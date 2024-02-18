@@ -2,6 +2,7 @@ module NonlinearNormalForm
 
 using Reexport
 using GTPSA
+using LinearAlgebra
 
 @reexport using GTPSA
 
@@ -9,106 +10,101 @@ import Base: getindex,
              setindex!,
              convert,
              ∘,
-             one,
              promote_rule,
-             show
+             show,
+             complex
 
-export ComplexDAMap, DAMap, GTPSAMap, ComplexGTPSAMap, TaylorMap, Descriptor
+export DAMap, GTPSAMap, Probe, TaylorMap, Descriptor,
 
-abstract type TaylorMap{S<:Union{Float64,ComplexF64}, T<:Union{TPS,ComplexTPS}} end
+       checksymp
 
-struct DAMap{S,T} <: TaylorMap{S,T}
-  x0::Vector{S}   # ENTRANCE VALUE OF THE MAP!
-  v::Vector{T}    # Expansion around x0, with scalar part equal to EXIT value of map
-end
 
-struct GTPSAMap{S,T} <: TaylorMap{S,T}
-  x0::Vector{S} 
-  v::Vector{T}
-end
+abstract type TaylorMap end 
 
-#const ComplexGTPSAMap = GTPSAMap{ComplexF64, ComplexTPS}
-#const ComplexDAMap = DAMap{ComplexF64, ComplexTPS}
-
-#promote_rule(t1::Type{DAMap{<:Real,TPS}}, t2::Type{DAMap{<:Real,TPS}}) = t1{Float64,TPS}
-#promote_rule(t1::Type{DAMap{<:Number,Union{TPS,ComplexTPS}}},t2::Type{DAMap{<:Number,Union{TPS,ComplexTPS}}}) = t1{ComplexF64,ComplexTPS}
-
-#promote_rule(t1::Type{GTPSAMap{<:Real,TPS}}, t2::Type{GTPSAMap{<:Real,TPS}}) = t1{Float64,TPS}
-#promote_rule(t1::Type{GTPSAMap{<:Number,Union{TPS,ComplexTPS}}},t2::Type{GTPSAMap{<:Number,Union{TPS,ComplexTPS}}}) = t1{ComplexF64,ComplexTPS}
-
-# Disallow just adding scalars for now, maybe forever:
-# promote_rule(::Type{DAMap{TPS}}, ::Type{Vector{<:Union{Type{AbstractFloat}, Type{Integer}, Type{Rational}, Type{AbstractIrrational}}}}) = DAMap{TPS}
-# promote_rule(::Type{DAMap{ComplexTPS}}, ::Type{Vector{<:Union{Type{Complex},Type{AbstractFloat}, Type{Integer}, Type{Rational}, Type{AbstractIrrational}}}}) = DAMap{ComplexTPS}
-
-function DAMap(m::Union{TaylorMap,Nothing}=nothing; use::Union{Descriptor,TaylorMap,Nothing}=nothing)
-  return low_map(DAMap, m, use)
-end
-
-function GTPSAMap(m::Union{TaylorMap,Nothing}=nothing; use::Union{Descriptor,TaylorMap,Nothing}=nothing)
-  return low_map(GTPSAMap, m, use)
-end
-
-# Create identity map using specified Descriptor
-function low_map(type::Type, m::Nothing, use::Descriptor)
-  desc = unsafe_load(use.desc)
-  nv = desc.nv
-  np = desc.np
-  x0 = zeros(nv) 
-  v = Vector{TPS}(undef, nv+np)
-  for i=1:nv+np
-    t = TPS(use=use)
-    GTPSA.mad_tpsa_seti!(t.tpsa, Cint(i), 0.0, 1.0)
-    v[i] = t
-  end
-  return (type)(x0, v)
-end
-
-# Use latest descriptor
-function low_map(type::Type, m::Nothing, use::Nothing)
-  return low_map(type, m, GTPSA.desc_current)
-end
-
-# Copy ctor: use DAMap/GTPSA map Descriptor
-function low_map(type::Type, m::TaylorMap, use::Nothing)
-  return (type)(deepcopy(m.x0), deepcopy(m.v))
-end
-
-function low_map(type::Type, m::TaylorMap, use::Union{Descriptor,TaylorMap})
-  error("Changing descriptor of maps not yet implemented.")
-end
-
-# Use descriptor in Vector of TPSA. This probably shouldn't be done.
-# Do we need a probe?
-#= NOT ALLOWED!
-function low_map(type::Type, m::Vector{<:Union{TPS,ComplexTPS}}, use::Nothing)
-  nv = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m).tpsa).d)).nv
-  length(m) == nv || error("Length of $(typeof(m)) != Number of variables")
-  return (type)(zeros(GTPSA.numtype(first(m)), nv), deepcopy(m))
-end
-=#
-
-getdesc(m::TaylorMap) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.v).tpsa).d))
+# helper functions
+getdesc(m::TaylorMap) = Descriptor(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.v).tpsa).d))
 numvars(m::TaylorMap) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.v).tpsa).d)).nv
 numparams(m::TaylorMap) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.v).tpsa).d)).np
 
+getdesc(t::Union{TPS,ComplexTPS}) = Descriptor(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(t.tpsa).d))
+numvars(t::Union{TPS,ComplexTPS}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(t.tpsa).d)).nv
+numparams(t::Union{TPS,ComplexTPS}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(t.tpsa).d)).np
+
+getdesc(d::Descriptor) = d
+numvars(d::Descriptor) = unsafe_load(d.desc).nv
+numparams(d::Descriptor) = unsafe_load(d.desc).nv
 
 
-# Only difference is in map composition
-function ∘(d1::DAMap,d2::DAMap)
-  ref = Vector{eltype(d2.v)}(undef, length(d2.v))
-  for i=1:length(d2.v)
-    ref[i] = d2.v[i][0]
-    d2.v[i][0] = 0
-  end
-  out = ∘(d1.v, d2.v)
-  for i=1:length(d2.v)
-    d2.v[i][0] = ref[i]
-  end
-  return out
+#=
+zero(m::TaylorMap) = (typeof(m))(use=m)
+
+# Identity map:
+function one(m::Union{TaylorMap,Nothing}=nothing)
+  return low_one(m, use)
 end
 
+function low_one(m::TaylorMap, use::Nothing)
+  nv = numvars(m)
+  x0 = zeros(typeof(first(m.x0)), nv)
+  v = Vector{typeof(first(m.v))}(undef, nv)
+  for i=1:nv
+    t = TPS(use=first(m.v))
+    GTPSA.mad_tpsa_seti!(t.tpsa, Cint(i), 0.0, 1.0)
+    @inbounds v[i] = t
+  end
+  return (typeof(m))(x0, v)
+end
+
+function low_one(m::TaylorMap, use::Nothing)
+
+end
+=#
+#=
+# Use latest Descriptor
+function one(type::Union{Type{DAMap},Type{GTPSAMap},Type{DAMap{S,T}}, Type{GTPSAMap{S,T}}}) where {S <: Union{Float64,ComplexF64},T <: Union{TPS,ComplexTPS}}
+  desc = unsafe_load(GTPSA.desc_current.desc)
+  nv = desc.nv
+  x0 = zeros(nv) 
+  v = Vector{TPS}(undef, nv)
+  for i=1:nv
+    t = TPS(use=GTPSA.desc_current)
+    GTPSA.mad_tpsa_seti!(t.tpsa, Cint(i), 0.0, 1.0)
+    @inbounds v[i] = t
+  end
+  return (type)(x0, v)
+end
+=#
+
+# Only difference is in map composition
+function ∘(m2::DAMap,m1::DAMap)
+  ref = Vector{ComplexF64}(undef, length(m1.v))
+  for i=1:length(m1.v)
+    @inbounds ref[i] = m1.v[i][0]
+    @inbounds m1.v[i][0] = 0
+  end
+  outv = ∘(m2.v, vcat(m1.v, complexparams(use=first(m1.v))...))
+  for i=1:length(m1.v)
+    @inbounds m1.v[i][0] = ref[i]
+  end
+  return DAMap(zeros(ComplexF64, length(m1.v)), outv)
+end
+
+function ∘(m2::GTPSAMap,m1::GTPSAMap)
+  return GTPSAMap(zeros(ComplexF64, length(m1.v)),∘(m2.v, vcat(m1.v, complexparams(use=first(m1.v))...)))
+end
+
+function checksymp(m::TaylorMap, tol)
+  nv = numvars(m)
+  J = zeros(nv, nv)
+  for i=1:2:nv
+    J[i:i+1,i:i+1] = [0 1; -1 0];
+  end
+  M = jacobian(m.v)
+  res = tranpose(M)*J*M
+  return sum(abs.(res - J))
+end
+
+
 include("show.jl")
-
-
 
 end
