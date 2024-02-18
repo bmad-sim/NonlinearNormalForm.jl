@@ -1,5 +1,5 @@
 #=
-GTPSAMap and DAMap used for normal form analysis. Maps can be 
+TPSAMap and DAMap used for normal form analysis. Maps can be 
 constructed from Probes, GTPSA Descriptors, or other Maps. If 
 no argument is provided, then GTPSA.desc_current is used to generate
 a zero map (all coefficients zero with zero entrance value).
@@ -14,7 +14,7 @@ struct DAMap <: TaylorMap
   q::Quaternion{ComplexTPS}  # Quaternion for spin
 end
 
-struct GTPSAMap <: TaylorMap
+struct TPSAMap <: TaylorMap
   x0::Vector{ComplexF64}     # Entrance value of map
   v::Vector{ComplexTPS}      # Expansion around x0, with scalar part equal to EXIT value of map
   E::Matrix{ComplexF64}      # Envelope for stochastic radiation
@@ -25,8 +25,8 @@ function DAMap(m::Union{TaylorMap,Probe,Nothing}=nothing; use::Union{Descriptor,
   return low_map(DAMap, m, use)
 end
 
-function GTPSAMap(m::Union{TaylorMap,Probe,Nothing}=nothing; use::Union{Descriptor,TaylorMap,Nothing}=nothing)
-  return low_map(GTPSAMap, m, use)
+function TPSAMap(m::Union{TaylorMap,Probe,Nothing}=nothing; use::Union{Descriptor,TaylorMap,Nothing}=nothing)
+  return low_map(TPSAMap, m, use)
 end
 
 # --- Probe ---
@@ -37,7 +37,7 @@ end
 
 # If Probe contains TPS and Descriptor is specified, change Descriptor
 function low_map(type::Type, m::Probe{TPS}, use::Union{Descriptor,TaylorMap})
-  return (type)(deepcopy(m.x0), map(x->ComplexTPS(x,use=getdesc(use), m.v)) # Error checking done in GTPSA
+  return (type)(deepcopy(m.x0), map(x->ComplexTPS(x,use=getdesc(use)), m.v)) # Error checking done in GTPSA
 end
 
 # If Probe does not contain TPS, use specified Descriptor:
@@ -79,3 +79,21 @@ function low_map(type::Type, m::Nothing, use::Nothing)
 end
 
 # --- Operators --- 
+
+# Only difference is in map composition
+function ∘(m2::DAMap,m1::DAMap)
+  ref = Vector{ComplexF64}(undef, length(m1.v))
+  for i=1:length(m1.v)
+    @inbounds ref[i] = m1.v[i][0]
+    @inbounds m1.v[i][0] = 0
+  end
+  outv = ∘(m2.v, vcat(m1.v, complexparams(use=first(m1.v))...))
+  for i=1:length(m1.v)
+    @inbounds m1.v[i][0] = ref[i]
+  end
+  return DAMap(zeros(ComplexF64, length(m1.v)), outv)
+end
+
+function ∘(m2::TPSAMap,m1::TPSAMap)
+  return TPSAMap(zeros(ComplexF64, length(m1.v)),∘(m2.v, vcat(m1.v, complexparams(use=first(m1.v))...)))
+end

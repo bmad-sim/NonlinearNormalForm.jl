@@ -14,9 +14,7 @@ import Base: getindex,
              show,
              complex
 
-export DAMap, GTPSAMap, Probe, TaylorMap, Descriptor,
-
-       checksymp
+export TaylorMap, Quaternion, Probe, TPSAMap, DAMap, TPSAMap, checksymp, checksympm
 
 
 abstract type TaylorMap end 
@@ -75,36 +73,30 @@ function one(type::Union{Type{DAMap},Type{GTPSAMap},Type{DAMap{S,T}}, Type{GTPSA
 end
 =#
 
-# Only difference is in map composition
-function ∘(m2::DAMap,m1::DAMap)
-  ref = Vector{ComplexF64}(undef, length(m1.v))
-  for i=1:length(m1.v)
-    @inbounds ref[i] = m1.v[i][0]
-    @inbounds m1.v[i][0] = 0
+function checksympm(M::Matrix)
+  nv = size(M)[1]
+  J = zeros(nv, nv)
+  for i=1:2:nv
+    J[i:i+1,i:i+1] = [0 1; -1 0];
   end
-  outv = ∘(m2.v, vcat(m1.v, complexparams(use=first(m1.v))...))
-  for i=1:length(m1.v)
-    @inbounds m1.v[i][0] = ref[i]
-  end
-  return DAMap(zeros(ComplexF64, length(m1.v)), outv)
+  res = transpose(M)*J*M
+  return sum(abs.(res - J))
 end
 
-function ∘(m2::GTPSAMap,m1::GTPSAMap)
-  return GTPSAMap(zeros(ComplexF64, length(m1.v)),∘(m2.v, vcat(m1.v, complexparams(use=first(m1.v))...)))
-end
-
-function checksymp(m::TaylorMap, tol)
+function checksymp(m::TaylorMap)
   nv = numvars(m)
   J = zeros(nv, nv)
   for i=1:2:nv
     J[i:i+1,i:i+1] = [0 1; -1 0];
   end
   M = jacobian(m.v)
-  res = tranpose(M)*J*M
+  res = transpose(M)*J*M
   return sum(abs.(res - J))
 end
 
-
+include("quaternion.jl")
+include("probe.jl")
+include("map.jl")
 include("show.jl")
 
 end
