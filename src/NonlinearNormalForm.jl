@@ -2,7 +2,8 @@ module NonlinearNormalForm
 
 import Base: ∘,
              show,
-             convert
+             convert,
+             inv
 
 using GTPSA,
       LinearAlgebra,
@@ -27,7 +28,6 @@ numparams(t::Union{TPS,ComplexTPS}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.
 getdesc(d::Descriptor) = d
 numvars(d::Descriptor) = unsafe_load(d.desc).nv
 numparams(d::Descriptor) = unsafe_load(d.desc).nv
-
 
 function checksympm(M::Matrix)
   nv = size(M)[1]

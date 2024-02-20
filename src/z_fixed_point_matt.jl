@@ -2,10 +2,9 @@ using Revise
 using BenchmarkTools: @btime, @benchmark
 using NonlinearNormalForm
 
-undef_init(vec::Vector) = Vector{eltype(vec)}(undef, length(vec))
-
 function track_qf(p::Probe, k1, hkick, rad=false)
-  z0 = p.x0 + p.v
+  # Translate coordinates
+  z0 = p.x0 + p.x
   z = Vector{promote_type(eltype(z0),typeof(k1),typeof(hkick))}(undef, length(z0))
   
   lbend=0.1
@@ -22,16 +21,19 @@ function track_qf(p::Probe, k1, hkick, rad=false)
     lrad1=0.2
     lrad2=0.2
     lrad3=0.2
-    z[1] += @FastGTPSA exp(lrad1*(1.0+z1^2))*z[1] 
-    z[3] += @FastGTPSA exp(lrad2*(1.0+z3^2))*z3 
-    z[5] += @FastGTPSA exp(lrad3*(1.0+z5^2))*z5 
+    z[1] += @FastGTPSA exp(lrad1*(1.0+z[1]^2))*z[1] 
+    z[3] += @FastGTPSA exp(lrad2*(1.0+z[3]^2))*z[3] 
+    z[5] += @FastGTPSA exp(lrad3*(1.0+z[5]^2))*z[5] 
   end
 
-  return Probe(z)
+  # Translate back
+  z -= p.x0
+
+  return Probe(z, x0=p.x0)
 end
 
 function track_qd(p::Probe, k1, vkick)
-  z0 = p.x0 + p.v
+  z0 = p.x0 + p.x
   z = Vector{promote_type(eltype(z0),typeof(k1),typeof(vkick))}(undef, length(z0))
 
   L  = @FastGTPSA 0.5/(1.0+z0[6])
@@ -42,11 +44,13 @@ function track_qd(p::Probe, k1, vkick)
   z[4] = @FastGTPSA -sqrt(k1)*sin(sqrt(k1)*L)*z0[3]+cos(sqrt(k1)*L)*z0[4]+vkick 
   z[5] = @FastGTPSA z0[5]+h
   z[6] = +z0[6]
-  return Probe(z)
+
+  z -= p.x0
+  return Probe(z, x0=p.x0)
 end
 
 function track_drift(p::Probe)
-  z0 = p.x0 + p.v
+  z0 = p.x0 + p.x
   z = Vector{eltype(z0)}(undef, length(z0))
 
   L = 0.75
@@ -56,12 +60,13 @@ function track_drift(p::Probe)
   z[4] = +z0[4]
   z[5] = @FastGTPSA z0[5]-L*((z0[2]^2)+(z0[4]^2))/(1.0+z0[6])^2/2.0
   z[6] = +z0[6] 
-  return Probe(z)
+  z -= p.x0
+  return Probe(z, x0=p.x0)
 end
 
 
 function track_cav(p::Probe)
-  z0 = p.x0 + p.v
+  z0 = p.x0 + p.x
   z = Vector{eltype(z0)}(undef, length(z0))
 
   z[1] = +z0[1]
@@ -70,11 +75,12 @@ function track_cav(p::Probe)
   z[4] = +z0[4]
   z[5] = +z0[5]
   z[6] = @FastGTPSA z0[6]+0.0001*z0[5]
-  return Probe(z)
+  z -= p.x0
+  return Probe(z, x0=p.x0)
 end
 
 function track_sextupole(p::Probe, k2l)
-  z0 = p.x0 + p.v
+  z0 = p.x0 + p.x
   z = Vector{promote_type(eltype(z0),typeof(k2l))}(undef, length(z0))
   
   z[1] = +z0[1]
@@ -83,7 +89,8 @@ function track_sextupole(p::Probe, k2l)
   z[4] = @FastGTPSA z0[4]+k2l*2.0*z0[1]*z0[3]
   z[5] = +z0[5]
   z[6] = +z0[6]
-  return Probe(z)
+  z -= p.x0
+  return Probe(z, x0=p.x0)
 end
 
 function track_fodo(z0, k1, k2l, kick, rad)
@@ -108,17 +115,16 @@ end
 
 closed_orbit = 1e-3
 
-d = Descriptor(6,2,2,2);
+d = Descriptor(6,1,2,1);
 x = vars();
 k = params();
 
 x0 = repeat([closed_orbit], 6)
 
-xs = Probe(x+x0)
+xs = Probe(x, x0=x0)
 k1 = 0.36;
 k2l = 1.2;
 xs = track_ring(xs, k1, k2l, [k[1], k[2], zeros(TPS,48)...])
-
 
 
 

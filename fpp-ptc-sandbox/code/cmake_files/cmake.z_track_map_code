@@ -1,0 +1,14 @@
+set (EXENAME z_track_map_code)
+
+FILE (GLOB SRC_FILES z_track_map_code.f90)
+
+set (INC_DIRS
+)
+
+set (LINK_LIBS
+  forest
+  bsim
+  bmad
+  sim_utils
+  ${ACC_BMAD_LINK_LIBS}
+)

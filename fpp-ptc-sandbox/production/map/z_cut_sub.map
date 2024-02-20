@@ -1,0 +1,102 @@
+# Path: /Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/production/bin/z_cut_sub
+# Arch: arm64
+# Object files:
+[  0] linker synthesized
+[  1] CMakeFiles/z_cut_sub-exe.dir/z_cut_sub.f90.o
+[  2] /Users/mgs255/Software/bmad/bmad-ecosystem/production/lib/libforest.dylib
+[  3] /opt/homebrew/Cellar/gcc/13.2.0/lib/gcc/current/libgfortran.dylib
+[  4] /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.0.sdk/usr/lib/libSystem.tbd
+# Sections:
+# Address	Size    	Segment	Section
+0x1000037A0	0x000004C8	__TEXT	__text
+0x100003C70	0x0000002C	__TEXT	__text_startup
+0x100003C9C	0x0000015C	__TEXT	__stubs
+0x100003E00	0x000000E0	__TEXT	__const
+0x100003EE0	0x00000050	__TEXT	__cstring
+0x100003F30	0x000000C8	__TEXT	__eh_frame
+0x100004000	0x000000F8	__DATA_CONST	__got
+0x100008000	0x0000B658	__DATA	__bss
+# Symbols:
+# Address	Size    	File  Name
+0x1000037A0	0x000004C8	[  1] _MAIN__
+0x100003C70	0x0000002C	[  1] _main
+0x100003C9C	0x0000000C	[  2] ___c_tpsa_MOD_a_opt_c_damap.stub
+0x100003CA8	0x0000000C	[  2] ___c_tpsa_MOD_alloc_c_normal_form.stub
+0x100003CB4	0x0000000C	[  2] ___c_tpsa_MOD_alloc_c_vector_field.stub
+0x100003CC0	0x0000000C	[  2] ___c_tpsa_MOD_c_aimag.stub
+0x100003CCC	0x0000000C	[  2] ___c_tpsa_MOD_c_allocda.stub
+0x100003CD8	0x0000000C	[  2] ___c_tpsa_MOD_c_equalmap.stub
+0x100003CE4	0x0000000C	[  2] ___c_tpsa_MOD_c_equalvec.stub
+0x100003CF0	0x0000000C	[  2] ___c_tpsa_MOD_c_expflo_map.stub
+0x100003CFC	0x0000000C	[  2] ___c_tpsa_MOD_c_init.stub
+0x100003D08	0x0000000C	[  2] ___c_tpsa_MOD_c_killda.stub
+0x100003D14	0x0000000C	[  2] ___c_tpsa_MOD_c_pri_map.stub
+0x100003D20	0x0000000C	[  2] ___c_tpsa_MOD_c_taylor_ran.stub
+0x100003D2C	0x0000000C	[  2] ___c_tpsa_MOD_cdscmul.stub
+0x100003D38	0x0000000C	[  2] ___c_tpsa_MOD_cutorder.stub
+0x100003D44	0x0000000C	[  2] ___c_tpsa_MOD_cutordermap.stub
+0x100003D50	0x0000000C	[  2] ___c_tpsa_MOD_equal.stub
+0x100003D5C	0x0000000C	[  2] ___c_tpsa_MOD_getordermap.stub
+0x100003D68	0x0000000C	[  2] ___c_tpsa_MOD_getvectorfield.stub
+0x100003D74	0x0000000C	[  2] ___c_tpsa_MOD_k_opt_c_damap.stub
+0x100003D80	0x0000000C	[  2] ___c_tpsa_MOD_kill_c_normal_form.stub
+0x100003D8C	0x0000000C	[  2] ___c_tpsa_MOD_kill_c_vector_field.stub
+0x100003D98	0x0000000C	[  2] ___c_tpsa_MOD_subs.stub
+0x100003DA4	0x0000000C	[  3] __gfortran_set_args.stub
+0x100003DB0	0x0000000C	[  3] __gfortran_set_options.stub
+0x100003DBC	0x0000000C	[  3] __gfortran_st_write.stub
+0x100003DC8	0x0000000C	[  3] __gfortran_st_write_done.stub
+0x100003DD4	0x0000000C	[  3] __gfortran_transfer_character_write.stub
+0x100003DE0	0x0000000C	[  3] __gfortran_transfer_integer_write.stub
+0x100003DEC	0x0000000C	[  4] _memcpy.stub
+0x100003E00	0x00000008	[  1] lC0
+0x100003E08	0x00000010	[  1] lC1
+0x100003E18	0x00000008	[  1] lC2
+0x100003E20	0x00000018	[  1] lC4
+0x100003E38	0x00000014	[  1] lC5
+0x100003E4C	0x00000004	[  1] lC6
+0x100003E50	0x0000001C	[  1] lC7
+0x100003E6C	0x00000004	[  1] lC8
+0x100003E70	0x00000034	[  1] lC9
+0x100003EA4	0x0000001C	[  1] _options.4.4
+0x100003EC0	0x00000008	[  1] lC11
+0x100003ED0	0x00000010	[  1] 16-byte-literal
+0x100003EE0	0x00000050	[  1] literal string: /Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/z_cut_sub.f90
+0x100003F30	0x00000018	[  1] CIE
+0x100003F48	0x00000080	[  1] FDE for: _MAIN__
+0x100003FC8	0x00000030	[  1] FDE for: _main
+0x100004000	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_a_opt_c_damap
+0x100004008	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_alloc_c_normal_form
+0x100004010	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_alloc_c_vector_field
+0x100004018	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_aimag
+0x100004020	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_allocda
+0x100004028	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_equalmap
+0x100004030	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_equalvec
+0x100004038	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_expflo_map
+0x100004040	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_init
+0x100004048	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_killda
+0x100004050	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_pri_map
+0x100004058	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_taylor_ran
+0x100004060	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_cdscmul
+0x100004068	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_cutorder
+0x100004070	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_cutordermap
+0x100004078	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_equal
+0x100004080	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_getordermap
+0x100004088	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_getvectorfield
+0x100004090	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_k_opt_c_damap
+0x100004098	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_kill_c_normal_form
+0x1000040A0	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_kill_c_vector_field
+0x1000040A8	0x00000008	[  0] non-lazy-pointer-to-local: ___c_tpsa_MOD_n_cai
+0x1000040B0	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_subs
+0x1000040B8	0x00000008	[  0] non-lazy-pointer-to-local: ___precision_constants_MOD_use_quaternion
+0x1000040C0	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_set_args
+0x1000040C8	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_set_options
+0x1000040D0	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_st_write
+0x1000040D8	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_st_write_done
+0x1000040E0	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_transfer_character_write
+0x1000040E8	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_transfer_integer_write
+0x1000040F0	0x00000008	[  4] non-lazy-pointer-to-local: _memcpy
+0x100008000	0x00008D78	[  1] _normal.0
+0x100010D78	0x000012D0	[  1] _nl.1
+0x100012048	0x000012D0	[  1] _m.2
+0x100013318	0x00000340	[  1] _vf.3
