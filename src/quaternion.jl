@@ -11,7 +11,12 @@ struct Quaternion{T <: Number}
   q::NTuple{4, T}
 end
 
-convert(::Type{Quaternion{T}}, Q::Quaternion{S}) where {T,S} = Quaternion(map(x->(T)(x), Q.q))
+convert(::Type{Quaternion{S}}, Q::Quaternion{T}) where {S,T} = Quaternion(map(x->(S)(x), Q.q))
+Quaternion(q0::T, q1::T, q2::T, q3::T) where T <: Number = Quaternion(tuple(q0,q1,q2,q3))
+Quaternion(Q::Quaternion) = Quaternion(deepcopy(Q.q)) # in case mutating types
+
+unit_quat(t::T) where T <: Number = Quaternion((one(t), zero(t), zero(t), zero(t)))
+# unit_quat(t::S{T}) where {S, T <: Number} = Quaternion((one(first(t)), zero(first(t)), zero(first(t)), zero(first(t))))
 
 function Base.:*(Q1::Quaternion, Q2::Quaternion)
   q1 = Q1.q

@@ -6,73 +6,58 @@ a zero map (all coefficients zero with zero entrance value).
 
 The GTPSA Descriptor can be changed when constructing a Map from a
 Probe. The numbers of variables and parameters in the GTPSAs must agree.
+
+Once again parametric types, however being a TaylorMap we now require the 
+orbit x and spin q to be TPSs.
 =#
-struct DAMap <: TaylorMap
-  x::Vector{ComplexTPS}      # Expansion around x0, with scalar part equal to EXIT value of map wrt initial coordinates x0
-  x0::Vector{ComplexF64}     # Entrance value of map
-  q::Quaternion{ComplexTPS}  # Quaternion for spin
-  E::Matrix{ComplexF64}      # Envelope for stochastic radiation
+abstract type TaylorMap end 
+
+struct DAMap{S<:Number,T<:Union{TPS,ComplexTPS},U<:Union{TPS,ComplexTPS},V<:Number} <: TaylorMap
+  x0::Vector{S}     # Entrance value of map
+  x::Vector{T}      # Expansion around x0, with scalar part equal to EXIT value of map wrt initial coordinates x0
+  q::Quaternion{U}  # Quaternion for spin
+  E::Matrix{V}      # Envelope for stochastic radiation
 end
 
-struct TPSAMap <: TaylorMap
-  x::Vector{ComplexTPS}      # Expansion around x0, with scalar part equal to EXIT value of map wrt initial coordinates x0
-  x0::Vector{ComplexF64}     # Entrance value of map
-  q::Quaternion{ComplexTPS}  # Quaternion for spin
-  E::Matrix{ComplexF64}      # Envelope for stochastic radiation
+struct TPSAMap{S<:Number,T<:Union{TPS,ComplexTPS},U<:Union{TPS,ComplexTPS},V<:Number} <: TaylorMap
+  x0::Vector{S}     # Entrance value of map
+  x::Vector{T}      # Expansion around x0, with scalar part equal to EXIT value of map wrt initial coordinates x0
+  q::Quaternion{U}  # Quaternion for spin
+  E::Matrix{V}      # Envelope for stochastic radiation
 end
 
-# maps can default to empty using GTPSA.desc_current, unlike Probes which are also used in tracking regular
+# List of acceptable Probes to create TaylorMaps from (e.g. including/excluding orbit/spin):
+# For now I will just assume both orbit and spin are TPSs but can change later:
+const TaylorProbe{S<:Real,V<:Real,W<:Real} = Probe{S,TPS,TPS,V} #Union{Probe{S,TPS,TPS,V}, Probe{S,W,TPS,V}, Probe{S,TPS,W,V}}
 
-# Quasi-keyword argument constructor for easy expansion/modification
-function DAMap(; x::Vector{ComplexTPS}, x0::Vector{ComplexF64}, q::Quaternion{ComplexTPS}, E::Matrix{ComplexF64})
-  return DAMap(x, x0, q, E)
-end
+for t = (:DAMap, :TPSAMap)
+  @eval begin
+    # Function to create a TaylorMap from a TaylorProbe (assuming consistent definition)
+    function $t(p::TaylorProbe; use::Union{Descriptor,<:TaylorMap,TaylorProbe,Nothing}=nothing)
+      return $t(deepcopy(p.x0), (eltype(p.x)).(p.x,use=getdesc(use)), Quaternion((eltype(p.q.q)).(p.q.q, use=getdesc(use))), deepcopy(p.E))
+    end
 
-# Quasi-keyword argument constructor for easy expansion/modification
-function TPSAMap(; x::Vector{ComplexTPS}, x0::Vector{ComplexF64}, q::Quaternion{ComplexTPS}, E::Matrix{ComplexF64})
-  return TPSAMap(x, x0, q, E)
-end
+    # Copy ctor/change ctor (again assumes consistent definition)
+    function $t(m::TaylorMap; use::Union{Descriptor,<:TaylorMap,TaylorProbe,Nothing}=nothing)
+      return $t(deepcopy(m.x0),(eltype(p.x)).(m.x,use=getdesc(use)), Quaternion((eltype(p.x)).(m.q.q, use=getdesc(use))), deepcopy(m.E))
+    end
 
-# --- Definitions ---
-function DAMap(m::Union{<:TaylorMap,Probe,Vector{<:Union{TPS,ComplexTPS}}}; use::Union{Descriptor,<:TaylorMap,Nothing}=nothing)
-  return low_map(DAMap, m, use)
-end
-
-function TPSAMap(m::Union{<:TaylorMap,Probe}; use::Union{Descriptor,<:TaylorMap,Nothing}=nothing)
-  return low_map(TPSAMap, m, use)
-end
-
-# --- Low-level ctors ---
-function low_map(type::Type, m::Union{<:TaylorMap,Probe{TPS}}, use::Nothing)
-  return (type)(x=ComplexTPS.(m.x),x0=convert(Vector{ComplexF64}, m.x0), q=Quaternion(ComplexTPS.(m.q.q)), E=convert(Matrix{ComplexF64}, m.E))
-end
-
-function low_map(type::Type, m::Probe{Float64}, use::Union{Descriptor,<:TaylorMap})
-  length(m.x0) == numvars(use) || error("Number of variables in GTPSA != number of variables in Probe!")
-  return (type)(x=ComplexTPS.(m.x,use=getdesc(use)),x0=convert(Vector{ComplexF64}, m.x0), q=Quaternion(ComplexTPS.(m.q.q,use=getdesc(use))), E=convert(Matrix{ComplexF64}, m.E)) # Error checking done in GTPSA
-end
-
-function low_map(type::Type, m::Probe{Float64}, use::Nothing)
-  return low_map(type, m, GTPSA.desc_current)
-end
-
-function low_map(type::Type, m::Nothing, use::Union{Descriptor,TaylorMap})
-  nv = numvars(use)
-  x0 = zeros(ComplexF64, nv) 
-  x = Vector{ComplexTPS}(undef, nv)
-  for i in eachindex(x)
-    x[i] = ComplexTPS(use=getdesc(use))
+    # For some reason type unstable if TPS type for quaternion? huh?
+    # Create from vector and blank (in this case must check for consistency)
+    function $t(x::Vector{<:Union{TPS,ComplexTPS}}=zeros(TPS, numvars(GTPSA.desc_current)); x0::Vector{<:Number}=zeros(numtype(first(x)), numvars(x)), q::Quaternion{<:Union{TPS,ComplexTPS}}, E::Matrix{<:Number}=zeros(numtype(first(x)), numvars(x), numvars(x)), use::Union{Descriptor,<:TaylorMap,TaylorProbe,Nothing}=nothing)
+      numvars(x) == length(x) || error("Length of orbital ray inconsistent with number of variables in GTPSA!")
+      numvars(x) == length(x0) || error("Length of orbital ray != length of coordinate system origin vector!")
+      (numvars(x),numvars(x)) == size(E) || error("Size of stochastic matrix inconsistent with number of variables!")
+      x1 = (eltype(x)).(x, use=getdesc(use))
+      if isnothing(q)
+        q1 = unit_quat(first(x1))
+      else
+        q1 = Quaternion((eltype(x)).(q.q, use=getdesc(use)))
+      end
+      
+      return $t(x0, x, q1, E)
+    end
   end
-  return (type)(x=x,x0=x0,q=Quaternion((ComplexTPS(use=getdesc(use)), ComplexTPS(use=getdesc(use)), ComplexTPS(use=getdesc(use)), ComplexTPS(use=getdesc(use)))), E=zeros(nv, nv))
-end
-
-function low_map(type::Type, m::Nothing, use::Nothing)
-  return low_map(type, m, GTPSA.desc_current)
-end
-
-# Change Descriptor:
-function low_map(type::Type, m::Union{<:TaylorMap,Probe{TPS}}, use::Union{Descriptor,<:TaylorMap})
-  return (type)(x=ComplexTPS.(m.x, use=getdesc(use)),x0=convert(Vector{ComplexF64}, m.x0), q=Quaternion(ComplexTPS.(m.q.q, use=getdesc(use))), E=convert(Matrix{ComplexF64}, m.E))
 end
 
 # --- Operators --- 
@@ -91,7 +76,7 @@ function ∘(m2::DAMap,m1::DAMap)
   for i=1:nv
     @inbounds m1.x[i][0] = ref[i]
   end
-  return DAMap(x=outx, x0=deepcopy(m1.x0), q=Quaternion((ComplexTPS(use=getdesc(m1)), ComplexTPS(use=getdesc(m1)), ComplexTPS(use=getdesc(m1)), ComplexTPS(use=getdesc(m1)))), E=zeros(nv, nv))
+  return DAMap(outx, deepcopy(m1.x0), Quaternion((ComplexTPS(use=getdesc(m1)), ComplexTPS(use=getdesc(m1)), ComplexTPS(use=getdesc(m1)), ComplexTPS(use=getdesc(m1)))), zeros(nv, nv))
 end
 
 function ∘(m2::TPSAMap,m1::TPSAMap)
