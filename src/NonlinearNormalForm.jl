@@ -6,15 +6,24 @@ import Base: ∘,
              inv,
              ==
 
-using GTPSA,
-      LinearAlgebra,
+using LinearAlgebra,
       Printf,
       Reexport
 
-import GTPSA: numtype, Desc
 @reexport using GTPSA
 
-export TaylorMap, Quaternion, Probe, TPSAMap, DAMap, TPSAMap, checksymp, checksympm, test
+import LinearAlgebra: norm, dot
+
+import GTPSA: numtype, 
+              Desc, 
+              RTPSA, 
+              CTPSA,
+              compose!,
+              minv!,
+              jacobian
+
+export TaylorMap, Quaternion, Probe, TPSAMap, DAMap, TPSAMap, checksymp, qmul!,
+        normalize!, dot
 
 include("quaternion.jl")
 include("probe.jl")
@@ -40,7 +49,7 @@ numparams(m::Quaternion{<:Union{ComplexTPS,TPS}}) = unsafe_load(Base.unsafe_conv
 
 getdesc(d::Descriptor) = d
 numvars(d::Descriptor) = unsafe_load(d.desc).nv
-numparams(d::Descriptor) = unsafe_load(d.desc).nv
+numparams(d::Descriptor) = unsafe_load(d.desc).np
 
 getdesc(d::Nothing) = nothing
 
@@ -50,14 +59,16 @@ function checksymp(M::Matrix{T}) where T<:Number
   nv == last(s) || error("Non-square matrix!")
   iseven(nv) || error("Matrix contains odd number of rows/columns!")
   J = zeros(nv,nv)
-  for i=1:2:first(nv)
+  for i=1:2:nv
     J[i:i+1,i:i+1] = [0 1; -1 0];
   end
   res = transpose(M)*J*M
   return sum(abs.(res - J))
 end
 
-checksymp(m::TaylorMap) = checksymp(jacobian(m.v))
+#hessian(m::TaylorMap,include_params=false) = hessian(m.x[1:numvars(m)],include_params=include_params)
+jacobian(m::TaylorMap,include_params=false) = jacobian(m.x[1:numvars(m)],include_params=include_params)
+checksymp(m::TaylorMap) = checksymp(jacobian(m))
 
 
 end

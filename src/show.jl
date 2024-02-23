@@ -10,7 +10,7 @@ function show(io::IO, m::Union{Probe,TaylorMap})
     lines_used[] += 2 + (desc.nv > 0 ? 2 : 0) + (desc.np > 0 ? 2 : 0)
   end
   println(io, "Reference Orbit ", typeof(m.x0),":")
-  for i in LinearIndices(m.x)
+  for i =1:length(m.x0)
     !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || (println(io, "\t⋮"); return)
     @printf(io, "%-3s  ", "$(i):"); println(io, m.x0[i])
     lines_used[] += 1
@@ -24,10 +24,10 @@ function show(io::IO, m::Union{Probe,TaylorMap})
 
   if eltype(m.x) <: Union{TPS,ComplexTPS}
     !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || (println(io, "\t⋮"); return)
-    GTPSA.show_map!(io, m.x, lines_used, true)
+    GTPSA.show_map!(io, m.x, lines_used, true, 1:numvars(m))
     !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || return
   else
-    for i in LinearIndices(m.x)
+    for i =1:length(m.x0)
       !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || (println(io, "\t⋮"); return)
       @printf(io, "%-3s  ", "$(i):"); println(io, m.x[i])
       lines_used[] += 1
@@ -38,23 +38,24 @@ function show(io::IO, m::Union{Probe,TaylorMap})
   println(io)
   lines_used[]+= 1
   !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || (println(io, "\t⋮"); return)
-  println(io,typeof(m.q),":")
+  println(io,typeof(m.Q),":")
   lines_used[] += 1
 
   
-  if eltype(m.q.q) <: Union{TPS,ComplexTPS}
+  if eltype(m.Q.q) <: Union{TPS,ComplexTPS}
     !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || (println(io, "\t⋮"); return)
-    GTPSA.show_map!(io, [m.q.q...], lines_used, false, [" q0:"," q1:"," q2:"," q3:"])
+    GTPSA.show_map!(io, [m.Q.q...], lines_used, false, [" q0:"," q1:"," q2:"," q3:"])
   else
     for i=1:4
       !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || (println(io, "\t⋮"); return)
-      @printf(io, "%-3s  ", "$(i):"); println(io, m.q.q[i])
+      @printf(io, "%-3s  ", "$(i):"); println(io, m.Q.q[i])
       lines_used[] += 1
     end
   end
   
 end
 
+#=
 function show(io::IO, Q::Quaternion)
 
-end
+end=#

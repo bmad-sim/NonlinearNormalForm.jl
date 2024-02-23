@@ -43,6 +43,7 @@ program matt
 
   !!! multiplying the TPSA maps
   map12=map2.o.map1
+  !!map12=map1*map2
   write(*,*) "Map 2 .o. Map 1:"
   call print(map12)
   

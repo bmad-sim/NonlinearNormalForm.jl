@@ -10,100 +10,249 @@ Probe. The numbers of variables and parameters in the GTPSAs must agree.
 Once again parametric types, however being a TaylorMap we now require the 
 orbit x and spin q to be TPSs.
 =#
-abstract type TaylorMap{S<:Number,T<:Union{TPS,ComplexTPS},U<:Union{TPS,ComplexTPS},V<:Number} end 
+abstract type TaylorMap{S,T<:Union{TPS,ComplexTPS},U<:Union{TPS,ComplexTPS},V} end 
 
-struct DAMap{S<:Number,T<:Union{TPS,ComplexTPS},U<:Union{TPS,ComplexTPS},V<:Number} <: TaylorMap{S,T,U,V}
+struct DAMap{S,T<:Union{TPS,ComplexTPS},U<:Union{TPS,ComplexTPS},V} <: TaylorMap{S,T,U,V}
   x0::Vector{S}     # Entrance value of map
   x::Vector{T}      # Expansion around x0, with scalar part equal to EXIT value of map wrt initial coordinates x0
-  q::Quaternion{U}  # Quaternion for spin
+  Q::Quaternion{U}  # Quaternion for spin
   E::Matrix{V}      # Envelope for stochastic radiation
 end
 
-struct TPSAMap{S<:Number,T<:Union{TPS,ComplexTPS},U<:Union{TPS,ComplexTPS},V<:Number} <: TaylorMap{S,T,U,V}
+struct TPSAMap{S,T<:Union{TPS,ComplexTPS},U<:Union{TPS,ComplexTPS},V} <: TaylorMap{S,T,U,V}
   x0::Vector{S}     # Entrance value of map
   x::Vector{T}      # Expansion around x0, with scalar part equal to EXIT value of map wrt initial coordinates x0
-  q::Quaternion{U}  # Quaternion for spin
+  Q::Quaternion{U}  # Quaternion for spin
   E::Matrix{V}      # Envelope for stochastic radiation
 end
-
-# List of acceptable Probes to create TaylorMaps from (e.g. including/excluding orbit/spin):
-# For now I will just assume both orbit and spin are TPSs but can change later:
-#const TaylorProbe{S<:Real,V<:Real} = Probe{S,TPS,TPS,V} #Union{Probe{S,TPS,TPS,V}, Probe{S,W,TPS,V}, Probe{S,TPS,W,V}}
 
 for t = (:DAMap, :TPSAMap)
   @eval begin
-    # Function to create a TaylorMap from a valid Probe or other TaylorMap
-    function $t(m::Union{TaylorMap{S,T,U,V},Probe{S,T,U,V}}; use::Union{Descriptor,TaylorMap,Probe{S,T,U,V},Nothing}=nothing) where {S<:Real, T<:Union{TPS,ComplexTPS}, U<:Union{TPS,ComplexTPS}, V<:Real}
+    # Create a TaylorMap from other TaylorMap
+    function $t(m::TaylorMap{S,T,U,V}; use::Union{Descriptor,TaylorMap,Probe{S,T,U,V},Nothing}=nothing) where {S, T<:Union{TPS,ComplexTPS}, U<:Union{TPS,ComplexTPS}, V}
       x0 = deepcopy(m.x0)
       x = map(x->(T)(x, use=getdesc(use)), m.x)
-      q = Quaternion(map(x->(U)(x, use=getdesc(use)), m.q.q))
+      Q = Quaternion(map(x->(U)(x, use=getdesc(use)), m.Q.q))
       E = deepcopy(m.E)
-      return $t{S,T,U,V}(x0, x, q, E)
+      return $t{S,T,U,V}(x0, x, Q, E)
+    end
+
+    # Create TaylorMap from a Probe (must tag on Parameters)
+    function $t(m::Probe{S,T,U,V}; use::Union{Descriptor,TaylorMap,Probe{S,T,U,V},Nothing}=nothing) where {S, T<:Union{TPS,ComplexTPS}, U<:Union{TPS,ComplexTPS}, V}
+      x0 = deepcopy(m.x0)
+      v = map(x->(T)(x, use=getdesc(use)), m.x)
+      if eltype(v) == TPS
+        k = params(getdesc(v))
+      else
+        k = complexparams(getdesc(v))
+      end
+      x = vcat(v,k)
+      Q = Quaternion(map(x->(U)(x, use=getdesc(use)), m.Q.q))
+      E = deepcopy(m.E)
+      return $t{S,T,U,V}(x0, x, Q, E)
     end
     
     # Create from vector and blank (in this case must check for consistency)
-    function $t(x::Vector{T}=zeros(TPS, numvars(GTPSA.desc_current)); x0::Vector{S}=zeros(numtype(first(x)), numvars(x)), q::Quaternion{U}=unit_quat(first(x)), E::Matrix{V}=zeros(numtype(first(x)), numvars(x), numvars(x)), use::Union{Descriptor,<:TaylorMap,Probe{<:Real,TPS,TPS,<:Real},Nothing}=nothing) where {S<:Number,T<:Union{TPS,ComplexTPS}, U<:Union{TPS,ComplexTPS},V<:Number}
+    function $t(x::Vector{T}=zeros(TPS, numvars(GTPSA.desc_current)); x0::Vector{S}=zeros(numtype(first(x)), numvars(x)), Q::Quaternion{U}=Quaternion(first(x)), E::Matrix{V}=zeros(numtype(first(x)), numvars(x), numvars(x)), use::Union{Descriptor,<:TaylorMap,Probe{S,TPS,TPS,V},Nothing}=nothing) where {S,T<:Union{TPS,ComplexTPS}, U<:Union{TPS,ComplexTPS},V}
       numvars(x) == length(x) || error("Length of orbital ray inconsistent with number of variables in GTPSA!")
-      numvars(x) == length(x0) || error("Length of orbital ray != length of coordinate system origin vector!")
+      numvars(x) == length(x0) || error("Length of orbital ray != length of reference orbit vector!")
       (numvars(x),numvars(x)) == size(E) || error("Size of stochastic matrix inconsistent with number of variables!")
-      (isnothing(use) && getdesc(x) == getdesc(q)) || error("Orbital ray Descriptor different from quaternion Descriptor!")
+      (isnothing(use) && getdesc(x) == getdesc(Q)) || error("Orbital ray Descriptor different from quaternion Descriptor!")
       
       x1 = map(x->(T)(x, use=getdesc(use)), x)
-      #(eltype(x)).(x, use=getdesc(use))
-      q1 = Quaternion(map(x->(U)(x, use=getdesc(use)), q.q))
+      Q1 = Quaternion(map(x->(U)(x, use=getdesc(use)), Q.q))
       
-      return $t{eltype(x0),T,U,eltype(E)}(deepcopy(x0), x1, q1, deepcopy(E))
+      return $t{eltype(x0),T,U,eltype(E)}(deepcopy(x0), x1, Q1, deepcopy(E))
     end
   end
 end
 
 
-# --- Operators --- 
+# --- composition ---
 
-# --- Compose ---
-function ∘(m2::DAMap,m1::DAMap{S,T,U,V}) where {S,T,U,V}
-  scalar.(m1.x) == m2.x0 || error("Disconnected DAMaps! Scalar part of first map != entrance coordinates of second map!")
-  nv = numvars(m1)
-  ref = Vector{numtype(T)}(undef, nv)
+function ∘(m2::DAMap{S2,T2,U2,V2},m1::DAMap{S1,T1,U1,V1}) where {S2,T2,U2,V2,S1,T1,U1,V1}
+  # all(scalar.(m1.x)+m1.x0 - m2.x0 .< 1e-20) || error("Disconnected DAMaps! Exit coordinates of first map != entrance coordinates of second map!")
+  desc = getdesc(m1)
+  nv = numvars(desc)
+  np = numparams(desc)
+  ref = Vector{numtype(T1)}(undef, nv)
+
+  outT = promote_type(T2,T1)
+
+  outx = Vector{outT}(undef,  nv+np)
+  # Set up orbit out:
+  for i=1:nv
+    @inbounds outx[i] = outT(use=desc)
+  end
+
+  outU = promote_type(U2,U1)
+
+  outQ = Quaternion{outU}([outU(use=desc), outU(use=desc), outU(use=desc), outU(use=desc)])
+
+  # Take out scalar part and store it
   for i=1:nv
     @inbounds ref[i] = m1.x[i][0]
     @inbounds m1.x[i][0] = 0
   end
-  # What kind to get? Complex or Real?
-  # there is probably a better way to do this 
-  # but this is type stable
-  # maybe we should make params also just take a TPS 
-  # and return that TPSs params with the correct type
-  if eltype(m1.x) == TPS
-    k = params(use=getdesc(m1.x))
+
+  # Do the composition, promoting if necessary
+  # --- Orbit ---
+  if outT != T1
+    # Promote to ComplexTPS:
+    m1x_store = map(t->outT(t), view(m1.x, :)) # Must store to prevent GC   
+    m1x_low = map(t->t.tpsa, m1x_store)
   else
-    k = complexparams(use=getdesc(m1.x))
+    m1x_store = nothing
+    m1x_low = map(t->t.tpsa, view(m1.x, :))
   end
-  tmp = vcat(m1.x, k...)
-  outx = ∘(m2.x, tmp)
+  if outT != T2
+    m2x_store = map(t->outT(t), view(m2.x, 1:nv)) # Must store to prevent GC   
+    m2x_low = map(t->t.tpsa, m2x_store)
+  else
+    m2x_store = nothing
+    m2x_low = map(t->t.tpsa, view(m2.x, 1:nv))
+  end
+
+  # --- Quaternion ---
+  if outU != U2
+    m2Q_store = map(t->outU(t), view(m2.Q.q, :)) # Must store to prevent GC
+    m2Q_low = map(t->t.tpsa, m2Q_store)
+  else
+    m2Q_store = nothing
+    m2Q_low = map(t->t.tpsa, view(m2.Q.q, :))
+  end
+
+  # go low
+  outx_low = map(t->t.tpsa, view(outx, 1:nv))
+  outQ_low = map(t->t.tpsa, outQ.q)
+
+  # Orbit:
+  GC.@preserve m1x_store m2x_store compose!(nv, m2x_low, nv+np, m1x_low, outx_low)
+
+  # Spin (spectator) q(z0)=q2(M(z0))q1(z0)
+  # First obtain q2(M(z0))
+  GC.@preserve m1x_store m2Q_store compose!(Cint(4), m2Q_low, nv, m1x_low, outQ_low)
+  # Now concatenate
+  qmul!(outQ, m1.Q, outQ)
+
+  # Add the params to outx:
+  if outT == TPS
+    k = params(desc)
+  else
+    k = complexparams(desc)
+  end
+  outx[nv+1:end] = k
+  
+  # Put back the reference
   for i=1:nv
     @inbounds m1.x[i][0] = ref[i]
   end
-  return DAMap(deepcopy(m1.x0), outx, Quaternion((ComplexTPS(use=getdesc(m1)), ComplexTPS(use=getdesc(m1)), ComplexTPS(use=getdesc(m1)), ComplexTPS(use=getdesc(m1)))), zeros(nv, nv))
+
+  # Make that map!
+  return DAMap(deepcopy(m1.x0), outx, outQ, zeros(nv, nv))
 end
 
-function ∘(m2::TPSAMap,m1::TPSAMap)
-  nv = numvars(m1)
-  if eltype(m1.x) == TPS
-    k = params(use=getdesc(m1.x))
-  else
-    k = complexparams(use=getdesc(m1.x))
+function ∘(m2::TPSAMap{S2,T2,U2,V2},m1::TPSAMap{S1,T1,U1,V1}) where {S2,T2,U2,V2,S1,T1,U1,V1}
+  desc = getdesc(m1)
+  nv = numvars(desc)
+  np = numparams(desc)
+  ref = Vector{numtype(T1)}(undef, nv)
+
+  outT = promote_type(T2,T1)
+
+  outx = Vector{outT}(undef,  nv+np)
+  # Set up orbit out:
+  for i=1:nv
+    @inbounds outx[i] = outT(use=desc)
   end
-  outx = ∘(m2.x, vcat((m1.x0+m1.x), k...))
-  return TPSAMap(deepcopy(m1.x0), outx, Quaternion((ComplexTPS(use=getdesc(m1)), ComplexTPS(use=getdesc(m1)), ComplexTPS(use=getdesc(m1)), ComplexTPS(use=getdesc(m1)))), zeros(nv, nv))
+
+  outU = promote_type(U2,U1)
+
+  outQ = Quaternion{outU}([outU(use=desc), outU(use=desc), outU(use=desc), outU(use=desc)])
+
+  # Do the composition, promoting if necessary
+  # --- Orbit ---
+  if outT != T1
+    # Promote to ComplexTPS:
+    m1x_store = map(t->outT(t), view(m1.x, :)) # Must store to prevent GC   
+    m1x_low = map(t->t.tpsa, m1x_store)
+  else
+    m1x_store = nothing
+    m1x_low = map(t->t.tpsa, view(m1.x, :))
+  end
+  if outT != T2
+    m2x_store = map(t->outT(t), view(m2.x, 1:nv)) # Must store to prevent GC   
+    m2x_low = map(t->t.tpsa, m2x_store)
+  else
+    m2x_store = nothing
+    m2x_low = map(t->t.tpsa, view(m2.x, 1:nv))
+  end
+
+  # --- Quaternion ---
+  if outU != U2
+    m2Q_store = map(t->outU(t), view(m2.Q.q, :)) # Must store to prevent GC
+    m2Q_low = map(t->t.tpsa, m2Q_store)
+  else
+    m2Q_store = nothing
+    m2Q_low = map(t->t.tpsa, view(m2.Q.q, :))
+  end
+
+  # go low
+  outx_low = map(t->t.tpsa, view(outx, 1:nv))
+  outQ_low = map(t->t.tpsa, outQ.q)
+
+  # Orbit:
+  GC.@preserve m1x_store m2x_store compose!(nv, m2x_low, nv+np, m1x_low, outx_low)
+
+  # Spin (spectator) q(z0)=q2(M(z0))q1(z0)
+  # First obtain q2(M(z0))
+  GC.@preserve m1x_store m2Q_store compose!(Cint(4), m2Q_low, nv, m1x_low, outQ_low)
+  # Now concatenate
+  qmul!(outQ, m1.Q, outQ)
+
+  # Add the params to outx:
+  if outT == TPS
+    k = params(desc)
+  else
+    k = complexparams(desc)
+  end
+  outx[nv+1:end] = k
+  
+  # Make that map!
+  return TPSAMap(deepcopy(m1.x0), outx, outQ, zeros(nv, nv))
 end
 
-# --- Inverse ---
-function inv(m1::DAMap)
-  nv = numvars(m1)
-  outx = map(x->x[0], m1.v)
-  for t in m1.v t[0] = 0 end
-  outv = inv(m1.v)
-  return DAMap(outx, outv, Quaternion((ComplexTPS(use=getdesc(m1)), ComplexTPS(use=getdesc(m1)), ComplexTPS(use=getdesc(m1)), ComplexTPS(use=getdesc(m1)))), zeros(nv, nv))
+# --- inverse ---
+function inv(m1::TaylorMap{S,T,U,V}) where {S,T,U,V}
+  desc = getdesc(m1)
+  nv = numvars(desc)
+  np = numparams(desc) 
+  outx = Vector{T}(undef, nv+np)
+  for i=1:nv
+    @inbounds outx[i] = T(use=desc)
+  end
+  # 
+  outQ = inv(m1.Q)
+
+  m1x_low = map(t->t.tpsa, view(m1.x, 1:nv))
+  outx_low = map(t->t.tpsa, view(outx, 1:nv))
+
+  # This C function ignores the scalar part so no need to take it out
+  minv!(nv, m1x_low, outx_low)
+
+  # Now do quaternion: inverse of q(z0) is q^-1(M^-1(zf))
+  outQ_low = map(t->t.tpsa, outQ.q)
+  compose!(Cint(4), outQ_low, nv, outx_low, outQ_low)
+
+  # Add the params to outx:
+  if T == TPS
+    k = params(desc)
+  else
+    k = complexparams(desc)
+  end
+  outx[nv+1:end] = k
+  return (typeof(m1))(deepcopy(m1.x0), outx, outQ, zeros(nv,nv))
 end
 
+
+==(m1::TaylorMap, m2::TaylorMap) = (m1.x0 == m2.x0 && m1.x == m2.x && m1.q == m2.q && m1.E == m2.E)
