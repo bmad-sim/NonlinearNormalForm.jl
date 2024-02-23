@@ -165,7 +165,7 @@ function ∘(m2::TPSAMap{S2,T2,U2,V2},m1::TPSAMap{S1,T1,U1,V1}) where {S2,T2,U2,
   for i=1:nv
     @inbounds outx[i] = outT(use=desc)
   end
-
+  
   outU = promote_type(U2,U1)
 
   outQ = Quaternion{outU}([outU(use=desc), outU(use=desc), outU(use=desc), outU(use=desc)])
@@ -217,7 +217,7 @@ function ∘(m2::TPSAMap{S2,T2,U2,V2},m1::TPSAMap{S1,T1,U1,V1}) where {S2,T2,U2,
     k = complexparams(desc)
   end
   outx[nv+1:end] = k
-  
+
   # Make that map!
   return TPSAMap(deepcopy(m1.x0), outx, outQ, zeros(nv, nv))
 end
@@ -255,4 +255,4 @@ function inv(m1::TaylorMap{S,T,U,V}) where {S,T,U,V}
 end
 
 
-==(m1::TaylorMap, m2::TaylorMap) = (m1.x0 == m2.x0 && m1.x == m2.x && m1.q == m2.q && m1.E == m2.E)
+==(m1::TaylorMap, m2::TaylorMap) = (m1.x0 == m2.x0 && m1.x == m2.x && m1.Q == m2.Q && m1.E == m2.E)
