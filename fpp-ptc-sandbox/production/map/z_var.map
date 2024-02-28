@@ -1,0 +1,46 @@
+# Path: /Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/production/bin/z_var
+# Arch: arm64
+# Object files:
+[  0] linker synthesized
+[  1] CMakeFiles/z_var-exe.dir/z_var.f90.o
+[  2] /Users/mgs255/Software/bmad/bmad-ecosystem/production/lib/libforest.dylib
+[  3] /opt/homebrew/Cellar/gcc/13.2.0/lib/gcc/current/libgfortran.dylib
+# Sections:
+# Address	Size    	Segment	Section
+0x100003DA0	0x00000000	__TEXT	__text
+0x100003DA0	0x00000130	__TEXT	__text_startup
+0x100003ED0	0x00000078	__TEXT	__stubs
+0x100003F50	0x00000050	__TEXT	__const
+0x100003FA0	0x00000060	__TEXT	__eh_frame
+0x100004000	0x00000058	__DATA_CONST	__got
+# Symbols:
+# Address	Size    	File  Name
+0x100003DA0	0x00000130	[  1] _main
+0x100003ED0	0x0000000C	[  2] ___c_tpsa_MOD_c_allocda.stub
+0x100003EDC	0x0000000C	[  2] ___c_tpsa_MOD_c_init.stub
+0x100003EE8	0x0000000C	[  2] ___c_tpsa_MOD_c_killda.stub
+0x100003EF4	0x0000000C	[  2] ___c_tpsa_MOD_c_pri.stub
+0x100003F00	0x0000000C	[  2] ___c_tpsa_MOD_cdscadd.stub
+0x100003F0C	0x0000000C	[  2] ___c_tpsa_MOD_cdscmul.stub
+0x100003F18	0x0000000C	[  2] ___c_tpsa_MOD_dscadd.stub
+0x100003F24	0x0000000C	[  2] ___c_tpsa_MOD_equal.stub
+0x100003F30	0x0000000C	[  3] __gfortran_set_args.stub
+0x100003F3C	0x0000000C	[  3] __gfortran_set_options.stub
+0x100003F50	0x00000008	[  1] lC0
+0x100003F58	0x00000004	[  1] lC1
+0x100003F5C	0x0000001C	[  1] _options.0.0
+0x100003F80	0x00000010	[  1] 16-byte-literal
+0x100003F90	0x00000010	[  1] 16-byte-literal
+0x100003FA0	0x00000018	[  1] CIE
+0x100003FB8	0x00000048	[  1] FDE for: _main
+0x100004000	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_allocda
+0x100004008	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_init
+0x100004010	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_killda
+0x100004018	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_pri
+0x100004020	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_cdscadd
+0x100004028	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_cdscmul
+0x100004030	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_dscadd
+0x100004038	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_equal
+0x100004040	0x00000008	[  0] non-lazy-pointer-to-local: ___definition_MOD_dz_c
+0x100004048	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_set_args
+0x100004050	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_set_options

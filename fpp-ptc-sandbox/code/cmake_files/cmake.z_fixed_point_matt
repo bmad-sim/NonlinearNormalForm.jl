@@ -1,0 +1,14 @@
+set (EXENAME z_fixed_point_matt)
+
+FILE (GLOB SRC_FILES z_fixed_point_matt.f90)
+
+set (INC_DIRS
+)
+
+set (LINK_LIBS
+  forest
+  bsim
+  bmad
+  sim_utils
+  ${ACC_BMAD_LINK_LIBS}
+)

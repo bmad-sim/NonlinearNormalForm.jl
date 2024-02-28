@@ -1,0 +1,54 @@
+# Path: /Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/production/bin/z_shift
+# Arch: arm64
+# Object files:
+[  0] linker synthesized
+[  1] CMakeFiles/z_shift-exe.dir/z_shift.f90.o
+[  2] /Users/mgs255/Software/bmad/bmad-ecosystem/production/lib/libforest.dylib
+[  3] /opt/homebrew/Cellar/gcc/13.2.0/lib/gcc/current/libgfortran.dylib
+# Sections:
+# Address	Size    	Segment	Section
+0x100003B80	0x00000000	__TEXT	__text
+0x100003B80	0x00000304	__TEXT	__text_startup
+0x100003E84	0x00000084	__TEXT	__stubs
+0x100003F08	0x00000070	__TEXT	__const
+0x100003F78	0x00000088	__TEXT	__eh_frame
+0x100004000	0x00000058	__DATA_CONST	__got
+# Symbols:
+# Address	Size    	File  Name
+0x100003B80	0x00000304	[  1] _main
+0x100003E84	0x0000000C	[  2] ___c_tpsa_MOD_add.stub
+0x100003E90	0x0000000C	[  2] ___c_tpsa_MOD_c_a_opt.stub
+0x100003E9C	0x0000000C	[  2] ___c_tpsa_MOD_c_init.stub
+0x100003EA8	0x0000000C	[  2] ___c_tpsa_MOD_c_pri.stub
+0x100003EB4	0x0000000C	[  2] ___c_tpsa_MOD_daddsca.stub
+0x100003EC0	0x0000000C	[  2] ___c_tpsa_MOD_dputcharr.stub
+0x100003ECC	0x0000000C	[  2] ___c_tpsa_MOD_equal.stub
+0x100003ED8	0x0000000C	[  2] ___c_tpsa_MOD_getintk.stub
+0x100003EE4	0x0000000C	[  2] ___c_tpsa_MOD_k_opt.stub
+0x100003EF0	0x0000000C	[  3] __gfortran_set_args.stub
+0x100003EFC	0x0000000C	[  3] __gfortran_set_options.stub
+0x100003F08	0x00000008	[  1] lC0
+0x100003F10	0x00000008	[  1] lC1
+0x100003F18	0x00000008	[  1] lC2
+0x100003F20	0x00000008	[  1] lC3
+0x100003F28	0x00000008	[  1] lC4
+0x100003F30	0x00000008	[  1] lC5
+0x100003F38	0x00000008	[  1] lC6
+0x100003F40	0x00000008	[  1] lC7
+0x100003F48	0x00000008	[  1] lC8
+0x100003F50	0x00000008	[  1] lC9
+0x100003F58	0x00000004	[  1] lC10
+0x100003F5C	0x0000001C	[  1] _options.0.0
+0x100003F78	0x00000018	[  1] CIE
+0x100003F90	0x00000070	[  1] FDE for: _main
+0x100004000	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_add
+0x100004008	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_a_opt
+0x100004010	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_init
+0x100004018	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_pri
+0x100004020	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_daddsca
+0x100004028	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_dputcharr
+0x100004030	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_equal
+0x100004038	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_getintk
+0x100004040	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_k_opt
+0x100004048	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_set_args
+0x100004050	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_set_options

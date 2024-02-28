@@ -1,0 +1,14 @@
+set (EXENAME z_deriv)
+
+FILE (GLOB SRC_FILES z_deriv.f90)
+
+set (INC_DIRS
+)
+
+set (LINK_LIBS
+  forest
+  bsim
+  bmad
+  sim_utils
+  ${ACC_BMAD_LINK_LIBS}
+)

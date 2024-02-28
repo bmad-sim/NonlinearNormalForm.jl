@@ -1,0 +1,385 @@
+# Path: /Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/production/bin/z_track_map_code
+# Arch: arm64
+# Object files:
+[  0] linker synthesized
+[  1] CMakeFiles/z_track_map_code-exe.dir/z_track_map_code.f90.o
+[  2] /Users/mgs255/Software/bmad/bmad-ecosystem/production/lib/libforest.dylib
+[  3] /opt/homebrew/Cellar/gcc/13.2.0/lib/gcc/current/libgfortran.dylib
+[  4] /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.0.sdk/usr/lib/libSystem.tbd
+# Sections:
+# Address	Size    	Segment	Section
+0x1000012A0	0x00006054	__TEXT	__text
+0x100007300	0x0000002C	__TEXT	__text_startup
+0x10000732C	0x00000450	__TEXT	__stubs
+0x100007780	0x000006F0	__TEXT	__const
+0x100007E70	0x00000057	__TEXT	__cstring
+0x100007EC8	0x00000138	__TEXT	__eh_frame
+0x100008000	0x00000338	__DATA_CONST	__got
+0x10000C000	0x0000E5F0	__DATA	__bss
+# Symbols:
+# Address	Size    	File  Name
+0x1000012A0	0x00003530	[  1] _build_lattice_als.0.constprop.0
+0x1000047D0	0x00002B24	[  1] _MAIN__
+0x100007300	0x0000002C	[  1] _main
+0x10000732C	0x0000000C	[  2] ___c_tpsa_MOD_a_opt_c_damap.stub
+0x100007338	0x0000000C	[  2] ___c_tpsa_MOD_add.stub
+0x100007344	0x0000000C	[  2] ___c_tpsa_MOD_alloc_c_damap.stub
+0x100007350	0x0000000C	[  2] ___c_tpsa_MOD_alloc_c_normal_form.stub
+0x10000735C	0x0000000C	[  2] ___c_tpsa_MOD_c_alloc_us.stub
+0x100007368	0x0000000C	[  2] ___c_tpsa_MOD_c_allocda.stub
+0x100007374	0x0000000C	[  2] ___c_tpsa_MOD_c_allocdas.stub
+0x100007380	0x0000000C	[  2] ___c_tpsa_MOD_c_concat.stub
+0x10000738C	0x0000000C	[  2] ___c_tpsa_MOD_c_concat_map_ray.stub
+0x100007398	0x0000000C	[  2] ___c_tpsa_MOD_c_dputint0r.stub
+0x1000073A4	0x0000000C	[  2] ___c_tpsa_MOD_c_equalcray.stub
+0x1000073B0	0x0000000C	[  2] ___c_tpsa_MOD_c_equalmap.stub
+0x1000073BC	0x0000000C	[  2] ___c_tpsa_MOD_c_fill_uni.stub
+0x1000073C8	0x0000000C	[  2] ___c_tpsa_MOD_c_identityequalmap.stub
+0x1000073D4	0x0000000C	[  2] ___c_tpsa_MOD_c_init_all.stub
+0x1000073E0	0x0000000C	[  2] ___c_tpsa_MOD_c_kill_unis.stub
+0x1000073EC	0x0000000C	[  2] ___c_tpsa_MOD_c_killda.stub
+0x1000073F8	0x0000000C	[  2] ___c_tpsa_MOD_c_killdas.stub
+0x100007404	0x0000000C	[  2] ___c_tpsa_MOD_c_normal.stub
+0x100007410	0x0000000C	[  2] ___c_tpsa_MOD_c_pri.stub
+0x10000741C	0x0000000C	[  2] ___c_tpsa_MOD_c_refill_uni.stub
+0x100007428	0x0000000C	[  2] ___c_tpsa_MOD_c_trxtaylor_da.stub
+0x100007434	0x0000000C	[  2] ___c_tpsa_MOD_dsubsc.stub
+0x100007440	0x0000000C	[  2] ___c_tpsa_MOD_equal.stub
+0x10000744C	0x0000000C	[  2] ___c_tpsa_MOD_equalc_ray_ray.stub
+0x100007458	0x0000000C	[  2] ___c_tpsa_MOD_equalc_t.stub
+0x100007464	0x0000000C	[  2] ___c_tpsa_MOD_getdiff.stub
+0x100007470	0x0000000C	[  2] ___c_tpsa_MOD_getintk.stub
+0x10000747C	0x0000000C	[  2] ___c_tpsa_MOD_k_opt_c_damap.stub
+0x100007488	0x0000000C	[  2] ___c_tpsa_MOD_kill_c_damap.stub
+0x100007494	0x0000000C	[  2] ___c_tpsa_MOD_kill_c_normal_form.stub
+0x1000074A0	0x0000000C	[  2] ___c_tpsa_MOD_mul.stub
+0x1000074AC	0x0000000C	[  2] ___c_tpsa_MOD_pow_tpsamap.stub
+0x1000074B8	0x0000000C	[  2] ___definition_MOD_in_bmad_units.stub
+0x1000074C4	0x0000000C	[  2] ___gauss_dis_MOD_gaussian_seed.stub
+0x1000074D0	0x0000000C	[  2] ___mad_like_MOD_add_bb.stub
+0x1000074DC	0x0000000C	[  2] ___mad_like_MOD_add_be.stub
+0x1000074E8	0x0000000C	[  2] ___mad_like_MOD_add_ee.stub
+0x1000074F4	0x0000000C	[  2] ___mad_like_MOD_b2.stub
+0x100007500	0x0000000C	[  2] ___mad_like_MOD_drft.stub
+0x10000750C	0x0000000C	[  2] ___mad_like_MOD_el_q.stub
+0x100007518	0x0000000C	[  2] ___mad_like_MOD_equal_l_l.stub
+0x100007524	0x0000000C	[  2] ___mad_like_MOD_makeitc.stub
+0x100007530	0x0000000C	[  2] ___mad_like_MOD_mark.stub
+0x10000753C	0x0000000C	[  2] ___mad_like_MOD_mul_e.stub
+0x100007548	0x0000000C	[  2] ___mad_like_MOD_quadtilt.stub
+0x100007554	0x0000000C	[  2] ___mad_like_MOD_rectaetilt.stub
+0x100007560	0x0000000C	[  2] ___mad_like_MOD_rfcavityl.stub
+0x10000756C	0x0000000C	[  2] ___mad_like_MOD_set_mad.stub
+0x100007578	0x0000000C	[  2] ___mad_like_MOD_sexttilt.stub
+0x100007584	0x0000000C	[  2] ___madx_ptc_module_MOD_ptc_end.stub
+0x100007590	0x0000000C	[  2] ___madx_ptc_module_MOD_ptc_ini_no_append.stub
+0x10000759C	0x0000000C	[  2] ___polymorphic_taylor_MOD_dequaldacon.stub
+0x1000075A8	0x0000000C	[  2] ___polymorphic_taylor_MOD_make_it_knobr.stub
+0x1000075B4	0x0000000C	[  2] ___polymorphic_taylor_MOD_printpoly.stub
+0x1000075C0	0x0000000C	[  2] ___ptc_multiparticle_MOD_make_node_layout.stub
+0x1000075CC	0x0000000C	[  2] ___ptc_multiparticle_MOD_survey_exist_planar_l_new.stub
+0x1000075D8	0x0000000C	[  2] ___ptc_spin_MOD_track_node_layout_flag_pr_t12_p.stub
+0x1000075E4	0x0000000C	[  2] ___ptc_spin_MOD_track_node_layout_flag_pr_t12_r.stub
+0x1000075F0	0x0000000C	[  2] ___s_extend_poly_MOD_equal_c_map_ray8.stub
+0x1000075FC	0x0000000C	[  2] ___s_extend_poly_MOD_scdadd.stub
+0x100007608	0x0000000C	[  2] ___s_family_MOD_addp_anbn.stub
+0x100007614	0x0000000C	[  2] ___s_family_MOD_kill_para_l.stub
+0x100007620	0x0000000C	[  2] ___s_fibre_bundle_MOD_append_empty_layout.stub
+0x10000762C	0x0000000C	[  2] ___s_fibre_bundle_MOD_move_to_name_old.stub
+0x100007638	0x0000000C	[  2] ___s_fitting_MOD_mess_up_alignment.stub
+0x100007644	0x0000000C	[  2] ___s_fitting_new_MOD_find_orbit_layout_noda_object.stub
+0x100007650	0x0000000C	[  2] ___s_status_MOD_add.stub
+0x10000765C	0x0000000C	[  2] ___s_status_MOD_equalt.stub
+0x100007668	0x0000000C	[  2] ___s_status_MOD_make_states_0.stub
+0x100007674	0x0000000C	[  2] ___s_status_MOD_para_rema.stub
+0x100007680	0x0000000C	[  2] ___s_status_MOD_s_init.stub
+0x10000768C	0x0000000C	[  2] ___s_status_MOD_update_states.stub
+0x100007698	0x0000000C	[  2] ___tree_element_module_MOD_alloc_probe_8.stub
+0x1000076A4	0x0000000C	[  2] ___tree_element_module_MOD_equal_probe8_probe.stub
+0x1000076B0	0x0000000C	[  2] ___tree_element_module_MOD_equal_probe8_probe8.stub
+0x1000076BC	0x0000000C	[  2] ___tree_element_module_MOD_equal_probe_probe8.stub
+0x1000076C8	0x0000000C	[  2] ___tree_element_module_MOD_equal_probe_real6.stub
+0x1000076D4	0x0000000C	[  2] ___tree_element_module_MOD_kill_probe_8.stub
+0x1000076E0	0x0000000C	[  3] __gfortran_set_args.stub
+0x1000076EC	0x0000000C	[  3] __gfortran_set_options.stub
+0x1000076F8	0x0000000C	[  3] __gfortran_st_read.stub
+0x100007704	0x0000000C	[  3] __gfortran_st_read_done.stub
+0x100007710	0x0000000C	[  3] __gfortran_st_write.stub
+0x10000771C	0x0000000C	[  3] __gfortran_st_write_done.stub
+0x100007728	0x0000000C	[  3] __gfortran_stop_numeric.stub
+0x100007734	0x0000000C	[  3] __gfortran_transfer_array_write.stub
+0x100007740	0x0000000C	[  3] __gfortran_transfer_character_write.stub
+0x10000774C	0x0000000C	[  3] __gfortran_transfer_integer.stub
+0x100007758	0x0000000C	[  3] __gfortran_transfer_integer_write.stub
+0x100007764	0x0000000C	[  3] __gfortran_transfer_real_write.stub
+0x100007770	0x0000000C	[  4] _memcpy.stub
+0x100007780	0x00000004	[  1] lC0
+0x100007784	0x00000004	[  1] lC1
+0x100007788	0x00000004	[  1] lC2
+0x10000778C	0x00000004	[  1] lC3
+0x100007790	0x00000008	[  1] lC4
+0x100007798	0x00000008	[  1] lC5
+0x1000077A0	0x00000008	[  1] lC6
+0x1000077A8	0x00000008	[  1] lC7
+0x1000077B0	0x00000008	[  1] lC8
+0x1000077B8	0x00000008	[  1] lC9
+0x1000077C0	0x00000008	[  1] lC10
+0x1000077C8	0x00000008	[  1] lC11
+0x1000077D0	0x00000008	[  1] lC12
+0x1000077D8	0x00000008	[  1] lC13
+0x1000077E0	0x00000008	[  1] lC14
+0x1000077E8	0x00000008	[  1] lC15
+0x1000077F0	0x00000008	[  1] lC16
+0x1000077F8	0x00000008	[  1] lC17
+0x100007800	0x00000008	[  1] lC18
+0x100007808	0x00000008	[  1] lC19
+0x100007810	0x00000008	[  1] lC20
+0x100007818	0x00000008	[  1] lC21
+0x100007820	0x00000008	[  1] lC22
+0x100007828	0x00000008	[  1] lC23
+0x100007830	0x00000008	[  1] lC24
+0x100007838	0x00000008	[  1] lC25
+0x100007840	0x00000008	[  1] lC26
+0x100007848	0x00000008	[  1] lC27
+0x100007850	0x00000008	[  1] lC28
+0x100007858	0x00000008	[  1] lC29
+0x100007860	0x00000008	[  1] lC30
+0x100007868	0x00000008	[  1] lC31
+0x100007870	0x00000008	[  1] lC32
+0x100007878	0x00000008	[  1] lC33
+0x100007880	0x00000008	[  1] lC34
+0x100007888	0x00000008	[  1] lC35
+0x100007890	0x00000008	[  1] lC36
+0x100007898	0x00000008	[  1] lC37
+0x1000078A0	0x00000008	[  1] lC38
+0x1000078A8	0x00000008	[  1] lC39
+0x1000078B0	0x00000008	[  1] lC40
+0x1000078B8	0x00000008	[  1] lC41
+0x1000078C0	0x00000008	[  1] lC42
+0x1000078C8	0x00000008	[  1] lC43
+0x1000078D0	0x00000008	[  1] lC44
+0x1000078D8	0x00000008	[  1] lC45
+0x1000078E0	0x00000008	[  1] lC46
+0x1000078E8	0x00000008	[  1] lC47
+0x1000078F0	0x00000008	[  1] lC48
+0x1000078F8	0x00000008	[  1] lC49
+0x100007900	0x00000008	[  1] lC50
+0x100007908	0x00000008	[  1] lC51
+0x100007910	0x00000008	[  1] lC52
+0x100007918	0x00000008	[  1] lC53
+0x100007920	0x00000008	[  1] lC54
+0x100007928	0x00000008	[  1] lC55
+0x100007930	0x00000008	[  1] lC56
+0x100007938	0x00000008	[  1] lC57
+0x100007940	0x00000008	[  1] lC58
+0x100007948	0x00000008	[  1] lC59
+0x100007950	0x00000008	[  1] lC60
+0x100007958	0x00000008	[  1] lC61
+0x100007960	0x00000008	[  1] lC62
+0x100007968	0x00000008	[  1] lC63
+0x100007970	0x00000008	[  1] lC64
+0x100007978	0x00000008	[  1] lC65
+0x100007980	0x00000008	[  1] lC66
+0x100007988	0x00000008	[  1] lC67
+0x100007990	0x00000008	[  1] lC68
+0x100007998	0x00000008	[  1] lC69
+0x1000079A0	0x00000008	[  1] lC70
+0x1000079A8	0x00000008	[  1] lC71
+0x1000079B0	0x00000008	[  1] lC72
+0x1000079B8	0x00000008	[  1] lC73
+0x1000079C0	0x00000008	[  1] lC74
+0x1000079C8	0x00000008	[  1] lC75
+0x1000079D0	0x00000008	[  1] lC76
+0x1000079D8	0x00000008	[  1] lC77
+0x1000079E0	0x00000008	[  1] lC78
+0x1000079E8	0x00000008	[  1] lC79
+0x1000079F0	0x00000008	[  1] lC80
+0x1000079F8	0x00000008	[  1] lC81
+0x100007A00	0x00000008	[  1] lC82
+0x100007A08	0x00000008	[  1] lC83
+0x100007A10	0x00000008	[  1] lC84
+0x100007A18	0x00000008	[  1] lC85
+0x100007A20	0x00000008	[  1] lC86
+0x100007A28	0x00000008	[  1] lC87
+0x100007A30	0x00000008	[  1] lC88
+0x100007A38	0x00000008	[  1] lC89
+0x100007A40	0x00000008	[  1] lC90
+0x100007A48	0x00000008	[  1] lC91
+0x100007A50	0x00000004	[  1] lC92
+0x100007A54	0x00000004	[  1] lC94
+0x100007A58	0x00000004	[  1] lC95
+0x100007A5C	0x00000004	[  1] lC96
+0x100007A60	0x00000018	[  1] lC106
+0x100007A78	0x00000038	[  1] lC107
+0x100007AB0	0x00000040	[  1] lC108
+0x100007AF0	0x00000048	[  1] lC109
+0x100007B38	0x00000040	[  1] lC110
+0x100007B78	0x00000008	[  1] lC111
+0x100007B80	0x00000008	[  1] lC112
+0x100007B88	0x00000008	[  1] lC113
+0x100007B90	0x00000010	[  1] lC114
+0x100007BA0	0x00000010	[  1] lC115
+0x100007BB0	0x00000010	[  1] lC116
+0x100007BC0	0x00000018	[  1] lC117
+0x100007BD8	0x00000030	[  1] lC118
+0x100007C08	0x00000030	[  1] lC119
+0x100007C38	0x00000004	[  1] lC120
+0x100007C3C	0x00000004	[  1] lC121
+0x100007C40	0x00000004	[  1] lC122
+0x100007C44	0x00000004	[  1] lC123
+0x100007C48	0x00000004	[  1] lC124
+0x100007C4C	0x00000004	[  1] lC125
+0x100007C50	0x00000018	[  1] lC126
+0x100007C68	0x00000008	[  1] lC127
+0x100007C70	0x00000008	[  1] lC128
+0x100007C78	0x00000008	[  1] lC129
+0x100007C80	0x00000010	[  1] lC130
+0x100007C90	0x00000010	[  1] lC131
+0x100007CA0	0x00000004	[  1] lC132
+0x100007CA4	0x00000004	[  1] lC133
+0x100007CA8	0x00000004	[  1] lC134
+0x100007CAC	0x00000004	[  1] lC135
+0x100007CB0	0x00000040	[  1] lC136
+0x100007CF0	0x00000018	[  1] lC137
+0x100007D08	0x00000020	[  1] lC138
+0x100007D28	0x00000018	[  1] lC139
+0x100007D40	0x0000000C	[  1] lC140
+0x100007D4C	0x00000004	[  1] lC141
+0x100007D50	0x00000020	[  1] _options.111.10
+0x100007D70	0x00000008	[  1] lC101
+0x100007D78	0x00000008	[  1] lC143
+0x100007D80	0x00000008	[  1] lC144
+0x100007D88	0x00000008	[  1] 8-byte-literal
+0x100007D90	0x00000008	[  1] 8-byte-literal
+0x100007D98	0x00000008	[  1] 8-byte-literal
+0x100007DA0	0x00000008	[  1] 8-byte-literal
+0x100007DA8	0x00000008	[  1] 8-byte-literal
+0x100007DB0	0x00000008	[  1] 8-byte-literal
+0x100007DC0	0x00000010	[  1] 16-byte-literal
+0x100007DD0	0x00000010	[  1] 16-byte-literal
+0x100007DE0	0x00000010	[  1] 16-byte-literal
+0x100007DF0	0x00000010	[  1] 16-byte-literal
+0x100007E00	0x00000010	[  1] 16-byte-literal
+0x100007E10	0x00000010	[  1] 16-byte-literal
+0x100007E20	0x00000010	[  1] 16-byte-literal
+0x100007E30	0x00000010	[  1] 16-byte-literal
+0x100007E40	0x00000010	[  1] 16-byte-literal
+0x100007E50	0x00000010	[  1] 16-byte-literal
+0x100007E60	0x00000010	[  1] 16-byte-literal
+0x100007E70	0x00000057	[  1] literal string: /Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/z_track_map_code.f90
+0x100007EC8	0x00000018	[  1] CIE
+0x100007EE0	0x00000080	[  1] FDE for: _build_lattice_als.0.constprop.0
+0x100007F60	0x00000070	[  1] FDE for: _MAIN__
+0x100007FD0	0x00000030	[  1] FDE for: _main
+0x100008000	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_a_opt_c_damap
+0x100008008	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_add
+0x100008010	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_alloc_c_damap
+0x100008018	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_alloc_c_normal_form
+0x100008020	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_alloc_us
+0x100008028	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_allocda
+0x100008030	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_allocdas
+0x100008038	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_concat
+0x100008040	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_concat_map_ray
+0x100008048	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_dputint0r
+0x100008050	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_equalcray
+0x100008058	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_equalmap
+0x100008060	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_fill_uni
+0x100008068	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_identityequalmap
+0x100008070	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_init_all
+0x100008078	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_kill_unis
+0x100008080	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_killda
+0x100008088	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_killdas
+0x100008090	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_normal
+0x100008098	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_pri
+0x1000080A0	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_refill_uni
+0x1000080A8	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_trxtaylor_da
+0x1000080B0	0x00000008	[  0] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_verbose
+0x1000080B8	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_dsubsc
+0x1000080C0	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_equal
+0x1000080C8	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_equalc_ray_ray
+0x1000080D0	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_equalc_t
+0x1000080D8	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_getdiff
+0x1000080E0	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_getintk
+0x1000080E8	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_k_opt_c_damap
+0x1000080F0	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_kill_c_damap
+0x1000080F8	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_kill_c_normal_form
+0x100008100	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_mul
+0x100008108	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_pow_tpsamap
+0x100008110	0x00000008	[  2] non-lazy-pointer-to-local: ___definition_MOD_in_bmad_units
+0x100008118	0x00000008	[  2] non-lazy-pointer-to-local: ___gauss_dis_MOD_gaussian_seed
+0x100008120	0x00000008	[  2] non-lazy-pointer-to-local: ___mad_like_MOD_add_bb
+0x100008128	0x00000008	[  2] non-lazy-pointer-to-local: ___mad_like_MOD_add_be
+0x100008130	0x00000008	[  2] non-lazy-pointer-to-local: ___mad_like_MOD_add_ee
+0x100008138	0x00000008	[  2] non-lazy-pointer-to-local: ___mad_like_MOD_b2
+0x100008140	0x00000008	[  2] non-lazy-pointer-to-local: ___mad_like_MOD_drft
+0x100008148	0x00000008	[  2] non-lazy-pointer-to-local: ___mad_like_MOD_el_q
+0x100008150	0x00000008	[  2] non-lazy-pointer-to-local: ___mad_like_MOD_equal_l_l
+0x100008158	0x00000008	[  2] non-lazy-pointer-to-local: ___mad_like_MOD_makeitc
+0x100008160	0x00000008	[  2] non-lazy-pointer-to-local: ___mad_like_MOD_mark
+0x100008168	0x00000008	[  2] non-lazy-pointer-to-local: ___mad_like_MOD_mul_e
+0x100008170	0x00000008	[  2] non-lazy-pointer-to-local: ___mad_like_MOD_quadtilt
+0x100008178	0x00000008	[  2] non-lazy-pointer-to-local: ___mad_like_MOD_rectaetilt
+0x100008180	0x00000008	[  2] non-lazy-pointer-to-local: ___mad_like_MOD_rfcavityl
+0x100008188	0x00000008	[  2] non-lazy-pointer-to-local: ___mad_like_MOD_set_mad
+0x100008190	0x00000008	[  2] non-lazy-pointer-to-local: ___mad_like_MOD_sexttilt
+0x100008198	0x00000008	[  0] non-lazy-pointer-to-local: ___madx_ptc_module_MOD_m_u
+0x1000081A0	0x00000008	[  2] non-lazy-pointer-to-local: ___madx_ptc_module_MOD_ptc_end
+0x1000081A8	0x00000008	[  2] non-lazy-pointer-to-local: ___madx_ptc_module_MOD_ptc_ini_no_append
+0x1000081B0	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_dequaldacon
+0x1000081B8	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_make_it_knobr
+0x1000081C0	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_printpoly
+0x1000081C8	0x00000008	[  0] non-lazy-pointer-to-local: ___precision_constants_MOD_c_
+0x1000081D0	0x00000008	[  0] non-lazy-pointer-to-local: ___precision_constants_MOD_ndpt_bmad
+0x1000081D8	0x00000008	[  0] non-lazy-pointer-to-local: ___precision_constants_MOD_use_quaternion
+0x1000081E0	0x00000008	[  2] non-lazy-pointer-to-local: ___ptc_multiparticle_MOD_make_node_layout
+0x1000081E8	0x00000008	[  2] non-lazy-pointer-to-local: ___ptc_multiparticle_MOD_survey_exist_planar_l_new
+0x1000081F0	0x00000008	[  2] non-lazy-pointer-to-local: ___ptc_spin_MOD_track_node_layout_flag_pr_t12_p
+0x1000081F8	0x00000008	[  2] non-lazy-pointer-to-local: ___ptc_spin_MOD_track_node_layout_flag_pr_t12_r
+0x100008200	0x00000008	[  0] non-lazy-pointer-to-local: ___s_def_kind_MOD_n_cav4_f
+0x100008208	0x00000008	[  2] non-lazy-pointer-to-local: ___s_extend_poly_MOD_equal_c_map_ray8
+0x100008210	0x00000008	[  2] non-lazy-pointer-to-local: ___s_extend_poly_MOD_scdadd
+0x100008218	0x00000008	[  2] non-lazy-pointer-to-local: ___s_family_MOD_addp_anbn
+0x100008220	0x00000008	[  2] non-lazy-pointer-to-local: ___s_family_MOD_kill_para_l
+0x100008228	0x00000008	[  2] non-lazy-pointer-to-local: ___s_fibre_bundle_MOD_append_empty_layout
+0x100008230	0x00000008	[  2] non-lazy-pointer-to-local: ___s_fibre_bundle_MOD_move_to_name_old
+0x100008238	0x00000008	[  0] non-lazy-pointer-to-local: ___s_fibre_bundle_MOD_use_info
+0x100008240	0x00000008	[  2] non-lazy-pointer-to-local: ___s_fitting_MOD_mess_up_alignment
+0x100008248	0x00000008	[  2] non-lazy-pointer-to-local: ___s_fitting_new_MOD_find_orbit_layout_noda_object
+0x100008250	0x00000008	[  2] non-lazy-pointer-to-local: ___s_status_MOD_add
+0x100008258	0x00000008	[  0] non-lazy-pointer-to-local: ___s_status_MOD_default
+0x100008260	0x00000008	[  2] non-lazy-pointer-to-local: ___s_status_MOD_equalt
+0x100008268	0x00000008	[  0] non-lazy-pointer-to-local: ___s_status_MOD_exact_model
+0x100008270	0x00000008	[  0] non-lazy-pointer-to-local: ___s_status_MOD_madkind2
+0x100008278	0x00000008	[  0] non-lazy-pointer-to-local: ___s_status_MOD_madlength
+0x100008280	0x00000008	[  2] non-lazy-pointer-to-local: ___s_status_MOD_make_states_0
+0x100008288	0x00000008	[  2] non-lazy-pointer-to-local: ___s_status_MOD_para_rema
+0x100008290	0x00000008	[  2] non-lazy-pointer-to-local: ___s_status_MOD_s_init
+0x100008298	0x00000008	[  2] non-lazy-pointer-to-local: ___s_status_MOD_update_states
+0x1000082A0	0x00000008	[  2] non-lazy-pointer-to-local: ___tree_element_module_MOD_alloc_probe_8
+0x1000082A8	0x00000008	[  2] non-lazy-pointer-to-local: ___tree_element_module_MOD_equal_probe8_probe
+0x1000082B0	0x00000008	[  2] non-lazy-pointer-to-local: ___tree_element_module_MOD_equal_probe8_probe8
+0x1000082B8	0x00000008	[  2] non-lazy-pointer-to-local: ___tree_element_module_MOD_equal_probe_probe8
+0x1000082C0	0x00000008	[  2] non-lazy-pointer-to-local: ___tree_element_module_MOD_equal_probe_real6
+0x1000082C8	0x00000008	[  2] non-lazy-pointer-to-local: ___tree_element_module_MOD_kill_probe_8
+0x1000082D0	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_set_args
+0x1000082D8	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_set_options
+0x1000082E0	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_st_read
+0x1000082E8	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_st_read_done
+0x1000082F0	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_st_write
+0x1000082F8	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_st_write_done
+0x100008300	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_stop_numeric
+0x100008308	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_transfer_array_write
+0x100008310	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_transfer_character_write
+0x100008318	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_transfer_integer
+0x100008320	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_transfer_integer_write
+0x100008328	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_transfer_real_write
+0x100008330	0x00000008	[  4] non-lazy-pointer-to-local: _memcpy
+0x10000C000	0x00000008	[  1] _thi.1
+0x10000C008	0x00008D78	[  1] _normal_form.2
+0x100014D80	0x000012D0	[  1] _lagrange_map_ap.3
+0x100016050	0x00000118	[  1] _ray_tc.4
+0x100016168	0x000005E8	[  1] _ray_8_tc.5
+0x100016750	0x000012D0	[  1] _two_turn_map_ap.6
+0x100017A20	0x000012D0	[  1] _identity_ap.7
+0x100018CF0	0x000012D0	[  1] _one_turn_map_ap.8
+0x100019FC0	0x00000630	[  1] _tpos.9
