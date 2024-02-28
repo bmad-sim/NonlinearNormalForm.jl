@@ -325,4 +325,22 @@ function inv(m1::TPSAMap{S,T,U,V}) where {S,T,U,V}
   return TPSAMap(outx0, outx, outQ, zeros(nv,nv))
 end
 
+function ^(m1::TaylorMap{S,T,U,V}, n::Integer) where {S,T,U,V}
+  if n>0
+    m = m1
+    for i=1:n-1
+      m = m1∘m
+    end
+    return m
+  elseif n<0
+    m = m1
+    for i=1:-n+1
+      m = m1∘m
+    end
+    return inv(m)
+  else
+    return (typeof(m1)){S,T,U,V}(m1)
+  end
+end
+
 ==(m1::TaylorMap, m2::TaylorMap) = (m1.x0 == m2.x0 && m1.x == m2.x && m1.Q == m2.Q && m1.E == m2.E)
