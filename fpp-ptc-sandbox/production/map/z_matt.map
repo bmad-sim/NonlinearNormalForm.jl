@@ -8,17 +8,17 @@
 [  4] /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.0.sdk/usr/lib/libSystem.tbd
 # Sections:
 # Address	Size    	Segment	Section
-0x100003870	0x00000494	__TEXT	__text
+0x100003880	0x00000490	__TEXT	__text
 0x100003D10	0x00000020	__TEXT	__text_startup
 0x100003D30	0x00000114	__TEXT	__stubs
 0x100003E48	0x0000004D	__TEXT	__cstring
 0x100003EA0	0x000000B0	__TEXT	__const
-0x100003F50	0x000000A8	__TEXT	__eh_frame
+0x100003F50	0x000000B0	__TEXT	__eh_frame
 0x100004000	0x000000B8	__DATA_CONST	__got
 0x100008000	0x00005E10	__DATA	__bss
 # Symbols:
 # Address	Size    	File  Name
-0x100003870	0x00000494	[  1] _MAIN__
+0x100003880	0x00000490	[  1] _MAIN__
 0x100003D10	0x00000020	[  1] _main
 0x100003D30	0x0000000C	[  2] ___c_tpsa_MOD_a_opt_c_damap.stub
 0x100003D3C	0x0000000C	[  2] ___c_tpsa_MOD_add.stub
@@ -59,8 +59,8 @@
 0x100003F30	0x00000010	[  1] 16-byte-literal
 0x100003F40	0x00000010	[  1] 16-byte-literal
 0x100003F50	0x00000018	[  1] CIE
-0x100003F68	0x00000068	[  1] FDE for: _MAIN__
-0x100003FD0	0x00000028	[  1] FDE for: _main
+0x100003F68	0x00000070	[  1] FDE for: _MAIN__
+0x100003FD8	0x00000028	[  1] FDE for: _main
 0x100004000	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_a_opt_c_damap
 0x100004008	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_add
 0x100004010	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_allocda

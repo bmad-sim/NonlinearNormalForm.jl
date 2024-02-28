@@ -36,8 +36,8 @@ program matt
 
 
 
-  x2= 2.0d0
-  map2%x0(1)=x2
+  x2= 1.0d0
+  map2%x0(1)=3.0d0
   x=x2+2*(1.d0.cmono.1)+2*(1.d0.cmono.1)**2
   map2%v(1)=x
   write(*,*) "Map 2:"

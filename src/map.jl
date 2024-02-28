@@ -299,7 +299,7 @@ function inv(m1::TPSAMap{S,T,U,V}) where {S,T,U,V}
   end
   outx[nv+1:end] = k
 
-  return TPSAMap(deepcopy(m1.x0), outx, outQ, zeros(nv,nv))
+  return TPSAMap(scalar.(m1.x), outx, outQ, zeros(nv,nv))
 end
 
 
