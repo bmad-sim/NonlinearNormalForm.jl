@@ -29,24 +29,43 @@ program matt
   
   x1= 1.0d0
   map1%x0(1)=4.0d0
-  x=x1+2*(1.d0.cmono.1)+2*(1.d0.cmono.1)**2
+  x=x1+2*(1.d0.cmono.1) +2*(1.d0.cmono.1)**2
   map1%v(1)=x
   write(*,*) "Map 1:"
   call print(map1)
 
+  x2= 1.0d0
+  map2%x0(1)=3.0d0
+  x=x2+2*(1.d0.cmono.1) +2*(1.d0.cmono.1)**2
+  map2%v(1)=x
+  write(*,*) "Map 2:"
+  call print(map2)
+
+  map12 = map2*map1
+  write(*,*) "Map2*map1:"
+  call print(map12)
+
+
+  map12 = map2.o.map1
+  write(*,*) "Map2.o.map1:"
+  call print(map12)
 
   map12 = map1**(3)
-  write(*,*) "Map1**(3):"
+  write(*,*) "Map1**(2):"
   call print(map12)
 
   map12 = map1**(-3)
-  write(*,*) "Map1**(-3):"
+  write(*,*) "Map1**(-2):"
   call print(map12)
 
   map12 = map1.oo.(2)
-  write(*,*) "Map1.oo.(-2):"
+  write(*,*) "Map1.oo.(2):"
   call print(map12)
 
+  map12 = map1.oo.(-2)
+  write(*,*) "Map1.oo.(-2):"
+  call print(map12)
+  stop
 
   map12 = map1.oo.(-2)
   map12 = map12.oo.(-1)

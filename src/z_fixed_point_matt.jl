@@ -7,8 +7,7 @@ const a = 0.00115965218128
 const gamma_0 = 40.5/a
 
 function track_qf(p::Probe, k1, hkick, rad=false)
-  # Translate coordinates
-  z0 = p.x0 + p.x
+  z0 = p.x
   z = Vector{promote_type(eltype(z0),typeof(k1),typeof(hkick))}(undef, length(z0))
   
   lbend=0.1
@@ -61,14 +60,11 @@ function track_qf(p::Probe, k1, hkick, rad=false)
     z[5] += @FastGTPSA exp(lrad3*(1.0+z[5]^2))*z[5] 
   end
 
-  # Translate back
-  z -= p.x0
-
   return Probe(z,x0=p.x0,Q=Q)
 end
 
 function track_qd(p::Probe, k1, vkick)
-  z0 = p.x0 + p.x
+  z0 = p.x
   z = Vector{promote_type(eltype(z0),typeof(k1),typeof(vkick))}(undef, length(z0))
 
   L  = @FastGTPSA 0.5/(1.0+z0[6])
@@ -111,12 +107,11 @@ function track_qd(p::Probe, k1, vkick)
   Qkick = Quaternion([cos(vkick*(1+a*gamma_0)/2), sin(vkick*(1+a*gamma_0)/2), 0, 0])
   qmul!(Qkick, Q, Q)
 
-  z -= p.x0
   return Probe(z,x0=p.x0,Q=Q)
 end
 
 function track_drift(p::Probe)
-  z0 = p.x0 + p.x
+  z0 = p.x
   z = Vector{eltype(z0)}(undef, length(z0))
 
   L = 0.75
@@ -126,14 +121,13 @@ function track_drift(p::Probe)
   z[4] = +z0[4]
   z[5] = @FastGTPSA z0[5]-L*((z0[2]^2)+(z0[4]^2))/(1.0+z0[6])^2/2.0
   z[6] = +z0[6] 
-  z -= p.x0
   
   return Probe(z,x0=p.x0,Q=p.Q)
 end
 
 
 function track_cav(p::Probe)
-  z0 = p.x0 + p.x
+  z0 = p.x
   z = Vector{eltype(z0)}(undef, length(z0))
 
   z[1] = +z0[1]
@@ -142,13 +136,12 @@ function track_cav(p::Probe)
   z[4] = +z0[4]
   z[5] = +z0[5]
   z[6] = @FastGTPSA z0[6]+0.0001*z0[5]
-  z -= p.x0
-  
+
   return Probe(z,x0=p.x0,Q=p.Q)
 end
 
 function track_sextupole(p::Probe, k2l)
-  z0 = p.x0 + p.x
+  z0 = p.x
   z = Vector{promote_type(eltype(z0),typeof(k2l))}(undef, length(z0))
   
   z[1] = +z0[1]
@@ -163,7 +156,6 @@ function track_sextupole(p::Probe, k2l)
   Q = Quaternion(q)
   qmul!(Q, p.Q, Q)
 
-  z -= p.x0
   return Probe(z,x0=p.x0,Q=Q)
 end
 
@@ -199,7 +191,7 @@ function track_ring0()
   x = vars()
   k = params()
 
-  p = Probe(x, x0=x0)
+  p = Probe(x+x0, x0=x0)
   p = track_ring(p,vkicks=[vkicks[1]+k[1], k[2], zeros(TPS,48)...]) # first and second coil are knobs
 
   # Make DAMap

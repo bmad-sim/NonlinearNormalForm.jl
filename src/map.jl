@@ -176,6 +176,12 @@ function ∘(m2::TPSAMap{S2,T2,U2,V2},m1::TPSAMap{S1,T1,U1,V1}) where {S2,T2,U2,
 
   outQ = Quaternion{outU}([outU(use=desc), outU(use=desc), outU(use=desc), outU(use=desc)])
 
+  # For TPSA Map concatenation, we need to subtract w_0 (m2 x0) (Eq. 33)
+  # Because we are still expressing in terms of z_0 (m1 x0)
+  for i=1:nv
+    @inbounds m1.x[i] -= m2.x0[i]
+  end
+
   # Do the composition, promoting if necessary
   # --- Orbit ---
   if outT != T1
@@ -224,6 +230,20 @@ function ∘(m2::TPSAMap{S2,T2,U2,V2},m1::TPSAMap{S1,T1,U1,V1}) where {S2,T2,U2,
   end
   outx[nv+1:end] = k
 
+  # Now fix m1 and if m2 === m1, add to output too:
+ # For TPSA Map concatenation, we need to subtract w_0 (m2 x0) (Eq. 33)
+  # Because we are still expressing in terms of z_0 (m1 x0)
+  if m1 === m2
+    for i=1:nv
+      @inbounds m1.x[i] += m2.x0[i]
+      @inbounds outx[i] += m2.x0[i]
+    end
+  else
+    for i=1:nv
+      @inbounds m1.x[i] += m2.x0[i]
+    end
+  end
+
   # Make that map!
   return TPSAMap(deepcopy(m1.x0), outx, outQ, zeros(nv, nv))
 end
@@ -256,15 +276,13 @@ function inv(m1::DAMap{S,T,U,V}) where {S,T,U,V}
   else
     k = complexparams(desc)
   end
-  outx[nv+1:end] = k
 
-  # outx0 = scalar.(m1.x) + m1.x0
-  # scalar(outx) -=  scalar.(m1.x)
   outx0 = Vector{numtype(T)}(undef, nv)
   for i=1:nv
-    @inbounds outx0[i] = m1.x[i][0] + m1.x0[i]
-    @inbounds outx[i] -= m1.x[i][0]
+    @inbounds outx0[i] = m1.x[i][0]
+    @inbounds outx[i] += m1.x0[i]
   end
+  outx[nv+1:end] = k
   
   return DAMap(outx0, outx, outQ, zeros(nv,nv))
 end
@@ -297,23 +315,14 @@ function inv(m1::TPSAMap{S,T,U,V}) where {S,T,U,V}
     k = complexparams(desc)
   end
 
-  # Add the reference orbit part to outx for TPSAMap inverse:
+  outx0 = Vector{numtype(T)}(undef, nv)
   for i=1:nv
+    @inbounds outx0[i] = m1.x[i][0]
     @inbounds outx[i] += m1.x0[i]
   end
   outx[nv+1:end] = k
-  
-  # outx0 = scalar.(m1.x) + m1.x0
-  # scalar(outx) -=  scalar.(m1.x)
-  outx0 = Vector{numtype(T)}(undef, nv)
-  for i=1:nv
-    @inbounds outx0[i] = m1.x[i][0] + m1.x0[i]
-    @inbounds outx[i] -= m1.x[i][0]
-  end
-  
+
   return TPSAMap(outx0, outx, outQ, zeros(nv,nv))
 end
-
-#function ^()
 
 ==(m1::TaylorMap, m2::TaylorMap) = (m1.x0 == m2.x0 && m1.x == m2.x && m1.Q == m2.Q && m1.E == m2.E)
