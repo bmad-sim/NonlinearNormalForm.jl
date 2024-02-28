@@ -4,7 +4,7 @@ doesn't seem to have anything...
 
 Or Julia does have stuff but it requires 
 Quaternion{T<:Real} + im*Quaternion{T<:Real} 
-to fit in with the stupid concrete Complex type
+to fit in with the concrete Complex type
 presumably.
 =#
 struct Quaternion{T <: Number}

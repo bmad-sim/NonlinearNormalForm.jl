@@ -27,6 +27,45 @@ program matt
   go_to_orbit%n=nV
   call alloc(x); call alloc(map1,map2,map12,go_to_orbit,one_turn_map_AP);
   
+  x1= 1.0d0
+  map1%x0(1)=x1
+  x=x1+(1.d0.cmono.1)+(1.d0.cmono.1)**2
+  map1%v(1)=x
+  write(*,*) "Map 1:"
+  call print(map1)
+
+
+
+  x2= 2.0d0
+  map2%x0(1)=x2
+  x=x2+2*(1.d0.cmono.1)+2*(1.d0.cmono.1)**2
+  map2%v(1)=x
+  write(*,*) "Map 2:"
+  call print(map2)
+
+  map12 = map2**(-1)
+  write(*,*) "Map2**(-1):"
+  call print(map12)
+
+  map12 = map2.oo.(-1)
+  write(*,*) "Map2.oo.(-1):"
+  call print(map12)
+  stop
+
+stop
+  
+  !!! multiplying the TPSA maps
+  map12=map2.o.map1
+  write(*,*) "Map 2 .o. Map 1:"
+  call print(map12)
+
+  map12=map2*map1
+  write(*,*) "Map 2 * Map 1:"
+  call print(map12)
+
+  stop
+
+
   x1= 0.015d0
   map1%x0(1)=x1
   x=map1%x0(1)+(1.d0.cmono.1)

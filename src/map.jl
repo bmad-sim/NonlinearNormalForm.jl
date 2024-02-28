@@ -170,6 +170,12 @@ function ∘(m2::TPSAMap{S2,T2,U2,V2},m1::TPSAMap{S1,T1,U1,V1}) where {S2,T2,U2,
 
   outQ = Quaternion{outU}([outU(use=desc), outU(use=desc), outU(use=desc), outU(use=desc)])
 
+
+  # Subtract w0 from m1 (Eq 33 in FPP manual)
+  for i=1:nv
+    @inbounds m1.x[i] -= m2.x0[i]
+  end
+
   # Do the composition, promoting if necessary
   # --- Orbit ---
   if outT != T1
@@ -218,12 +224,17 @@ function ∘(m2::TPSAMap{S2,T2,U2,V2},m1::TPSAMap{S1,T1,U1,V1}) where {S2,T2,U2,
   end
   outx[nv+1:end] = k
 
+  # Add back in w0 to m1
+  for i=1:nv
+    @inbounds m1.x[i] += m2.x0[i]
+  end
+
   # Make that map!
   return TPSAMap(deepcopy(m1.x0), outx, outQ, zeros(nv, nv))
 end
 
 # --- inverse ---
-function inv(m1::TaylorMap{S,T,U,V}) where {S,T,U,V}
+function inv(m1::DAMap{S,T,U,V}) where {S,T,U,V}
   desc = getdesc(m1)
   nv = numvars(desc)
   np = numparams(desc) 
@@ -251,7 +262,44 @@ function inv(m1::TaylorMap{S,T,U,V}) where {S,T,U,V}
     k = complexparams(desc)
   end
   outx[nv+1:end] = k
-  return (typeof(m1))(deepcopy(m1.x0), outx, outQ, zeros(nv,nv))
+  return DAMap(deepcopy(m1.x0), outx, outQ, zeros(nv,nv))
+end
+
+function inv(m1::TPSAMap{S,T,U,V}) where {S,T,U,V}
+  desc = getdesc(m1)
+  nv = numvars(desc)
+  np = numparams(desc) 
+  outx = Vector{T}(undef, nv+np)
+  for i=1:nv
+    @inbounds outx[i] = T(use=desc)
+  end
+  # 
+  outQ = inv(m1.Q)
+
+  m1x_low = map(t->t.tpsa, view(m1.x, 1:nv))
+  outx_low = map(t->t.tpsa, view(outx, 1:nv))
+
+  # This C function ignores the scalar part so no need to take it out
+  minv!(nv, m1x_low, outx_low)
+
+  # Now do quaternion: inverse of q(z0) is q^-1(M^-1(zf))
+  outQ_low = map(t->t.tpsa, outQ.q)
+  compose!(Cint(4), outQ_low, nv, outx_low, outQ_low)
+
+  # Add the params to outx:
+  if T == TPS
+    k = params(desc)
+  else
+    k = complexparams(desc)
+  end
+
+  # Add the reference orbit part to outx for TPSAMap inverse:
+  for i=1:nv
+    @inbounds outx[i] += m1.x0[i]
+  end
+  outx[nv+1:end] = k
+
+  return TPSAMap(deepcopy(m1.x0), outx, outQ, zeros(nv,nv))
 end
 
 
