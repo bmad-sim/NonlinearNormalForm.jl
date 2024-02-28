@@ -1,6 +1,7 @@
 module NonlinearNormalForm
 
 import Base: ∘,
+             ^,
              show,
              convert,
              inv,

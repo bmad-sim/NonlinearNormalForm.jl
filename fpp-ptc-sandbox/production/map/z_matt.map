@@ -8,55 +8,58 @@
 [  4] /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.0.sdk/usr/lib/libSystem.tbd
 # Sections:
 # Address	Size    	Segment	Section
-0x100003880	0x00000490	__TEXT	__text
-0x100003D10	0x00000020	__TEXT	__text_startup
-0x100003D30	0x00000114	__TEXT	__stubs
-0x100003E48	0x0000004D	__TEXT	__cstring
-0x100003EA0	0x000000B0	__TEXT	__const
+0x100003850	0x000004AC	__TEXT	__text
+0x100003D00	0x00000020	__TEXT	__text_startup
+0x100003D20	0x00000114	__TEXT	__stubs
+0x100003E38	0x0000004D	__TEXT	__cstring
+0x100003E90	0x000000C0	__TEXT	__const
 0x100003F50	0x000000B0	__TEXT	__eh_frame
 0x100004000	0x000000B8	__DATA_CONST	__got
 0x100008000	0x00005E10	__DATA	__bss
 # Symbols:
 # Address	Size    	File  Name
-0x100003880	0x00000490	[  1] _MAIN__
-0x100003D10	0x00000020	[  1] _main
-0x100003D30	0x0000000C	[  2] ___c_tpsa_MOD_a_opt_c_damap.stub
-0x100003D3C	0x0000000C	[  2] ___c_tpsa_MOD_add.stub
-0x100003D48	0x0000000C	[  2] ___c_tpsa_MOD_c_allocda.stub
-0x100003D54	0x0000000C	[  2] ___c_tpsa_MOD_c_dputint0r.stub
-0x100003D60	0x0000000C	[  2] ___c_tpsa_MOD_c_equalmap.stub
-0x100003D6C	0x0000000C	[  2] ___c_tpsa_MOD_c_init_all.stub
-0x100003D78	0x0000000C	[  2] ___c_tpsa_MOD_c_pri_map.stub
-0x100003D84	0x0000000C	[  2] ___c_tpsa_MOD_dscadd.stub
-0x100003D90	0x0000000C	[  2] ___c_tpsa_MOD_equal.stub
-0x100003D9C	0x0000000C	[  2] ___c_tpsa_MOD_iscmul.stub
-0x100003DA8	0x0000000C	[  2] ___c_tpsa_MOD_pow.stub
-0x100003DB4	0x0000000C	[  2] ___c_tpsa_MOD_pow_tpsamap.stub
-0x100003DC0	0x0000000C	[  2] ___c_tpsa_MOD_powmap.stub
-0x100003DCC	0x0000000C	[  3] __gfortran_set_args.stub
-0x100003DD8	0x0000000C	[  3] __gfortran_set_options.stub
-0x100003DE4	0x0000000C	[  3] __gfortran_st_read.stub
-0x100003DF0	0x0000000C	[  3] __gfortran_st_read_done.stub
-0x100003DFC	0x0000000C	[  3] __gfortran_st_write.stub
-0x100003E08	0x0000000C	[  3] __gfortran_st_write_done.stub
-0x100003E14	0x0000000C	[  3] __gfortran_stop_string.stub
-0x100003E20	0x0000000C	[  3] __gfortran_transfer_character_write.stub
-0x100003E2C	0x0000000C	[  3] __gfortran_transfer_integer.stub
-0x100003E38	0x0000000C	[  4] _memcpy.stub
-0x100003E48	0x0000004D	[  1] literal string: /Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/z_matt.f90
-0x100003EA0	0x00000014	[  1] lC1
-0x100003EB4	0x00000004	[  1] lC2
-0x100003EB8	0x00000008	[  1] lC3
-0x100003EC0	0x00000008	[  1] lC4
-0x100003EC8	0x00000008	[  1] lC5
-0x100003ED0	0x00000008	[  1] lC6
-0x100003ED8	0x00000008	[  1] lC7
-0x100003EE0	0x00000010	[  1] lC8
-0x100003EF0	0x00000010	[  1] lC9
-0x100003F00	0x00000020	[  1] _options.12.5
-0x100003F20	0x00000008	[  1] lC10
-0x100003F28	0x00000008	[  1] lC11
-0x100003F30	0x00000010	[  1] 16-byte-literal
+0x100003850	0x000004AC	[  1] _MAIN__
+0x100003D00	0x00000020	[  1] _main
+0x100003D20	0x0000000C	[  2] ___c_tpsa_MOD_a_opt_c_damap.stub
+0x100003D2C	0x0000000C	[  2] ___c_tpsa_MOD_add.stub
+0x100003D38	0x0000000C	[  2] ___c_tpsa_MOD_c_allocda.stub
+0x100003D44	0x0000000C	[  2] ___c_tpsa_MOD_c_dputint0r.stub
+0x100003D50	0x0000000C	[  2] ___c_tpsa_MOD_c_equalmap.stub
+0x100003D5C	0x0000000C	[  2] ___c_tpsa_MOD_c_init_all.stub
+0x100003D68	0x0000000C	[  2] ___c_tpsa_MOD_c_pri_map.stub
+0x100003D74	0x0000000C	[  2] ___c_tpsa_MOD_dscadd.stub
+0x100003D80	0x0000000C	[  2] ___c_tpsa_MOD_equal.stub
+0x100003D8C	0x0000000C	[  2] ___c_tpsa_MOD_iscmul.stub
+0x100003D98	0x0000000C	[  2] ___c_tpsa_MOD_pow.stub
+0x100003DA4	0x0000000C	[  2] ___c_tpsa_MOD_pow_tpsamap.stub
+0x100003DB0	0x0000000C	[  2] ___c_tpsa_MOD_powmap.stub
+0x100003DBC	0x0000000C	[  3] __gfortran_set_args.stub
+0x100003DC8	0x0000000C	[  3] __gfortran_set_options.stub
+0x100003DD4	0x0000000C	[  3] __gfortran_st_read.stub
+0x100003DE0	0x0000000C	[  3] __gfortran_st_read_done.stub
+0x100003DEC	0x0000000C	[  3] __gfortran_st_write.stub
+0x100003DF8	0x0000000C	[  3] __gfortran_st_write_done.stub
+0x100003E04	0x0000000C	[  3] __gfortran_stop_string.stub
+0x100003E10	0x0000000C	[  3] __gfortran_transfer_character_write.stub
+0x100003E1C	0x0000000C	[  3] __gfortran_transfer_integer.stub
+0x100003E28	0x0000000C	[  4] _memcpy.stub
+0x100003E38	0x0000004D	[  1] literal string: /Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/z_matt.f90
+0x100003E90	0x00000014	[  1] lC1
+0x100003EA4	0x00000004	[  1] lC2
+0x100003EA8	0x00000008	[  1] lC3
+0x100003EB0	0x00000008	[  1] lC4
+0x100003EB8	0x00000008	[  1] lC5
+0x100003EC0	0x00000008	[  1] lC6
+0x100003EC8	0x0000000C	[  1] lC7
+0x100003ED4	0x00000004	[  1] lC8
+0x100003ED8	0x00000010	[  1] lC9
+0x100003EE8	0x00000010	[  1] lC10
+0x100003EF8	0x00000004	[  1] lC11
+0x100003EFC	0x00000004	[  1] lC12
+0x100003F00	0x00000014	[  1] lC13
+0x100003F14	0x0000001C	[  1] _options.19.5
+0x100003F30	0x00000008	[  1] lC14
+0x100003F38	0x00000008	[  1] lC15
 0x100003F40	0x00000010	[  1] 16-byte-literal
 0x100003F50	0x00000018	[  1] CIE
 0x100003F68	0x00000070	[  1] FDE for: _MAIN__

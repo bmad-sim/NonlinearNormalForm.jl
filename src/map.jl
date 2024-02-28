@@ -69,7 +69,6 @@ end
 
 
 # --- composition ---
-
 function ∘(m2::DAMap{S2,T2,U2,V2},m1::DAMap{S1,T1,U1,V1}) where {S2,T2,U2,V2,S1,T1,U1,V1}
   # all(scalar.(m1.x)+m1.x0 - m2.x0 .< 1e-20) || error("Disconnected DAMaps! Exit coordinates of first map != entrance coordinates of second map!")
   desc = getdesc(m1)
@@ -143,10 +142,18 @@ function ∘(m2::DAMap{S2,T2,U2,V2},m1::DAMap{S1,T1,U1,V1}) where {S2,T2,U2,V2,S
   end
   outx[nv+1:end] = k
   
-  # Put back the reference
-  for i=1:nv
-    @inbounds m1.x[i][0] = ref[i]
+  # Put back the reference and if m1 === m2, also add to outx
+  if m1 === m2
+    for i=1:nv
+      @inbounds m1.x[i][0] = ref[i]
+      @inbounds outx[i][0] += ref[i]
+    end
+  else
+    for i=1:nv
+      @inbounds m1.x[i][0] = ref[i]
+    end
   end
+
 
   # Make that map!
   return DAMap(deepcopy(m1.x0), outx, outQ, zeros(nv, nv))
@@ -156,7 +163,6 @@ function ∘(m2::TPSAMap{S2,T2,U2,V2},m1::TPSAMap{S1,T1,U1,V1}) where {S2,T2,U2,
   desc = getdesc(m1)
   nv = numvars(desc)
   np = numparams(desc)
-  ref = Vector{numtype(T1)}(undef, nv)
 
   outT = promote_type(T2,T1)
 
@@ -169,12 +175,6 @@ function ∘(m2::TPSAMap{S2,T2,U2,V2},m1::TPSAMap{S1,T1,U1,V1}) where {S2,T2,U2,
   outU = promote_type(U2,U1)
 
   outQ = Quaternion{outU}([outU(use=desc), outU(use=desc), outU(use=desc), outU(use=desc)])
-
-
-  # Subtract w0 from m1 (Eq 33 in FPP manual)
-  for i=1:nv
-    @inbounds m1.x[i] -= m2.x0[i]
-  end
 
   # Do the composition, promoting if necessary
   # --- Orbit ---
@@ -224,11 +224,6 @@ function ∘(m2::TPSAMap{S2,T2,U2,V2},m1::TPSAMap{S1,T1,U1,V1}) where {S2,T2,U2,
   end
   outx[nv+1:end] = k
 
-  # Add back in w0 to m1
-  for i=1:nv
-    @inbounds m1.x[i] += m2.x0[i]
-  end
-
   # Make that map!
   return TPSAMap(deepcopy(m1.x0), outx, outQ, zeros(nv, nv))
 end
@@ -262,7 +257,16 @@ function inv(m1::DAMap{S,T,U,V}) where {S,T,U,V}
     k = complexparams(desc)
   end
   outx[nv+1:end] = k
-  return DAMap(deepcopy(m1.x0), outx, outQ, zeros(nv,nv))
+
+  # outx0 = scalar.(m1.x) + m1.x0
+  # scalar(outx) -=  scalar.(m1.x)
+  outx0 = Vector{numtype(T)}(undef, nv)
+  for i=1:nv
+    @inbounds outx0[i] = m1.x[i][0] + m1.x0[i]
+    @inbounds outx[i] -= m1.x[i][0]
+  end
+  
+  return DAMap(outx0, outx, outQ, zeros(nv,nv))
 end
 
 function inv(m1::TPSAMap{S,T,U,V}) where {S,T,U,V}
@@ -298,9 +302,18 @@ function inv(m1::TPSAMap{S,T,U,V}) where {S,T,U,V}
     @inbounds outx[i] += m1.x0[i]
   end
   outx[nv+1:end] = k
-
-  return TPSAMap(scalar.(m1.x), outx, outQ, zeros(nv,nv))
+  
+  # outx0 = scalar.(m1.x) + m1.x0
+  # scalar(outx) -=  scalar.(m1.x)
+  outx0 = Vector{numtype(T)}(undef, nv)
+  for i=1:nv
+    @inbounds outx0[i] = m1.x[i][0] + m1.x0[i]
+    @inbounds outx[i] -= m1.x[i][0]
+  end
+  
+  return TPSAMap(outx0, outx, outQ, zeros(nv,nv))
 end
 
+#function ^()
 
 ==(m1::TaylorMap, m2::TaylorMap) = (m1.x0 == m2.x0 && m1.x == m2.x && m1.Q == m2.Q && m1.E == m2.E)
