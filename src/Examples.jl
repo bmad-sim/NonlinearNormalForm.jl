@@ -202,17 +202,19 @@ function track_ring0()
 
   # Make DAMap
   m1 = DAMap(p)
-  println(m1)
+  m = m1^-1∘m1 
+  println(m)
+  return m1
+
+  # println(m1)
 
   # DAMap concatenation and inversion:
-  m = m1^1∘m1  # or inv(m1)∘m1
-  println(m)
+  # m = m1^-1∘m1  # or inv(m1)∘m1
+  # println(m)
 
   # TPSAMap concatenation and inversion:
   # mt1 = TPSAMap(m1)
-  # mt = mt1^1∘mt1  # or inv(mt1)∘mt1
-
-  return m1
+  # mt = mt1^-1∘mt1  # or inv(mt1)∘mt1
 end
 
 end
