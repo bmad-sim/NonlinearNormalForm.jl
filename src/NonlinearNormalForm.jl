@@ -24,7 +24,7 @@ import GTPSA: numtype,
               jacobian
 
 export TaylorMap, Quaternion, Probe, TPSAMap, DAMap, TPSAMap, checksymp, qmul!,
-        normalize!, dot
+        normalize!, dot, to_SO3
 
 include("quaternion.jl")
 include("probe.jl")
@@ -32,9 +32,9 @@ include("map.jl")
 include("show.jl")
 
 # helper functions
-getdesc(m::Union{Probe{<:Real,TPS,TPS,<:Real},<:TaylorMap}) = Descriptor(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.x).tpsa).d))
-numvars(m::Union{Probe{<:Real,TPS,TPS,<:Real},<:TaylorMap}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.x).tpsa).d)).nv
-numparams(m::Union{Probe{<:Real,TPS,TPS,<:Real},<:TaylorMap}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.x).tpsa).d)).np
+getdesc(m::Union{Probe{<:Real,Union{TPS,ComplexTPS},Union{TPS,ComplexTPS},<:Real},<:TaylorMap}) = Descriptor(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.x).tpsa).d))
+numvars(m::Union{Probe{<:Real,Union{TPS,ComplexTPS},Union{TPS,ComplexTPS},<:Real},<:TaylorMap}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.x).tpsa).d)).nv
+numparams(m::Union{Probe{<:Real,Union{TPS,ComplexTPS},Union{TPS,ComplexTPS},<:Real},<:TaylorMap}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.x).tpsa).d)).np
 
 getdesc(t::Union{TPS,ComplexTPS}) = Descriptor(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(t.tpsa).d))
 numvars(t::Union{TPS,ComplexTPS}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(t.tpsa).d)).nv

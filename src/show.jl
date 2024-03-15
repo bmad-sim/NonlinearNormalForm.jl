@@ -5,9 +5,8 @@ function show(io::IO, m::Union{Probe,TaylorMap})
   if GTPSA.show_header
     println(io, "-----------------------")
     desc = unsafe_load(Base.unsafe_convert(Ptr{Desc}, unsafe_load(first(m.x).tpsa).d))
-    GTPSA.show_GTPSA_info(io, desc)
+    lines_used[] += 2 + GTPSA.show_GTPSA_info(io, desc)
     println(io, "-----------------------")
-    lines_used[] += 2 + (desc.nv > 0 ? 2 : 0) + (desc.np > 0 ? 2 : 0)
   end
   println(io, "Reference Orbit ", typeof(m.x0),":")
   for i =1:length(m.x0)

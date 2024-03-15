@@ -37,16 +37,10 @@ for t = (:DAMap, :TPSAMap)
       return $t{S,T,U,V}(x0, x, Q, E)
     end
 
-    # Create TaylorMap from a Probe (must tag on Parameters)
+    # Create TaylorMap from a Probe
     function $t(m::Probe{S,T,U,V}; use::Union{Descriptor,TaylorMap,Probe{S,T,U,V},Nothing}=nothing) where {S, T<:Union{TPS,ComplexTPS}, U<:Union{TPS,ComplexTPS}, V}
       x0 = deepcopy(m.x0)
-      v = map(x->(T)(x, use=getdesc(use)), m.x)
-      if eltype(v) == TPS
-        k = params(getdesc(v))
-      else
-        k = complexparams(getdesc(v))
-      end
-      x = vcat(v,k)
+      x = map(x->(T)(x, use=getdesc(use)), m.x)
       Q = Quaternion(map(x->(U)(x, use=getdesc(use)), m.Q.q))
       E = deepcopy(m.E)
       return $t{S,T,U,V}(x0, x, Q, E)
@@ -57,7 +51,7 @@ for t = (:DAMap, :TPSAMap)
       numvars(x) == length(x) || error("Length of orbital ray inconsistent with number of variables in GTPSA!")
       numvars(x) == length(x0) || error("Length of orbital ray != length of reference orbit vector!")
       (numvars(x),numvars(x)) == size(E) || error("Size of stochastic matrix inconsistent with number of variables!")
-      (isnothing(use) && getdesc(x) == getdesc(Q)) || error("Orbital ray Descriptor different from quaternion Descriptor!")
+      (isnothing(use) && getdesc(x) != getdesc(Q)) || error("Orbital ray Descriptor different from quaternion Descriptor!")
       
       x1 = map(x->(T)(x, use=getdesc(use)), x)
       Q1 = Quaternion(map(x->(U)(x, use=getdesc(use)), Q.q))
@@ -78,7 +72,7 @@ function ∘(m2::DAMap{S2,T2,U2,V2},m1::DAMap{S1,T1,U1,V1}) where {S2,T2,U2,V2,S
 
   outT = promote_type(T2,T1)
 
-  outx = Vector{outT}(undef,  nv+np)
+  outx = Vector{outT}(undef,  nv)
   # Set up orbit out:
   for i=1:nv
     @inbounds outx[i] = outT(use=desc)
@@ -94,35 +88,41 @@ function ∘(m2::DAMap{S2,T2,U2,V2},m1::DAMap{S1,T1,U1,V1}) where {S2,T2,U2,V2,S
     @inbounds m1.x[i][0] = 0
   end
 
-  # Do the composition, promoting if necessary
+  # get the immutable parameters
+  if outT == ComplexTPS
+    k = desc.kc
+  else
+    k = desc.kr
+  end
+    # Do the composition, promoting if necessary
   # --- Orbit ---
   if outT != T1
     # Promote to ComplexTPS:
-    m1x_store = map(t->outT(t), view(m1.x, :)) # Must store to prevent GC   
-    m1x_low = map(t->t.tpsa, m1x_store)
+    m1x_store = map(t->outT(t), m1.x) # Must store to prevent GC   
+    m1x_low = vcat(map(t->t.tpsa, m1x_store), k)
   else
     m1x_store = nothing
-    m1x_low = map(t->t.tpsa, view(m1.x, :))
+    m1x_low = vcat(map(t->t.tpsa, m1.x), k)
   end
   if outT != T2
-    m2x_store = map(t->outT(t), view(m2.x, 1:nv)) # Must store to prevent GC   
+    m2x_store = map(t->outT(t), m2.x) # Must store to prevent GC   
     m2x_low = map(t->t.tpsa, m2x_store)
   else
     m2x_store = nothing
-    m2x_low = map(t->t.tpsa, view(m2.x, 1:nv))
+    m2x_low = map(t->t.tpsa, m2.x)
   end
 
   # --- Quaternion ---
   if outU != U2
-    m2Q_store = map(t->outU(t), view(m2.Q.q, :)) # Must store to prevent GC
+    m2Q_store = map(t->outU(t), m2.Q.q) # Must store to prevent GC
     m2Q_low = map(t->t.tpsa, m2Q_store)
   else
     m2Q_store = nothing
-    m2Q_low = map(t->t.tpsa, view(m2.Q.q, :))
+    m2Q_low = map(t->t.tpsa, m2.Q.q)
   end
 
   # go low
-  outx_low = map(t->t.tpsa, view(outx, 1:nv))
+  outx_low = map(t->t.tpsa, outx)
   outQ_low = map(t->t.tpsa, outQ.q)
 
   # Orbit:
@@ -130,17 +130,9 @@ function ∘(m2::DAMap{S2,T2,U2,V2},m1::DAMap{S1,T1,U1,V1}) where {S2,T2,U2,V2,S
 
   # Spin (spectator) q(z0)=q2(M(z0))q1(z0)
   # First obtain q2(M(z0))
-  GC.@preserve m1x_store m2Q_store compose!(Cint(4), m2Q_low, nv, m1x_low, outQ_low)
+  GC.@preserve m1x_store m2Q_store compose!(Cint(4), m2Q_low, nv+np, m1x_low, outQ_low)
   # Now concatenate
   qmul!(outQ, m1.Q, outQ)
-
-  # Add the params to outx:
-  if outT == TPS
-    k = params(desc)
-  else
-    k = complexparams(desc)
-  end
-  outx[nv+1:end] = k
   
   # Put back the reference and if m1 === m2, also add to outx
   if m1 === m2
@@ -153,7 +145,6 @@ function ∘(m2::DAMap{S2,T2,U2,V2},m1::DAMap{S1,T1,U1,V1}) where {S2,T2,U2,V2,S
       @inbounds m1.x[i][0] = ref[i]
     end
   end
-
 
   # Make that map!
   return DAMap(deepcopy(m1.x0), outx, outQ, zeros(nv, nv))
@@ -182,35 +173,41 @@ function ∘(m2::TPSAMap{S2,T2,U2,V2},m1::TPSAMap{S1,T1,U1,V1}) where {S2,T2,U2,
     @inbounds m1.x[i] -= m2.x0[i]
   end
 
-  # Do the composition, promoting if necessary
+  # get the immutable parameters
+  if outT == ComplexTPS
+    k = desc.kc
+  else
+    k = desc.kr
+  end
+    # Do the composition, promoting if necessary
   # --- Orbit ---
   if outT != T1
     # Promote to ComplexTPS:
-    m1x_store = map(t->outT(t), view(m1.x, :)) # Must store to prevent GC   
-    m1x_low = map(t->t.tpsa, m1x_store)
+    m1x_store = map(t->outT(t), m1.x) # Must store to prevent GC   
+    m1x_low = vcat(map(t->t.tpsa, m1x_store), k)
   else
     m1x_store = nothing
-    m1x_low = map(t->t.tpsa, view(m1.x, :))
+    m1x_low = vcat(map(t->t.tpsa, m1.x), k)
   end
   if outT != T2
-    m2x_store = map(t->outT(t), view(m2.x, 1:nv)) # Must store to prevent GC   
+    m2x_store = map(t->outT(t), m2.x) # Must store to prevent GC   
     m2x_low = map(t->t.tpsa, m2x_store)
   else
     m2x_store = nothing
-    m2x_low = map(t->t.tpsa, view(m2.x, 1:nv))
+    m2x_low = map(t->t.tpsa, m2.x)
   end
 
   # --- Quaternion ---
   if outU != U2
-    m2Q_store = map(t->outU(t), view(m2.Q.q, :)) # Must store to prevent GC
+    m2Q_store = map(t->outU(t), m2.Q.q) # Must store to prevent GC
     m2Q_low = map(t->t.tpsa, m2Q_store)
   else
     m2Q_store = nothing
-    m2Q_low = map(t->t.tpsa, view(m2.Q.q, :))
+    m2Q_low = map(t->t.tpsa, m2.Q.q)
   end
 
   # go low
-  outx_low = map(t->t.tpsa, view(outx, 1:nv))
+  outx_low = map(t->t.tpsa, outx)
   outQ_low = map(t->t.tpsa, outQ.q)
 
   # Orbit:
@@ -218,17 +215,9 @@ function ∘(m2::TPSAMap{S2,T2,U2,V2},m1::TPSAMap{S1,T1,U1,V1}) where {S2,T2,U2,
 
   # Spin (spectator) q(z0)=q2(M(z0))q1(z0)
   # First obtain q2(M(z0))
-  GC.@preserve m1x_store m2Q_store compose!(Cint(4), m2Q_low, nv, m1x_low, outQ_low)
+  GC.@preserve m1x_store m2Q_store compose!(Cint(4), m2Q_low, nv+np, m1x_low, outQ_low)
   # Now concatenate
   qmul!(outQ, m1.Q, outQ)
-
-  # Add the params to outx:
-  if outT == TPS
-    k = params(desc)
-  else
-    k = complexparams(desc)
-  end
-  outx[nv+1:end] = k
 
   # Now fix m1 and if m2 === m1, add to output too:
  # For TPSA Map concatenation, we need to subtract w_0 (m2 x0) (Eq. 33)
@@ -253,36 +242,35 @@ function inv(m1::DAMap{S,T,U,V}) where {S,T,U,V}
   desc = getdesc(m1)
   nv = numvars(desc)
   np = numparams(desc) 
-  outx = Vector{T}(undef, nv+np)
+  outx = Vector{T}(undef, nv)
   for i=1:nv
     @inbounds outx[i] = T(use=desc)
   end
   # 
   outQ = inv(m1.Q)
 
-  m1x_low = map(t->t.tpsa, view(m1.x, 1:nv))
-  outx_low = map(t->t.tpsa, view(outx, 1:nv))
+  # get the immutable parameters
+  if T == ComplexTPS
+    k = desc.kc
+  else
+    k = desc.kr
+  end
+
+  m1x_low = vcat(map(t->t.tpsa, m1.x), k)
+  outx_low = vcat(map(t->t.tpsa, outx), k)
 
   # This C function ignores the scalar part so no need to take it out
-  minv!(nv, m1x_low, outx_low)
+  minv!(nv+np, m1x_low, nv, outx_low)
 
   # Now do quaternion: inverse of q(z0) is q^-1(M^-1(zf))
   outQ_low = map(t->t.tpsa, outQ.q)
-  compose!(Cint(4), outQ_low, nv, outx_low, outQ_low)
+  compose!(Cint(4), outQ_low, nv+np, outx_low, outQ_low)
 
-  # Add the params to outx:
-  if T == TPS
-    k = params(desc)
-  else
-    k = complexparams(desc)
-  end
-
-  outx0 = Vector{numtype(T)}(undef, nv)
+  outx0 = Vector{S}(undef, nv)
   for i=1:nv
     @inbounds outx0[i] = m1.x[i][0]
     @inbounds outx[i] += m1.x0[i]
   end
-  outx[nv+1:end] = k
   
   return DAMap(outx0, outx, outQ, zeros(nv,nv))
 end
@@ -291,36 +279,35 @@ function inv(m1::TPSAMap{S,T,U,V}) where {S,T,U,V}
   desc = getdesc(m1)
   nv = numvars(desc)
   np = numparams(desc) 
-  outx = Vector{T}(undef, nv+np)
+  outx = Vector{T}(undef, nv)
   for i=1:nv
     @inbounds outx[i] = T(use=desc)
   end
   # 
   outQ = inv(m1.Q)
 
-  m1x_low = map(t->t.tpsa, view(m1.x, 1:nv))
-  outx_low = map(t->t.tpsa, view(outx, 1:nv))
+  # get the immutable parameters
+  if T == ComplexTPS
+    k = desc.kc
+  else
+    k = desc.kr
+  end
+
+  m1x_low = vcat(map(t->t.tpsa, m1.x), k)
+  outx_low = vcat(map(t->t.tpsa, outx), k)
 
   # This C function ignores the scalar part so no need to take it out
-  minv!(nv, m1x_low, outx_low)
+  minv!(nv+np, m1x_low, nv, outx_low)
 
   # Now do quaternion: inverse of q(z0) is q^-1(M^-1(zf))
   outQ_low = map(t->t.tpsa, outQ.q)
-  compose!(Cint(4), outQ_low, nv, outx_low, outQ_low)
+  compose!(Cint(4), outQ_low, nv+np, outx_low, outQ_low)
 
-  # Add the params to outx:
-  if T == TPS
-    k = params(desc)
-  else
-    k = complexparams(desc)
-  end
-
-  outx0 = Vector{numtype(T)}(undef, nv)
+  outx0 = Vector{S}(undef, nv)
   for i=1:nv
     @inbounds outx0[i] = m1.x[i][0]
     @inbounds outx[i] += m1.x0[i]
   end
-  outx[nv+1:end] = k
 
   return TPSAMap(outx0, outx, outQ, zeros(nv,nv))
 end
