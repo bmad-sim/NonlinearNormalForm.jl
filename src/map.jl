@@ -75,7 +75,7 @@ function ∘(m2::DAMap{S2,T2,U2,V2},m1::DAMap{S1,T1,U1,V1}) where {S2,T2,U2,V2,S
   outx = Vector{outT}(undef,  nv)
   # Set up orbit out:
   for i=1:nv
-    @inbounds outx[i] = outT(use=desc)
+     outx[i] = outT(use=desc)
   end
 
   outU = promote_type(U2,U1)
@@ -84,8 +84,8 @@ function ∘(m2::DAMap{S2,T2,U2,V2},m1::DAMap{S1,T1,U1,V1}) where {S2,T2,U2,V2,S
 
   # Take out scalar part and store it
   for i=1:nv
-    @inbounds ref[i] = m1.x[i][0]
-    @inbounds m1.x[i][0] = 0
+     ref[i] = m1.x[i][0]
+     m1.x[i][0] = 0
   end
 
   # get the immutable parameters
@@ -137,12 +137,12 @@ function ∘(m2::DAMap{S2,T2,U2,V2},m1::DAMap{S1,T1,U1,V1}) where {S2,T2,U2,V2,S
   # Put back the reference and if m1 === m2, also add to outx
   if m1 === m2
     for i=1:nv
-      @inbounds m1.x[i][0] = ref[i]
-      @inbounds outx[i][0] += ref[i]
+       m1.x[i][0] = ref[i]
+       outx[i][0] += ref[i]
     end
   else
     for i=1:nv
-      @inbounds m1.x[i][0] = ref[i]
+       m1.x[i][0] = ref[i]
     end
   end
 
@@ -160,7 +160,7 @@ function ∘(m2::TPSAMap{S2,T2,U2,V2},m1::TPSAMap{S1,T1,U1,V1}) where {S2,T2,U2,
   outx = Vector{outT}(undef,  nv+np)
   # Set up orbit out:
   for i=1:nv
-    @inbounds outx[i] = outT(use=desc)
+     outx[i] = outT(use=desc)
   end
   
   outU = promote_type(U2,U1)
@@ -170,7 +170,7 @@ function ∘(m2::TPSAMap{S2,T2,U2,V2},m1::TPSAMap{S1,T1,U1,V1}) where {S2,T2,U2,
   # For TPSA Map concatenation, we need to subtract w_0 (m2 x0) (Eq. 33)
   # Because we are still expressing in terms of z_0 (m1 x0)
   for i=1:nv
-    @inbounds m1.x[i] -= m2.x0[i]
+     m1.x[i] -= m2.x0[i]
   end
 
   # get the immutable parameters
@@ -224,12 +224,12 @@ function ∘(m2::TPSAMap{S2,T2,U2,V2},m1::TPSAMap{S1,T1,U1,V1}) where {S2,T2,U2,
   # Because we are still expressing in terms of z_0 (m1 x0)
   if m1 === m2
     for i=1:nv
-      @inbounds m1.x[i] += m2.x0[i]
-      @inbounds outx[i] += m2.x0[i]
+       m1.x[i] += m2.x0[i]
+       outx[i] += m2.x0[i]
     end
   else
     for i=1:nv
-      @inbounds m1.x[i] += m2.x0[i]
+       m1.x[i] += m2.x0[i]
     end
   end
 
@@ -244,7 +244,7 @@ function inv(m1::DAMap{S,T,U,V}) where {S,T,U,V}
   np = numparams(desc) 
   outx = Vector{T}(undef, nv)
   for i=1:nv
-    @inbounds outx[i] = T(use=desc)
+     outx[i] = T(use=desc)
   end
   # 
   outQ = inv(m1.Q)
@@ -268,8 +268,8 @@ function inv(m1::DAMap{S,T,U,V}) where {S,T,U,V}
 
   outx0 = Vector{S}(undef, nv)
   for i=1:nv
-    @inbounds outx0[i] = m1.x[i][0]
-    @inbounds outx[i] += m1.x0[i]
+     outx0[i] = m1.x[i][0]
+     outx[i] += m1.x0[i]
   end
   
   return DAMap(outx0, outx, outQ, zeros(nv,nv))
@@ -281,7 +281,7 @@ function inv(m1::TPSAMap{S,T,U,V}) where {S,T,U,V}
   np = numparams(desc) 
   outx = Vector{T}(undef, nv)
   for i=1:nv
-    @inbounds outx[i] = T(use=desc)
+     outx[i] = T(use=desc)
   end
   # 
   outQ = inv(m1.Q)
@@ -305,23 +305,26 @@ function inv(m1::TPSAMap{S,T,U,V}) where {S,T,U,V}
 
   outx0 = Vector{S}(undef, nv)
   for i=1:nv
-    @inbounds outx0[i] = m1.x[i][0]
-    @inbounds outx[i] += m1.x0[i]
+     outx0[i] = m1.x[i][0]
+     outx[i] += m1.x0[i]
   end
 
   return TPSAMap(outx0, outx, outQ, zeros(nv,nv))
 end
 
+Base.literal_pow(::typeof(^), m::TaylorMap{S,T,U,V}, vn::Val{n}) where {S,T,U,V,n} = ^(m,n)
+
+
 function ^(m1::TaylorMap{S,T,U,V}, n::Integer) where {S,T,U,V}
   if n>0
     m = m1
-    for i=1:n-1
+    for i=1:(n-1)
       m = m1∘m
     end
     return m
   elseif n<0
     m = m1
-    for i=1:-n+1
+    for i=1:(-n-1)
       m = m1∘m
     end
     return inv(m)

@@ -11,7 +11,7 @@ export track_drift,
 
 const a = 0.00115965218128 
 const gamma_0 = 40.5/a
-rf_on::Bool = false
+rf_on::Bool = true
 radiation_on::Bool = false
 N_fodo::Int = 50
 
@@ -19,7 +19,7 @@ function track_qf(p::Probe, k1, hkick)
   z0 = p.x
   z = Vector{promote_type(eltype(z0),typeof(k1),typeof(hkick))}(undef, length(z0))
   
-  lbend=2*pi/Examples.N_fodo
+  lbend=0.1#2*pi/Examples.N_fodo
   L  =  0.5/(1.0+z0[6])
   h  =  -L*(z0[2]^2+k1*z0[1]^2+ z0[4]^2-k1*z0[3]^2)/(1.0+z0[6])/2.0
   z[1] =  cos(sqrt(k1)*L)*z0[1]+1/sqrt(k1)*sin(sqrt(k1)*L)*z0[2]

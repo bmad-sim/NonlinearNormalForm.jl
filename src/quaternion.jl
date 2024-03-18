@@ -15,6 +15,7 @@ convert(::Type{Quaternion{S}}, Q::Quaternion{T}) where {S,T} = Quaternion(map(x-
 Quaternion(Q::Quaternion) = Quaternion(deepcopy(Q1.q))
 
 Quaternion(t::T) where T <: Number = Quaternion([one(t), zero(t), zero(t), zero(t)])
+Quaternion(n::Nothing) = Quaternion{Nothing}(Nothing[])
 
 function qmul!(Q1::Quaternion{S}, Q2::Quaternion{T}, Q3::Quaternion) where {S,T}
   q1 = Q1.q

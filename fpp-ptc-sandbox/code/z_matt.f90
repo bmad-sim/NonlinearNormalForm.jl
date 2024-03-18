@@ -50,24 +50,24 @@ program matt
   write(*,*) "Map2.o.map1:"
   call print(map12)
 
-  map12 = map1**(3)
-  write(*,*) "Map1**(2):"
+  map12 = map1**(-1)
+  write(*,*) "Map1**(-1):"
   call print(map12)
 
   map12 = map1**(-3)
-  write(*,*) "Map1**(-2):"
+  write(*,*) "Map1**(-3):"
   call print(map12)
 
-  map12 = map1.oo.(2)
-  write(*,*) "Map1.oo.(2):"
+  map12 = map1.oo.(-1)
+  write(*,*) "Map1.oo.(-1):"
   call print(map12)
 
-  map12 = map1.oo.(-2)
-  write(*,*) "Map1.oo.(-2):"
+  map12 = map1.oo.(-3)
+  write(*,*) "Map1.oo.(-3):"
   call print(map12)
   stop
 
-  map12 = map1.oo.(-2)
+  map12 = map1.oo.(-1)
   map12 = map12.oo.(-1)
   write(*,*) "inv(Map1.oo.(2)):"
   call print(map12)
