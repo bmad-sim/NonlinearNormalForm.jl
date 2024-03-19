@@ -70,11 +70,14 @@ program example
 
    !call print(xs0)
     
+    call track_sextupole(xs, xs,k2l) !, vkick(1))
+    m=xs
+        call print(m)
+    stop
    
    call track_ring(xs,xs,k1,k2l,kick,vkick)
       m=xs
-    call print(m)
-    stop
+
 
    filename="/Users/mgs255/.julia/dev/NonlinearNormalForm/src/mymap.txt"
    !filename="C:\document\my_tex_papers\julia\one_turn_map_no_quaternion.txt"

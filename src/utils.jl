@@ -50,7 +50,7 @@ function read_fpp_map(file)
         idx += 1
         count += 1
       end
-      if -data[idx,1] != count
+      if count!=0 && -data[idx,1] != count
         println(m)
         println(data[idx,1])
         println(count)
