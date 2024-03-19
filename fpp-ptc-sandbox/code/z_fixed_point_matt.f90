@@ -58,8 +58,8 @@ program example
    
    k1=0.36d0
    k2l= 1.2d0
-   !vkick(1)=morph(1.d0.mono.7)!+1.d-4
-   !vkick(2)=morph(1.d0.mono.8)  !+.23d0
+   vkick(1)=morph(1.d0.mono.7)!+1.d-4
+   vkick(2)=morph(1.d0.mono.8)  !+.23d0
    c_%ndpt=0
     
    closed_orbit=0
