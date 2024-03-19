@@ -25,6 +25,7 @@ set (EXE_SPECS
   cmake_files/cmake.z_track_map_code
   cmake_files/cmake.z_track_da_tpsa
   cmake_files/cmake.z_matt
+  cmake_files/cmake.z_simple_operations
 )
 
 

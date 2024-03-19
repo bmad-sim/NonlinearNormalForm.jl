@@ -8,44 +8,46 @@
 [  4] /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.0.sdk/usr/lib/libSystem.tbd
 # Sections:
 # Address	Size    	Segment	Section
-0x100003610	0x000006A8	__TEXT	__text
-0x100003CC0	0x00000020	__TEXT	__text_startup
-0x100003CE0	0x0000012C	__TEXT	__stubs
-0x100003E10	0x0000004D	__TEXT	__cstring
+0x100003550	0x00000750	__TEXT	__text
+0x100003CA0	0x00000020	__TEXT	__text_startup
+0x100003CC0	0x00000144	__TEXT	__stubs
+0x100003E08	0x0000004D	__TEXT	__cstring
 0x100003E60	0x000000F0	__TEXT	__const
 0x100003F50	0x000000B0	__TEXT	__eh_frame
-0x100004000	0x000000C8	__DATA_CONST	__got
+0x100004000	0x000000D8	__DATA_CONST	__got
 0x100008000	0x00005E10	__DATA	__bss
 # Symbols:
 # Address	Size    	File  Name
-0x100003610	0x000006A8	[  1] _MAIN__
-0x100003CC0	0x00000020	[  1] _main
-0x100003CE0	0x0000000C	[  2] ___c_tpsa_MOD_a_opt_c_damap.stub
-0x100003CEC	0x0000000C	[  2] ___c_tpsa_MOD_add.stub
-0x100003CF8	0x0000000C	[  2] ___c_tpsa_MOD_c_allocda.stub
-0x100003D04	0x0000000C	[  2] ___c_tpsa_MOD_c_concat.stub
-0x100003D10	0x0000000C	[  2] ___c_tpsa_MOD_c_concat_tpsa.stub
-0x100003D1C	0x0000000C	[  2] ___c_tpsa_MOD_c_dputint0r.stub
-0x100003D28	0x0000000C	[  2] ___c_tpsa_MOD_c_equalmap.stub
-0x100003D34	0x0000000C	[  2] ___c_tpsa_MOD_c_init_all.stub
-0x100003D40	0x0000000C	[  2] ___c_tpsa_MOD_c_pri_map.stub
-0x100003D4C	0x0000000C	[  2] ___c_tpsa_MOD_dscadd.stub
-0x100003D58	0x0000000C	[  2] ___c_tpsa_MOD_equal.stub
-0x100003D64	0x0000000C	[  2] ___c_tpsa_MOD_iscmul.stub
-0x100003D70	0x0000000C	[  2] ___c_tpsa_MOD_pow.stub
-0x100003D7C	0x0000000C	[  2] ___c_tpsa_MOD_pow_tpsamap.stub
-0x100003D88	0x0000000C	[  2] ___c_tpsa_MOD_powmap.stub
-0x100003D94	0x0000000C	[  3] __gfortran_set_args.stub
-0x100003DA0	0x0000000C	[  3] __gfortran_set_options.stub
-0x100003DAC	0x0000000C	[  3] __gfortran_st_read.stub
-0x100003DB8	0x0000000C	[  3] __gfortran_st_read_done.stub
-0x100003DC4	0x0000000C	[  3] __gfortran_st_write.stub
-0x100003DD0	0x0000000C	[  3] __gfortran_st_write_done.stub
-0x100003DDC	0x0000000C	[  3] __gfortran_stop_string.stub
-0x100003DE8	0x0000000C	[  3] __gfortran_transfer_character_write.stub
-0x100003DF4	0x0000000C	[  3] __gfortran_transfer_integer.stub
-0x100003E00	0x0000000C	[  4] _memcpy.stub
-0x100003E10	0x0000004D	[  1] literal string: /Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/z_matt.f90
+0x100003550	0x00000750	[  1] _MAIN__
+0x100003CA0	0x00000020	[  1] _main
+0x100003CC0	0x0000000C	[  2] ___c_tpsa_MOD_a_opt_c_damap.stub
+0x100003CCC	0x0000000C	[  2] ___c_tpsa_MOD_add.stub
+0x100003CD8	0x0000000C	[  2] ___c_tpsa_MOD_c_add_map.stub
+0x100003CE4	0x0000000C	[  2] ___c_tpsa_MOD_c_allocda.stub
+0x100003CF0	0x0000000C	[  2] ___c_tpsa_MOD_c_concat.stub
+0x100003CFC	0x0000000C	[  2] ___c_tpsa_MOD_c_concat_tpsa.stub
+0x100003D08	0x0000000C	[  2] ___c_tpsa_MOD_c_dputint0r.stub
+0x100003D14	0x0000000C	[  2] ___c_tpsa_MOD_c_equalmap.stub
+0x100003D20	0x0000000C	[  2] ___c_tpsa_MOD_c_init_all.stub
+0x100003D2C	0x0000000C	[  2] ___c_tpsa_MOD_c_pri_map.stub
+0x100003D38	0x0000000C	[  2] ___c_tpsa_MOD_dscadd.stub
+0x100003D44	0x0000000C	[  2] ___c_tpsa_MOD_equal.stub
+0x100003D50	0x0000000C	[  2] ___c_tpsa_MOD_iscmul.stub
+0x100003D5C	0x0000000C	[  2] ___c_tpsa_MOD_pow.stub
+0x100003D68	0x0000000C	[  2] ___c_tpsa_MOD_pow_tpsamap.stub
+0x100003D74	0x0000000C	[  2] ___c_tpsa_MOD_powmap.stub
+0x100003D80	0x0000000C	[  3] __gfortran_set_args.stub
+0x100003D8C	0x0000000C	[  3] __gfortran_set_options.stub
+0x100003D98	0x0000000C	[  3] __gfortran_st_read.stub
+0x100003DA4	0x0000000C	[  3] __gfortran_st_read_done.stub
+0x100003DB0	0x0000000C	[  3] __gfortran_st_write.stub
+0x100003DBC	0x0000000C	[  3] __gfortran_st_write_done.stub
+0x100003DC8	0x0000000C	[  3] __gfortran_stop_string.stub
+0x100003DD4	0x0000000C	[  3] __gfortran_transfer_character_write.stub
+0x100003DE0	0x0000000C	[  3] __gfortran_transfer_complex_write.stub
+0x100003DEC	0x0000000C	[  3] __gfortran_transfer_integer.stub
+0x100003DF8	0x0000000C	[  4] _memcpy.stub
+0x100003E08	0x0000004D	[  1] literal string: /Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/z_matt.f90
 0x100003E60	0x00000014	[  1] lC1
 0x100003E74	0x00000004	[  1] lC2
 0x100003E78	0x00000008	[  1] lC3
@@ -60,9 +62,10 @@
 0x100003EC8	0x00000010	[  1] lC12
 0x100003ED8	0x00000010	[  1] lC13
 0x100003EE8	0x00000010	[  1] lC14
-0x100003EF8	0x00000020	[  1] _options.23.5
-0x100003F18	0x00000008	[  1] lC15
+0x100003EF8	0x0000000C	[  1] lC15
+0x100003F04	0x0000001C	[  1] _options.27.5
 0x100003F20	0x00000008	[  1] lC16
+0x100003F28	0x00000008	[  1] lC17
 0x100003F30	0x00000010	[  1] 16-byte-literal
 0x100003F40	0x00000010	[  1] 16-byte-literal
 0x100003F50	0x00000018	[  1] CIE
@@ -70,29 +73,31 @@
 0x100003FD8	0x00000028	[  1] FDE for: _main
 0x100004000	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_a_opt_c_damap
 0x100004008	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_add
-0x100004010	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_allocda
-0x100004018	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_concat
-0x100004020	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_concat_tpsa
-0x100004028	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_dputint0r
-0x100004030	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_equalmap
-0x100004038	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_init_all
-0x100004040	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_pri_map
-0x100004048	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_dscadd
-0x100004050	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_equal
-0x100004058	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_iscmul
-0x100004060	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_pow
-0x100004068	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_pow_tpsamap
-0x100004070	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_powmap
-0x100004078	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_set_args
-0x100004080	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_set_options
-0x100004088	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_st_read
-0x100004090	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_st_read_done
-0x100004098	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_st_write
-0x1000040A0	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_st_write_done
-0x1000040A8	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_stop_string
-0x1000040B0	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_transfer_character_write
-0x1000040B8	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_transfer_integer
-0x1000040C0	0x00000008	[  4] non-lazy-pointer-to-local: _memcpy
+0x100004010	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_add_map
+0x100004018	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_allocda
+0x100004020	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_concat
+0x100004028	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_concat_tpsa
+0x100004030	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_dputint0r
+0x100004038	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_equalmap
+0x100004040	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_init_all
+0x100004048	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_pri_map
+0x100004050	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_dscadd
+0x100004058	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_equal
+0x100004060	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_iscmul
+0x100004068	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_pow
+0x100004070	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_pow_tpsamap
+0x100004078	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_powmap
+0x100004080	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_set_args
+0x100004088	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_set_options
+0x100004090	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_st_read
+0x100004098	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_st_read_done
+0x1000040A0	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_st_write
+0x1000040A8	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_st_write_done
+0x1000040B0	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_stop_string
+0x1000040B8	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_transfer_character_write
+0x1000040C0	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_transfer_complex_write
+0x1000040C8	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_transfer_integer
+0x1000040D0	0x00000008	[  4] non-lazy-pointer-to-local: _memcpy
 0x100008000	0x000012D0	[  1] _go_to_orbit.0
 0x1000092D0	0x000012D0	[  1] _one_turn_map_ap.1
 0x10000A5A0	0x000012D0	[  1] _map12.2

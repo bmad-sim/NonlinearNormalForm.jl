@@ -324,6 +324,19 @@ z_matt-exe/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_matt-exe.dir/build.make CMakeFiles/z_matt-exe.dir/build
 .PHONY : z_matt-exe/fast
 
+#=============================================================================
+# Target rules for targets named z_simple_operations-exe
+
+# Build rule for target.
+z_simple_operations-exe: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 z_simple_operations-exe
+.PHONY : z_simple_operations-exe
+
+# fast build rule for target.
+z_simple_operations-exe/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_simple_operations-exe.dir/build.make CMakeFiles/z_simple_operations-exe.dir/build
+.PHONY : z_simple_operations-exe/fast
+
 z_cut.o: z_cut.f90.o
 .PHONY : z_cut.o
 
@@ -588,6 +601,30 @@ z_shift.f90.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_shift-exe.dir/build.make CMakeFiles/z_shift-exe.dir/z_shift.f90.s
 .PHONY : z_shift.f90.s
 
+z_simple_operations.o: z_simple_operations.f90.o
+.PHONY : z_simple_operations.o
+
+# target to build an object file
+z_simple_operations.f90.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_simple_operations-exe.dir/build.make CMakeFiles/z_simple_operations-exe.dir/z_simple_operations.f90.o
+.PHONY : z_simple_operations.f90.o
+
+z_simple_operations.i: z_simple_operations.f90.i
+.PHONY : z_simple_operations.i
+
+# target to preprocess a source file
+z_simple_operations.f90.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_simple_operations-exe.dir/build.make CMakeFiles/z_simple_operations-exe.dir/z_simple_operations.f90.i
+.PHONY : z_simple_operations.f90.i
+
+z_simple_operations.s: z_simple_operations.f90.s
+.PHONY : z_simple_operations.s
+
+# target to generate assembly for a file
+z_simple_operations.f90.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_simple_operations-exe.dir/build.make CMakeFiles/z_simple_operations-exe.dir/z_simple_operations.f90.s
+.PHONY : z_simple_operations.f90.s
+
 z_sub_i.o: z_sub_i.f90.o
 .PHONY : z_sub_i.o
 
@@ -727,6 +764,7 @@ help:
 	@echo "... z_poisson-exe"
 	@echo "... z_pseudo_deriv-exe"
 	@echo "... z_shift-exe"
+	@echo "... z_simple_operations-exe"
 	@echo "... z_sub_i-exe"
 	@echo "... z_sub_j-exe"
 	@echo "... z_track_da_tpsa-exe"
@@ -765,6 +803,9 @@ help:
 	@echo "... z_shift.o"
 	@echo "... z_shift.i"
 	@echo "... z_shift.s"
+	@echo "... z_simple_operations.o"
+	@echo "... z_simple_operations.i"
+	@echo "... z_simple_operations.s"
 	@echo "... z_sub_i.o"
 	@echo "... z_sub_i.i"
 	@echo "... z_sub_i.s"

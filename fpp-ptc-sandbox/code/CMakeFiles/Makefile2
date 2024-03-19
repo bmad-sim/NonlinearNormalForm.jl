@@ -79,6 +79,7 @@ all: CMakeFiles/z_fixed_point_matt-exe.dir/all
 all: CMakeFiles/z_track_map_code-exe.dir/all
 all: CMakeFiles/z_track_da_tpsa-exe.dir/all
 all: CMakeFiles/z_matt-exe.dir/all
+all: CMakeFiles/z_simple_operations-exe.dir/all
 .PHONY : all
 
 # The main recursive "preinstall" target.
@@ -102,6 +103,7 @@ clean: CMakeFiles/z_fixed_point_matt-exe.dir/clean
 clean: CMakeFiles/z_track_map_code-exe.dir/clean
 clean: CMakeFiles/z_track_da_tpsa-exe.dir/clean
 clean: CMakeFiles/z_matt-exe.dir/clean
+clean: CMakeFiles/z_simple_operations-exe.dir/clean
 .PHONY : clean
 
 #=============================================================================
@@ -137,7 +139,7 @@ CMakeFiles/z_deriv-exe.dir/clean:
 CMakeFiles/z_sub_i-exe.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_sub_i-exe.dir/build.make CMakeFiles/z_sub_i-exe.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_sub_i-exe.dir/build.make CMakeFiles/z_sub_i-exe.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles --progress-num=23,24 "Built target z_sub_i-exe"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles --progress-num=25,26 "Built target z_sub_i-exe"
 .PHONY : CMakeFiles/z_sub_i-exe.dir/all
 
 # Build rule for subdir invocation for target.
@@ -189,7 +191,7 @@ CMakeFiles/z_cut-exe.dir/clean:
 CMakeFiles/z_sub_j-exe.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_sub_j-exe.dir/build.make CMakeFiles/z_sub_j-exe.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_sub_j-exe.dir/build.make CMakeFiles/z_sub_j-exe.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles --progress-num=25,26 "Built target z_sub_j-exe"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles --progress-num=27,28 "Built target z_sub_j-exe"
 .PHONY : CMakeFiles/z_sub_j-exe.dir/all
 
 # Build rule for subdir invocation for target.
@@ -215,7 +217,7 @@ CMakeFiles/z_sub_j-exe.dir/clean:
 CMakeFiles/z_var-exe.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_var-exe.dir/build.make CMakeFiles/z_var-exe.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_var-exe.dir/build.make CMakeFiles/z_var-exe.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles --progress-num=31,32 "Built target z_var-exe"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles --progress-num=33,34 "Built target z_var-exe"
 .PHONY : CMakeFiles/z_var-exe.dir/all
 
 # Build rule for subdir invocation for target.
@@ -449,7 +451,7 @@ CMakeFiles/z_fixed_point_matt-exe.dir/clean:
 CMakeFiles/z_track_map_code-exe.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_track_map_code-exe.dir/build.make CMakeFiles/z_track_map_code-exe.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_track_map_code-exe.dir/build.make CMakeFiles/z_track_map_code-exe.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles --progress-num=29,30 "Built target z_track_map_code-exe"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles --progress-num=31,32 "Built target z_track_map_code-exe"
 .PHONY : CMakeFiles/z_track_map_code-exe.dir/all
 
 # Build rule for subdir invocation for target.
@@ -475,7 +477,7 @@ CMakeFiles/z_track_map_code-exe.dir/clean:
 CMakeFiles/z_track_da_tpsa-exe.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_track_da_tpsa-exe.dir/build.make CMakeFiles/z_track_da_tpsa-exe.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_track_da_tpsa-exe.dir/build.make CMakeFiles/z_track_da_tpsa-exe.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles --progress-num=27,28 "Built target z_track_da_tpsa-exe"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles --progress-num=29,30 "Built target z_track_da_tpsa-exe"
 .PHONY : CMakeFiles/z_track_da_tpsa-exe.dir/all
 
 # Build rule for subdir invocation for target.
@@ -519,6 +521,32 @@ z_matt-exe: CMakeFiles/z_matt-exe.dir/rule
 CMakeFiles/z_matt-exe.dir/clean:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_matt-exe.dir/build.make CMakeFiles/z_matt-exe.dir/clean
 .PHONY : CMakeFiles/z_matt-exe.dir/clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/z_simple_operations-exe.dir
+
+# All Build rule for target.
+CMakeFiles/z_simple_operations-exe.dir/all:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_simple_operations-exe.dir/build.make CMakeFiles/z_simple_operations-exe.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_simple_operations-exe.dir/build.make CMakeFiles/z_simple_operations-exe.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles --progress-num=23,24 "Built target z_simple_operations-exe"
+.PHONY : CMakeFiles/z_simple_operations-exe.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/z_simple_operations-exe.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles 2
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/z_simple_operations-exe.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles 0
+.PHONY : CMakeFiles/z_simple_operations-exe.dir/rule
+
+# Convenience name for target.
+z_simple_operations-exe: CMakeFiles/z_simple_operations-exe.dir/rule
+.PHONY : z_simple_operations-exe
+
+# clean rule for target.
+CMakeFiles/z_simple_operations-exe.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_simple_operations-exe.dir/build.make CMakeFiles/z_simple_operations-exe.dir/clean
+.PHONY : CMakeFiles/z_simple_operations-exe.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.

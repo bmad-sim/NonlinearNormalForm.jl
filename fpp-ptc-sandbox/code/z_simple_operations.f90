@@ -75,10 +75,10 @@ call print(mtr%v(1))
 call print(m%q%x(1))
 call print(mtr%q%x(1))
 
-scac=-1.d0
-mtr=m+a
-a=scac*a
-mtr=mtr+a
+!scac=-1.d0
+!mtr=m+a
+!a=scac*a
+!mtr=mtr+a
 
 write(6,*) "Checking addition and subtraction on vector fields"
 

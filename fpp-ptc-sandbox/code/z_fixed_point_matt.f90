@@ -72,6 +72,9 @@ program example
     
    
    call track_ring(xs,xs,k1,k2l,kick,vkick)
+      m=xs
+    call print(m)
+    stop
 
    filename="/Users/mgs255/.julia/dev/NonlinearNormalForm/src/mymap.txt"
    !filename="C:\document\my_tex_papers\julia\one_turn_map_no_quaternion.txt"
@@ -87,8 +90,7 @@ program example
 
     !call print(xs)
    
-    m=xs
-    call print(m)
+ 
     call c_gofix(m,m1)
     call print(m1)
     stop

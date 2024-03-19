@@ -1,6 +1,10 @@
 module NonlinearNormalForm
 
 import Base: ∘,
+             *,
+             literal_pow,
+             +,
+             -,
              ^,
              show,
              convert,
@@ -9,7 +13,8 @@ import Base: ∘,
 
 using LinearAlgebra,
       Printf,
-      Reexport
+      Reexport,
+      DelimitedFiles
 
 @reexport using GTPSA
 
@@ -24,12 +29,13 @@ import GTPSA: numtype,
               jacobian
 
 export TaylorMap, Quaternion, Probe, TPSAMap, DAMap, TPSAMap, checksymp, qmul!,
-        normalize!, dot, to_SO3, test
+        normalize!, dot, to_SO3, test, read_fpp_map
 
 include("quaternion.jl")
 include("probe.jl")
 include("map.jl")
 include("show.jl")
+include("utils.jl")
 
 # helper functions
 getdesc(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Union{TPS,ComplexTPS},<:Real},<:TaylorMap}) = Descriptor(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.x).tpsa).d))
@@ -64,7 +70,7 @@ function checksymp(M::Matrix{T}) where T<:Number
     J[i:i+1,i:i+1] = [0 1; -1 0];
   end
   res = transpose(M)*J*M
-  return sum(abs.(res - J))
+  return res
 end
 
 #hessian(m::TaylorMap,include_params=false) = hessian(m.x[1:numvars(m)],include_params=include_params)

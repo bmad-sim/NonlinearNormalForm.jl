@@ -65,6 +65,13 @@ program matt
   map12 = map1.oo.(-3)
   write(*,*) "Map1.oo.(-3):"
   call print(map12)
+
+  map12 = map1 + map2
+  write(*,*) "Map1+map2:"
+  call print(map12)
+  write(*,*) map12%x0(1)
+
+
   stop
 
   map12 = map1.oo.(-1)
@@ -80,6 +87,7 @@ program matt
   map12 = map1.oo.(-1)
   write(*,*) "Map1.oo.(-1):"
   call print(map12)
+  write(*,*) map12%x0
   
 
 stop

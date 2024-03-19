@@ -237,6 +237,10 @@ function ∘(m2::TPSAMap{S2,T2,U2,V2},m1::TPSAMap{S1,T1,U1,V1}) where {S2,T2,U2,
   return TPSAMap(deepcopy(m1.x0), outx, outQ, zeros(nv, nv))
 end
 
+# Also allow * for simpliticty
+*(m2::DAMap{S2,T2,U2,V2},m1::DAMap{S1,T1,U1,V1}) where {S2,T2,U2,V2,S1,T1,U1,V1} = ∘(m2,m1)
+*(m2::TPSAMap{S2,T2,U2,V2},m1::TPSAMap{S1,T1,U1,V1}) where {S2,T2,U2,V2,S1,T1,U1,V1} = ∘(m2,m1)
+
 # --- inverse ---
 function inv(m1::DAMap{S,T,U,V}) where {S,T,U,V}
   desc = getdesc(m1)
@@ -312,7 +316,7 @@ function inv(m1::TPSAMap{S,T,U,V}) where {S,T,U,V}
   return TPSAMap(outx0, outx, outQ, zeros(nv,nv))
 end
 
-Base.literal_pow(::typeof(^), m::TaylorMap{S,T,U,V}, vn::Val{n}) where {S,T,U,V,n} = ^(m,n)
+literal_pow(::typeof(^), m::TaylorMap{S,T,U,V}, vn::Val{n}) where {S,T,U,V,n} = ^(m,n)
 
 
 function ^(m1::TaylorMap{S,T,U,V}, n::Integer) where {S,T,U,V}
@@ -333,4 +337,21 @@ function ^(m1::TaylorMap{S,T,U,V}, n::Integer) where {S,T,U,V}
   end
 end
 
+function +(m2::DAMap{S2,T2,U2,V2},m1::DAMap{S1,T1,U1,V1}) where {S2,T2,U2,V2,S1,T1,U1,V1}
+  return DAMap(m2.x0+m1.x0, m2.x+m1.x, Quaternion(m2.Q.q+m1.Q.q), m2.E+m1.E)
+end
+
+function -(m2::DAMap{S2,T2,U2,V2},m1::DAMap{S1,T1,U1,V1}) where {S2,T2,U2,V2,S1,T1,U1,V1}
+  return DAMap(m2.x0-m1.x0, m2.x-m1.x, Quaternion(m2.Q.q-m1.Q.q), m2.E-m1.E)
+end
+
+function +(m2::TPSAMap{S2,T2,U2,V2},m1::TPSAMap{S1,T1,U1,V1}) where {S2,T2,U2,V2,S1,T1,U1,V1}
+  return TPSAMap(m2.x0+m1.x0, m2.x+m1.x, Quaternion(m2.Q.q+m1.Q.q), m2.E+m1.E)
+end
+
+function -(m2::TPSAMap{S2,T2,U2,V2},m1::TPSAMap{S1,T1,U1,V1}) where {S2,T2,U2,V2,S1,T1,U1,V1}
+  return TPSAMap(m2.x0-m1.x0, m2.x-m1.x, Quaternion(m2.Q.q-m1.Q.q), m2.E-m1.E)
+end
+
 ==(m1::TaylorMap, m2::TaylorMap) = (m1.x0 == m2.x0 && m1.x == m2.x && m1.Q == m2.Q && m1.E == m2.E)
+
