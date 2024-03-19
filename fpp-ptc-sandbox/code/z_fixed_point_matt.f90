@@ -25,6 +25,7 @@ program example
    real(dp), parameter:: a = 0.00115965218128d0
    real(dp), parameter:: gamma_0 = 40.5d0/a
    logical :: quaternion_on=.true.
+   logical :: radiation_on = .false.
    character(255) filename
    n_cai=-i_
    np=2
@@ -70,13 +71,13 @@ program example
 
    !call print(xs0)
     
-    call track_sextupole(xs, xs,k2l) !, vkick(1))
-    m=xs
-        call print(m)
-    stop
+    !.m = xs
+    !call print(m)
    
    call track_ring(xs,xs,k1,k2l,kick,vkick)
       m=xs
+      call print(m)
+      stop
 
 
    filename="/Users/mgs255/.julia/dev/NonlinearNormalForm/src/mymap.txt"
@@ -181,7 +182,7 @@ program example
      h=-L*((x0%x(2)**2+k1*x0%x(1)**2)+(x0%x(4)**2-k1*x0%x(3)**2))/(1.d0+x0%x(6))/2.d0
      z%x(1) =  cos(sqrt(k1)*L)*x0%x(1)           + 1.d0 /sqrt(k1)*sin(sqrt(k1)*L)*x0%x(2)
      z%x(2) =  -sqrt(k1)*sin(sqrt(k1)*L)*x0%x(1) + cos(sqrt(k1)*L)*x0%x(2) + hkick 
-     z%x(3) =  cosh(sqrt(k1)*L)*x0%x(3)          + 1.d0  /sqrt(k1)*sinh(sqrt(k1)*L)*x0%x(4)
+     z%x(3) =  cosh(sqrt(k1)*L)*x0%x(3)+1/sqrt(k1)*sinh(sqrt(k1)*L)*x0%x(4)
      z%x(4) =  sqrt(k1)*sinh(sqrt(k1)*L)*x0%x(3) + cosh(sqrt(k1)*L)*x0%x(4)
      z%x(5)=x0%x(5)+h  
      z%x(6)=x0%x(6)
@@ -235,10 +236,12 @@ program example
    !call print(z%q)
    !pause 5
    endif
+   if (radiation_on) then
      do i=1,3 
       z%x(2*i-1)=exp(lrad(i)*(1.d0+z%x(2*i-1)**2))* z%x(2*i-1)
    !   z%x(2*i-1)=exp(lrad(i))* z%x(2*i-1)
      enddo
+    endif
     
    
      x=z

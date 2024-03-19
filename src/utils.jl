@@ -6,7 +6,7 @@ function read_fpp_map(file)
 
   # Make the TPSA
   d = Descriptor(nv, no, np, no)
-  m = DAMap(repeat([ComplexTPS(use=d)], nv), Q=Quaternion(repeat([ComplexTPS(use=d)], 4)))
+  m = DAMap(repeat([ComplexTPS(use=d)], nv), Q=Quaternion([ComplexTPS(1,use=d), repeat([ComplexTPS(use=d)], 3)...]))
 
   idx=3
   data=data[3:end,:]
@@ -24,7 +24,7 @@ function read_fpp_map(file)
       idx += 1
       count += 1
     end
-    if -data[idx,1] != count
+    if count != 0 && -data[idx,1] != count
       println(m)
       println(data[idx,1])
       println(count)

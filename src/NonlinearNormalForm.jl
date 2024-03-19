@@ -69,7 +69,7 @@ function checksymp(M::Matrix{T}) where T<:Number
   for i=1:2:nv
     J[i:i+1,i:i+1] = [0 1; -1 0];
   end
-  res = transpose(M)*J*M
+  res = transpose(M)*J*M-J
   return res
 end
 
