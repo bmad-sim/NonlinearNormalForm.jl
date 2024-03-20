@@ -43,7 +43,7 @@ function show(io::IO, m::Union{Probe,TaylorMap})
   
   if eltype(m.Q.q) <: Union{TPS,ComplexTPS}
     !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || (println(io, "\t⋮"); return)
-    GTPSA.show_map!(io, [m.Q.q...], lines_used, false, [" q0:"," q1:"," q2:"," q3:"])
+    GTPSA.show_map!(io, collect(m.Q.q), lines_used, false, [" q0:"," q1:"," q2:"," q3:"])
   else
     for i=1:4
       !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || (println(io, "\t⋮"); return)

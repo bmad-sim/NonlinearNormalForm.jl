@@ -178,8 +178,8 @@ function track_fodo(p0, k1, k2l, hkick, vkick)
   return p6
 end
 
-function track_ring(p0; N=50, k1=0.36, k2l=1.2, hkicks=zeros(N), vkicks=zeros(N))
-  for i=1:N
+function track_ring(p0; N_fodo=50, k1=0.36, k2l=1.2, hkicks=zeros(N_fodo), vkicks=zeros(N_fodo))
+  for i=1:N_fodo
     p0 = track_fodo(p0, k1, k2l, hkicks[i], vkicks[i])
   end
   if Examples.rf_on

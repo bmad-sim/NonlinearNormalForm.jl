@@ -25,11 +25,10 @@ import GTPSA: numtype,
               RTPSA, 
               CTPSA,
               compose!,
-              minv!,
               jacobian
 
 export TaylorMap, Quaternion, Probe, TPSAMap, DAMap, TPSAMap, checksymp, qmul!,
-        normalize!, dot, to_SO3, read_fpp_map
+        normalize!, dot, to_SO3, read_fpp_map, test
 
 
 include("quaternion.jl")

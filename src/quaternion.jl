@@ -17,6 +17,8 @@ Quaternion(Q::Quaternion) = Quaternion(deepcopy(Q1.q))
 Quaternion(t::T) where T <: Number = Quaternion([one(t), zero(t), zero(t), zero(t)])
 Quaternion(n::Nothing) = Quaternion{Nothing}(Nothing[])
 
+==(Q1::Quaternion, Q2::Quaternion) = Q1.q == Q2.q
+
 function qmul!(Q1::Quaternion{S}, Q2::Quaternion{T}, Q3::Quaternion) where {S,T}
   q1 = Q1.q
   q2 = Q2.q
