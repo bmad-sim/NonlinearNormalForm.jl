@@ -58,11 +58,17 @@ program example
    
    k1=0.36d0
    k2l= 1.2d0
-   vkick(1)=morph(1.d0.mono.7)!+1.d-4
+   vkick(1)=morph(1.d0.mono.7) !+1.d-4
    vkick(2)=morph(1.d0.mono.8)  !+.23d0
    c_%ndpt=0
     
-   closed_orbit=0
+    closed_orbit=0
+   !closed_orbit(1) = -4.0442788590574703e-7
+   !closed_orbit(2) = -6.654652444059091e-8
+   !closed_orbit(3) = 1.511019672182745e-5
+   !closed_orbit(4) = -5.5202889999456834e-5
+   !closed_orbit(5) = -1.2991550531522366e-16
+   !closed_orbit(6) = 1.7942099750917895e-7
    !call find_fix_point(closed_orbit, k1 , k2l, kick,vkick )
     
    xs0=closed_orbit
@@ -76,8 +82,9 @@ program example
    
    call track_ring(xs,xs,k1,k2l,kick,vkick)
       m=xs
-      call print(m)
-      stop
+    call c_gofix(m,m1)
+    call print(m1)
+    stop
 
 
    filename="/Users/mgs255/.julia/dev/NonlinearNormalForm/src/mymap.txt"
@@ -95,9 +102,7 @@ program example
     !call print(xs)
    
  
-    call c_gofix(m,m1)
-    call print(m1)
-    stop
+
 
 
     !m%x0(1:6)=closed_orbit

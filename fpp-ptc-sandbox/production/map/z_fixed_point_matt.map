@@ -8,77 +8,78 @@
 [  4] /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.0.sdk/usr/lib/libSystem.tbd
 # Sections:
 # Address	Size    	Segment	Section
-0x100004820	0x0000311C	__TEXT	__text
-0x100007940	0x00000020	__TEXT	__text_startup
-0x100007960	0x000002A0	__TEXT	__stubs
+0x1000047F0	0x0000313C	__TEXT	__text
+0x100007930	0x00000020	__TEXT	__text_startup
+0x100007950	0x000002AC	__TEXT	__stubs
 0x100007C00	0x00000140	__TEXT	__const
 0x100007D40	0x00000093	__TEXT	__cstring
 0x100007DD8	0x00000220	__TEXT	__eh_frame
-0x100008000	0x000001E0	__DATA_CONST	__got
+0x100008000	0x000001E8	__DATA_CONST	__got
 0x10000C000	0x000189B8	__DATA	__bss
 # Symbols:
 # Address	Size    	File  Name
-0x100004820	0x000013D0	[  1] _track_qf.8.constprop.0
-0x100005BF0	0x00000454	[  1] _track_sextupole.5.constprop.0
-0x100006044	0x00000200	[  1] _track_drift.6.constprop.0
-0x100006244	0x000016F8	[  1] _MAIN__
-0x100007940	0x00000020	[  1] _main
-0x100007960	0x0000000C	[  2] ___c_tpsa_MOD_a_opt_c_damap.stub
-0x10000796C	0x0000000C	[  2] ___c_tpsa_MOD_a_opt_c_vector.stub
-0x100007978	0x0000000C	[  2] ___c_tpsa_MOD_alloc_c_normal_form.stub
-0x100007984	0x0000000C	[  2] ___c_tpsa_MOD_c_a_opt.stub
-0x100007990	0x0000000C	[  2] ___c_tpsa_MOD_c_allocdas.stub
-0x10000799C	0x0000000C	[  2] ___c_tpsa_MOD_c_identityequalmap.stub
-0x1000079A8	0x0000000C	[  2] ___c_tpsa_MOD_c_init_all.stub
-0x1000079B4	0x0000000C	[  2] ___c_tpsa_MOD_c_pri_map.stub
-0x1000079C0	0x0000000C	[  2] ___polymorphic_taylor_MOD_a_opt.stub
-0x1000079CC	0x0000000C	[  2] ___polymorphic_taylor_MOD_a_opt_quaternion.stub
-0x1000079D8	0x0000000C	[  2] ___polymorphic_taylor_MOD_add.stub
-0x1000079E4	0x0000000C	[  2] ___polymorphic_taylor_MOD_allocpolyn.stub
-0x1000079F0	0x0000000C	[  2] ___polymorphic_taylor_MOD_dcosht.stub
-0x1000079FC	0x0000000C	[  2] ___polymorphic_taylor_MOD_dcost.stub
-0x100007A08	0x0000000C	[  2] ___polymorphic_taylor_MOD_ddivsc.stub
-0x100007A14	0x0000000C	[  2] ___polymorphic_taylor_MOD_dequaldacon.stub
-0x100007A20	0x0000000C	[  2] ___polymorphic_taylor_MOD_div.stub
-0x100007A2C	0x0000000C	[  2] ___polymorphic_taylor_MOD_dmulsc.stub
-0x100007A38	0x0000000C	[  2] ___polymorphic_taylor_MOD_dscadd.stub
-0x100007A44	0x0000000C	[  2] ___polymorphic_taylor_MOD_dscdiv.stub
-0x100007A50	0x0000000C	[  2] ___polymorphic_taylor_MOD_dscmul.stub
-0x100007A5C	0x0000000C	[  2] ___polymorphic_taylor_MOD_dsinht.stub
-0x100007A68	0x0000000C	[  2] ___polymorphic_taylor_MOD_dsint.stub
-0x100007A74	0x0000000C	[  2] ___polymorphic_taylor_MOD_dsqrtt.stub
-0x100007A80	0x0000000C	[  2] ___polymorphic_taylor_MOD_equal.stub
-0x100007A8C	0x0000000C	[  2] ___polymorphic_taylor_MOD_equalq.stub
-0x100007A98	0x0000000C	[  2] ___polymorphic_taylor_MOD_equalq_r.stub
-0x100007AA4	0x0000000C	[  2] ___polymorphic_taylor_MOD_idivsc.stub
-0x100007AB0	0x0000000C	[  2] ___polymorphic_taylor_MOD_iequaldacon.stub
-0x100007ABC	0x0000000C	[  2] ___polymorphic_taylor_MOD_imulsc.stub
-0x100007AC8	0x0000000C	[  2] ___polymorphic_taylor_MOD_iscadd.stub
-0x100007AD4	0x0000000C	[  2] ___polymorphic_taylor_MOD_iscdiv.stub
-0x100007AE0	0x0000000C	[  2] ___polymorphic_taylor_MOD_iscmul.stub
-0x100007AEC	0x0000000C	[  2] ___polymorphic_taylor_MOD_iscsub.stub
-0x100007AF8	0x0000000C	[  2] ___polymorphic_taylor_MOD_k_opt.stub
-0x100007B04	0x0000000C	[  2] ___polymorphic_taylor_MOD_k_opt_quaternion.stub
-0x100007B10	0x0000000C	[  2] ___polymorphic_taylor_MOD_mul.stub
-0x100007B1C	0x0000000C	[  2] ___polymorphic_taylor_MOD_mulq.stub
-0x100007B28	0x0000000C	[  2] ___polymorphic_taylor_MOD_polymorpht.stub
-0x100007B34	0x0000000C	[  2] ___polymorphic_taylor_MOD_pow.stub
-0x100007B40	0x0000000C	[  2] ___polymorphic_taylor_MOD_subs.stub
-0x100007B4C	0x0000000C	[  2] ___polymorphic_taylor_MOD_unarysub.stub
-0x100007B58	0x0000000C	[  2] ___s_extend_poly_MOD_daddsc.stub
-0x100007B64	0x0000000C	[  2] ___s_extend_poly_MOD_equal_c_map_ray8.stub
-0x100007B70	0x0000000C	[  2] ___tpsa_MOD_allocda.stub
-0x100007B7C	0x0000000C	[  2] ___tpsa_MOD_dputint0.stub
-0x100007B88	0x0000000C	[  2] ___tree_element_module_MOD_alloc_probe_8.stub
-0x100007B94	0x0000000C	[  2] ___tree_element_module_MOD_equal_probe8_probe8.stub
-0x100007BA0	0x0000000C	[  2] ___tree_element_module_MOD_equal_probe_real6.stub
-0x100007BAC	0x0000000C	[  2] ___tree_element_module_MOD_kill_probe_8.stub
-0x100007BB8	0x0000000C	[  3] __gfortran_os_error_at.stub
-0x100007BC4	0x0000000C	[  3] __gfortran_set_args.stub
-0x100007BD0	0x0000000C	[  3] __gfortran_set_options.stub
-0x100007BDC	0x0000000C	[  3] __gfortran_stop_string.stub
-0x100007BE8	0x0000000C	[  4] _malloc.stub
-0x100007BF4	0x0000000C	[  4] _memcpy.stub
+0x1000047F0	0x000013D0	[  1] _track_qf.8.constprop.0
+0x100005BC0	0x00000454	[  1] _track_sextupole.5.constprop.0
+0x100006014	0x00000200	[  1] _track_drift.6.constprop.0
+0x100006214	0x00001718	[  1] _MAIN__
+0x100007930	0x00000020	[  1] _main
+0x100007950	0x0000000C	[  2] ___c_tpsa_MOD_a_opt_c_damap.stub
+0x10000795C	0x0000000C	[  2] ___c_tpsa_MOD_a_opt_c_vector.stub
+0x100007968	0x0000000C	[  2] ___c_tpsa_MOD_alloc_c_normal_form.stub
+0x100007974	0x0000000C	[  2] ___c_tpsa_MOD_c_a_opt.stub
+0x100007980	0x0000000C	[  2] ___c_tpsa_MOD_c_allocdas.stub
+0x10000798C	0x0000000C	[  2] ___c_tpsa_MOD_c_gofix.stub
+0x100007998	0x0000000C	[  2] ___c_tpsa_MOD_c_identityequalmap.stub
+0x1000079A4	0x0000000C	[  2] ___c_tpsa_MOD_c_init_all.stub
+0x1000079B0	0x0000000C	[  2] ___c_tpsa_MOD_c_pri_map.stub
+0x1000079BC	0x0000000C	[  2] ___polymorphic_taylor_MOD_a_opt.stub
+0x1000079C8	0x0000000C	[  2] ___polymorphic_taylor_MOD_a_opt_quaternion.stub
+0x1000079D4	0x0000000C	[  2] ___polymorphic_taylor_MOD_add.stub
+0x1000079E0	0x0000000C	[  2] ___polymorphic_taylor_MOD_allocpolyn.stub
+0x1000079EC	0x0000000C	[  2] ___polymorphic_taylor_MOD_dcosht.stub
+0x1000079F8	0x0000000C	[  2] ___polymorphic_taylor_MOD_dcost.stub
+0x100007A04	0x0000000C	[  2] ___polymorphic_taylor_MOD_ddivsc.stub
+0x100007A10	0x0000000C	[  2] ___polymorphic_taylor_MOD_dequaldacon.stub
+0x100007A1C	0x0000000C	[  2] ___polymorphic_taylor_MOD_div.stub
+0x100007A28	0x0000000C	[  2] ___polymorphic_taylor_MOD_dmulsc.stub
+0x100007A34	0x0000000C	[  2] ___polymorphic_taylor_MOD_dscadd.stub
+0x100007A40	0x0000000C	[  2] ___polymorphic_taylor_MOD_dscdiv.stub
+0x100007A4C	0x0000000C	[  2] ___polymorphic_taylor_MOD_dscmul.stub
+0x100007A58	0x0000000C	[  2] ___polymorphic_taylor_MOD_dsinht.stub
+0x100007A64	0x0000000C	[  2] ___polymorphic_taylor_MOD_dsint.stub
+0x100007A70	0x0000000C	[  2] ___polymorphic_taylor_MOD_dsqrtt.stub
+0x100007A7C	0x0000000C	[  2] ___polymorphic_taylor_MOD_equal.stub
+0x100007A88	0x0000000C	[  2] ___polymorphic_taylor_MOD_equalq.stub
+0x100007A94	0x0000000C	[  2] ___polymorphic_taylor_MOD_equalq_r.stub
+0x100007AA0	0x0000000C	[  2] ___polymorphic_taylor_MOD_idivsc.stub
+0x100007AAC	0x0000000C	[  2] ___polymorphic_taylor_MOD_iequaldacon.stub
+0x100007AB8	0x0000000C	[  2] ___polymorphic_taylor_MOD_imulsc.stub
+0x100007AC4	0x0000000C	[  2] ___polymorphic_taylor_MOD_iscadd.stub
+0x100007AD0	0x0000000C	[  2] ___polymorphic_taylor_MOD_iscdiv.stub
+0x100007ADC	0x0000000C	[  2] ___polymorphic_taylor_MOD_iscmul.stub
+0x100007AE8	0x0000000C	[  2] ___polymorphic_taylor_MOD_iscsub.stub
+0x100007AF4	0x0000000C	[  2] ___polymorphic_taylor_MOD_k_opt.stub
+0x100007B00	0x0000000C	[  2] ___polymorphic_taylor_MOD_k_opt_quaternion.stub
+0x100007B0C	0x0000000C	[  2] ___polymorphic_taylor_MOD_mul.stub
+0x100007B18	0x0000000C	[  2] ___polymorphic_taylor_MOD_mulq.stub
+0x100007B24	0x0000000C	[  2] ___polymorphic_taylor_MOD_polymorpht.stub
+0x100007B30	0x0000000C	[  2] ___polymorphic_taylor_MOD_pow.stub
+0x100007B3C	0x0000000C	[  2] ___polymorphic_taylor_MOD_subs.stub
+0x100007B48	0x0000000C	[  2] ___polymorphic_taylor_MOD_unarysub.stub
+0x100007B54	0x0000000C	[  2] ___s_extend_poly_MOD_daddsc.stub
+0x100007B60	0x0000000C	[  2] ___s_extend_poly_MOD_equal_c_map_ray8.stub
+0x100007B6C	0x0000000C	[  2] ___tpsa_MOD_allocda.stub
+0x100007B78	0x0000000C	[  2] ___tpsa_MOD_dputint0.stub
+0x100007B84	0x0000000C	[  2] ___tree_element_module_MOD_alloc_probe_8.stub
+0x100007B90	0x0000000C	[  2] ___tree_element_module_MOD_equal_probe8_probe8.stub
+0x100007B9C	0x0000000C	[  2] ___tree_element_module_MOD_equal_probe_real6.stub
+0x100007BA8	0x0000000C	[  2] ___tree_element_module_MOD_kill_probe_8.stub
+0x100007BB4	0x0000000C	[  3] __gfortran_os_error_at.stub
+0x100007BC0	0x0000000C	[  3] __gfortran_set_args.stub
+0x100007BCC	0x0000000C	[  3] __gfortran_set_options.stub
+0x100007BD8	0x0000000C	[  3] __gfortran_stop_string.stub
+0x100007BE4	0x0000000C	[  4] _malloc.stub
+0x100007BF0	0x0000000C	[  4] _memcpy.stub
 0x100007C00	0x00000008	[  1] lC0
 0x100007C08	0x00000008	[  1] lC1
 0x100007C10	0x00000008	[  1] lC2
@@ -125,60 +126,61 @@
 0x100008018	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_alloc_c_normal_form
 0x100008020	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_a_opt
 0x100008028	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_allocdas
-0x100008030	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_identityequalmap
-0x100008038	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_init_all
-0x100008040	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_pri_map
-0x100008048	0x00000008	[  0] non-lazy-pointer-to-local: ___c_tpsa_MOD_n_cai
-0x100008050	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_a_opt
-0x100008058	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_a_opt_quaternion
-0x100008060	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_add
-0x100008068	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_allocpolyn
-0x100008070	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_dcosht
-0x100008078	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_dcost
-0x100008080	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_ddivsc
-0x100008088	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_dequaldacon
-0x100008090	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_div
-0x100008098	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_dmulsc
-0x1000080A0	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_dscadd
-0x1000080A8	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_dscdiv
-0x1000080B0	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_dscmul
-0x1000080B8	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_dsinht
-0x1000080C0	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_dsint
-0x1000080C8	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_dsqrtt
-0x1000080D0	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_equal
-0x1000080D8	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_equalq
-0x1000080E0	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_equalq_r
-0x1000080E8	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_idivsc
-0x1000080F0	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_iequaldacon
-0x1000080F8	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_imulsc
-0x100008100	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_iscadd
-0x100008108	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_iscdiv
-0x100008110	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_iscmul
-0x100008118	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_iscsub
-0x100008120	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_k_opt
-0x100008128	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_k_opt_quaternion
-0x100008130	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_mul
-0x100008138	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_mulq
-0x100008140	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_polymorpht
-0x100008148	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_pow
-0x100008150	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_subs
-0x100008158	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_unarysub
-0x100008160	0x00000008	[  0] non-lazy-pointer-to-local: ___precision_constants_MOD_c_
-0x100008168	0x00000008	[  0] non-lazy-pointer-to-local: ___precision_constants_MOD_use_quaternion
-0x100008170	0x00000008	[  2] non-lazy-pointer-to-local: ___s_extend_poly_MOD_daddsc
-0x100008178	0x00000008	[  2] non-lazy-pointer-to-local: ___s_extend_poly_MOD_equal_c_map_ray8
-0x100008180	0x00000008	[  2] non-lazy-pointer-to-local: ___tpsa_MOD_allocda
-0x100008188	0x00000008	[  2] non-lazy-pointer-to-local: ___tpsa_MOD_dputint0
-0x100008190	0x00000008	[  2] non-lazy-pointer-to-local: ___tree_element_module_MOD_alloc_probe_8
-0x100008198	0x00000008	[  2] non-lazy-pointer-to-local: ___tree_element_module_MOD_equal_probe8_probe8
-0x1000081A0	0x00000008	[  2] non-lazy-pointer-to-local: ___tree_element_module_MOD_equal_probe_real6
-0x1000081A8	0x00000008	[  2] non-lazy-pointer-to-local: ___tree_element_module_MOD_kill_probe_8
-0x1000081B0	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_os_error_at
-0x1000081B8	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_set_args
-0x1000081C0	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_set_options
-0x1000081C8	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_stop_string
-0x1000081D0	0x00000008	[  4] non-lazy-pointer-to-local: _malloc
-0x1000081D8	0x00000008	[  4] non-lazy-pointer-to-local: _memcpy
+0x100008030	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_gofix
+0x100008038	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_identityequalmap
+0x100008040	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_init_all
+0x100008048	0x00000008	[  2] non-lazy-pointer-to-local: ___c_tpsa_MOD_c_pri_map
+0x100008050	0x00000008	[  0] non-lazy-pointer-to-local: ___c_tpsa_MOD_n_cai
+0x100008058	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_a_opt
+0x100008060	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_a_opt_quaternion
+0x100008068	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_add
+0x100008070	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_allocpolyn
+0x100008078	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_dcosht
+0x100008080	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_dcost
+0x100008088	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_ddivsc
+0x100008090	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_dequaldacon
+0x100008098	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_div
+0x1000080A0	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_dmulsc
+0x1000080A8	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_dscadd
+0x1000080B0	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_dscdiv
+0x1000080B8	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_dscmul
+0x1000080C0	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_dsinht
+0x1000080C8	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_dsint
+0x1000080D0	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_dsqrtt
+0x1000080D8	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_equal
+0x1000080E0	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_equalq
+0x1000080E8	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_equalq_r
+0x1000080F0	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_idivsc
+0x1000080F8	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_iequaldacon
+0x100008100	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_imulsc
+0x100008108	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_iscadd
+0x100008110	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_iscdiv
+0x100008118	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_iscmul
+0x100008120	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_iscsub
+0x100008128	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_k_opt
+0x100008130	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_k_opt_quaternion
+0x100008138	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_mul
+0x100008140	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_mulq
+0x100008148	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_polymorpht
+0x100008150	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_pow
+0x100008158	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_subs
+0x100008160	0x00000008	[  2] non-lazy-pointer-to-local: ___polymorphic_taylor_MOD_unarysub
+0x100008168	0x00000008	[  0] non-lazy-pointer-to-local: ___precision_constants_MOD_c_
+0x100008170	0x00000008	[  0] non-lazy-pointer-to-local: ___precision_constants_MOD_use_quaternion
+0x100008178	0x00000008	[  2] non-lazy-pointer-to-local: ___s_extend_poly_MOD_daddsc
+0x100008180	0x00000008	[  2] non-lazy-pointer-to-local: ___s_extend_poly_MOD_equal_c_map_ray8
+0x100008188	0x00000008	[  2] non-lazy-pointer-to-local: ___tpsa_MOD_allocda
+0x100008190	0x00000008	[  2] non-lazy-pointer-to-local: ___tpsa_MOD_dputint0
+0x100008198	0x00000008	[  2] non-lazy-pointer-to-local: ___tree_element_module_MOD_alloc_probe_8
+0x1000081A0	0x00000008	[  2] non-lazy-pointer-to-local: ___tree_element_module_MOD_equal_probe8_probe8
+0x1000081A8	0x00000008	[  2] non-lazy-pointer-to-local: ___tree_element_module_MOD_equal_probe_real6
+0x1000081B0	0x00000008	[  2] non-lazy-pointer-to-local: ___tree_element_module_MOD_kill_probe_8
+0x1000081B8	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_os_error_at
+0x1000081C0	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_set_args
+0x1000081C8	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_set_options
+0x1000081D0	0x00000008	[  3] non-lazy-pointer-to-local: __gfortran_stop_string
+0x1000081D8	0x00000008	[  4] non-lazy-pointer-to-local: _malloc
+0x1000081E0	0x00000008	[  4] non-lazy-pointer-to-local: _memcpy
 0x10000C000	0x00000118	[  1] _xs0.11
 0x10000C118	0x000005E8	[  1] _xs.12
 0x10000C700	0x000012D0	[  1] _z1j.13

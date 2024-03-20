@@ -196,17 +196,17 @@ function track_ring0()
   x0 = optimize(orbit, zeros(6),g_tol=1e-25).minimizer 
 
   # Now expand along closed orbit
-  d = Descriptor(6,2,52,2)
+  d = Descriptor(6,2,2,2)
   x = vars()
   k = params()
 
   p = Probe(x+x0, x0=x0)
-  p = track_ring(p,vkicks=[vkicks[1]+k[1], k[2:end]...]) # first and second coil are knobs
+  p = track_ring(p,vkicks=[vkicks[1]+k[1], k[2], repeat([TPS(use=d)],48)...]) # first and second coil are knobs
 
   # Make DAMap
   m1 = DAMap(p)
-  m = m1^-1∘m1 
-  println(m)
+  #m = m1^-1∘m1 
+  #println(m)
   return m1
 
   # println(m1)
