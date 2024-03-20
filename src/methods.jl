@@ -13,16 +13,15 @@ function gofix(xy::DAMap, order=1)
 
   # 2: map is cut to order 2 or above
   cut!(v,v,order+1)
-  print(read_fpp_map("gofix2.map").x - v.x)
 
   # 3: map is inverted at least to order 1:
-  w = inv(v)
+  inv!(v,v)
 
   # 4: a map x is created with dimension nv
   # x is zero except for the parameters and delta if coasting
-  x = zero(w) # default identity in parameters
+  x = zero(v) # default identity in parameters
   x.Q.q[1] = 1 # identity in spin
-  a1 = w∘x
+  a1 = v∘x
 
   # 5: add back in idenrttiy
   a1.x[1:nv] .+= vars(desc)

@@ -133,13 +133,8 @@ function zero(m::$t{S,T,U,V}) where {S,T,U,V}
   return $t{S,T,U,V}(copy(m.x0), x, Quaternion(q), copy(m.E))
 end
 
-end
-end
-
-==(m1::TaylorMap, m2::TaylorMap) = (m1.x0 == m2.x0 && m1.x == m2.x && m1.Q == m2.Q && m1.E == m2.E)
-
-# --- compose ---
-@inline function compose_it(m2::TaylorMap{S2,T2,U2,V2}, m1::TaylorMap{S1,T1,U1,V1}) where {S2,T2,U2,V2,S1,T1,U1,V1}
+# Inner composition
+@inline function compose_it(m2::$t{S2,T2,U2,V2}, m1::$t{S1,T1,U1,V1}) where {S2,T2,U2,V2,S1,T1,U1,V1}
   desc = getdesc(m1)
   nv = numvars(desc)
   np = numparams(desc)
@@ -165,15 +160,18 @@ end
   # Do the composition, promoting if necessary
   # --- Orbit ---
   if outT != T1
+    m1x_store = Vector{outT}(undef, nn)
     # Promote to ComplexTPS:
-    m1x_store = map(t->outT(t), m1.x) # Must store to prevent GC   
+    map!(t->ComplexTPS(t), m1x_store,  m1.x) # Must store to prevent GC   
     m1x_low = map(t->t.tpsa, m1x_store)
   else
     m1x_store = nothing
     m1x_low = map(t->t.tpsa, m1.x)
   end
   if outT != T2
-    m2x_store = map(t->outT(t), view(m2.x,1:nv)) # Must store to prevent GC   
+    m2x_store = Vector{outT}(undef, nv)
+    # Promote to ComplexTPS:
+    map!(t->ComplexTPS(t), m2x_store, view(m2.x,1:nv)) # Must store to prevent GC   
     m2x_low = map(t->t.tpsa, m2x_store)
   else
     m2x_store = nothing
@@ -182,7 +180,8 @@ end
 
   # --- Quaternion ---
   if outU != U2
-    m2Q_store = map(t->outU(t), m2.Q.q) # Must store to prevent GC
+    m2Q_store = Vector{outT}(undef, 4)
+    map!(t->ComplexTPS(t), m2Q_store, m2.Q.q) # Must store to prevent GC
     m2Q_low = map(t->t.tpsa, m2Q_store)
   else
     m2Q_store = nothing
@@ -200,10 +199,18 @@ end
   # First obtain q2(M(z0))
   GC.@preserve m1x_store m2Q_store compose!(Cint(4), m2Q_low, nv+np, m1x_low, outQ_low)
   # Now concatenate
-  qmul!(outQ, m1.Q, outQ)
+  mul!(outQ, m1.Q, outQ)
   # Make that map
-  return (typeof(m1))(copy(m1.x0), outx, outQ, zeros(nv, nv))
+  return $t(copy(m1.x0), outx, outQ, zeros(nv, nv))
 end
+
+end
+end
+
+==(m1::TaylorMap, m2::TaylorMap) = (m1.x0 == m2.x0 && m1.x == m2.x && m1.Q == m2.Q && m1.E == m2.E)
+
+# --- compose ---
+
 
 
 function ∘(m2::DAMap{S2,T2,U2,V2},m1::DAMap{S1,T1,U1,V1}) where {S2,T2,U2,V2,S1,T1,U1,V1}
@@ -305,6 +312,34 @@ function inv(m1::TaylorMap{S,T,U,V}) where {S,T,U,V}
   return (typeof(m1))(outx0, outx, outQ, zeros(nv,nv))
 end
 
+function inv!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}) where {S,T,U,V}
+  desc = getdesc(m1)
+  nv = numvars(desc)
+  np = numparams(desc)
+  nn = np + nv
+
+  # add immutable parameters to outx
+  @inbounds m.x[nv+1:nn] = view(m1.x, nv+1:nn)
+
+  inv!(m.Q, m1.Q)
+
+  m1x_low = map(t->t.tpsa, m1.x)
+  outx_low = map(t->t.tpsa, m.x)
+
+  # This C function ignores the scalar part so no need to take it out
+  minv!(nv+np, m1x_low, nv, outx_low)
+
+  # Now do quaternion: inverse of q(z0) is q^-1(M^-1(zf))
+  outQ_low = map(t->t.tpsa, m.Q.q)
+  compose!(Cint(4), outQ_low, nv+np, outx_low, outQ_low)
+  for i=1:nv
+     @inbounds m.x0[i] = m1.x[i][0]
+     @inbounds m.x[i] += m1.x0[i]
+  end
+  
+  return 
+end
+
 literal_pow(::typeof(^), m::TaylorMap{S,T,U,V}, vn::Val{n}) where {S,T,U,V,n} = ^(m,n)
 
 function ^(m1::TaylorMap{S,T,U,V}, n::Integer) where {S,T,U,V}
@@ -326,22 +361,9 @@ function ^(m1::TaylorMap{S,T,U,V}, n::Integer) where {S,T,U,V}
 end
 
 function cut(m1::TaylorMap{S,T,U,V}, order::Integer) where {S,T,U,V}
-  desc = getdesc(m1)
-  nv = numvars(desc)
-  np = numparams(desc)
-  nn = np + nv
-  outx = Vector{T}(undef, nn)
-  outq = Vector{U}(undef, 4)
-  for i=1:nv
-     @inbounds outx[i] = cutord(m1.x[i], order)
-  end
-  # add immutable parameters to outx
-  @inbounds outx[nv+1:nn] = view(m1.x, nv+1:nn)
-  for i=1:4
-    @inbounds outq[i] = cutord(m1.Q.q[i], order)
-  end
-
-  return (typeof(m1))(copy(m1.x0), outx, Quaternion(outq), copy(m1.E))
+  m = zero(m1)
+  cut!(m, m1, order)
+  return m
 end
 
 function cut!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}, order::Integer) where {S,T,U,V}

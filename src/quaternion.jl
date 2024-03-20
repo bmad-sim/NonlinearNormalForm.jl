@@ -19,7 +19,7 @@ Quaternion(n::Nothing) = Quaternion{Nothing}(Nothing[])
 
 ==(Q1::Quaternion, Q2::Quaternion) = Q1.q == Q2.q
 
-function qmul!(Q1::Quaternion{S}, Q2::Quaternion{T}, Q3::Quaternion) where {S,T}
+function mul!(Q3::Quaternion, Q1::Quaternion{S}, Q2::Quaternion{T}) where {S,T}
   q1 = Q1.q
   q2 = Q2.q
   A =  (q1[1]+q1[2])*(q2[1]+q2[2])
@@ -75,6 +75,12 @@ function Base.inv(Q1::Quaternion)
   q1 = Q1.q
   out1 = q1./dot(Q1,Q1)
   return Quaternion([out1[1], -out1[2], -out1[3], -out1[4]])
+end
+
+function inv!(Q::Quaternion, Q1::Quaternion)
+  Q.q .= Q1.q./dot(Q1,Q1)
+  @inbounds Q.q[2:4] .*= -1
+  return
 end
 
 function to_SO3(Q1::Quaternion)

@@ -3580,3 +3580,132 @@ events:
         
       exitCode: 2
 ...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/opt/homebrew/Cellar/cmake/3.27.8/share/cmake/Modules/FindHDF5.cmake:318 (try_compile)"
+      - "/opt/homebrew/Cellar/cmake/3.27.8/share/cmake/Modules/FindHDF5.cmake:620 (_HDF5_test_regular_compiler_Fortran)"
+      - "/Users/mgs255/Software/bmad/bmad-ecosystem/util/Master.cmake:475 (find_package)"
+      - "CMakeLists.txt:32 (include)"
+    directories:
+      source: "/Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles/CMakeScratch/TryCompile-CXOhhb"
+      binary: "/Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles/CMakeScratch/TryCompile-CXOhhb"
+    cmakeVariables:
+      CMAKE_EXE_LINKER_FLAGS: "-L/opt/homebrew/opt/zlib/lib -L/opt/homebrew/opt/readline/lib -L/opt/homebrew/opt/lapack/lib -L/opt/homebrew/opt/pango/lib -L/opt/homebrew/opt -L/opt/homebrew/opt/glib/lib -L/opt/homebrew/opt/lapack/lib"
+      CMAKE_Fortran_FLAGS: ""
+      CMAKE_Fortran_FLAGS_DEBUG: "-g"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: ""
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.0.sdk"
+    buildResult:
+      variable: "HDF5_Fortran_COMPILER_NO_INTERROGATE"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles/CMakeScratch/TryCompile-CXOhhb'
+        
+        Run Build Command(s): /opt/homebrew/Cellar/cmake/3.27.8/bin/cmake -E env VERBOSE=1 /opt/homebrew/bin/gmake -f Makefile cmTC_f919f/fast
+        /opt/homebrew/bin/gmake  -f CMakeFiles/cmTC_f919f.dir/build.make CMakeFiles/cmTC_f919f.dir/build
+        gmake[1]: Entering directory '/Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles/CMakeScratch/TryCompile-CXOhhb'
+        Building Fortran object CMakeFiles/cmTC_f919f.dir/cmake_hdf5_test.f90.o
+        /opt/homebrew/bin/gfortran   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.0.sdk -c /Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles/hdf5/cmake_hdf5_test.f90 -o CMakeFiles/cmTC_f919f.dir/cmake_hdf5_test.f90.o
+        /Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles/hdf5/cmake_hdf5_test.f90:2:7:
+        
+            2 |   use hdf5
+              |       1
+        Fatal Error: Cannot open module file 'hdf5.mod' for reading at (1): No such file or directory
+        compilation terminated.
+        gmake[1]: *** [CMakeFiles/cmTC_f919f.dir/build.make:78: CMakeFiles/cmTC_f919f.dir/cmake_hdf5_test.f90.o] Error 1
+        gmake[1]: Leaving directory '/Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles/CMakeScratch/TryCompile-CXOhhb'
+        gmake: *** [Makefile:127: cmTC_f919f/fast] Error 2
+        
+      exitCode: 2
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/opt/homebrew/Cellar/cmake/3.27.8/share/cmake/Modules/FindHDF5.cmake:318 (try_compile)"
+      - "/opt/homebrew/Cellar/cmake/3.27.8/share/cmake/Modules/FindHDF5.cmake:620 (_HDF5_test_regular_compiler_Fortran)"
+      - "/Users/mgs255/Software/bmad/bmad-ecosystem/util/Master.cmake:475 (find_package)"
+      - "CMakeLists.txt:32 (include)"
+    directories:
+      source: "/Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles/CMakeScratch/TryCompile-5O0SaH"
+      binary: "/Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles/CMakeScratch/TryCompile-5O0SaH"
+    cmakeVariables:
+      CMAKE_EXE_LINKER_FLAGS: "-L/opt/homebrew/opt/zlib/lib -L/opt/homebrew/opt/readline/lib -L/opt/homebrew/opt/lapack/lib -L/opt/homebrew/opt/pango/lib -L/opt/homebrew/opt -L/opt/homebrew/opt/glib/lib -L/opt/homebrew/opt/lapack/lib"
+      CMAKE_Fortran_FLAGS: ""
+      CMAKE_Fortran_FLAGS_DEBUG: "-g"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: ""
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.0.sdk"
+    buildResult:
+      variable: "HDF5_Fortran_COMPILER_NO_INTERROGATE"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles/CMakeScratch/TryCompile-5O0SaH'
+        
+        Run Build Command(s): /opt/homebrew/Cellar/cmake/3.27.8/bin/cmake -E env VERBOSE=1 /opt/homebrew/bin/gmake -f Makefile cmTC_72a7d/fast
+        /opt/homebrew/bin/gmake  -f CMakeFiles/cmTC_72a7d.dir/build.make CMakeFiles/cmTC_72a7d.dir/build
+        gmake[1]: Entering directory '/Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles/CMakeScratch/TryCompile-5O0SaH'
+        Building Fortran object CMakeFiles/cmTC_72a7d.dir/cmake_hdf5_test.f90.o
+        /opt/homebrew/bin/gfortran   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.0.sdk -c /Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles/hdf5/cmake_hdf5_test.f90 -o CMakeFiles/cmTC_72a7d.dir/cmake_hdf5_test.f90.o
+        /Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles/hdf5/cmake_hdf5_test.f90:2:7:
+        
+            2 |   use hdf5
+              |       1
+        Fatal Error: Cannot open module file 'hdf5.mod' for reading at (1): No such file or directory
+        compilation terminated.
+        gmake[1]: *** [CMakeFiles/cmTC_72a7d.dir/build.make:78: CMakeFiles/cmTC_72a7d.dir/cmake_hdf5_test.f90.o] Error 1
+        gmake[1]: Leaving directory '/Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles/CMakeScratch/TryCompile-5O0SaH'
+        gmake: *** [Makefile:127: cmTC_72a7d/fast] Error 2
+        
+      exitCode: 2
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/opt/homebrew/Cellar/cmake/3.27.8/share/cmake/Modules/FindHDF5.cmake:318 (try_compile)"
+      - "/opt/homebrew/Cellar/cmake/3.27.8/share/cmake/Modules/FindHDF5.cmake:620 (_HDF5_test_regular_compiler_Fortran)"
+      - "/Users/mgs255/Software/bmad/bmad-ecosystem/util/Master.cmake:475 (find_package)"
+      - "CMakeLists.txt:32 (include)"
+    directories:
+      source: "/Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles/CMakeScratch/TryCompile-Kew8pS"
+      binary: "/Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles/CMakeScratch/TryCompile-Kew8pS"
+    cmakeVariables:
+      CMAKE_EXE_LINKER_FLAGS: "-L/opt/homebrew/opt/zlib/lib -L/opt/homebrew/opt/readline/lib -L/opt/homebrew/opt/lapack/lib -L/opt/homebrew/opt/pango/lib -L/opt/homebrew/opt -L/opt/homebrew/opt/glib/lib -L/opt/homebrew/opt/lapack/lib"
+      CMAKE_Fortran_FLAGS: ""
+      CMAKE_Fortran_FLAGS_DEBUG: "-g"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: ""
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.0.sdk"
+    buildResult:
+      variable: "HDF5_Fortran_COMPILER_NO_INTERROGATE"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles/CMakeScratch/TryCompile-Kew8pS'
+        
+        Run Build Command(s): /opt/homebrew/Cellar/cmake/3.27.8/bin/cmake -E env VERBOSE=1 /opt/homebrew/bin/gmake -f Makefile cmTC_3e1a4/fast
+        /opt/homebrew/bin/gmake  -f CMakeFiles/cmTC_3e1a4.dir/build.make CMakeFiles/cmTC_3e1a4.dir/build
+        gmake[1]: Entering directory '/Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles/CMakeScratch/TryCompile-Kew8pS'
+        Building Fortran object CMakeFiles/cmTC_3e1a4.dir/cmake_hdf5_test.f90.o
+        /opt/homebrew/bin/gfortran   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.0.sdk -c /Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles/hdf5/cmake_hdf5_test.f90 -o CMakeFiles/cmTC_3e1a4.dir/cmake_hdf5_test.f90.o
+        /Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles/hdf5/cmake_hdf5_test.f90:2:7:
+        
+            2 |   use hdf5
+              |       1
+        Fatal Error: Cannot open module file 'hdf5.mod' for reading at (1): No such file or directory
+        compilation terminated.
+        gmake[1]: *** [CMakeFiles/cmTC_3e1a4.dir/build.make:78: CMakeFiles/cmTC_3e1a4.dir/cmake_hdf5_test.f90.o] Error 1
+        gmake[1]: Leaving directory '/Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles/CMakeScratch/TryCompile-Kew8pS'
+        gmake: *** [Makefile:127: cmTC_3e1a4/fast] Error 2
+        
+      exitCode: 2
+...

@@ -31,7 +31,7 @@ import GTPSA: numtype,
               cutord,
               cutord!
 
-export TaylorMap, Quaternion, Probe, TPSAMap, DAMap, TPSAMap, checksymp, qmul!,
+export TaylorMap, Quaternion, Probe, TPSAMap, DAMap, TPSAMap, checksymp, mul!,
         normalize!, dot, to_SO3, read_fpp_map, cut, cut!, gofix, test
 
 
