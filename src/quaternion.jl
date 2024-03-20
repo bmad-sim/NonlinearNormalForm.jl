@@ -11,8 +11,8 @@ struct Quaternion{T <: Number}
   q::Vector{T}
 end
 
-convert(::Type{Quaternion{S}}, Q::Quaternion{T}) where {S,T} = Quaternion(map(x->(S)(x), Q1.q))
-Quaternion(Q::Quaternion) = Quaternion(deepcopy(Q1.q))
+convert(::Type{Quaternion{S}}, Q::Quaternion{T}) where {S,T} = Quaternion(map(x->(S)(x), Q.q))
+Quaternion(Q::Quaternion) = Quaternion(deepcopy(Q.q))
 
 Quaternion(t::T) where T <: Number = Quaternion([one(t), zero(t), zero(t), zero(t)])
 Quaternion(n::Nothing) = Quaternion{Nothing}(Nothing[])

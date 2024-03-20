@@ -30,7 +30,7 @@ end
 
 # Copy ctor:
 function Probe(p::Probe{S,T,U,V}) where {S,T,U,V}
-  return Probe{S,T,U,V}(deepcopy(p.x0), deepcopy(p.x), deepcopy(p.Q), deepcopy(p.E))
+  return Probe{S,T,U,V}(copy(p.x0), deepcopy(p.x), deepcopy(p.Q), copy(p.E))
 end
 
 ==(p1::Probe, p2::Probe) = (p1.x0 == p2.x0 && p1.x == p2.x && p1.q == p2.q && p1.E == p2.E)

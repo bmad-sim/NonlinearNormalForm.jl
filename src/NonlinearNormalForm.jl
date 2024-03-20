@@ -9,6 +9,8 @@ import Base: ∘,
              show,
              convert,
              inv,
+             zero,
+             
              ==
 
 using LinearAlgebra,
@@ -25,10 +27,12 @@ import GTPSA: numtype,
               RTPSA, 
               CTPSA,
               compose!,
-              jacobian
+              jacobian, 
+              cutord,
+              cutord!
 
 export TaylorMap, Quaternion, Probe, TPSAMap, DAMap, TPSAMap, checksymp, qmul!,
-        normalize!, dot, to_SO3, read_fpp_map, test
+        normalize!, dot, to_SO3, read_fpp_map, cut, cut!, gofix, test
 
 
 include("quaternion.jl")

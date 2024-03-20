@@ -31,48 +31,56 @@ for t = (:DAMap, :TPSAMap)
 
 # Create a TaylorMap from other TaylorMap
 function $t(m::TaylorMap{S,T,U,V}; use::Union{Descriptor,TaylorMap,Probe{S,T,U,V},Nothing}=nothing) where {S, T<:Union{TPS,ComplexTPS}, U<:Union{TPS,ComplexTPS}, V}
-  x0 = deepcopy(m.x0)
-
-  nv = numvars(m)
-  np = numparams(m)
+  desc = getdesc(m)
+  nv = numvars(desc)
+  np = numparams(desc)
   nn = np+nv
   x = Vector{T}(undef, nn)
-  x[1:nv] = map(x->(T)(x, use=getdesc(use)), view(m.x, 1:nv))
+  q = Vector{U}(undef, 4)
+  for i=1:nv
+    @inbounds x[i] = T(m.x[i], use=getdesc(use))
+  end
 
   # use same parameters if same descriptor (use=nothing)
   if isnothing(use)
-    x[nv+1:nn] = m.x[nv+1:nn]
+    @inbounds x[nv+1:nn] = view(m.x, nv+1:nn)
   else
     if T == TPS
-      x[nv+1:nn] = params(getdesc(first(x)))
+      @inbounds x[nv+1:nn] = params(getdesc(first(x)))
     else
-      x[nv+1:nn] = complexparams(getdesc(first(x)))
+      @inbounds x[nv+1:nn] = complexparams(getdesc(first(x)))
     end
   end
 
-  Q = Quaternion(map(x->(U)(x, use=getdesc(use)), m.Q.q))
-  E = deepcopy(m.E)
-  return $t{S,T,U,V}(x0, x, Q, E)
+  for i=1:4
+    @inbounds q[i] = U(m.Q.q[i],use=getdesc(use))
+  end
+  return $t{S,T,U,V}(copy(m.x0), x, Quaternion(q), copy(m.E))
 end
 
 # Create TaylorMap from a Probe. Probes do not have parameters tacked on so must allocate new
 function $t(p::Probe{S,T,U,V}; use::Union{Descriptor,TaylorMap,Probe{S,T,U,V},Nothing}=nothing) where {S, T<:Union{TPS,ComplexTPS}, U<:Union{TPS,ComplexTPS}, V}
-  x0 = deepcopy(p.x0)
-
-  nv = numvars(p)
-  np = numparams(p)
+  desc = getdesc(p)
+  nv = numvars(desc)
+  np = numparams(desc)
   nn = np+nv
   x = Vector{T}(undef, nn)
-  x[1:nv] = map(x->(T)(x, use=getdesc(use)), p.x)
-  if T == TPS
-    x[nv+1:nn] = params(getdesc(first(x)))
-  else
-    x[nv+1:nn] = complexparams(getdesc(first(x)))
+  q = Vector{U}(undef, 4)
+  for i=1:nv
+    @inbounds x[i] = T(p.x[i], use=getdesc(use))
   end
 
-  Q = Quaternion(map(x->(U)(x, use=getdesc(use)), p.Q.q))
-  E = deepcopy(p.E)
-  return $t{S,T,U,V}(x0, x, Q, E)
+  # Must allocate new for parameters
+  if T == TPS
+    @inbounds x[nv+1:nn] = params(getdesc(first(x)))
+  else
+    @inbounds x[nv+1:nn] = complexparams(getdesc(first(x)))
+  end
+
+  for i=1:4
+    @inbounds q[i] = U(p.Q.q[i],use=getdesc(use))
+  end
+  return $t{S,T,U,V}(copy(p.x0), x, Quaternion(q), copy(p.E))
 end
 
 # Create from vector and blank (in this case must check for consistency)
@@ -92,7 +100,7 @@ function $t(x::Vector{T}=zeros(TPS, numvars(GTPSA.desc_current)); x0::Vector{S}=
     x1[nv+1:nn] = complexparams(getdesc(first(x)))
   end
   Q1 = Quaternion(map(x->(U)(x, use=getdesc(use)), Q.q))
-  return $t{eltype(x0),T,U,eltype(E)}(deepcopy(x0), x1, Q1, deepcopy(E))
+  return $t{eltype(x0),T,U,eltype(E)}(copy(x0), x1, Q1, copy(E))
 end
 
 # Basic operators
@@ -102,6 +110,27 @@ end
 
 function -(m2::$t{S2,T2,U2,V2},m1::$t{S1,T1,U1,V1}) where {S2,T2,U2,V2,S1,T1,U1,V1}
   return $t(m2.x0-m1.x0, m2.x-m1.x, Quaternion(m2.Q.q-m1.Q.q), m2.E-m1.E)
+end
+
+# zero map (empty but still identity in parameters)
+function zero(m::$t{S,T,U,V}) where {S,T,U,V}
+  desc = getdesc(m)
+  nv = numvars(desc)
+  np = numparams(desc)
+  nn = np+nv
+  x = Vector{T}(undef, nn)
+  q = Vector{U}(undef, 4)
+  for i=1:nv
+    @inbounds x[i] = zero(m.x[i])
+  end
+
+  # use same parameters 
+  @inbounds x[nv+1:nn] = view(m.x, nv+1:nn)
+
+  for i=1:4
+    @inbounds q[i] = zero(m.Q.q[i])
+  end
+  return $t{S,T,U,V}(copy(m.x0), x, Quaternion(q), copy(m.E))
 end
 
 end
@@ -173,7 +202,7 @@ end
   # Now concatenate
   qmul!(outQ, m1.Q, outQ)
   # Make that map
-  return (typeof(m1))(deepcopy(m1.x0), outx, outQ, zeros(nv, nv))
+  return (typeof(m1))(copy(m1.x0), outx, outQ, zeros(nv, nv))
 end
 
 
@@ -296,3 +325,40 @@ function ^(m1::TaylorMap{S,T,U,V}, n::Integer) where {S,T,U,V}
   end
 end
 
+function cut(m1::TaylorMap{S,T,U,V}, order::Integer) where {S,T,U,V}
+  desc = getdesc(m1)
+  nv = numvars(desc)
+  np = numparams(desc)
+  nn = np + nv
+  outx = Vector{T}(undef, nn)
+  outq = Vector{U}(undef, 4)
+  for i=1:nv
+     @inbounds outx[i] = cutord(m1.x[i], order)
+  end
+  # add immutable parameters to outx
+  @inbounds outx[nv+1:nn] = view(m1.x, nv+1:nn)
+  for i=1:4
+    @inbounds outq[i] = cutord(m1.Q.q[i], order)
+  end
+
+  return (typeof(m1))(copy(m1.x0), outx, Quaternion(outq), copy(m1.E))
+end
+
+function cut!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}, order::Integer) where {S,T,U,V}
+  desc = getdesc(m1)
+  nv = numvars(desc)
+  np = numparams(desc)
+  nn = np + nv
+  m.x0 .= m1.x0
+  ord = Cint(order)
+  for i=1:nv
+    GTPSA.cutord!(m1.x[i].tpsa, m.x[i].tpsa, convert(Cint, ord))
+  end
+  # add immutable parameters to outx
+  @inbounds m.x[nv+1:nn] = view(m1.x, nv+1:nn)
+  for i=1:4
+    @inbounds GTPSA.cutord!(m1.Q.q[i].tpsa, m.Q.q[i].tpsa, convert(Cint, ord))
+  end
+  m.E .= m.E
+  return
+end
