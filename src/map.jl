@@ -104,22 +104,22 @@ function $t(x::Vector{T}=zeros(TPS, numvars(GTPSA.desc_current)); x0::Vector{S}=
 end
 
 # Basic operators
-function +(m2::$t{S2,T2,U2,V2},m1::$t{S1,T1,U1,V1}) where {S2,T2,U2,V2,S1,T1,U1,V1}
+function +(m2::$t,m1::$t)
   return $t(m2.x0+m1.x0, m2.x+m1.x, Quaternion(m2.Q.q+m1.Q.q), m2.E+m1.E)
 end
 
-function -(m2::$t{S2,T2,U2,V2},m1::$t{S1,T1,U1,V1}) where {S2,T2,U2,V2,S1,T1,U1,V1}
+function -(m2::$t,m1::$t)
   return $t(m2.x0-m1.x0, m2.x-m1.x, Quaternion(m2.Q.q-m1.Q.q), m2.E-m1.E)
 end
 
 # zero map (empty but still identity in parameters)
-function zero(m::$t{S,T,U,V}) where {S,T,U,V}
+function zero(m::$t)
   desc = getdesc(m)
   nv = numvars(desc)
   np = numparams(desc)
   nn = np+nv
-  x = Vector{T}(undef, nn)
-  q = Vector{U}(undef, 4)
+  x = Vector{eltype(m.x)}(undef, nn)
+  q = Vector{eltype(m.Q.q)}(undef, 4)
   for i=1:nv
     @inbounds x[i] = zero(m.x[i])
   end
@@ -130,46 +130,58 @@ function zero(m::$t{S,T,U,V}) where {S,T,U,V}
   for i=1:4
     @inbounds q[i] = zero(m.Q.q[i])
   end
-  return $t{S,T,U,V}(copy(m.x0), x, Quaternion(q), copy(m.E))
+  return $t(copy(m.x0), x, Quaternion(q), copy(m.E))
 end
 
-# Inner composition
-@inline function compose_it(m2::$t{S2,T2,U2,V2}, m1::$t{S1,T1,U1,V1}) where {S2,T2,U2,V2,S1,T1,U1,V1}
+# Inner composition, assumes everything is set up correctly
+# m.x[1:nv] and m.Q.q must contain allocated TPSs
+function compose_it!(m::$t, m2::$t, m1::$t)
   desc = getdesc(m1)
+  nn = numnn(desc)
   nv = numvars(desc)
   np = numparams(desc)
-  nn = nv+np
+  
+  outT = eltype(m.x)
+  outU = eltype(m.Q.q)
+  m.x0 .= m1.x0
+  m.E .= zeros(nv,nv)
 
-  outT = promote_type(T2,T1)
-  outx = Vector{outT}(undef,  nn)
-  # Set up orbit out:
-  for i=1:nv
-     @inbounds outx[i] = outT(use=desc)
-  end
   # add immutable parameters to outx
-  if outT == T2
-    @inbounds outx[nv+1:nn] = view(m2.x, nv+1:nn)
+  if eltype(m.x) == eltype(m1.x)
+    @inbounds m.x[nv+1:nn] = view(m1.x, nv+1:nn)
   else
-    @inbounds outx[nv+1:nn] = view(m1.x, nv+1:nn)
+    @inbounds m.x[nv+1:nn] = view(m2.x, nv+1:nn)
   end
-
-  # set up quaternion out:
-  outU = promote_type(U2,U1)
-  outQ = Quaternion{outU}([outU(use=desc), outU(use=desc), outU(use=desc), outU(use=desc)])
 
   # Do the composition, promoting if necessary
   # --- Orbit ---
-  if outT != T1
-    m1x_store = Vector{outT}(undef, nn)
+  if outT != eltype(m1.x) #T1
+    m1x_store = Vector{ComplexTPS}(undef, nn)
     # Promote to ComplexTPS:
     map!(t->ComplexTPS(t), m1x_store,  m1.x) # Must store to prevent GC   
     m1x_low = map(t->t.tpsa, m1x_store)
+    if m1 === m
+      m1xquat_store = Vector{ComplexTPS}(undef, nn)
+      map!(t->ComplexTPS(t), m1xquat_store, m1x_store) 
+      m1xquat_low = map(t->t.tpsa, m1xquat_store)
+    else
+      m1xquat_store = m1x_store
+      m1xquat_low = m1x_low
+    end
   else
     m1x_store = nothing
     m1x_low = map(t->t.tpsa, m1.x)
+    if m1 === m
+      m1xquat_store = Vector{outT}(undef, nn)
+      map!(t->(eltype(m1.x))(t), m1xquat_store, m1.x) 
+      m1xquat_low = map(t->t.tpsa, m1xquat_store)
+    else
+      m1xquat_store = nothing
+      m1xquat_low = m1x_low
+    end
   end
-  if outT != T2
-    m2x_store = Vector{outT}(undef, nv)
+  if outT != eltype(m2.x)# T2
+    m2x_store = Vector{ComplexTPS}(undef, nv)
     # Promote to ComplexTPS:
     map!(t->ComplexTPS(t), m2x_store, view(m2.x,1:nv)) # Must store to prevent GC   
     m2x_low = map(t->t.tpsa, m2x_store)
@@ -179,8 +191,8 @@ end
   end
 
   # --- Quaternion ---
-  if outU != U2
-    m2Q_store = Vector{outT}(undef, 4)
+  if outU != eltype(m2.Q.q) #U2
+    m2Q_store = Vector{ComplexTPS}(undef, 4)
     map!(t->ComplexTPS(t), m2Q_store, m2.Q.q) # Must store to prevent GC
     m2Q_low = map(t->t.tpsa, m2Q_store)
   else
@@ -189,19 +201,44 @@ end
   end
 
   # go low
-  outx_low = map(t->t.tpsa, view(outx,1:nv))
-  outQ_low = map(t->t.tpsa, outQ.q)
+  outx_low = map(t->t.tpsa, view(m.x,1:nv))
+  outQ_low = map(t->t.tpsa, m.Q.q)
 
   # Orbit:
   GC.@preserve m1x_store m2x_store compose!(nv, m2x_low, nv+np, m1x_low, outx_low)
 
   # Spin (spectator) q(z0)=q2(M(z0))q1(z0)
   # First obtain q2(M(z0))
-  GC.@preserve m1x_store m2Q_store compose!(Cint(4), m2Q_low, nv+np, m1x_low, outQ_low)
+  GC.@preserve m1xquat_store m2Q_store compose!(Cint(4), m2Q_low, nv+np, m1xquat_low, outQ_low)
   # Now concatenate
-  mul!(outQ, m1.Q, outQ)
+  mul!(m.Q, m1.Q, m.Q)
   # Make that map
-  return $t(copy(m1.x0), outx, outQ, zeros(nv, nv))
+  return 
+end
+
+function compose_it(m2::$t, m1::$t)
+  desc = getdesc(m1)
+  nn = numnn(desc)
+  nv = numvars(desc)
+
+  # Set up outx:
+  outT = promote_type(eltype(m2.x),eltype(m1.x))
+  outx = Vector{outT}(undef, nn)
+  for i=1:nv
+     @inbounds outx[i] = outT(use=desc)
+  end
+
+  # set up quaternion out:
+  outU = promote_type(eltype(m2.Q.q), eltype(m1.Q.q))
+  outQ = Quaternion{outU}([outU(use=desc), outU(use=desc), outU(use=desc), outU(use=desc)])
+
+  # make a map
+  m = $t(Vector{eltype(m1.x0)}(undef, nv), outx, outQ, Matrix{eltype(m1.E)}(undef, nv, nv))
+
+  # compose
+  compose_it!(m, m2, m1)
+
+  return m
 end
 
 end
@@ -210,14 +247,39 @@ end
 ==(m1::TaylorMap, m2::TaylorMap) = (m1.x0 == m2.x0 && m1.x == m2.x && m1.Q == m2.Q && m1.E == m2.E)
 
 # --- compose ---
-
-
-
-function ∘(m2::DAMap{S2,T2,U2,V2},m1::DAMap{S1,T1,U1,V1}) where {S2,T2,U2,V2,S1,T1,U1,V1}
+function compose!(m::DAMap, m2::DAMap, m1::DAMap)
   # DAMap setup:
   desc = getdesc(m1)
   nv = numvars(desc)
-  ref = Vector{numtype(T1)}(undef, nv)
+  ref = Vector{numtype(eltype(m1.x))}(undef, nv)
+  # Take out scalar part and store it
+  for i=1:nv
+      @inbounds ref[i] = m1.x[i][0]
+      @inbounds m1.x[i][0] = 0
+  end
+
+  compose_it!(m, m2, m1)
+
+  # Put back the reference and if m1 === m2, also add to outx
+  if m1 === m2
+    for i=1:nv
+        @inbounds m1.x[i][0] = ref[i]
+        @inbounds m.x[i][0] += ref[i]
+    end
+  else
+    for i=1:nv
+        @inbounds m1.x[i][0] = ref[i]
+    end
+  end
+
+  return m
+end
+
+function ∘(m2::DAMap,m1::DAMap)
+  # DAMap setup:
+  desc = getdesc(m1)
+  nv = numvars(desc)
+  ref = Vector{numtype(eltype(m1.x))}(undef, nv)
   # Take out scalar part and store it
   for i=1:nv
      @inbounds ref[i] = m1.x[i][0]
@@ -241,13 +303,12 @@ function ∘(m2::DAMap{S2,T2,U2,V2},m1::DAMap{S1,T1,U1,V1}) where {S2,T2,U2,V2,S
   return m
 end
 
-function ∘(m2::TPSAMap{S2,T2,U2,V2},m1::TPSAMap{S1,T1,U1,V1}) where {S2,T2,U2,V2,S1,T1,U1,V1}
-  desc = getdesc(m1)
-  nv = numvars(desc)
-
+function ∘(m2::TPSAMap, m1::TPSAMap)
   # TPSAMap setup:
   # For TPSA Map concatenation, we need to subtract w_0 (m2 x0) (Eq. 33)
   # Because we are still expressing in terms of z_0 (m1 x0)
+  desc = getdesc(m1)
+  nv = numvars(desc)
   for i=1:nv
     @inbounds m1.x[i] -= m2.x0[i]
   end
@@ -255,7 +316,7 @@ function ∘(m2::TPSAMap{S2,T2,U2,V2},m1::TPSAMap{S1,T1,U1,V1}) where {S2,T2,U2,
   m = compose_it(m2,m1)
   
   # Now fix m1 and if m2 === m1, add to output too:
- # For TPSA Map concatenation, we need to subtract w_0 (m2 x0) (Eq. 33)
+  # For TPSA Map concatenation, we need to subtract w_0 (m2 x0) (Eq. 33)
   # Because we are still expressing in terms of z_0 (m1 x0)
   if m1 === m2
     for i=1:nv
@@ -272,8 +333,8 @@ function ∘(m2::TPSAMap{S2,T2,U2,V2},m1::TPSAMap{S1,T1,U1,V1}) where {S2,T2,U2,
 end
 
 # Also allow * for simpliticty
-*(m2::DAMap{S2,T2,U2,V2},m1::DAMap{S1,T1,U1,V1}) where {S2,T2,U2,V2,S1,T1,U1,V1} = ∘(m2,m1)
-*(m2::TPSAMap{S2,T2,U2,V2},m1::TPSAMap{S1,T1,U1,V1}) where {S2,T2,U2,V2,S1,T1,U1,V1} = ∘(m2,m1)
+*(m2::DAMap,m1::DAMap) = ∘(m2,m1)
+*(m2::TPSAMap,m1::TPSAMap) = ∘(m2,m1)
 
 # --- inverse ---
 minv!(na::Cint, ma::Vector{Ptr{RTPSA}}, nb::Cint, mc::Vector{Ptr{RTPSA}}) = (@inline; GTPSA.mad_tpsa_minv!(na, ma, nb, mc))
