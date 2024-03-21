@@ -48,7 +48,6 @@ function read_fpp_map(file)
   no = data[findfirst(t->t=="NO", data) + CartesianIndex(0,2)]
   np = data[findfirst(t->t=="NV", data) + CartesianIndex(0,2)] - nv
   nn = nv+np
-println(nv)
   # Make the TPSA
   d = Descriptor(nv, no, np, no)
   m = DAMap(repeat([ComplexTPS(use=d)], nv), Q=Quaternion([ComplexTPS(1,use=d), repeat([ComplexTPS(use=d)], 3)...]))

@@ -56,9 +56,9 @@ function track_qf(p::Probe, k1, hkick)
   q = [q0,q1,q2,q3]
   q = q/sqrt(dot(q,q))
   Q = Quaternion{promote_type(eltype(z0),typeof(k1),typeof(hkick))}(q)
-  mul!(Q, p.Q, Q)
+  mul!(Q,Q,p.Q)
   Qkick = Quaternion{promote_type(eltype(z0),typeof(k1),typeof(hkick))}([cos(hkick*(1+a*gamma_0)/2),0, sin(hkick*(1+a*gamma_0)/2), 0])
-  mul!(Qkick, Q, Q)
+  mul!(Q, Qkick, Q)
 
   if Examples.radiation_on
     lrad1=0.2
@@ -112,9 +112,9 @@ function track_qd(p::Probe, k1, vkick)
   q = [q0,q1,q2,q3]
   q = q/sqrt(dot(q,q))
   Q = Quaternion{promote_type(eltype(z0),typeof(k1),typeof(vkick))}(q)
-  mul!(Q, p.Q, Q)
+  mul!(Q, Q, p.Q)
   Qkick = Quaternion{promote_type(eltype(z0),typeof(k1),typeof(vkick))}([cos(vkick*(1+a*gamma_0)/2), sin(vkick*(1+a*gamma_0)/2), 0, 0])
-  mul!(Qkick, Q, Q)
+  mul!(Q, Qkick, Q)
 
   return Probe(z,x0=p.x0,Q=Q)
 end
@@ -163,7 +163,7 @@ function track_sextupole(p::Probe, k2l)
   q = [1,-k2l*2.0*z0[1]*z0[3]*(1+a*gamma_0)/2,-k2l*(z0[1]^2-z0[3]^2)*(1+a*gamma_0)/2,0]
   q = q/sqrt(dot(q,q))
   Q = Quaternion{promote_type(eltype(z0),typeof(k2l))}(q)
-  mul!(Q, p.Q, Q)
+  mul!(Q, Q, p.Q)
 
   return Probe(z,x0=p.x0,Q=Q)
 end

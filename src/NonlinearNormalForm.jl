@@ -10,7 +10,7 @@ import Base: ∘,
              convert,
              inv,
              zero,
-             
+             one,
              ==
 
 using LinearAlgebra,

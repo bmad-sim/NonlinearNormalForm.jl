@@ -79,9 +79,18 @@ program example
     
     !.m = xs
     !call print(m)
-   
-   call track_ring(xs,xs,k1,k2l,kick,vkick)
+   call track_qf(xs,xs, k1, kick(1))
+   call track_sextupole(xs,xs, k2l)
+   !call track_drift(z0,z)
+   !call track_qd(z,z0, k1, vkick)
+  ! call track_sextupole(z0,z, -k2l)
+  ! call track_drift(z,z0)
+   !call track_fodo(xs,xs, k1, k2l, kick(1), vkick(1)) !, k1, vkick(1))
+   !call track_ring(xs,xs,k1,k2l,kick,vkick)
       m=xs
+      m1 = m
+      call print(m)
+      stop
     call c_gofix(m,m1)
     call print(m1)
     stop

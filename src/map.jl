@@ -115,9 +115,10 @@ end
 # zero map (empty but still identity in parameters)
 function zero(m::$t)
   desc = getdesc(m)
+  nn = numnn(desc)
   nv = numvars(desc)
   np = numparams(desc)
-  nn = np+nv
+  
   x = Vector{eltype(m.x)}(undef, nn)
   q = Vector{eltype(m.Q.q)}(undef, 4)
   for i=1:nv
@@ -129,6 +130,29 @@ function zero(m::$t)
 
   for i=1:4
     @inbounds q[i] = zero(m.Q.q[i])
+  end
+  return $t(copy(m.x0), x, Quaternion(q), copy(m.E))
+end
+
+# identity map
+function one(m::$t)
+  desc = getdesc(m)
+  nn = numnn(desc)
+  nv = numvars(desc)
+  np = numparams(desc)
+  
+  x = Vector{eltype(m.x)}(undef, nn)
+  q = Vector{eltype(m.Q.q)}(undef, 4)
+  for i=1:nv
+    @inbounds x[i] = mono(i,use=desc)
+  end
+
+  # use same parameters 
+  @inbounds x[nv+1:nn] = view(m.x, nv+1:nn)
+
+  q[1] = one(m.Q.q[1])
+  for i=2:4
+    @inbounds q[i] = zero(m.Q.q[1])
   end
   return $t(copy(m.x0), x, Quaternion(q), copy(m.E))
 end
@@ -220,6 +244,7 @@ function compose_it!(m::$t, m2::$t, m1::$t)
 
   # Spin (spectator) q(z0)=q2(M(z0))q1(z0)
   # First obtain q2(M(z0))
+  #
   GC.@preserve m1xquat_store m2Q_store compose!(Cint(4), m2Q_low, nv+np, m1xquat_low, outQ_low)
   # Now concatenate
   mul!(m.Q, m1Q, m.Q)
