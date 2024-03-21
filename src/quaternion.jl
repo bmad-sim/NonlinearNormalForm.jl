@@ -12,7 +12,7 @@ struct Quaternion{T <: Number}
 end
 
 convert(::Type{Quaternion{S}}, Q::Quaternion{T}) where {S,T} = Quaternion(map(x->(S)(x), Q.q))
-Quaternion(Q::Quaternion) = Quaternion(deepcopy(Q.q))
+Quaternion(Q::Quaternion{T}) where T <: Number = Quaternion(map(x->T(x), Q.q))
 
 Quaternion(t::T) where T <: Number = Quaternion([one(t), zero(t), zero(t), zero(t)])
 Quaternion(n::Nothing) = Quaternion{Nothing}(Nothing[])

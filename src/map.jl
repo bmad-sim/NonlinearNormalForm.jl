@@ -133,8 +133,15 @@ function zero(m::$t)
   return $t(copy(m.x0), x, Quaternion(q), copy(m.E))
 end
 
-# Inner composition, assumes everything is set up correctly
-# m.x[1:nv] and m.Q.q must contain allocated TPSs
+
+"""
+    compose_it!(m, m2, m1)
+
+Composes the maps  in-place, `m2 ∘ m1`. Aliasing is allowed, however in some cases may 
+be slower than not aliasing, especially when `m === m1`. Assumes the destination map is 
+properly set up (with correct types promoted if necessary), and that `m.x[1:nv]` and 
+`m.Q.q` contain allocated TPSs.
+""" 
 function compose_it!(m::$t, m2::$t, m1::$t)
   desc = getdesc(m1)
   nn = numnn(desc)
@@ -164,9 +171,11 @@ function compose_it!(m::$t, m2::$t, m1::$t)
       m1xquat_store = Vector{ComplexTPS}(undef, nn)
       map!(t->ComplexTPS(t), m1xquat_store, m1x_store) 
       m1xquat_low = map(t->t.tpsa, m1xquat_store)
+      m1Q = Quaternion(m1.Q)
     else
       m1xquat_store = m1x_store
       m1xquat_low = m1x_low
+      m1Q = m1.Q
     end
   else
     m1x_store = nothing
@@ -175,9 +184,11 @@ function compose_it!(m::$t, m2::$t, m1::$t)
       m1xquat_store = Vector{outT}(undef, nn)
       map!(t->(eltype(m1.x))(t), m1xquat_store, m1.x) 
       m1xquat_low = map(t->t.tpsa, m1xquat_store)
+      m1Q = Quaternion(m1.Q)
     else
       m1xquat_store = nothing
       m1xquat_low = m1x_low
+      m1Q = m1.Q
     end
   end
   if outT != eltype(m2.x)# T2
@@ -211,7 +222,7 @@ function compose_it!(m::$t, m2::$t, m1::$t)
   # First obtain q2(M(z0))
   GC.@preserve m1xquat_store m2Q_store compose!(Cint(4), m2Q_low, nv+np, m1xquat_low, outQ_low)
   # Now concatenate
-  mul!(m.Q, m1.Q, m.Q)
+  mul!(m.Q, m1Q, m.Q)
   # Make that map
   return 
 end
