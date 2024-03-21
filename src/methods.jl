@@ -17,11 +17,12 @@ function gofix(xy::DAMap, order=1)
   desc = getdesc(xy)
   nv = numvars(desc)
 
-  # 1: v = map-identity in harmonic planes
-  v = DAMap(xy)
+  # 1: v = map-identity in harmonic planes, identity in spin
+  v = zero(xy)
   for i=1:nv
-    @inbounds v.x[i] -= mono(i,use=desc)
+    @inbounds v.x[i] =  xy.x[i] - mono(i,use=desc)
   end
+  v.Q.q[1] = 1
 
   # 2: map is cut to order 2 or above
   cut!(v,v,order+1)
