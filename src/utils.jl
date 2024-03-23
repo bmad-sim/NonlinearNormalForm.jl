@@ -1,8 +1,8 @@
 # helper functions
-getdesc(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Union{TPS,ComplexTPS},<:Real},<:TaylorMap}) = Descriptor(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.x).tpsa).d))
-numvars(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Union{TPS,ComplexTPS},<:Real},<:TaylorMap}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.x).tpsa).d)).nv
-numparams(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Union{TPS,ComplexTPS},<:Real},<:TaylorMap}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.x).tpsa).d)).np
-numnn(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Union{TPS,ComplexTPS},<:Real},<:TaylorMap}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.x).tpsa).d)).nn
+getdesc(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap}) = Descriptor(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.x).tpsa).d))
+numvars(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.x).tpsa).d)).nv
+numparams(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.x).tpsa).d)).np
+numnn(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.x).tpsa).d)).nn
 
 getdesc(t::Union{TPS,ComplexTPS}) = Descriptor(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(t.tpsa).d))
 numvars(t::Union{TPS,ComplexTPS}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(t.tpsa).d)).nv
@@ -26,6 +26,17 @@ numnn(d::Descriptor) = unsafe_load(d.desc).nn
 
 getdesc(d::Nothing) = nothing
 
+numtype(t::TPS) = Float64
+numtype(ct::ComplexTPS) = ComplexF64
+numtype(::Type{TPS}) = Float64
+numtype(::Type{ComplexTPS}) = ComplexF64
+
+lowtype(t::TPS) = Ptr{RTPSA}
+lowtype(ct::ComplexTPS) = Ptr{CTPSA}
+lowtype(::Type{TPS}) = Ptr{RTPSA}
+lowtype(::Type{ComplexTPS}) = Ptr{CTPSA}
+
+
 function checksymp(M::Matrix{T}) where T<:Number
   s = size(M)
   nv = first(s)
@@ -39,7 +50,7 @@ function checksymp(M::Matrix{T}) where T<:Number
   return res
 end
 
-jacobian(m::TaylorMap,include_params=false) = jacobian(m.x[1:numvars(m)],include_params=include_params)
+jacobian(m::TaylorMap;include_params=false) = jacobian(m.x[1:numvars(m)],include_params=include_params)
 checksymp(m::TaylorMap) = checksymp(jacobian(m))
 
 function read_fpp_map(file)

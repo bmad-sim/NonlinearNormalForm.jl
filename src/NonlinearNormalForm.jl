@@ -5,6 +5,8 @@ import Base: ∘,
              literal_pow,
              +,
              -,
+             /,
+             \,
              ^,
              show,
              convert,
@@ -22,8 +24,7 @@ using LinearAlgebra,
 
 import LinearAlgebra: norm, dot
 
-import GTPSA: numtype, 
-              Desc, 
+import GTPSA: Desc, 
               RTPSA, 
               CTPSA,
               compose!,

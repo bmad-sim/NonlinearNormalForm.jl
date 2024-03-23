@@ -60,8 +60,8 @@ program example
    k2l= 1.2d0
    vkick(1)=morph(1.d0.mono.7) !+1.d-4
    vkick(2)=morph(1.d0.mono.8)  !+.23d0
-   c_%ndpt=0
-    
+   !c_%ndpt=1 ! rf off
+
     closed_orbit=0
    !closed_orbit(1) = -4.0442788590574703e-7
    !closed_orbit(2) = -6.654652444059091e-8
@@ -79,20 +79,18 @@ program example
     
     !.m = xs
     !call print(m)
-   call track_qf(xs,xs, k1, kick(1))
-   call track_sextupole(xs,xs, k2l)
+   !call track_qf(xs,xs, k1, kick(1))
+   !call track_sextupole(xs,xs, k2l)
    !call track_drift(z0,z)
    !call track_qd(z,z0, k1, vkick)
   ! call track_sextupole(z0,z, -k2l)
   ! call track_drift(z,z0)
    !call track_fodo(xs,xs, k1, k2l, kick(1), vkick(1)) !, k1, vkick(1))
-   !call track_ring(xs,xs,k1,k2l,kick,vkick)
+   call track_ring(xs,xs,k1,k2l,kick,vkick)
       m=xs
-      m1 = m
-      call print(m)
-      stop
-    call c_gofix(m,m1)
-    call print(m1)
+    call c_gofix(m,a0)
+    m=c_simil(a0,m,-1)
+    !call print(m)
     stop
 
 
@@ -422,7 +420,12 @@ program example
         call track_fodo(z0,z, k1, k2l, kick(i), vkick(i))
         z0=z
      enddo
-     if(c_%ndpt==0) call track_cav(z)
+
+
+     if(c_%ndpt==0) then 
+      write(*,*) "am tracking rf"
+      call track_cav(z) 
+    endif
    
    end subroutine
    
