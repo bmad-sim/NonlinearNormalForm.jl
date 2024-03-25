@@ -8,7 +8,8 @@ The GTPSA Descriptor can be changed when constructing a Map from a
 Probe. The numbers of variables and parameters in the GTPSAs must agree.
 
 Once again parametric types, however being a TaylorMap we now require the 
-orbit x and spin q to be TPSs.
+orbit x and spin q to be TPSs. For no spin tracking, U==Nothing, for no radiation,
+V == Nothing.
 =#
 abstract type TaylorMap{S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V} end 
 
@@ -29,25 +30,20 @@ end
 for t = (:DAMap, :TPSAMap)
 @eval begin
 
-# First, require that if quaternion is used, that it has same type as orbit
-# This sensible requirement will drastically simplify the code
-$t{S,T,U,V}(x0, x, Q, E) where {S,T<:TPS, U<:ComplexTPS,V} = error("Orbital ray has type $(T) but quaternion has type $(U)!")
-$t{S,T,U,V}(x0, x, Q, E) where {S,T<:ComplexTPS, U<:TPS,V} = error("Orbital ray has type $(T) but quaternion has type $(U)!")
-
 # Create a TaylorMap from other TaylorMap
-function $t(m::TaylorMap{S,T,U,V}; use::Union{Descriptor,TaylorMap,Probe{S,T,U,V},Nothing}=nothing) where {S, T<:Union{TPS,ComplexTPS}, U<:Union{TPS,ComplexTPS,Nothing}, V}
+function $t(m::TaylorMap{S,T,U,V}; use::Union{Descriptor,TaylorMap,Probe{S,T,U,V},Nothing}=nothing) where {S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing}}
   desc = getdesc(m)
   nv = numvars(desc)
   np = numparams(desc)
-  nn = np+nv
+  nn = numnn(desc)
   x = Vector{T}(undef, nn)
-  q = Vector{U}(undef, 4)
+  
   for i=1:nv
     @inbounds x[i] = T(m.x[i], use=getdesc(use))
   end
 
   # use same parameters if same descriptor (use=nothing)
-  if isnothing(use)
+  if isnothing(use) || getdesc(use) == desc
     @inbounds x[nv+1:nn] = view(m.x, nv+1:nn)
   else
     if T == TPS
@@ -57,56 +53,119 @@ function $t(m::TaylorMap{S,T,U,V}; use::Union{Descriptor,TaylorMap,Probe{S,T,U,V
     end
   end
 
-  for i=1:4
-    @inbounds q[i] = U(m.Q.q[i],use=getdesc(use))
+  if !isnothing(m.Q)
+    q = Vector{T}(undef, 4)
+    for i=1:4
+      @inbounds q[i] = T(m.Q.q[i],use=getdesc(use))
+    end
+    Q = Quaternion(q)
+  else
+    Q = nothing
   end
-  return $t{S,T,U,V}(copy(m.x0), x, Quaternion(q), copy(m.E))
+
+  if !isnothing(m.E)
+    E = copy(m.E)
+  else
+    E = nothing
+  end
+
+  return $t{S,T,U,V}(copy(m.x0), x, Q, E)
 end
 
 # Create TaylorMap from a Probe. Probes do not have parameters tacked on so must allocate new
-
-function $t(p::Probe{S,T,U,V}; use::Union{Descriptor,TaylorMap,Probe{S,T,U,V},Nothing}=nothing) where {S, T<:Union{TPS,ComplexTPS}, U<:Union{TPS,ComplexTPS}, V}
+function $t(p::Probe{S,T,U,V}; use::Union{Descriptor,TaylorMap,Probe{S,T,U,V},Nothing}=nothing) where {S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing}}
   desc = getdesc(p)
   nv = numvars(desc)
   np = numparams(desc)
-  nn = np+nv
+  nn = numnn(desc)
   x = Vector{T}(undef, nn)
-  q = Vector{U}(undef, 4)
+
+  length(p.x) == nv || error("Length of orbital ray ($(length(p.x))) inconsistent with number of variables in GTPSA ($(nv))")
+  
   for i=1:nv
     @inbounds x[i] = T(p.x[i], use=getdesc(use))
   end
 
-  # Must allocate new for parameters
   if T == TPS
     @inbounds x[nv+1:nn] = params(getdesc(first(x)))
   else
     @inbounds x[nv+1:nn] = complexparams(getdesc(first(x)))
   end
 
-  for i=1:4
-    @inbounds q[i] = U(p.Q.q[i],use=getdesc(use))
+
+  if !isnothing(p.Q)
+    q = Vector{T}(undef, 4)
+    for i=1:4
+      @inbounds q[i] = T(p.Q.q[i],use=getdesc(use))
+    end
+    Q = Quaternion(q)
+  else
+    Q = nothing
   end
-  return $t{S,T,U,V}(copy(p.x0), x, Quaternion(q), copy(p.E))
+
+  if !isnothing(p.E)
+    E = copy(p.E)
+  else
+    E = nothing
+  end
+
+  return $t{S,T,U,V}(copy(p.x0), x, Q, E)
 end
-#=
+
 # Create from vector and blank (in this case must check for consistency)
-function $t(x::Vector{T}=zeros(TPS, numvars(GTPSA.desc_current)); x0::Vector{S}=zeros(numtype(first(x)), numvars(x)), Q::Quaternion{U}=Quaternion(first(x)), E::Matrix{V}=zeros(numtype(first(x)), numvars(x), numvars(x)), use::Union{Descriptor,<:TaylorMap,Probe{S,TPS,TPS,V},Nothing}=nothing) where {S,T<:Union{TPS,ComplexTPS}, U<:Union{TPS,ComplexTPS},V}
-  numvars(x) == length(x) || error("Length of orbital ray inconsistent with number of variables in GTPSA!")
-  numvars(x) == length(x0) || error("Length of orbital ray != length of reference orbit vector!")
-  (numvars(x),numvars(x)) == size(E) || error("Size of stochastic matrix inconsistent with number of variables!")
-  (!isnothing(use) || getdesc(x) == getdesc(Q)) || error("Orbital ray Descriptor different from quaternion Descriptor!")
+# This constructor is type unstable if the spin or radiation kwargs are set, 
+# and should be avoided in performance critical applications
+function $t(x::Vector{T}=zeros(TPS, numvars(GTPSA.desc_current)); x0::Vector{S}=zeros(numtype(first(x)), numvars(x)), Q::U=nothing, E::V=nothing,  spin::Union{Bool,Nothing}=nothing, radiation::Union{Bool,Nothing}=nothing, use::Union{Descriptor,<:TaylorMap,Probe{S,T,U,V},Nothing}=nothing) where {S, T<:Union{TPS,ComplexTPS}, U<:Union{TPS,ComplexTPS,Nothing}, V}
   nv = numvars(x)
   np = numparams(x)
-  nn = np+nv
+  nn = numnn(x)
+
+  length(x) == length(x0) || error("Length of orbital ray != length of reference orbit vector!")
+  numvars(x) == length(x) || error("Length of orbital ray inconsistent with number of variables in GTPSA!")
+
+
   x1 = Vector{T}(undef, nn)
-  x1[1:nv] = map(x->(T)(x, use=getdesc(use)), x)
+  @inbounds x1[1:nv] = map(x->(T)(x, use=getdesc(use)), x)
+
   if T == TPS
-    x1[nv+1:nn] = params(getdesc(first(x)))
+    @inbounds x1[nv+1:nn] = params(getdesc(first(x)))
   else
-    x1[nv+1:nn] = complexparams(getdesc(first(x)))
+    @inbounds x1[nv+1:nn] = complexparams(getdesc(first(x)))
   end
-  Q1 = Quaternion(map(x->(U)(x, use=getdesc(use)), Q.q))
-  return $t{eltype(x0),T,U,eltype(E)}(copy(x0), x1, Q1, copy(E))
+
+  if isnothing(spin)
+    Q1 = Q
+  elseif spin
+    if isnothing(Q)
+      Q1 = Quaternion(first(x1)) # implicilty uses use descriptor
+    else
+      (!isnothing(use) || getdesc(x) == getdesc(Q)) || error("Orbital ray Descriptor different from quaternion Descriptor!")
+      q = Vector{T}(undef, 4)
+      for i=1:4
+        @inbounds q[i] = T(Q.q[i],use=getdesc(use))
+      end
+      Q1 = Quaternion(q)
+    end
+  else
+    # error("For no spin tracking, please omit the spin kwarg or set spin=nothing") # For type stability
+    Q1 = nothing # For type instability
+  end
+
+  if isnothing(radiation)
+    E1 = E
+  elseif radiation
+    if isnothing(E)
+      E1 = zeros(eltype(x0), nv, nv) 
+    else
+      (nv,nv) == size(E) || error("Size of stochastic matrix inconsistent with number of variables!")
+      E1 = E
+    end
+  else
+    # error("For no radiation, please omit the radiation kwarg or set radiation=nothing") # For type stability
+    E1 = nothing # for type instability
+  end
+
+  return $t{S,T,typeof(Q1),typeof(E1)}(copy(x0), x1, Q1, E1)
 end
 
 # Basic operators
@@ -117,7 +176,7 @@ end
 function -(m2::$t,m1::$t)
   return $t(m2.x0-m1.x0, m2.x-m1.x, Quaternion(m2.Q.q-m1.Q.q), m2.E-m1.E)
 end
-=#
+
 # Also allow * for simpliticty and \ and / because why not
 *(m2::$t,m1::$t) = ∘(m2,m1)
 /(m2::$t,m1::$t) = m2∘inv(m1) 
@@ -295,6 +354,7 @@ end
 
 end
 end
+
 
 ==(m1::TaylorMap, m2::TaylorMap) = (m1.x0 == m2.x0 && m1.x == m2.x && m1.Q == m2.Q && m1.E == m2.E)
 
