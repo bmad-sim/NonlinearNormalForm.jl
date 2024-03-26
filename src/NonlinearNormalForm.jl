@@ -13,6 +13,7 @@ import Base: ∘,
              inv,
              zero,
              one,
+             complex,
              ==
 
 using LinearAlgebra,
@@ -39,6 +40,8 @@ export TaylorMap, Quaternion, Probe, TPSAMap, DAMap, TPSAMap, checksymp, mul!,
 include("quaternion.jl")
 include("probe.jl")
 include("map.jl")
+include("compose_it.jl")
+include("operators.jl")
 include("show.jl")
 include("methods.jl")
 include("utils.jl")

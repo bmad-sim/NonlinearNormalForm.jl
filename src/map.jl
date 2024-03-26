@@ -197,71 +197,6 @@ function $t(x::Vector{T}=zeros(TPS, numvars(GTPSA.desc_current)); x0::Vector{S}=
   return $t{S,T,typeof(Q1),typeof(E1)}(copy(x0), x1, Q1, E1)
 end
 
-# Basic operators
-function +(m2::$t,m1::$t)
-  return $t(m2.x0+m1.x0, m2.x+m1.x, Quaternion(m2.Q.q+m1.Q.q), m2.E+m1.E)
-end
-
-function -(m2::$t,m1::$t)
-  return $t(m2.x0-m1.x0, m2.x-m1.x, Quaternion(m2.Q.q-m1.Q.q), m2.E-m1.E)
-end
-
-literal_pow(::typeof(^), m::TaylorMap{S,T,U,V}, vn::Val{n}) where {S,T,U,V,n} = ^(m,n)
-
-function ^(m1::$t{S,T,U,V}, n::Integer) where {S,T,U,V}
-  #prepare work
-  nn = numnn(m1)
-  nv = numvars(m1)
-  outx_low = Vector{lowtype(T)}(undef, nv)
-  m2x_low = Vector{lowtype(T)}(undef, nv)
-  m1x_low = Vector{lowtype(T)}(undef, nn)
-  if nv >= 4 # Reuse container
-    outQ_low = outx_low
-    m2Q_low = m2x_low
-  else
-    outQ_low = Vector{lowtype(T)}(undef, 4)
-    m2Q_low = Vector{lowtype(T)}(undef, 4)
-  end
-  work_low = (outx_low, m2x_low, m1x_low, outQ_low, m2Q_low)
-  work_ref = Vector{numtype(T)}(undef, nv)
-
-  # Do it
-  if n>0
-    m = $t(m1)
-    for i=1:(n-1)
-      compose!(m,m,m1, work_ref=work_ref,work_low=work_low)
-    end
-    return m
-  elseif n<0
-    m = m1
-    for i=1:(-n-1)
-      m = m1∘m
-    end
-    return inv(m)
-  else
-    return $t(m1)
-  end
-end
-
-# Also allow * for simpliticty and \ and / because why not
-*(m2::$t,m1::$t) = ∘(m2,m1)
-/(m2::$t,m1::$t) = m2∘inv(m1) 
-\(m2::$t,m1::$t) = inv(m2)∘m1
-
-# Uniform scaling (identity map)
-+(m::$t, J::UniformScaling) = m + one(m)
-+(J::UniformScaling, m::$t) = +(m,J)
--(m::$t, J::UniformScaling) = m - one(m)
--(J::UniformScaling, m::$t) = one(m) - m
-∘(m::$t, J::UniformScaling) = DAMap(m)
-∘(J::UniformScaling, m::$t) = ∘(m,J)
-*(m::$t, J::UniformScaling) = ∘(m,J)
-*(J::UniformScaling, m::$t) = ∘(m,J)
-/(m::$t, J::UniformScaling) = DAMap(m)
-/(J::UniformScaling, m::$t) = inv(m)
-\(m::$t, J::UniformScaling) = inv(m)
-\(J::UniformScaling, m::$t) = DAMap(m)
-
 # zero map (empty but still identity in parameters)
 function zero(m::$t{S,T,U,V}) where {S,T,U,V}
   desc = getdesc(m)
@@ -271,7 +206,7 @@ function zero(m::$t{S,T,U,V}) where {S,T,U,V}
   
   x = Vector{T}(undef, nn)
   for i=1:nv
-    @inbounds x[i] = zero(m.x[i])
+    @inbounds x[i] = T(use=desc)
   end
 
   # use same parameters 
@@ -280,7 +215,7 @@ function zero(m::$t{S,T,U,V}) where {S,T,U,V}
   if !isnothing(m.Q)
     q = Vector{T}(undef, 4)
     for i=1:4
-      @inbounds q[i] = zero(m.Q.q[i])
+      @inbounds q[i] = T(use=desc)
     end
     Q = Quaternion(q)
   else
@@ -304,8 +239,14 @@ function one(m::$t{S,T,U,V}) where {S,T,U,V}
   np = numparams(desc)
   
   x = Vector{T}(undef, nn)
-  for i=1:nv
-    @inbounds x[i] = zero(m.x[i])
+  if T == ComplexTPS
+    for i=1:nv
+      @inbounds x[i] = complexmono(i,use=desc)
+    end
+  else
+    for i=1:nv
+      @inbounds x[i] = mono(i,use=desc)
+    end
   end
 
   # use same parameters 
@@ -313,9 +254,9 @@ function one(m::$t{S,T,U,V}) where {S,T,U,V}
 
   if !isnothing(m.Q)
     q = Vector{T}(undef, 4)
-    @inbounds q[1] = one(m.Q.q[1])
+    @inbounds q[1] = one(first(x))
     for i=2:4
-      @inbounds q[i] = zero(m.Q.q[i])
+      @inbounds q[i] = T(use=desc)
     end
     Q = Quaternion(q)
   else
@@ -331,332 +272,13 @@ function one(m::$t{S,T,U,V}) where {S,T,U,V}
   return $t(zeros(eltype(m.x0), nv), x, Q, E)
 end
 
-"""
-    compose_it!(m, m2, m1)
-
-Composes the maps  in-place, `m2 ∘ m1`. Aliasing `m` with `m2` is allowed, but not `m` with `m1`.
-Assumes the destination map is properly set up (with correct types promoted if necessary), and 
-that `m.x[1:nv]` (and `m.Q.q` if spin) contain allocated TPSs.
-""" 
-function compose_it!(m::$t, m2::$t, m1::$t; work_low::Union{Nothing,Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}}=nothing)
-  @assert !(m === m1) "Cannot compose_it!(m, m2, m1) with m === m1"
-  @assert !isnothing(m1.Q) && !isnothing(m2.Q) || m1.Q == m2.Q "Cannot compose: one map includes spin, other does not"
-  @assert !isnothing(m1.E) && !isnothing(m2.E) || m1.E == m2.E "Cannot compose: one map includes radiation, other does not"
-  @assert eltype(m.x) == promote_type(eltype(m2.x),eltype(m1.x)) "Cannot compose: output map orbital ray type $(eltype(m.x)) must be $(promote_type(eltype(m2.x),eltype(m1.x)))"
-  @assert isnothing(m1.Q) && isnothing(m.Q) || eltype(m.Q.q) == promote_type(eltype(m2.Q.q),eltype(m1.Q.q)) "Cannot compose: output map quaternion type $(eltype(m.x)) must be $(promote_type(eltype(m2.x),eltype(m1.x)))"
-  @assert isnothing(m1.Q) && isnothing(m.Q) || eltype(m.Q.q) == promote_type(eltype(m2.Q.q),eltype(m1.Q.q)) "Cannot compose: output map stochastic matrix type $(eltype(m.x)) must be $(promote_type(eltype(m2.x),eltype(m1.x)))"
-
-  desc = getdesc(m1)
-  nn = numnn(desc)
-  nv = numvars(desc)
-  np = numparams(desc)
-  outT = eltype(m.x)
-
-  # Orbit work for all cases:
-  if isnothing(work_low)
-    outx_low = Vector{lowtype(outT)}(undef, nv)
-    m2x_low = Vector{lowtype(outT)}(undef, nv)
-    m1x_low = Vector{lowtype(outT)}(undef, nn)
-    if !isnothing(m.Q)
-      if nv >= 4 # Reuse container
-        outQ_low = outx_low
-        m2Q_low = m2x_low
-      else
-        outQ_low = Vector{lowtype(outT)}(undef, 4)
-        m2Q_low = Vector{lowtype(outT)}(undef, 4)
-      end    
-    end
-  else
-    outx_low = work_low[1]
-    m2x_low = work_low[2]
-    m1x_low = work_low[3]
-    @assert length(outx_low) == nv "Incorrect length for work_low[1] = outx_low. Received $(length(outx_low)), should be $nv"
-    @assert length(m2x_low) == nv "Incorrect length for work_low[2] = m2x_low. Received $(length(m2x_low)), should be $nv"
-    @assert length(m1x_low) == nn "Incorrect length for work_low[3] = m1x_low. Received $(length(m1x_low)), should be $nn"
-    if !isnothing(m.Q)
-      outQ_low = work_low[4]
-      m2Q_low = work_low[5]
-      @assert length(outQ_low) >= 4 "Incorrect length for outQ_low: length(work_low[4]) < 4"
-      @assert length(m2Q_low) >= 4 "Incorrect length for m2Q_low: length(work_low[5]) < 4"
-      @assert !(outQ_low === m1x_low) "m1x_low === outQ_low !! m1x_low must NOT be reused!"
-      @assert !(m2Q_low === m1x_low) "m1x_low === m2Q_low !! m1x_low must NOT be reused!"
-    end
-  end
-  # If promoting m1:
-
-  # Spin work for all cases:
-  # Quaternion: both could reuse either m2x_low or outx_low, but
-  # NOT m1x_low !!!
-
-  # Deal with x0:
-  m.x0 .= m1.x0
-
-  # add immutable parameters to outx
-  if eltype(m.x) == eltype(m1.x)
-    @inbounds m.x[nv+1:nn] = view(m1.x, nv+1:nn)
-  else
-    @inbounds m.x[nv+1:nn] = view(m2.x, nv+1:nn)
-  end
-
-  # Do the composition, promoting if necessary
-  # m1 promotion if necessary:
-  if outT != eltype(m1.x) 
-    m1x_store = Vector{ComplexTPS}(undef, nn)  # Must store to prevent GC
-    # Promote to ComplexTPS:
-    map!(t->ComplexTPS(t), m1x_store,  m1.x)   
-    map!(t->t.tpsa, m1x_low, m1x_store)
-  else
-    m1x_store = nothing
-    map!(t->t.tpsa, m1x_low, m1.x)
-  end
-
-  # m2 promotion if necessary:
-  if outT != eltype(m2.x)
-    m2x_store = Vector{ComplexTPS}(undef, nv) # Must store to prevent GC  
-    map!(t->ComplexTPS(t), m2x_store, view(m2.x,1:nv))  
-    map!(t->t.tpsa, m2x_low, m2x_store)
-  else
-    m2x_store = nothing
-    map!(t->t.tpsa, m2x_low, view(m2.x, 1:nv))
-  end
-
-  # go low
-  map!(t->t.tpsa, outx_low, view(m.x,1:nv))
-
-  # Orbit:
-  GC.@preserve m1x_store m2x_store compose!(nv, m2x_low, nv+np, m1x_low, outx_low)
-
-  # Spin:
-  if !isnothing(m.Q)
-    if outT != eltype(m2.x)
-      m2Q_store = Vector{ComplexTPS}(undef, 4) # Must store to prevent GC
-      map!(t->ComplexTPS(t), m2Q_store, m2.Q.q) 
-      map!(t->t.tpsa, m2Q_low, m2Q_store)
-    else
-      m2Q_store = nothing
-      map!(t->t.tpsa, m2Q_low, m2.Q.q)
-    end
-    # Go low
-    map!(t->t.tpsa, outQ_low, m.Q.q)
-    # Spin (spectator) q(z0)=q2(M(z0))q1(z0)
-    # First obtain q2(M(z0))
-    GC.@preserve m1x_store m2Q_store compose!(Cint(4), m2Q_low, nv+np, m1x_low, outQ_low)
-    # Now concatenate
-    mul!(m.Q, m1.Q, m.Q)
-  end
-
-  return 
-end
-
-function compose_it(m2::$t, m1::$t; work_low::Union{Nothing,Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}}=nothing)
-  @assert !isnothing(m1.Q) && !isnothing(m2.Q) || m1.Q == m2.Q "Cannot compose: one map includes spin, other does not"
-  @assert !isnothing(m1.E) && !isnothing(m2.E) || m1.E == m2.E "Cannot compose: one map includes radiation, other does not"
-
-  desc = getdesc(m1)
-  nn = numnn(desc)
-  nv = numvars(desc)
-
-  outT = promote_type(eltype(m2.x),eltype(m1.x))
-  
-  # set up outx0
-  outx0 = Vector{numtype(outT)}(undef, nv)
-
-  # Set up outx:
-  outx = Vector{outT}(undef, nn)
-  for i=1:nv  # no need to allocate immutable parameters taken care of inside compose_it!
-     @inbounds outx[i] = outT(use=desc)
-  end
-
-  # set up quaternion out:
-  if !isnothing(m1.Q)
-    outq = Vector{outT}(undef, 4)
-    for i=1:4
-      @inbounds outq[i] = outT(use=desc)
-    end
-    outQ = Quaternion(outq)
-  else
-    outQ = nothing
-  end
-
-  # set up radiation out
-  if isnothing(m1.E)
-    outE = nothing
-  else
-    outE = Matrix{numtype(outT)}(undef, nv, nv)
-  end
-
-  # make a map
-  m = $t(outx0, outx, outQ, outE)
-
-  # compose
-  compose_it!(m, m2, m1, work_low=work_low)
-
-  return m
-end
-
 end
 end
 
 
 ==(m1::TaylorMap, m2::TaylorMap) = (m1.x0 == m2.x0 && m1.x == m2.x && m1.Q == m2.Q && m1.E == m2.E)
 
-# --- compose ---
-function compose!(m::DAMap, m2::DAMap, m1::DAMap; work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing, work_low::Union{Nothing,Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}}=nothing)
-  # DAMap setup:
-  desc = getdesc(m1)
-  nv = numvars(desc)
-  if work_ref == nothing
-    ref = Vector{numtype(eltype(m1.x))}(undef, numvars(m1))
-  else
-    @assert length(work_ref) >= nv "Incorrect length for work_ref, received $(length(work_ref)) but should be atleast $nv"
-    ref = work_ref
-  end   
 
-  # Take out scalar part and store it
-  for i=1:nv
-      @inbounds ref[i] = m1.x[i][0]
-      @inbounds m1.x[i][0] = 0
-  end
-
-  compose_it!(m, m2, m1,work_low=work_low)
-
-  # Put back the reference and if m1 === m2, also add to outx
-  if m1 === m2
-    for i=1:nv
-        @inbounds m1.x[i][0] = ref[i]
-        @inbounds m.x[i][0] += ref[i]
-    end
-  else
-    for i=1:nv
-        @inbounds m1.x[i][0] = ref[i]
-    end
-  end
-
-  return m
-end
-
-function ∘(m2::DAMap,m1::DAMap)
-  # DAMap setup:
-  desc = getdesc(m1)
-  nv = numvars(desc)
-  ref = Vector{numtype(eltype(m1.x))}(undef, nv)
-  # Take out scalar part and store it
-  for i=1:nv
-     @inbounds ref[i] = m1.x[i][0]
-     @inbounds m1.x[i][0] = 0
-  end
-  
-  m = compose_it(m2,m1)
-  
-  # Put back the reference and if m1 === m2, also add to outx
-  if m1 === m2
-    for i=1:nv
-       @inbounds m1.x[i][0] = ref[i]
-       @inbounds m.x[i][0] += ref[i]
-    end
-  else
-    for i=1:nv
-       @inbounds m1.x[i][0] = ref[i]
-    end
-  end
-
-  return m
-end
-
-function ∘(m2::TPSAMap, m1::TPSAMap)
-  # TPSAMap setup:
-  # For TPSA Map concatenation, we need to subtract w_0 (m2 x0) (Eq. 33)
-  # Because we are still expressing in terms of z_0 (m1 x0)
-  desc = getdesc(m1)
-  nv = numvars(desc)
-  for i=1:nv
-    @inbounds m1.x[i] -= m2.x0[i]
-  end
-
-  m = compose_it(m2,m1)
-  
-  # Now fix m1 and if m2 === m1, add to output too:
-  # For TPSA Map concatenation, we need to subtract w_0 (m2 x0) (Eq. 33)
-  # Because we are still expressing in terms of z_0 (m1 x0)
-  if m1 === m2
-    for i=1:nv
-       @inbounds m1.x[i] += m2.x0[i]
-       @inbounds m.x[i] += m2.x0[i]
-    end
-  else
-    for i=1:nv
-       @inbounds m1.x[i] += m2.x0[i]
-    end
-  end
-
-  return m
-end
-
-
-# --- inverse ---
-minv!(na::Cint, ma::Vector{Ptr{RTPSA}}, nb::Cint, mc::Vector{Ptr{RTPSA}}) = (@inline; GTPSA.mad_tpsa_minv!(na, ma, nb, mc))
-minv!(na::Cint, ma::Vector{Ptr{CTPSA}}, nb::Cint, mc::Vector{Ptr{CTPSA}}) = (@inline; GTPSA.mad_ctpsa_minv!(na, ma, nb, mc))
-
-function inv(m1::TaylorMap{S,T,U,V}) where {S,T,U,V}
-  desc = getdesc(m1)
-  nv = numvars(desc)
-  np = numparams(desc)
-  nn = np + nv
-  outx = Vector{T}(undef, nn)
-  for i=1:nv
-     @inbounds outx[i] = T(use=desc)
-  end
-  # add immutable parameters to outx
-  @inbounds outx[nv+1:nn] = view(m1.x, nv+1:nn)
-
-  outQ = inv(m1.Q)
-
-  m1x_low = map(t->t.tpsa, m1.x)
-  outx_low = map(t->t.tpsa, outx)
-
-  # This C function ignores the scalar part so no need to take it out
-  minv!(nv+np, m1x_low, nv, outx_low)
-
-  # Now do quaternion: inverse of q(z0) is q^-1(M^-1(zf))
-  outQ_low = map(t->t.tpsa, outQ.q)
-  compose!(Cint(4), outQ_low, nv+np, outx_low, outQ_low)
-
-  outx0 = Vector{S}(undef, nv)
-  for i=1:nv
-     @inbounds outx0[i] = m1.x[i][0]
-     @inbounds outx[i] += m1.x0[i]
-  end
-  
-  return (typeof(m1))(outx0, outx, outQ, zeros(nv,nv))
-end
-
-function inv!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}) where {S,T,U,V}
-  desc = getdesc(m1)
-  nv = numvars(desc)
-  np = numparams(desc)
-  nn = np + nv
-
-  # add immutable parameters to outx
-  @inbounds m.x[nv+1:nn] = view(m1.x, nv+1:nn)
-
-  inv!(m.Q, m1.Q)
-
-  m1x_low = map(t->t.tpsa, m1.x)
-  outx_low = map(t->t.tpsa, m.x)
-
-  # This C function ignores the scalar part so no need to take it out
-  minv!(nv+np, m1x_low, nv, outx_low)
-
-  # Now do quaternion: inverse of q(z0) is q^-1(M^-1(zf))
-  outQ_low = map(t->t.tpsa, m.Q.q)
-  compose!(Cint(4), outQ_low, nv+np, outx_low, outQ_low)
-  for i=1:nv
-     @inbounds m.x0[i] = m1.x[i][0]
-     @inbounds m.x[i] += m1.x0[i]
-  end
-  
-  return 
-end
 
 
 function cut(m1::TaylorMap{S,T,U,V}, order::Integer) where {S,T,U,V}
