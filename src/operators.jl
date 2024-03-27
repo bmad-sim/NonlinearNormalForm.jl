@@ -91,13 +91,22 @@ function inv!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}; work_ref::Union{Not
     outx_low = Vector{lowtype(T)}(undef, nn)    # SHOULD ONLY NEED TO BE NV  BUT GTPSA BUG
     m1x_low = Vector{lowtype(T)}(undef, nn)
     if !isnothing(m.Q)
-      outQ_low = Vector{lowtype(T)}(undef, 4)
+      if nn >= 4   # reuse
+        outQ_low = m1x_low
+      else
+        outQ_low = Vector{lowtype(T)}(undef, 4)
+      end
     end
   else
     outx_low = work_low[1]
     m1x_low = work_low[2]
-    outQ_low = work_low[3]
-    @assert !(outQ_low === outx_low) "outQ_low === outx_low !! outx_low must NOT be reused!"
+    @assert length(outx_low) >= nn "Cannot inv!: incorrect length for outx_low = work_low[1]. Received $(length(outx_low)), must be >= $nn"
+    @assert length(m1x_low) >= nn "Cannot inv!: incorrect length for m1x_low = work_low[2]. Received $(length(m1x_low)), must be >= $nn"
+    if !isnothing(m.Q)
+      outQ_low = work_low[3]
+      @assert length(outQ_low) >= 4 "Cannot inv!: incorrect length for outQ_low = work_low[3]. Received $(length(outQ_low)), must be >= 4"
+      @assert !(outQ_low === outx_low) "Cannot inv!: outQ_low === outx_low !! outx_low must NOT be reused!"
+    end
   end
   # if aliasing, must pass vector to store x0
   if m1 === m
@@ -105,7 +114,7 @@ function inv!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}; work_ref::Union{Not
       ref = Vector{numtype(T)}(undef, nv)
     else
       ref = work_ref
-      @assert length(ref) >= nv "Incorrect length for ref"
+      @assert length(ref) >= nv "Cannot inv!: incorrect length for ref. Received $(length(ref)), must be >= $nv"
     end
     map!(t->t[0], ref, view(m1.x,1:nv))
   end
@@ -144,28 +153,29 @@ end
 # --- powers ---
 
 function ^(m1::DAMap{S,T,U,V}, n::Integer) where {S,T,U,V}
-  #prepare work
-  nn = numnn(m1)
-  nv = numvars(m1)
-  outx_low = Vector{lowtype(T)}(undef, nv)
-  m2x_low = Vector{lowtype(T)}(undef, nv)
-  m1x_low = Vector{lowtype(T)}(undef, nn)
-  if !isnothing(m1.Q)
-    if nv >= 4 # Reuse container
-      outQ_low = outx_low
-      m2Q_low = m2x_low
-    else
-      outQ_low = Vector{lowtype(T)}(undef, 4)
-      m2Q_low = Vector{lowtype(T)}(undef, 4)
-    end
-    work_low = (outx_low, m2x_low, m1x_low, outQ_low, m2Q_low)
-  else
-    work_low = (outx_low, m2x_low, m1x_low)
-  end
-  ref = Vector{numtype(T)}(undef, nv)
-
   # Do it
   if n>0
+    #prepare work
+    nn = numnn(m1)
+    nv = numvars(m1)
+    outx_low = Vector{lowtype(T)}(undef, nv)
+    m2x_low = Vector{lowtype(T)}(undef, nv)
+    m1x_low = Vector{lowtype(T)}(undef, nn)
+    if !isnothing(m1.Q)
+      if nv >= 4 # Reuse container
+        outQ_low = outx_low
+        m2Q_low = m2x_low
+      else
+        outQ_low = Vector{lowtype(T)}(undef, 4)
+        m2Q_low = Vector{lowtype(T)}(undef, 4)
+      end
+      work_low = (outx_low, m2x_low, m1x_low, outQ_low, m2Q_low)
+    else
+      work_low = (outx_low, m2x_low, m1x_low)
+    end
+    ref = Vector{numtype(T)}(undef, nv)
+
+    # do it:
     m = DAMap(m1)
     map!(t->t[0], ref, view(m.x,1:nv))
     for i=1:(n-1)
@@ -177,6 +187,28 @@ function ^(m1::DAMap{S,T,U,V}, n::Integer) where {S,T,U,V}
     end
     return m
   elseif n<0
+    #prepare work
+    nn = numnn(m1)
+    nv = numvars(m1)
+    outx_low = Vector{lowtype(T)}(undef, nn)
+    m2x_low = Vector{lowtype(T)}(undef, nv)
+    m1x_low = Vector{lowtype(T)}(undef, nn)
+    if !isnothing(m1.Q)
+      if nv >= 4 # Reuse container
+        outQ_low = outx_low
+        m2Q_low = m2x_low
+      else
+        outQ_low = Vector{lowtype(T)}(undef, 4)
+        m2Q_low = Vector{lowtype(T)}(undef, 4)
+      end
+      work_low = (outx_low, m2x_low, m1x_low, outQ_low, m2Q_low)
+      invwork_low = (outx_low,m1x_low,m2Q_low)
+    else
+      work_low = (outx_low, m2x_low, m1x_low)
+      invwork_low = (outx_low,m1x_low)
+    end
+    ref = Vector{numtype(T)}(undef, nv)
+
     m = DAMap(m1)
     map!(t->t[0], ref, view(m.x,1:nv))
     for i=1:(-n-1)
@@ -186,7 +218,7 @@ function ^(m1::DAMap{S,T,U,V}, n::Integer) where {S,T,U,V}
         @inbounds m1.x[i][0] = ref[i]
         #@inbounds m.x[i][0] += ref[i]
     end
-    inv!(m,m)
+    inv!(m,m,work_ref=ref,work_low=invwork_low)
     return m
   else
     return DAMap(m1)
@@ -194,38 +226,57 @@ function ^(m1::DAMap{S,T,U,V}, n::Integer) where {S,T,U,V}
 end
 
 function ^(m1::TPSAMap{S,T,U,V}, n::Integer) where {S,T,U,V}
-  #prepare work
-  nn = numnn(m1)
-  nv = numvars(m1)
-  outx_low = Vector{lowtype(T)}(undef, nv)
-  m2x_low = Vector{lowtype(T)}(undef, nv)
-  m1x_low = Vector{lowtype(T)}(undef, nn)
-  if !isnothing(m1.Q)
-    if nv >= 4 # Reuse container
-      outQ_low = outx_low
-      m2Q_low = m2x_low
-    else
-      outQ_low = Vector{lowtype(T)}(undef, 4)
-      m2Q_low = Vector{lowtype(T)}(undef, 4)
-    end
-    work_low = (outx_low, m2x_low, m1x_low, outQ_low, m2Q_low)
-  else
-    work_low = (outx_low, m2x_low, m1x_low)
-  end
-
   # Do it
   if n>0
+    #prepare work
+    nn = numnn(m1)
+    nv = numvars(m1)
+    outx_low = Vector{lowtype(T)}(undef, nv)
+    m2x_low = Vector{lowtype(T)}(undef, nv)
+    m1x_low = Vector{lowtype(T)}(undef, nn)
+    if !isnothing(m1.Q)
+      if nv >= 4 # Reuse container
+        outQ_low = outx_low
+        m2Q_low = m2x_low
+      else
+        outQ_low = Vector{lowtype(T)}(undef, 4)
+        m2Q_low = Vector{lowtype(T)}(undef, 4)
+      end
+      work_low = (outx_low, m2x_low, m1x_low, outQ_low, m2Q_low)
+    else
+      work_low = (outx_low, m2x_low, m1x_low)
+    end
     m = TPSAMap(m1)
     for i=1:(n-1)
       compose!(m,m,m1,work_low=work_low)
     end
     return m
   elseif n<0
+    #prepare work
+    nn = numnn(m1)
+    nv = numvars(m1)
+    outx_low = Vector{lowtype(T)}(undef, nn)
+    m2x_low = Vector{lowtype(T)}(undef, nv)
+    m1x_low = Vector{lowtype(T)}(undef, nn)
+    if !isnothing(m1.Q)
+      if nv >= 4 # Reuse container
+        outQ_low = outx_low
+        m2Q_low = m2x_low
+      else
+        outQ_low = Vector{lowtype(T)}(undef, 4)
+        m2Q_low = Vector{lowtype(T)}(undef, 4)
+      end
+      work_low = (outx_low, m2x_low, m1x_low, outQ_low, m2Q_low)
+      invwork_low = (outx_low,m1x_low,m2Q_low)
+    else
+      work_low = (outx_low, m2x_low, m1x_low)
+      invwork_low = (outx_low,m1x_low)
+    end
     m = TPSAMap(m1)
     for i=1:(-n-1)
       compose!(m,m,m1,work_low=work_low)
     end
-    inv!(m,m)
+    inv!(m,m,work_low=invwork_low)
     return m
   else
     return TPSAMap(m1)
