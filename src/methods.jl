@@ -18,6 +18,8 @@ function gofix(xy::DAMap, order=1)
   desc = getdesc(xy)
   nv = numvars(desc)
 
+  comp_work_low, inv_work_low = prep_comp_inv_work_low(xy)
+
   # 1: v = map-identity in harmonic planes, identity in spin
   v = zero(xy)
   for i=1:nv
@@ -29,13 +31,13 @@ function gofix(xy::DAMap, order=1)
   cut!(v,v,order+1)
 
   # 3: map is inverted at least to order 1:
-  inv!(v,v)
+  inv!(v,v,work_low=inv_work_low)
 
   # 4: a map x is created with dimension nv
   # x is zero except for the parameters and delta if coasting
   x = zero(v) # default identity in parameters
   x.Q.q[1] = 1 # identity in spin
-  compose!(v,v,x)
+  compose!(v,v,x,work_low=comp_work_low)
 
   # 5: add back in identity
   for i=1:nv

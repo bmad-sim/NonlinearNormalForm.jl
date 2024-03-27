@@ -40,6 +40,7 @@ export TaylorMap, Quaternion, Probe, TPSAMap, DAMap, TPSAMap, checksymp, mul!,
 include("quaternion.jl")
 include("probe.jl")
 include("map.jl")
+include("work.jl")
 include("compose_it.jl")
 include("operators.jl")
 include("show.jl")
