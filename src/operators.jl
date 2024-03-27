@@ -153,6 +153,7 @@ end
 # --- powers ---
 
 function ^(m1::DAMap{S,T,U,V}, n::Integer) where {S,T,U,V}
+  nv = numvars(m1)
   # Do it
   if n>0
     #prepare work
