@@ -299,9 +299,14 @@ function cut!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}, order::Integer) whe
   end
   # add immutable parameters to outx
   @inbounds m.x[nv+1:nn] = view(m1.x, nv+1:nn)
-  for i=1:4
-    @inbounds GTPSA.cutord!(m1.Q.q[i].tpsa, m.Q.q[i].tpsa, convert(Cint, ord))
+
+  if !isnothing(m1.Q)
+    for i=1:4
+      @inbounds GTPSA.cutord!(m1.Q.q[i].tpsa, m.Q.q[i].tpsa, convert(Cint, ord))
+    end
   end
-  m.E .= m.E
+  if !isnothing(m1.E)
+    m.E .= m.E
+  end
   return
 end
