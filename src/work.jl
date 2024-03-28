@@ -21,11 +21,26 @@ function prep_comp_work_low(m1::TaylorMap{S,T,U,V}) where {S,T,U,V}
   return work_low
 end
 
+function prep_comp_work_prom(m::TaylorMap, m2::TaylorMap, m1::TaylorMap)
+  nn = numnn(m)
+  nv = numvars(m)
+  if eltype(m.x) != eltype(m1.x)
+    m1x_prom = Vector{ComplexTPS}(undef, nn)
+    return (m1x_prom,)
+  elseif eltype(m.x) != eltype(m2.x)
+    m2x_prom = Vector{ComplexTPS}(undef, nv)
+    m2Q_prom = Vector{ComplexTPS}(undef, 4)
+    return (m2x_prom, m2Q_prom)
+  else
+    return nothing
+  end
+end
+
 function prep_comp_inv_work_low(m1::TaylorMap{S,T,U,V}) where {S,T,U,V}
   #prepare work
   nn = numnn(m1)
   nv = numvars(m1)
-  outx_low = Vector{lowtype(T)}(undef, nn)
+  outx_low = Vector{lowtype(T)}(undef, nn)   # change
   m2x_low = Vector{lowtype(T)}(undef, nv)
   m1x_low = Vector{lowtype(T)}(undef, nn)
   if !isnothing(m1.Q)
@@ -45,6 +60,22 @@ function prep_comp_inv_work_low(m1::TaylorMap{S,T,U,V}) where {S,T,U,V}
   return comp_work_low, inv_work_low
 end
 
-function prep_inv_work_low(m::TaylorMap{S,T,U,V}) where {S,T,U,V}
+function prep_inv_work_low(m1::TaylorMap{S,T,U,V}) where {S,T,U,V}
+  nn = numnn(m1)
+  outx_low = Vector{lowtype(T)}(undef, nn)    # SHOULD ONLY NEED TO BE NV  BUT GTPSA BUG
+  m1x_low = Vector{lowtype(T)}(undef, nn)
+  if !isnothing(m1.Q)
+    if nn >= 4   # reuse
+      outQ_low = m1x_low
+    else
+      outQ_low = Vector{lowtype(T)}(undef, 4)
+    end
+    return (outx_low, m1x_low, outQ_low)
+  else
+    return (outx_low,m1x_low)
+  end
+end
 
+function prep_work_ref(m1::TaylorMap{S,T,U,V}) where {S,T,U,V}
+  return Vector{numtype(eltype(m1.x))}(undef, numvars(m1))
 end

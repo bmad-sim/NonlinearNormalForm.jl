@@ -1,14 +1,11 @@
 # --- compose ---
-function compose!(m::DAMap, m2::DAMap, m1::DAMap; keep_scalar::Bool=true, work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing, work_low::Union{Nothing,Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}}=nothing, work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS}}}}=nothing)
+function compose!(m::DAMap, m2::DAMap, m1::DAMap; keep_scalar::Bool=true, work_ref::Vector{<:Union{Float64,ComplexF64}}=prep_work_ref(m1), work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_comp_work_low(m), work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS}}}}=prep_comp_work_prom(m,m2,m1))
   # DAMap setup:
   desc = getdesc(m1)
   nv = numvars(desc)
-  if isnothing(work_ref)
-    ref = Vector{numtype(eltype(m1.x))}(undef, numvars(m1))
-  else
-    @assert length(work_ref) >= nv "Incorrect length for work_ref, received $(length(work_ref)) but should be atleast $nv"
-    ref = work_ref
-  end   
+
+  @assert length(work_ref) >= nv "Incorrect length for work_ref, received $(length(work_ref)) but should be atleast $nv"
+  ref = work_ref
 
   if keep_scalar
     # Take out scalar part and store it
@@ -41,7 +38,7 @@ function compose!(m::DAMap, m2::DAMap, m1::DAMap; keep_scalar::Bool=true, work_r
   return m
 end
 
-function compose!(m::TPSAMap, m2::TPSAMap, m1::TPSAMap; work_low::Union{Nothing,Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}}=nothing, work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS}}}}=nothing)
+function compose!(m::TPSAMap, m2::TPSAMap, m1::TPSAMap; work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_comp_work_low(m), work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS}}}}=prep_comp_work_prom(m,m2,m1))
   # TPSAMap setup:
   # For TPSA Map concatenation, we need to subtract w_0 (m2 x0) (Eq. 33)
   # Because we are still expressing in terms of z_0 (m1 x0)
@@ -81,34 +78,22 @@ function inv(m1::TaylorMap{S,T,U,V}) where {S,T,U,V}
   return m
 end
 
-function inv!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}; work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing, work_low::Union{Nothing,Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}}=nothing) where {S,T,U,V}
+function inv!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}; work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_inv_work_low(m1)) where {S,T,U,V}
   desc = getdesc(m1)
   nn = numnn(desc)
   nv = numvars(desc)
 
-  # Set up work:
-  if isnothing(work_low)
-    outx_low = Vector{lowtype(T)}(undef, nn)    # SHOULD ONLY NEED TO BE NV  BUT GTPSA BUG
-    m1x_low = Vector{lowtype(T)}(undef, nn)
-    if !isnothing(m.Q)
-      if nn >= 4   # reuse
-        outQ_low = m1x_low
-      else
-        outQ_low = Vector{lowtype(T)}(undef, 4)
-      end
-    end
-  else
-    outx_low = work_low[1]
-    m1x_low = work_low[2]
-    @assert length(outx_low) >= nn "Cannot inv!: incorrect length for outx_low = work_low[1]. Received $(length(outx_low)), must be >= $nn"
-    @assert length(m1x_low) >= nn "Cannot inv!: incorrect length for m1x_low = work_low[2]. Received $(length(m1x_low)), must be >= $nn"
-    if !isnothing(m.Q)
-      outQ_low = work_low[3]
-      @assert length(outQ_low) >= 4 "Cannot inv!: incorrect length for outQ_low = work_low[3]. Received $(length(outQ_low)), must be >= 4"
-      @assert !(outQ_low === outx_low) "Cannot inv!: outQ_low === outx_low !! outx_low must NOT be reused!"
-    end
+  outx_low = work_low[1]
+  m1x_low = work_low[2]
+  @assert length(outx_low) >= nn "Cannot inv!: incorrect length for outx_low = work_low[1]. Received $(length(outx_low)), must be >= $nn"
+  @assert length(m1x_low) >= nn "Cannot inv!: incorrect length for m1x_low = work_low[2]. Received $(length(m1x_low)), must be >= $nn"
+  if !isnothing(m.Q)
+    outQ_low = work_low[3]
+    @assert length(outQ_low) >= 4 "Cannot inv!: incorrect length for outQ_low = work_low[3]. Received $(length(outQ_low)), must be >= 4"
+    @assert !(outQ_low === outx_low) "Cannot inv!: outQ_low === outx_low !! outx_low must NOT be reused!"
   end
-  # if aliasing, must pass vector to store x0
+  
+  # if aliasing, must use vector to store x0
   if m1 === m
     if isnothing(work_ref)
       ref = Vector{numtype(T)}(undef, nv)
@@ -117,7 +102,10 @@ function inv!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}; work_ref::Union{Not
       @assert length(ref) >= nv "Cannot inv!: incorrect length for ref. Received $(length(ref)), must be >= $nv"
     end
     map!(t->t[0], ref, view(m1.x,1:nv))
+  elseif !isnothing(work_ref)
+    @warn "work_ref provided to inv!, but !(m1 === m)"
   end
+
   # add immutable parameters to outx
   @inbounds m.x[nv+1:nn] = view(m1.x, nv+1:nn)
 
@@ -158,7 +146,7 @@ function ^(m1::DAMap{S,T,U,V}, n::Integer) where {S,T,U,V}
   if n>0
     #prepare work
     work_low = prep_comp_work_low(m1)
-    ref = Vector{numtype(T)}(undef, nv)
+    ref = prep_work_ref(m1)
 
     # do it:
     m = DAMap(m1)
@@ -173,7 +161,8 @@ function ^(m1::DAMap{S,T,U,V}, n::Integer) where {S,T,U,V}
     return m
   elseif n<0
     comp_work_low, inv_work_low = prep_comp_inv_work_low(m1)
-    ref = Vector{numtype(T)}(undef, nv)
+    ref = prep_work_ref(m1)
+    #println(typeof(ref))
 
     m = DAMap(m1)
     map!(t->t[0], ref, view(m.x,1:nv))
