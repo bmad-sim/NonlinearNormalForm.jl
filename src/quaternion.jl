@@ -22,15 +22,19 @@ Quaternion(n::Nothing) = Quaternion{Nothing}(Nothing[])
 function mul!(Q3::Quaternion, Q1::Quaternion{S}, Q2::Quaternion{T}) where {S,T}
   q1 = Q1.q
   q2 = Q2.q
-  E = @FastGTPSA (q1[2]+q1[4])*(q2[2]+q2[3])
-  F = @FastGTPSA (q1[2]-q1[4])*(q2[2]-q2[3])
-  G = @FastGTPSA (q1[1]+q1[3])*(q2[1]-q2[4])
-  H = @FastGTPSA (q1[1]-q1[3])*(q2[1]+q2[4])
+  A = @FastGTPSA  (q1[1]+q1[2])*(q2[1]+q2[2])
+  B = @FastGTPSA  (q1[4]-q1[3])*(q2[3]-q2[4])
+  C = @FastGTPSA  (q1[1]-q1[2])*(q2[3]+q2[4]) 
+  D = @FastGTPSA  (q1[3]+q1[4])*(q2[1]-q2[2])
+  E = @FastGTPSA  (q1[2]+q1[4])*(q2[2]+q2[3])
+  F = @FastGTPSA  (q1[2]-q1[4])*(q2[2]-q2[3])
+  G = @FastGTPSA  (q1[1]+q1[3])*(q2[1]-q2[4])
+  H = @FastGTPSA  (q1[1]-q1[3])*(q2[1]+q2[4])
   
-  Q3.q[1] = @FastGTPSA (q1[4]-q1[3])*(q2[3]-q2[4])+(-E-F+G+H)/2
-  Q3.q[2] = @FastGTPSA (q1[1]+q1[2])*(q2[1]+q2[2])-(E+F+G+H)/2
-  Q3.q[3] = @FastGTPSA (q1[1]-q1[2])*(q2[3]+q2[4])+(E-F+G-H)/2
-  Q3.q[4] = @FastGTPSA (q1[3]+q1[4])*(q2[1]-q2[2])+(E-F-G+H)/2
+  Q3.q[1] = @FastGTPSA  B+(-E-F+G+H)/2
+  Q3.q[2] = @FastGTPSA  A-(E+F+G+H)/2
+  Q3.q[3] = @FastGTPSA  C+(E-F+G-H)/2
+  Q3.q[4] = @FastGTPSA  D+(E-F-G+H)/2
 end
 
 function Base.:+(Q1::Quaternion, Q2::Quaternion)

@@ -277,36 +277,3 @@ end
 
 
 ==(m1::TaylorMap, m2::TaylorMap) = (m1.x0 == m2.x0 && m1.x == m2.x && m1.Q == m2.Q && m1.E == m2.E)
-
-
-
-
-function cut(m1::TaylorMap{S,T,U,V}, order::Integer) where {S,T,U,V}
-  m = zero(m1)
-  cut!(m, m1, order)
-  return m
-end
-
-function cut!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}, order::Integer) where {S,T,U,V}
-  desc = getdesc(m1)
-  nv = numvars(desc)
-  np = numparams(desc)
-  nn = np + nv
-  m.x0 .= m1.x0
-  ord = Cint(order)
-  for i=1:nv
-    GTPSA.cutord!(m1.x[i].tpsa, m.x[i].tpsa, convert(Cint, ord))
-  end
-  # add immutable parameters to outx
-  @inbounds m.x[nv+1:nn] = view(m1.x, nv+1:nn)
-
-  if !isnothing(m1.Q)
-    for i=1:4
-      @inbounds GTPSA.cutord!(m1.Q.q[i].tpsa, m.Q.q[i].tpsa, convert(Cint, ord))
-    end
-  end
-  if !isnothing(m1.E)
-    m.E .= m.E
-  end
-  return
-end

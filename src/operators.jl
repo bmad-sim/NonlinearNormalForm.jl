@@ -1,5 +1,5 @@
 # --- compose ---
-function compose!(m::DAMap, m2::DAMap, m1::DAMap; keep_scalar::Bool=true, work_ref::Vector{<:Union{Float64,ComplexF64}}=prep_work_ref(m1), work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_comp_work_low(m), work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS}}}}=prep_comp_work_prom(m,m2,m1))
+function compose!(m::DAMap, m2::DAMap, m1::DAMap; dospin::Bool=true, keep_scalar::Bool=true, work_ref::Vector{<:Union{Float64,ComplexF64}}=prep_work_ref(m1), work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_comp_work_low(m), work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS}}}}=prep_comp_work_prom(m,m2,m1))
   # DAMap setup:
   desc = getdesc(m1)
   nv = numvars(desc)
@@ -19,7 +19,7 @@ function compose!(m::DAMap, m2::DAMap, m1::DAMap; keep_scalar::Bool=true, work_r
     end
   end
 
-  compose_it!(m, m2, m1, work_low=work_low, work_prom=work_prom)
+  compose_it!(m, m2, m1, dospin=dospin, work_low=work_low, work_prom=work_prom)
 
   # Put back the reference and if m1 === m2, also add to outx
   if keep_scalar
@@ -38,7 +38,7 @@ function compose!(m::DAMap, m2::DAMap, m1::DAMap; keep_scalar::Bool=true, work_r
   return m
 end
 
-function compose!(m::TPSAMap, m2::TPSAMap, m1::TPSAMap; work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_comp_work_low(m), work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS}}}}=prep_comp_work_prom(m,m2,m1))
+function compose!(m::TPSAMap, m2::TPSAMap, m1::TPSAMap; dospin::Bool=true, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_comp_work_low(m), work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS}}}}=prep_comp_work_prom(m,m2,m1))
   # TPSAMap setup:
   # For TPSA Map concatenation, we need to subtract w_0 (m2 x0) (Eq. 33)
   # Because we are still expressing in terms of z_0 (m1 x0)
@@ -48,7 +48,7 @@ function compose!(m::TPSAMap, m2::TPSAMap, m1::TPSAMap; work_low::Tuple{Vararg{V
     @inbounds m1.x[i] -= m2.x0[i]
   end
 
-  compose_it!(m, m2, m1, work_low=work_low, work_prom=work_prom)
+  compose_it!(m, m2, m1, dospin=dospin, work_low=work_low, work_prom=work_prom)
 
   # Now fix m1 and if m2 === m1, add to output too:
   # For TPSA Map concatenation, we need to subtract w_0 (m2 x0) (Eq. 33)
@@ -72,13 +72,13 @@ minv!(na::Cint, ma::Vector{Ptr{RTPSA}}, nb::Cint, mc::Vector{Ptr{RTPSA}}) = (@in
 minv!(na::Cint, ma::Vector{Ptr{CTPSA}}, nb::Cint, mc::Vector{Ptr{CTPSA}}) = (@inline; GTPSA.mad_ctpsa_minv!(na, ma, nb, mc))
 
 
-function inv(m1::TaylorMap{S,T,U,V}) where {S,T,U,V}
+function inv(m1::TaylorMap{S,T,U,V}; dospin::Bool=true, work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_inv_work_low(m1)) where {S,T,U,V}
   m = zero(m1)
-  inv!(m,m1)
+  inv!(m,m1,dospin=dospin,work_ref=work_ref,work_low=work_low)
   return m
 end
 
-function inv!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}; work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_inv_work_low(m1)) where {S,T,U,V}
+function inv!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}; dospin::Bool=true, work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_inv_work_low(m1)) where {S,T,U,V}
   desc = getdesc(m1)
   nn = numnn(desc)
   nv = numvars(desc)
@@ -87,7 +87,7 @@ function inv!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}; work_ref::Union{Not
   m1x_low = work_low[2]
   @assert length(outx_low) >= nn "Cannot inv!: incorrect length for outx_low = work_low[1]. Received $(length(outx_low)), must be >= $nn"
   @assert length(m1x_low) >= nn "Cannot inv!: incorrect length for m1x_low = work_low[2]. Received $(length(m1x_low)), must be >= $nn"
-  if !isnothing(m.Q)
+  if !isnothing(m.Q) && dospin
     outQ_low = work_low[3]
     @assert length(outQ_low) >= 4 "Cannot inv!: incorrect length for outQ_low = work_low[3]. Received $(length(outQ_low)), must be >= 4"
     @assert !(outQ_low === outx_low) "Cannot inv!: outQ_low === outx_low !! outx_low must NOT be reused!"
@@ -116,7 +116,7 @@ function inv!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}; work_ref::Union{Not
   minv!(nn, m1x_low, nv, outx_low)
 
   # Now do quaternion: inverse of q(z0) is q^-1(M^-1(zf))
-  if !isnothing(m.Q)
+  if !isnothing(m.Q) && dospin
     inv!(m.Q, m1.Q)
     map!(t->t.tpsa, outQ_low, m.Q.q)
     compose!(Cint(4), outQ_low, nn, outx_low, outQ_low)
@@ -370,4 +370,57 @@ function complex(m::$t{S,T,U,V}) where {S,T,U,V}
 end
 
 end
+end
+
+function clear!(m::TaylorMap)
+  nv = numvars(m)
+
+  m.x0 .= 0
+
+  for i=1:nv
+    @inbounds clear!(m.x[i])
+  end
+
+  if !isnothing(m.Q)
+    for i=1:4
+      @inbounds clear!(m.Q.q[i])
+    end
+  end
+
+  if !isnothing(m.E)
+    m.E .= 0
+  end
+
+  return
+end
+
+
+function cut(m1::TaylorMap{S,T,U,V}, order::Integer; dospin::Bool=true) where {S,T,U,V}
+  m = zero(m1)
+  cut!(m, m1, order, dospin=dospin)
+  return m
+end
+
+function cut!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}, order::Integer; dospin::Bool=true) where {S,T,U,V}
+  desc = getdesc(m1)
+  nv = numvars(desc)
+  np = numparams(desc)
+  nn = np + nv
+  m.x0 .= m1.x0
+  ord = Cint(order)
+  for i=1:nv
+    GTPSA.cutord!(m1.x[i].tpsa, m.x[i].tpsa, convert(Cint, ord))
+  end
+  # add immutable parameters to outx
+  @inbounds m.x[nv+1:nn] = view(m1.x, nv+1:nn)
+
+  if !isnothing(m1.Q) && dospin
+    for i=1:4
+      @inbounds GTPSA.cutord!(m1.Q.q[i].tpsa, m.Q.q[i].tpsa, convert(Cint, ord))
+    end
+  end
+  if !isnothing(m1.E)
+    m.E .= m.E
+  end
+  return
 end

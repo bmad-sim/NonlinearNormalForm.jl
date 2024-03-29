@@ -1,13 +1,45 @@
 function show(io::IO, m::Union{Probe,TaylorMap})
   println(io, typeof(m),":")
   lines_used=Ref{Int}(2)
-
-  if GTPSA.show_header
-    println(io, "-----------------------")
-    desc = unsafe_load(Base.unsafe_convert(Ptr{Desc}, unsafe_load(first(m.x).tpsa).d))
-    lines_used[] += 2 + GTPSA.show_GTPSA_info(io, desc)
-    println(io, "-----------------------")
+  if eltype(m.x) <: Union{TPS,ComplexTPS}
+    diffdescsx = false
+    for i in eachindex(m.x)
+      if !diffdescsx && getdesc(first(m.x)) != getdesc(m.x[i])
+        println(io, "WARNING: Atleast one $(eltype(m.x)) in the orbital ray has a different Descriptor!")
+        diffdescsx = true
+        lines_used[] += 1
+      end
+    end
+    if eltype(m.Q) <: Union{TPS,ComplexTPS}
+      diffdescq = false
+      for i in eachindex(m.Q.q)
+        if !diffdescsq && getdesc(first(m.Q.q)) != getdesc(m.Q.q[i])
+          println(io, "WARNING: Atleast one $(eltype(m.Q.q)) in the quaternion has a different Descriptor!")
+          diffdescsq = true
+          lines_used[] += 1
+        end
+      end
+      diffdescsxq = false
+      if getdesc(first(m.x)) != getdesc(first(m.Q.q))
+        println(io, "WARNING: First element in orbital ray has different Descriptor than first element in quaternion!")
+        diffdescsxq = true
+        lines_used[] += 1
+      end
+    end
+    if GTPSA.show_header
+      if diffdescsq || diffdescsx || diffdescsxs
+        println(io, "Cannot show GTPSA header (non-unique Descriptor).")
+        lines_used[] += 1
+      else
+        println(io, "-----------------------")
+        desc = unsafe_load(Base.unsafe_convert(Ptr{Desc}, unsafe_load(first(m.x).tpsa).d))
+        lines_used[] += 2 + GTPSA.show_GTPSA_info(io, desc)
+        println(io, "-----------------------")
+      end
+    end
   end
+
+
   println(io, "Reference Orbit ", typeof(m.x0),":")
   for i =1:length(m.x0)
     !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || (println(io, "\t⋮"); return)
@@ -85,8 +117,3 @@ function show(io::IO, m::Union{Probe,TaylorMap})
   end
   
 end
-
-#=
-function show(io::IO, Q::Quaternion)
-
-end=#

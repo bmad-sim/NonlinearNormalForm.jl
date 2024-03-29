@@ -38,7 +38,7 @@ work_prom[2] = m2Q_prom  # Length >= 4, could be = Vector{ComplexTPS}(undef, 4)
 
 Note that the `ComplexTPS`s in the vector do NOT need to be defined - just the container should be passed.
 """ 
-function compose_it!(m::$t, m2::$t, m1::$t; work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_comp_work_low(m), work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS}}}}=prep_comp_work_prom(m,m2,m1))
+function compose_it!(m::$t, m2::$t, m1::$t; dospin::Bool=true, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_comp_work_low(m), work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS}}}}=prep_comp_work_prom(m,m2,m1))
   @assert !(m === m1) "Cannot compose_it!(m, m2, m1) with m === m1"
   @assert !isnothing(m1.Q) && !isnothing(m2.Q) || m1.Q == m2.Q "Cannot compose: one map includes spin, other does not"
   @assert !isnothing(m1.E) && !isnothing(m2.E) || m1.E == m2.E "Cannot compose: one map includes radiation, other does not"
@@ -58,7 +58,7 @@ function compose_it!(m::$t, m2::$t, m1::$t; work_low::Tuple{Vararg{Vector{<:Unio
   @assert length(outx_low) >= nv "Incorrect length for work_low[1] = outx_low. Received $(length(outx_low)), should be >=$nv"
   @assert length(m2x_low) >= nv "Incorrect length for work_low[2] = m2x_low. Received $(length(m2x_low)), should be >=$nv"
   @assert length(m1x_low) >= nn "Incorrect length for work_low[3] = m1x_low. Received $(length(m1x_low)), should be >=$nn"
-  if !isnothing(m.Q)
+  if !isnothing(m.Q) && dospin
     outQ_low = work_low[4]
     m2Q_low = work_low[5]
     @assert length(outQ_low) >= 4 "Incorrect length for outQ_low: length(work_low[4]) < 4"
@@ -75,9 +75,11 @@ function compose_it!(m::$t, m2::$t, m1::$t; work_low::Tuple{Vararg{Vector{<:Unio
   elseif outT != eltype(m2.x)
     m1x_prom = nothing
     m2x_prom = work_prom[1]
-    m2Q_prom = work_prom[2]
+    if isnothing(m.Q) && dospin
+      m2Q_prom = work_prom[2]
+      @assert length(m2Q_prom) >= 4 "Incorrect length for work_prom[2] = m2Q_prom: Received $(length(m2Q_prom)), should be >=4"
+    end
     @assert length(m2x_prom) >= nv "Incorrect length for work_prom[1] = m2x_prom: Received $(length(m2x_prom)), should be >=$nv"
-    @assert length(m2Q_prom) >= 4 "Incorrect length for work_prom[2] = m2Q_prom: Received $(length(m2Q_prom)), should be >=4"
   else
     m1x_prom = nothing
     m2x_prom = nothing
@@ -117,7 +119,7 @@ function compose_it!(m::$t, m2::$t, m1::$t; work_low::Tuple{Vararg{Vector{<:Unio
   GC.@preserve m1x_prom m2x_prom compose!(nv, m2x_low, nv+np, m1x_low, outx_low)
 
   # Spin:
-  if !isnothing(m.Q)
+  if !isnothing(m.Q) && dospin
     if outT != eltype(m2.x)
       map!(t->ComplexTPS(t), m2Q_prom, m2.Q.q) 
       map!(t->t.tpsa, m2Q_low, m2Q_prom)
