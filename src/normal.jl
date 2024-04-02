@@ -32,7 +32,7 @@ end
 function gofix!(a0::DAMap, m::DAMap, order=1; work_map::DAMap=zero(m), comp_work_low::Union{Nothing,Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}}=nothing, inv_work_low::Union{Nothing,Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}}=nothing)
   desc = getdesc(m)
   nv = numvars(desc)
-  #clear!(a0)
+  clear!(a0)
 
   if isnothing(comp_work_low) && isnothing(inv_work_low)
     comp_work_low, inv_work_low = prep_comp_inv_work_low(m)
@@ -49,14 +49,15 @@ function gofix!(a0::DAMap, m::DAMap, order=1; work_map::DAMap=zero(m), comp_work
   end
 
   # 2: map is cut to order 2 or above
-  cut!(a0,a0,order+1,dospin=false)
+  cut!(work_map,a0,order+1,dospin=false)
 
   # 3: map is inverted at least to order 1:
-  inv!(a0,a0,work_low=inv_work_low,dospin=false)
+  inv!(a0,work_map,work_low=inv_work_low,dospin=false)
 
   # 4: a map x is created with dimension nv
+  clear!(work_map)
   # x is zero except for the parameters and delta if coasting
-  compose!(a0,a0,work_map,work_low=comp_work_low,dospin=false)
+  compose!(a0,a0,work_map,work_low=comp_work_low,dospin=false,keep_scalar=false)
 
   # 5: add back in identity
   for i=1:nv

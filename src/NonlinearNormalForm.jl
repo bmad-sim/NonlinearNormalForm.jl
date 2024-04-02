@@ -39,7 +39,7 @@ import GTPSA: Desc,
               numnn
 
 export TaylorMap, Quaternion, Probe, TPSAMap, DAMap, TPSAMap, checksymp, mul!,
-        normalize!, dot, to_SO3, read_fpp_map, cut, cut!, gofix, normal, test, compose!, I
+        normalize!, dot, to_SO3, read_fpp_map, cut, cut!, gofix, gofix!, normal, test, compose!, I
 
 
 include("quaternion.jl")
