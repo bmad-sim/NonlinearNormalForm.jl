@@ -22,15 +22,30 @@ function prep_comp_work_low(m1::TaylorMap{S,T,U,V}) where {S,T,U,V}
 end
 
 function prep_comp_work_prom(m::TaylorMap, m2::TaylorMap, m1::TaylorMap)
-  nn = numnn(m)
-  nv = numvars(m)
+  desc = getdesc(m)
+  nn = numnn(desc)
+  nv = numvars(desc)
   if eltype(m.x) != eltype(m1.x)
     m1x_prom = Vector{ComplexTPS}(undef, nn)
+    for i=1:nn  # Allocate
+      @inbounds m1x_prom[i] = ComplexTPS(use=desc)
+    end
     return (m1x_prom,)
   elseif eltype(m.x) != eltype(m2.x)
     m2x_prom = Vector{ComplexTPS}(undef, nv)
-    m2Q_prom = Vector{ComplexTPS}(undef, 4)
-    return (m2x_prom, m2Q_prom)
+    for i=1:nv
+      @inbounds m2x_prom[i] = ComplexTPS(use=desc)
+    end
+    if !isnothing(m.Q)
+      m2Q_prom = Vector{ComplexTPS}(undef, 4)
+      @inbounds m2Q_prom[1] = ComplexTPS(use=desc)
+      @inbounds m2Q_prom[2] = ComplexTPS(use=desc)
+      @inbounds m2Q_prom[3] = ComplexTPS(use=desc)
+      @inbounds m2Q_prom[4] = ComplexTPS(use=desc)
+      return (m2x_prom, m2Q_prom)
+    else
+      return (m2x_prom,)
+    end
   else
     return nothing
   end

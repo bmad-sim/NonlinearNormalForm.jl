@@ -32,7 +32,11 @@ import GTPSA: Desc,
               jacobian, 
               cutord,
               cutord!,
-              clear!
+              clear!,
+              getdesc,
+              numvars,
+              numparams,
+              numnn
 
 export TaylorMap, Quaternion, Probe, TPSAMap, DAMap, TPSAMap, checksymp, mul!,
         normalize!, dot, to_SO3, read_fpp_map, cut, cut!, gofix, normal, test, compose!, I
@@ -46,6 +50,7 @@ include("compose_it.jl")
 include("operators.jl")
 include("show.jl")
 include("methods.jl")
+include("normal.jl")
 include("utils.jl")
 
 end

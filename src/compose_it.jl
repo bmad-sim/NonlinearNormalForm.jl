@@ -2,7 +2,7 @@ for t = (:DAMap, :TPSAMap)
 @eval begin
   
 """
-    compose_it!(m, m2, m1; work_low=nothing, work_prom=nothing)
+    compose_it!(m, m2, m1; dospin=true, work_low=nothing, work_prom=nothing)
 
 Low level composition function, `m = m2 ∘ m1`. Aliasing `m` with `m2` is allowed, but not `m` with `m1`.
 Assumes the destination map is properly set up (with correct types promoted if necessary), and 
@@ -15,28 +15,29 @@ Three vectors are for the orbital part (`m.x`, `m2.x`, `m1.x` correspondingly re
 `outx_low`, `m2x_low`, and `m1x_low`) and two are for the spin part (`m.Q.q` and `m2.Q.q` correspondingly 
 referred in the code as `outQ_low` and `m2Q_low`).  These 5 temporaries can be optionally passed as a tuple 
 in `work_low`, and must satisfy the following requirements:
-
+```
 work_low[1] = outx_low   # Length >= nv
 work_low[2] = m2x_low    # Length >= nv
 work_low[3] = m1x_low    # Length >= nv+np
 work_low[4] = outQ_low   # Length >= 4, could be = work_low[1] or work_low[2] if nv >= 4
 work_low[5] = m2Q_low    # Length >= 4, could be = work_low[1] or work_low[2] if nv >= 4
-
+```
 Furthermore, for the spin part both of `outx_low` and `m2x_low` could be reused for `outQ_low` and `m2Q_low` 
 if `nv >= 4` , however `m1x_low` MUST NOT BE REUSED!
 
 If promotion is occuring, then one of the maps is `ComplexTPS` and the other `TPS`, with output map `ComplexTPS`. 
 Note that the spin part is required to agree with the orbital part in terms of type by definition of the `TaylorMap` 
-struct. `work_prom` can optionally be passed as a tuple containing the temporary vectors if promotion is occuring:
+struct. `work_prom` can optionally be passed as a tuple containing the temporary `ComplexTPS`s if promotion is occuring:
 
 If `eltype(m.x) != eltype(m1.x)` (then `m1` must be promoted):
-work_prom[1] = m1x_prom  # Length >= nv+np, could be = Vector{ComplexTPS}(undef, nv+np)
+`work_prom[1] = m1x_prom  # Length >= nv+np, Vector{ComplexTPS}`
 
 else if `eltype(m.x) != eltype(m2.x)` (then `m2` must be promoted):
-work_prom[1] = m2x_prom  # Length >= nv, could be = Vector{ComplexTPS}(undef, nv)
-work_prom[2] = m2Q_prom  # Length >= 4, could be = Vector{ComplexTPS}(undef, 4)
-
-Note that the `ComplexTPS`s in the vector do NOT need to be defined - just the container should be passed.
+```
+work_prom[1] = m2x_prom  # Length >= nv, Vector{ComplexTPS}
+work_prom[2] = m2Q_prom  # Length >= 4, Vector{ComplexTPS}
+```
+Note that the `ComplexTPS`s in the vector(s) must be allocated and have the same `Descriptor`.
 """ 
 function compose_it!(m::$t, m2::$t, m1::$t; dospin::Bool=true, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_comp_work_low(m), work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS}}}}=prep_comp_work_prom(m,m2,m1))
   @assert !(m === m1) "Cannot compose_it!(m, m2, m1) with m === m1"
@@ -99,14 +100,19 @@ function compose_it!(m::$t, m2::$t, m1::$t; dospin::Bool=true, work_low::Tuple{V
   # Do the composition, promoting if necessary
   if outT != eltype(m1.x) 
     # Promote to ComplexTPS:
-    map!(t->ComplexTPS(t), m1x_prom,  m1.x)   
+    for i=1:nn
+      @inbounds complex!(m1x_prom[i], m1.x[i])
+    end
     map!(t->t.tpsa, m1x_low, m1x_prom)
   else
     map!(t->t.tpsa, m1x_low, m1.x)
   end
 
   if outT != eltype(m2.x)
-    map!(t->ComplexTPS(t), m2x_prom, view(m2.x,1:nv))  
+    # Promote to ComplexTPS:
+    for i=1:nv
+      @inbounds complex!(m2x_prom[i], m2.x[i])
+    end
     map!(t->t.tpsa, m2x_low, m2x_prom)
   else
     map!(t->t.tpsa, m2x_low, view(m2.x, 1:nv))
@@ -121,7 +127,11 @@ function compose_it!(m::$t, m2::$t, m1::$t; dospin::Bool=true, work_low::Tuple{V
   # Spin:
   if !isnothing(m.Q) && dospin
     if outT != eltype(m2.x)
-      map!(t->ComplexTPS(t), m2Q_prom, m2.Q.q) 
+      # Promote to ComplexTPS:
+      @inbounds complex!(m2Q_prom[1], m2.Q.q[1])
+      @inbounds complex!(m2Q_prom[2], m2.Q.q[2])
+      @inbounds complex!(m2Q_prom[3], m2.Q.q[3])
+      @inbounds complex!(m2Q_prom[4], m2.Q.q[4])
       map!(t->t.tpsa, m2Q_low, m2Q_prom)
     else
       map!(t->t.tpsa, m2Q_low, m2.Q.q)
