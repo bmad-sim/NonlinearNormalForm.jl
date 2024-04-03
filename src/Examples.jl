@@ -58,7 +58,9 @@ function track_qf(p::Probe, k1, hkick)
     q = q/sqrt(dot(q,q))
     Q = Quaternion{promote_type(eltype(z0),typeof(k1),typeof(hkick))}(q)
     mul!(Q,Q,p.Q)
+    print(Q)
     Qkick = Quaternion{promote_type(eltype(z0),typeof(k1),typeof(hkick))}([cos(hkick*(1+a*gamma_0)/2),0, sin(hkick*(1+a*gamma_0)/2), 0])
+    print(Qkick)
     mul!(Q, Qkick, Q)
   else 
     Q = nothing

@@ -6,7 +6,7 @@ function compose!(m::DAMap, m2::DAMap, m1::DAMap; dospin::Bool=true, keep_scalar
 
   if keep_scalar && isnothing(work_ref)
     ref = prep_work_ref(m)
-    @assert length(work_ref) >= nv "Incorrect length for work_ref, received $(length(work_ref)) but should be atleast $nv"
+    @assert length(ref) >= nv "Incorrect length for work_ref, received $(length(work_ref)) but should be atleast $nv"
   end
   
 
@@ -218,13 +218,13 @@ function clear!(m::TaylorMap)
 end
 
 # --- cut ---
-function cut(m1::TaylorMap{S,T,U,V}, order::Integer; dospin::Bool=true) where {S,T,U,V}
+function cutord(m1::TaylorMap{S,T,U,V}, order::Integer; dospin::Bool=true) where {S,T,U,V}
   m = zero(m1)
-  cut!(m, m1, order, dospin=dospin)
+  cutord!(m, m1, order, dospin=dospin)
   return m
 end
 
-function cut!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}, order::Integer; dospin::Bool=true) where {S,T,U,V}
+function cutord!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}, order::Integer; dospin::Bool=true) where {S,T,U,V}
   desc = getdesc(m1)
   nv = numvars(desc)
   np = numparams(desc)

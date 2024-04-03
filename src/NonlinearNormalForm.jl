@@ -30,6 +30,7 @@ import GTPSA: Desc,
               CTPSA,
               compose!,
               jacobian, 
+              jacobiant, jacobiant!,
               cutord,
               cutord!,
               clear!,
@@ -39,7 +40,8 @@ import GTPSA: Desc,
               numnn
 
 export TaylorMap, Quaternion, Probe, TPSAMap, DAMap, TPSAMap, checksymp, mul!,
-        normalize!, dot, to_SO3, read_fpp_map, cut, cut!, gofix, gofix!, normal, test, compose!, I
+        normalize!, dot, to_SO3, read_fpp_map, cutord, cutord!, gofix, gofix!, 
+        normal, compose!, I, jacobian, jacobiant
 
 
 include("quaternion.jl")

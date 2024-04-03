@@ -1,33 +1,22 @@
 function normal(m::DAMap)
-  
-  work_map = zero(m)
+  tmp1 = zero(m)
+  tmp2 = zero(m)
   comp_work_low, inv_work_low = prep_comp_inv_work_low(m)
 
-  a0 = zero(m)
+  a0 = tmp1
+  work_map = tmp2
 
   # 1: Go to the parameter dependent fixed point
   gofix!(a0, m, 1, work_map=work_map, comp_work_low=comp_work_low, inv_work_low=inv_work_low)
-
   # Similarity transformation to make parameter part of jacobian = 0 (inv(a0)∘m∘a0)
-  #m1 = zero(m)
-  #compose!(work_map, m, a0, work_low=comp_work_low)
-  #inv!(a0, a0, work_low=inv_work_low)
-  #compose!(m1, a0, work_map, work_low=comp_work_low)
-  return a0
-  #a0 = gofix(m)
-  #m = inv(a0)∘m∘a0 # similarity transformation to make parameter part of jacobian 0
+  compose!(work_map, m, a0, work_low=comp_work_low,keep_scalar=false)
+  inv!(a0, a0, work_low=inv_work_low)
+  compose!(a0, a0, work_map, work_low=comp_work_low,keep_scalar=false)
 
-
+  m0 = a0
   # 2: do the linear normal form exactly 
 
 end
-
-function gofix(m::DAMap, order=1; work_map::DAMap=zero(m), comp_work_low::Union{Nothing,Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}}=nothing, inv_work_low::Union{Nothing,Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}}=nothing)
-  a0 = zero(m)
-  gofix!(a0, m, 1, work_map=work_map, comp_work_low=comp_work_low, inv_work_low=inv_work_low)
-  return a0
-end
-
 
 function gofix!(a0::DAMap, m::DAMap, order=1; work_map::DAMap=zero(m), comp_work_low::Union{Nothing,Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}}=nothing, inv_work_low::Union{Nothing,Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}}=nothing)
   desc = getdesc(m)
@@ -49,7 +38,7 @@ function gofix!(a0::DAMap, m::DAMap, order=1; work_map::DAMap=zero(m), comp_work
   end
 
   # 2: map is cut to order 2 or above
-  cut!(work_map,a0,order+1,dospin=false)
+  cutord!(work_map,a0,order+1,dospin=false)
 
   # 3: map is inverted at least to order 1:
   inv!(a0,work_map,work_low=inv_work_low,dospin=false)
@@ -70,8 +59,24 @@ function gofix!(a0::DAMap, m::DAMap, order=1; work_map::DAMap=zero(m), comp_work
   return a0
 end
 
-function linear_a(xy::DAMap)
-  fm0 = transpose(jacobian(xy)) # OPTIMIZE IN FUTURE
-  eigen(fm0)
+function gofix(m::DAMap, order=1; work_map::DAMap=zero(m), comp_work_low::Union{Nothing,Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}}=nothing, inv_work_low::Union{Nothing,Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}}=nothing)
+  a0 = zero(m)
+  gofix!(a0, m, 1, work_map=work_map, comp_work_low=comp_work_low, inv_work_low=inv_work_low)
+  return a0
+end
+
+function linear_a(m0::DAMap)
+  # We now get the eigenvectors of the compositional map ℳ (which acts on functions of phase space instead 
+  # of phase space) in the linear regime. basically f∘ζ = ℳf where ζ is the linear map (vector). f=f(x,p) could 
+  # be a vector or scalar function. Assuming f(x,p) = v₁x + v₂p we see that if (written as a transfer matrix) 
+  # ζ = [a b; c d] then ℳf = v₁(ax + bp) + v₂(cx + dp) =  (v₁a+v₂c)x + (v₁b+v₂d)p = v̄₁x + v̄₂p . ℳ acts on 
+  # functions so essentially we have [v̄₁, v̄₂] = [a c; b d]*[v₁, v₂] =  Mᵀ * [v₁, v₂] . See Etienne's yellow 
+  # book Eq 2.39.
+
+  Mt = jacobiant(m0)      # parameters never included
+  F = eigen(Mt)
+  
+  # Locate the oscillation planes
+
 
 end

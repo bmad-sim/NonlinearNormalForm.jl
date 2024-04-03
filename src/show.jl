@@ -11,7 +11,7 @@ function show(io::IO, m::Union{Probe,TaylorMap})
       end
     end
     if eltype(m.Q) <: Union{TPS,ComplexTPS}
-      diffdescq = false
+      diffdescsq = false
       for i in eachindex(m.Q.q)
         if !diffdescsq && getdesc(first(m.Q.q)) != getdesc(m.Q.q[i])
           println(io, "WARNING: Atleast one $(eltype(m.Q.q)) in the quaternion has a different Descriptor!")
@@ -25,9 +25,12 @@ function show(io::IO, m::Union{Probe,TaylorMap})
         diffdescsxq = true
         lines_used[] += 1
       end
+    else
+      diffdescsq = false
+      diffdescsxq = false
     end
     if GTPSA.show_header
-      if diffdescsq || diffdescsx || diffdescsxs
+      if diffdescsq || diffdescsx || diffdescsxq
         println(io, "Cannot show GTPSA header (non-unique Descriptor).")
         lines_used[] += 1
       else

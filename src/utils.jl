@@ -38,7 +38,8 @@ function checksymp(M::Matrix{T}) where T<:Number
   return res
 end
 
-jacobian(m::TaylorMap;include_params=false) = jacobian(m.x[1:numvars(m)],include_params=include_params)
+jacobian(m::TaylorMap;include_params=false) = jacobian(view(m.x, 1:numvars(m)),include_params=include_params)
+jacobiant(m::TaylorMap;include_params=false) = jacobiant(view(m.x, 1:numvars(m)), include_params=include_params)
 checksymp(m::TaylorMap) = checksymp(jacobian(m))
 
 function read_fpp_map(file)
@@ -61,7 +62,7 @@ function read_fpp_map(file)
       a = data[idx,2]
       b = data[idx,3]
       ords = data[idx,4:end]
-      m.x[i][ords...] = a + im*b
+      m.x[i][collect(Int, ords)] = a + im*b
       idx += 1
       count += 1
     end
@@ -91,7 +92,7 @@ function read_fpp_map(file)
           a = data[idx,2]
           b = data[idx,3]
           ords = data[idx,4:end]
-          m.Q.q[i][ords...] = a + im*b
+          m.Q.q[i][collect(Int,ords)] = a + im*b
           idx += 1
           count += 1
         end
