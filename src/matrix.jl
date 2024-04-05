@@ -7,52 +7,69 @@ and eigenvalues. For complex conjugate pairs, the eigenvectors are normalized so
 """
 function mat_eigen!(mat::Matrix{<:Number}; sort=true) 
   F = eigen!(mat)
+  moveback_unstable!(F)
   if sort && !locate_planes!(F, sort=true)
     @warn "Plane sorting of eigenvectors failed; eigenvectors in arbitrary order..."
   end
-  normalize_evecs!(F.vectors)
+  normalize_eigen!(F)
   return F
 end
 
 function mat_eigen(mat::Matrix{<:Number}; sort=true)
-  F = eigen!(mat)
+  F = eigen(mat)
+  moveback_unstable!(F)
   if sort && !locate_planes!(F, sort=true)
     @warn "Plane sorting of eigenvectors failed; eigenvectors in arbitrary order..."
   end
-  normalize_evecs!(F.vectors)
+  normalize_eigen!(F)
   return F
 end
 
+"""
+    moveback_unstable!(F::Eigen)
 
-function pairup_eigen!(F::Eigen)
-  vecs = F.vectors
-  vals = F.vals
-  nv = size(vals,1)
-  npl = 
-
+This function moves back eigenvectors with eigenvalues having a zero imaginary component 
+to the end of the `values` and `vectors` arrays in the Eigen struct.
+"""
+function moveback_unstable!(F::Eigen)
+  evecs = F.vectors
+  evals = F.values
+  nv = size(evals,1)
+  for i=1:nv-1
+    if imag(evals[i]) == 0 && imag(evals[i+1]) != 0
+      evals[i], evals[i+1] = evals[i+1], evals[i]
+      for j=1:nv
+        evecs[j,i], evecs[j,i+1] = evecs[j,i+1], evecs[j,i]
+      end
+    end
+  end
 end
 
-
 """
-    normalize_evecs!(evecs::Matrix{<:Complex})
+    normalize_eigen!(F::Eigen)
 
 Assuming the eigenvectors are in complex-conjugate pais, the eigenvectors are 
 normalized so that `conj(vⱼ)*S*vⱼ = +im` for odd `j`, and `-im` for even `j` where 
 `S` is the skew-symmetric matrix e.g. [0 1; -1 0] for 2D.
 """
-function normalize_evecs!(evecs::Matrix{<:Complex})
+function normalize_eigen!(F::Eigen)
+  evecs = F.vectors
+  evals = F.values
   npl = Int(size(evecs,1)/2) # Number planes = Number harmonic variables / 2
 
   for i=1:npl # For each eigenvector pair
-    fnorm = 0
-    for j=1:nhpl # For each harmonic plane
-      fnorm += 2*imag(conj(evecs[2*j-1,2*i-1])*evecs[2*j,2*i-1])
+    if imag(evals[2*i]) != 0
+      fnorm = 0
+      for j=1:npl # For harmonic plane
+        fnorm += 2*imag(conj(evecs[2*j-1,2*i-1])*evecs[2*j,2*i-1])
+      end
+      println(fnorm)
+      @views evecs[:,2*i-1] = evecs[:,2*i-1]/sqrt(abs(fnorm))
+      @views evecs[:,2*i] = evecs[:,2*i]/sqrt(abs(fnorm))
     end
-    println(fnorm)
-    @views evecs[:,2*i-1] = evecs[:,2*i-1]/sqrt(abs(fnorm))
-    @views evecs[:,2*i] = evecs[:,2*i]/sqrt(abs(fnorm))
   end
 end
+
 
 """
     locate_planes!(F::Union{Matrix,Eigen}; sort::Bool=true, planes::Union{Vector{Int},Nothing}=nothing)
