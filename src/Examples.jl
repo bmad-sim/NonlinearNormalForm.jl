@@ -58,9 +58,7 @@ function track_qf(p::Probe, k1, hkick)
     q = q/sqrt(dot(q,q))
     Q = Quaternion{promote_type(eltype(z0),typeof(k1),typeof(hkick))}(q)
     mul!(Q,Q,p.Q)
-    print(Q)
     Qkick = Quaternion{promote_type(eltype(z0),typeof(k1),typeof(hkick))}([cos(hkick*(1+a*gamma_0)/2),0, sin(hkick*(1+a*gamma_0)/2), 0])
-    print(Qkick)
     mul!(Q, Qkick, Q)
   else 
     Q = nothing
@@ -215,7 +213,7 @@ function track_ring0()
   k = params()
 
   p = Probe(x+x0, x0=x0, spin=true)
-  p = track_ring(p,vkicks=[vkicks[1]+k[1], k[2], repeat([TPS(use=d)],48)...]) # first and second coil are knobs
+  p = track_ring(p,vkicks=[vkicks[1]+k[1], k[2], zeros(TPS,48)...]) # first and second coil are knobs
 
   # Make DAMap
   m1 = DAMap(p)

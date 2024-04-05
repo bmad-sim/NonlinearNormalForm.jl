@@ -16,6 +16,8 @@ function normal(m::DAMap)
   m0 = a0
   # 2: do the linear normal form exactly 
 
+  return m0
+
 end
 
 function gofix!(a0::DAMap, m::DAMap, order=1; work_map::DAMap=zero(m), comp_work_low::Union{Nothing,Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}}=nothing, inv_work_low::Union{Nothing,Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}}=nothing)
@@ -65,6 +67,14 @@ function gofix(m::DAMap, order=1; work_map::DAMap=zero(m), comp_work_low::Union{
   return a0
 end
 
+#=
+# -1 i inv(p)*m*p
+function simil!(p::DAMap, m::DAMap,; inverse::Bool=false, work_map::DAMap=zero(m))
+  compose!(work_map, m, p, work_low=comp_work_low,keep_scalar=false)
+  inv!(p, p, work_low=inv_work_low)
+  compose!(p, p, work_map, work_low=comp_work_low,keep_scalar=false)
+end
+=#
 function linear_a(m0::DAMap)
   # We now get the eigenvectors of the compositional map ℳ (which acts on functions of phase space instead 
   # of phase space) in the linear regime. basically f∘ζ = ℳf where ζ is the linear map (vector). f=f(x,p) could 
@@ -73,10 +83,46 @@ function linear_a(m0::DAMap)
   # functions so essentially we have [v̄₁, v̄₂] = [a c; b d]*[v₁, v₂] =  Mᵀ * [v₁, v₂] . See Etienne's yellow 
   # book Eq 2.39.
 
-  Mt = jacobiant(m0)      # parameters never included
-  F = eigen(Mt)
-  
+  nhv = numvars(m0)  # Number harmonic variables
+  nhpl = Int(nhv/2) # Number harmonic variables / 2 = number harmonic planes
+  Mt = zeros(numtype(m0), nhv, nhv) #Matrix{numtype(m0)}(undef, nhv, nhv)
+  planes = Vector{Int}(undef, nhpl)
+  fm = zeros(numtype(m0), nhv, numnn(m0)) #Matrix{complex(numtype(m0))}(undef, nhv, numnn(m0))
+
+  @views jacobiant!(Mt, m0.x[1:nhv])  # parameters never included
+  F = eigen!(Mt)                      # ! = Overwrites Mt to save space + make eigen computation faster
+  v = F.vectors
   # Locate the oscillation planes
+  if !locate_planes!(planes, v)
+    @warn "Unable to locate harmonic planes. Eigenvectors/values are in arbitrary order..."
+    planes .= 1:Int(nhpl)
+  end
+  return F.vectors
+
+  # Eigenvectors of linear part of Lie map are normalised so the Poisson bracket is 1
+  # No harm done if non-Hamiltonian map (radiation), insures linear order is symplectic 
+  # for linear canonical transformation. Eq 2.47 in Etienne's yellow book
+  for i=1:nhpl
+    normpb = 0
+    @views for j=1:nhpl
+      # Eq 2.47 RxIp - RpIx
+      normpb += real(v[2*j-1,planes[i]])*imag(v[2*j,planes[i]]) - real(v[2*j,planes[i]])*imag(v[2*j-1,planes[i]])
+    end
+
+    # From FPP, presumably makes phasor definition easier later on 
+    # than using Eq. 2.48? ask Etienne
+    sgn = normpb < 0 ? -1 : 1
+    @views for j=1:nhpl
+      fm[2*j-1,2*i-1] = real(v[2*i-1,planes[j]])*sgn/normpb
+      fm[2*j-1,2*i] = real(v[2*i,planes[j]])*sgn/normpb
+      fm[2*j,2*i-1] = imag(v[2*i-1,planes[j]])/normpb
+      fm[2*j,2*i] = imag(v[2*i,planes[j]])/normpb
+    end
+  end
+  return fm
+
+
 
 
 end
+

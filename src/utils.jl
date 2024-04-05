@@ -14,33 +14,12 @@ numvars(m::Quaternion{<:Union{ComplexTPS,TPS}}) = unsafe_load(Base.unsafe_conver
 numparams(m::Quaternion{<:Union{ComplexTPS,TPS}}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.q).tpsa).d)).np
 numnn(m::Quaternion{<:Union{ComplexTPS,TPS}}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.q).tpsa).d)).nn
 
-numtype(t::TPS) = Float64
-numtype(ct::ComplexTPS) = ComplexF64
-numtype(::Type{TPS}) = Float64
-numtype(::Type{ComplexTPS}) = ComplexF64
-
-lowtype(t::TPS) = Ptr{RTPSA}
-lowtype(ct::ComplexTPS) = Ptr{CTPSA}
-lowtype(::Type{TPS}) = Ptr{RTPSA}
-lowtype(::Type{ComplexTPS}) = Ptr{CTPSA}
-
-
-function checksymp(M::Matrix{T}) where T<:Number
-  s = size(M)
-  nv = first(s)
-  nv == last(s) || error("Non-square matrix!")
-  iseven(nv) || error("Matrix contains odd number of rows/columns!")
-  J = zeros(nv,nv)
-  for i=1:2:nv
-    J[i:i+1,i:i+1] = [0 1; -1 0];
-  end
-  res = transpose(M)*J*M-J
-  return res
-end
+numtype(m::Union{Probe{<:Real,T,<:Any,<:Any},<:TaylorMap{<:Number,T,<:Any,<:Any}}) where {T<:Union{TPS,ComplexTPS}} = numtype(T)
 
 jacobian(m::TaylorMap;include_params=false) = jacobian(view(m.x, 1:numvars(m)),include_params=include_params)
 jacobiant(m::TaylorMap;include_params=false) = jacobiant(view(m.x, 1:numvars(m)), include_params=include_params)
 checksymp(m::TaylorMap) = checksymp(jacobian(m))
+
 
 function read_fpp_map(file)
   data = readdlm(file, skipblanks=true)
@@ -50,7 +29,7 @@ function read_fpp_map(file)
   nn = nv+np
   # Make the TPSA
   d = Descriptor(nv, no, np, no)
-  m = DAMap(repeat([ComplexTPS(use=d)], nv), Q=Quaternion([ComplexTPS(1,use=d), repeat([ComplexTPS(use=d)], 3)...]))
+  m = complex(DAMap(spin=true)) #repeat([ComplexTPS(use=d)], nv), Q=Quaternion([ComplexTPS(1,use=d), repeat([ComplexTPS(use=d)], 3)...]))
 
   idx=3
   data=data[3:end,:]

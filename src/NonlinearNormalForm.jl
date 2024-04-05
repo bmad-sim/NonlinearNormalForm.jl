@@ -17,6 +17,7 @@ import Base: ∘,
              ==
 
 using LinearAlgebra,
+      #SkewLinearAlgebra,
       Printf,
       Reexport,
       DelimitedFiles
@@ -37,7 +38,9 @@ import GTPSA: Desc,
               getdesc,
               numvars,
               numparams,
-              numnn
+              numnn,
+              numtype,
+              lowtype
 
 export TaylorMap, Quaternion, Probe, TPSAMap, DAMap, TPSAMap, checksymp, mul!,
         normalize!, dot, to_SO3, read_fpp_map, cutord, cutord!, gofix, gofix!, 
@@ -53,6 +56,7 @@ include("operators.jl")
 include("show.jl")
 include("methods.jl")
 include("normal.jl")
+include("matrix.jl")
 include("utils.jl")
 
 end
