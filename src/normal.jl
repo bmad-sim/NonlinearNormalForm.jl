@@ -15,8 +15,7 @@ function normal(m::DAMap)
 
   m0 = a0
   # 2: do the linear normal form exactly 
-
-  return m0
+  return linear_a(m0)
 
 end
 
@@ -90,39 +89,8 @@ function linear_a(m0::DAMap)
   fm = zeros(numtype(m0), nhv, numnn(m0)) #Matrix{complex(numtype(m0))}(undef, nhv, numnn(m0))
 
   @views jacobiant!(Mt, m0.x[1:nhv])  # parameters never included
-  F = eigen!(Mt)                      # ! = Overwrites Mt to save space + make eigen computation faster
-  v = F.vectors
-  # Locate the oscillation planes
-  if !locate_planes!(planes, v)
-    @warn "Unable to locate harmonic planes. Eigenvectors/values are in arbitrary order..."
-    planes .= 1:Int(nhpl)
-  end
-  return F.vectors
+  F = mat_eigen!(Mt)
 
-  # Eigenvectors of linear part of Lie map are normalised so the Poisson bracket is 1
-  # No harm done if non-Hamiltonian map (radiation), insures linear order is symplectic 
-  # for linear canonical transformation. Eq 2.47 in Etienne's yellow book
-  for i=1:nhpl
-    normpb = 0
-    @views for j=1:nhpl
-      # Eq 2.47 RxIp - RpIx
-      normpb += real(v[2*j-1,planes[i]])*imag(v[2*j,planes[i]]) - real(v[2*j,planes[i]])*imag(v[2*j-1,planes[i]])
-    end
-
-    # From FPP, presumably makes phasor definition easier later on 
-    # than using Eq. 2.48? ask Etienne
-    sgn = normpb < 0 ? -1 : 1
-    @views for j=1:nhpl
-      fm[2*j-1,2*i-1] = real(v[2*i-1,planes[j]])*sgn/normpb
-      fm[2*j-1,2*i] = real(v[2*i,planes[j]])*sgn/normpb
-      fm[2*j,2*i-1] = imag(v[2*i-1,planes[j]])/normpb
-      fm[2*j,2*i] = imag(v[2*i,planes[j]])/normpb
-    end
-  end
-  return fm
-
-
-
-
+  return F
 end
 
