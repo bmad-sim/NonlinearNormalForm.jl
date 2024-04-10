@@ -163,12 +163,16 @@ function $t(x::Vector{T}=zeros(TPS, numvars(GTPSA.desc_current)); x0::Vector{S}=
   end
 
   if isnothing(spin)
-    (!isnothing(use) || getdesc(x) == getdesc(Q)) || error("Orbital ray Descriptor different from quaternion Descriptor!")
-    q = Vector{T}(undef, 4)
-    for i=1:4
-      @inbounds q[i] = T(Q.q[i],use=getdesc(use))
+    if isnothing(Q)
+      Q1 = Quaternion(first(x1)) # implicilty uses use descriptor
+    else
+      (!isnothing(use) || getdesc(x) == getdesc(Q)) || error("Orbital ray Descriptor different from quaternion Descriptor!")
+      q = Vector{T}(undef, 4)
+      for i=1:4
+        @inbounds q[i] = T(Q.q[i],use=getdesc(use))
+      end
+      Q1 = Quaternion(q)
     end
-    Q1 = Quaternion(q)
   elseif spin
     if isnothing(Q)
       Q1 = Quaternion(first(x1)) # implicilty uses use descriptor

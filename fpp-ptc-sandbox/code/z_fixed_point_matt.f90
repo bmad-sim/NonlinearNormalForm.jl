@@ -100,7 +100,7 @@ program example
     call c_gofix(m,a0)
     m=c_simil(a0,m,-1)
     call c_linear_a(m, a1)
-    !call print(a0)
+    !call print)
     stop
 
 
