@@ -2,5 +2,5 @@
 /docs/Manifest.toml
 /docs/build/
 /fpp-ptc-sandbox/production/
-/fpp-ptc-sandbox/CMakeFiles/
-/fpp-ptc-sandbox/CMakeCache.txt
+/fpp-ptc-sandbox/code/CMakeFiles/
+/fpp-ptc-sandbox/code/CMakeCache.txt
