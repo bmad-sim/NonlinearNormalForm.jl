@@ -7,6 +7,7 @@ type(c_normal_form) Normal_form
 real(dp) mat(2,2),alpha,beta,gamma
 integer index_beta(2),index_gamma(2),index_alpha(2),mf
 type(internal_state) state
+mf = 6
 ! This program initialize FPP via PTC
 ! which is more in line with a BMAD usage
 ! but is obviously not necessary.
@@ -25,6 +26,7 @@ call alloc(Normal_form)
 mat(1,1)=1; mat(1,2)=1;mat(2,1)=-0.4_dp; mat(2,2)=0.6_dp;
 ! Matrix mat(2,2) put into a c_damap to create T
 T=mat
+call print(T)
 call c_normal(T,Normal_form)
 N=Normal_form%Atot**(-1)*T*Normal_form%Atot
 ! Creating x^2+p^2 which is the invariant of a rotation
