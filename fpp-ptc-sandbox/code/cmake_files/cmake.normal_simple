@@ -1,0 +1,14 @@
+set (EXENAME normal_simple)
+
+FILE (GLOB SRC_FILES normal_simple.f90)
+
+set (INC_DIRS
+)
+
+set (LINK_LIBS
+  forest
+  bsim
+  bmad
+  sim_utils
+  ${ACC_BMAD_LINK_LIBS}
+)

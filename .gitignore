@@ -1,3 +1,6 @@
 /Manifest.toml
 /docs/Manifest.toml
 /docs/build/
+/fpp-ptc-sandbox/production/
+/fpp-ptc-sandbox/CMakeFiles/
+/fpp-ptc-sandbox/CMakeCache.txt

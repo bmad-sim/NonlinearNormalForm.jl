@@ -15,5 +15,6 @@
 /Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles/z_track_da_tpsa-exe.dir
 /Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles/z_matt-exe.dir
 /Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles/z_simple_operations-exe.dir
+/Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles/normal_simple-exe.dir
 /Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles/edit_cache.dir
 /Users/mgs255/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/CMakeFiles/rebuild_cache.dir

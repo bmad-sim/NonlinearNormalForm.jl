@@ -337,6 +337,43 @@ z_simple_operations-exe/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_simple_operations-exe.dir/build.make CMakeFiles/z_simple_operations-exe.dir/build
 .PHONY : z_simple_operations-exe/fast
 
+#=============================================================================
+# Target rules for targets named normal_simple-exe
+
+# Build rule for target.
+normal_simple-exe: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 normal_simple-exe
+.PHONY : normal_simple-exe
+
+# fast build rule for target.
+normal_simple-exe/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/normal_simple-exe.dir/build.make CMakeFiles/normal_simple-exe.dir/build
+.PHONY : normal_simple-exe/fast
+
+normal_simple.o: normal_simple.f90.o
+.PHONY : normal_simple.o
+
+# target to build an object file
+normal_simple.f90.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/normal_simple-exe.dir/build.make CMakeFiles/normal_simple-exe.dir/normal_simple.f90.o
+.PHONY : normal_simple.f90.o
+
+normal_simple.i: normal_simple.f90.i
+.PHONY : normal_simple.i
+
+# target to preprocess a source file
+normal_simple.f90.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/normal_simple-exe.dir/build.make CMakeFiles/normal_simple-exe.dir/normal_simple.f90.i
+.PHONY : normal_simple.f90.i
+
+normal_simple.s: normal_simple.f90.s
+.PHONY : normal_simple.s
+
+# target to generate assembly for a file
+normal_simple.f90.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/normal_simple-exe.dir/build.make CMakeFiles/normal_simple-exe.dir/normal_simple.f90.s
+.PHONY : normal_simple.f90.s
+
 z_cut.o: z_cut.f90.o
 .PHONY : z_cut.o
 
@@ -753,6 +790,7 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
+	@echo "... normal_simple-exe"
 	@echo "... z_cut-exe"
 	@echo "... z_cut_sub-exe"
 	@echo "... z_deriv-exe"
@@ -770,6 +808,9 @@ help:
 	@echo "... z_track_da_tpsa-exe"
 	@echo "... z_track_map_code-exe"
 	@echo "... z_var-exe"
+	@echo "... normal_simple.o"
+	@echo "... normal_simple.i"
+	@echo "... normal_simple.s"
 	@echo "... z_cut.o"
 	@echo "... z_cut.i"
 	@echo "... z_cut.s"
