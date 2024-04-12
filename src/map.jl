@@ -253,16 +253,19 @@ function $t(x::Vector{T}=zeros(TPS, numvars(GTPSA.desc_current)); x0::Vector{S}=
 end
 
 """
-    $($t)(M::Matrix{S}; x0::Vector{S}=zeros(numtype(first(x)), numvars(x)), Q::U=nothing, E::V=nothing,  spin::Union{Bool,Nothing}=nothing, radiation::Union{Bool,Nothing}=nothing, use::Union{Descriptor,TaylorMap,Probe{S,T,U,V},Nothing}=nothing) where {S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing}}
+    $($t)(M; x0::Vector{S}=zeros(numtype(first(x)), numvars(x)), Q::U=nothing, E::V=nothing,  spin::Union{Bool,Nothing}=nothing, radiation::Union{Bool,Nothing}=nothing, use::Union{Descriptor,TaylorMap,Probe{S,T,U,V},Nothing}=nothing) where {S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing}}
 
-Constructs a $($t) with the passed matrix of scalars as the linear part of the `TaylorMap`, and optionally the entrance 
+`M` must represent a matrix with linear indexing.
+
+Constructs a $($t) with the passed matrix of scalars `M` as the linear part of the `TaylorMap`, and optionally the entrance 
 coordinates `x0`, `Quaternion` for spin `Q`, and stochastic matrix `E` as keyword arguments. The helper keyword 
 arguments `spin` and `radiation` may be set to `true` to construct a $($t) with an identity quaternion/stochastic 
 matrix, or `false` for no spin/radiation. Note that setting `spin`/`radiation` to any `Bool` value without `Q` or `E` 
 specified is type-unstable. This constructor also checks for consistency in the length of the orbital ray and GTPSA 
 `Descriptor`.
 """
-function $t(M::Matrix{S}; use::Union{Descriptor,TaylorMap,Probe{S,Union{TPS,ComplexTPS},U,V}}=GTPSA.desc_current, x0::Vector{S}=zeros(eltype(M), size(M,1)), Q::U=nothing, E::V=nothing,  spin::Union{Bool,Nothing}=nothing, radiation::Union{Bool,Nothing}=nothing) where {S,U<:Union{Quaternion{<:Union{TPS,ComplexTPS}},Nothing},V<:Union{Matrix,Nothing}}
+function $t(M; use::Union{Descriptor,TaylorMap,Probe{S,Union{TPS,ComplexTPS},U,V}}=GTPSA.desc_current, x0::Vector{S}=zeros(eltype(M), size(M,1)), Q::U=nothing, E::V=nothing,  spin::Union{Bool,Nothing}=nothing, radiation::Union{Bool,Nothing}=nothing) where {S,U<:Union{Quaternion{<:Union{TPS,ComplexTPS}},Nothing},V<:Union{Matrix,Nothing}}
+  Base.require_one_based_indexing(M)
   nv = numvars(use)
   np = numparams(use)
   nn = numnn(use)
@@ -270,7 +273,7 @@ function $t(M::Matrix{S}; use::Union{Descriptor,TaylorMap,Probe{S,Union{TPS,Comp
   nv == length(x0) || error("Number of variables in GTPSA Descriptor != length of reference orbit vector!")
   nv == size(M,1) || error("Number of rows in transfer matrix inconsistent with number of variables in GTPSA!")
 
-  if S <: Complex
+  if eltype(M) <: Complex
     outT = ComplexTPS
   else
     outT = TPS
@@ -329,7 +332,7 @@ function $t(M::Matrix{S}; use::Union{Descriptor,TaylorMap,Probe{S,Union{TPS,Comp
     E1 = nothing # for type instability
   end
 
-  return $t{S,outT,typeof(Q1),typeof(E1)}(copy(x0), x1, Q1, E1)
+  return $t{eltype(M),outT,typeof(Q1),typeof(E1)}(copy(x0), x1, Q1, E1)
 end
 
 

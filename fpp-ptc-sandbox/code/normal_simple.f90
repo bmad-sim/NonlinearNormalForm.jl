@@ -27,7 +27,7 @@ mat(1,1)=1; mat(1,2)=1;mat(2,1)=-0.4_dp; mat(2,2)=0.6_dp;
 ! Matrix mat(2,2) put into a c_damap to create T
 T=mat
 call print(T)
-call c_normal(T,Normal_form)
+call c_normal_new(T,Normal_form)
 N=Normal_form%Atot**(-1)*T*Normal_form%Atot
 ! Creating x^2+p^2 which is the invariant of a rotation
 r2=(1.0_dp.cmono.1)**2+(1.0_dp.cmono.2)**2

@@ -17,7 +17,7 @@ import Base: ∘,
              ==
 
 using LinearAlgebra,
-      #SkewLinearAlgebra,
+      SkewLinearAlgebra,
       Printf,
       Reexport,
       DelimitedFiles
@@ -44,8 +44,8 @@ import GTPSA: Desc,
 
 export TaylorMap, Quaternion, Probe, TPSAMap, DAMap, TPSAMap, checksymp, mul!,
         normalize!, dot, to_SO3, read_fpp_map, cutord, cutord!, gofix, gofix!, 
-        normal, compose!, I, jacobian, jacobiant, linear_a, moveback_unstable!, normalize_eigen!,
-        mat_eigen, mat_eigen!, locate_planes!
+        normal, compose!, I, jacobian, jacobiant, linear_a, moveback_unstable!, normalize_evecs!,
+        mat_eigen, mat_eigen!, locate_modes!, S
 
 
 include("quaternion.jl")
@@ -58,6 +58,7 @@ include("show.jl")
 include("methods.jl")
 include("normal.jl")
 include("matrix.jl")
+include("symplectic_s.jl")
 include("utils.jl")
 
 end

@@ -54,8 +54,10 @@ function gofix!(a0::DAMap, m::DAMap, order=1; work_map::DAMap=zero(m), comp_work
     @inbounds a0.x0[i] = m.x0[i]
     @inbounds a0.x[i][i] += 1
   end
-
-  a0.Q.q[1][0] = 1
+  
+  if !isnothing(m.Q)
+    a0.Q.q[1][0] = 1
+  end
 
   return a0
 end
