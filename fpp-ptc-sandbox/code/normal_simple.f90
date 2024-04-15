@@ -7,6 +7,7 @@ type(c_normal_form) Normal_form
 real(dp) mat(2,2),alpha,beta,gamma
 integer index_beta(2),index_gamma(2),index_alpha(2),mf
 type(internal_state) state
+n_cai=-i_
 mf = 6
 ! This program initialize FPP via PTC
 ! which is more in line with a BMAD usage

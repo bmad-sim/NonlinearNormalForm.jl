@@ -1,16 +1,4 @@
 """
-    mat_eigen!(mat; sort=true, phase_modes=true)
-
-Same as `mat_eigen`, but mutates `mat` for speed. See the documentation for `mat_eigen` 
-for more details.
-"""
-function mat_eigen!(mat; sort=true, phase_modes=true)
-  F = eigen!(mat)
-  low_mat_eigen!(F, sort, phase_modes)
-  return F
-end
-
-"""
     mat_eigen(mat; sort=true, phase_modes=true)
 
 Given a matrix `mat` with an even number of rows/cols, calculates the eigenvectors 
@@ -34,6 +22,18 @@ function mat_eigen(mat; sort=true, phase_modes=true)
   return F
 end
 
+"""
+    mat_eigen!(mat; sort=true, phase_modes=true)
+
+Same as `mat_eigen`, but mutates `mat` for speed. See the documentation for `mat_eigen` 
+for more details.
+"""
+function mat_eigen!(mat; sort=true, phase_modes=true)
+  F = eigen!(mat)
+  low_mat_eigen!(F, sort, phase_modes)
+  return F
+end
+
 function low_mat_eigen!(F, sort, phase_modes)
   # Move unstable modes to the end:
   num_unstable = moveback_unstable!(F)
@@ -45,7 +45,7 @@ function low_mat_eigen!(F, sort, phase_modes)
     nv = length(F.values)
     n_modes = Int(nv/2)
     modes = Vector{Int}(undef, n_modes)
-    println(num_unstable)
+
     # If more than 1 mode is unstable, there is no gaurantee the modes are in pairs, so sorting fails.
     if num_unstable <= 2 && locate_modes!(F.vectors, F.values, sort=false, modes=modes) # Plane locating is successful
 
@@ -67,14 +67,16 @@ function low_mat_eigen!(F, sort, phase_modes)
       @views for i=1:Int((nv-num_unstable)/2)
         normalize_eigenmode!(F.vectors[:,2*i-1:2*i], F.values[2*i-1:2*i], -1)
       end
+
     end
-    println(norm(check_evecs_norm(view(F.vectors,:,1:size(F.vectors,2)-num_unstable))))
   else 
+
     # Normalize the stable modes:
     nv = length(F.values)
     @views for i=1:Int((nv-num_unstable)/2)
       normalize_eigenmode!(F.vectors[:,2*i-1:2*i], F.values[2*i-1:2*i], phase_modes ? i : -1)
     end
+
   end
 
   return F
@@ -112,12 +114,8 @@ function normalize_eigenmode!(evec_pair, eval_pair, phase_mode::Integer=-1)
   if sgn == -1
     # Flip evals now, evecs will be flipped with sgn
     eval_pair[1], eval_pair[2] = eval_pair[2], eval_pair[1]
-    #println("sgn is -")
-    #println("vⱼ'*vⱼ₊₁ is $(evec_pair[:,1]'*evec_pair[:,2])")
     fnorm=1/sqrt(-fnorm)
   else
-    #println("sgn is +")
-    #println("vⱼ'*vⱼ₊₁ is $(evec_pair[:,1]'*evec_pair[:,2])")
     fnorm=1/sqrt(fnorm)
   end
 

@@ -1,16 +1,41 @@
 # --- compose ---
-function compose!(m::DAMap, m2::DAMap, m1::DAMap; dospin::Bool=true, keep_scalar::Bool=true, work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_comp_work_low(m), work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS}}}}=prep_comp_work_prom(m,m2,m1))
+
+"""
+    compose!(m::DAMap, m2::DAMap, m1::DAMap; dospin::Bool=true, keep_scalar::Bool=true, work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_comp_work_low(m), work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS}}}}=prep_comp_work_prom(m,m2,m1))
+
+In-place `DAMap` composition which calculates `m = m2 ∘ m1`, ignoring the scalar part of `m1`.
+
+Aliasing `m === m2` is allowed, but NOT `m === m1`. `m2 === m1` is fine. The destination map `m` should be 
+properly set up (with correct types promoted if necessary), and have `m.x[1:nv]` (and `m.Q.q` if spin) 
+containing allocated TPSs.
+
+If `keep_scalar` is set to `true`, then the scalar part of `m1` is retained. In this case, a temporary 
+vector `work_ref` must be used to store the scalar part before calling the low-level `compose_it!`, 
+then added back into `m1` after composition. `work_ref` can be optionally provided, or will be created 
+internally in this case. Default is `true`.
+
+If `dospin` is `true`, then the quaternion part of the maps will be composed as well. Default is `true`.
+
+See the documentation for `compose_it!` for information on `work_low` and `work_prom`.
+
+### Keyword Arguments
+- `keep_scalar` -- Specify whether to keep the scalar part in `m1` or throw it away. If `true`, a temporary vector storing the scalar part must be used. Default is true
+- `work_ref` -- If `keep_scalar` is true, the temporary vector can be provided in this keyword argument. If `nothing` is provided, the temporary will be created internally. Default is `nothing`
+- `dospin` -- Specify whether or not to include the quaternions in the concatenation. Default is `true`
+- `work_low` -- Temporary vector to hold the low-level C pointers. See the `compose_it!` documentation for more details. Default is output from `prep_comp_work_low(m)`
+- `work_prom` -- Temporary vector of allocated `ComplexTPS`s when there is implicit promotion. See the `compose_it!` documentation for more details. Default is output from `prep_comp_work_prom(m, m2, m1)`
+"""
+function compose!(m::DAMap, m2::DAMap, m1::DAMap; keep_scalar::Bool=true, work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing, dospin::Bool=true, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_comp_work_low(m), work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS}}}}=prep_comp_work_prom(m,m2,m1))
   # DAMap setup:
   desc = getdesc(m1)
   nv = numvars(desc)
 
-  if keep_scalar && isnothing(work_ref)
-    ref = prep_work_ref(m)
-    @assert length(ref) >= nv "Incorrect length for work_ref, received $(length(work_ref)) but should be atleast $nv"
-  end
-  
-
   if keep_scalar
+    if isnothing(work_ref)
+      ref = prep_work_ref(m)
+    end
+    @assert length(ref) >= nv "Incorrect length for work_ref, received $(length(work_ref)) but should be atleast $nv"
+
     # Take out scalar part and store it
     for i=1:nv
         @inbounds ref[i] = m1.x[i][0]
@@ -41,6 +66,24 @@ function compose!(m::DAMap, m2::DAMap, m1::DAMap; dospin::Bool=true, keep_scalar
   return m
 end
 
+"""
+    compose!(m::TPSAMap, m2::TPSAMap, m1::TPSAMap; dospin::Bool=true, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_comp_work_low(m), work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS}}}}=prep_comp_work_prom(m,m2,m1))
+
+In-place TPSAMap` composition which calculates `m = m2 ∘ m1`, including the scalar part of `m1`.
+
+Aliasing `m === m2` is allowed, but NOT `m === m1`. `m2 === m1` is fine. The destination map `m` should be 
+properly set up (with correct types promoted if necessary), and have `m.x[1:nv]` (and `m.Q.q` if spin) 
+containing allocated TPSs.
+
+If `dospin` is `true`, then the quaternion part of the maps will be composed as well. Default is `true`.
+
+See the documentation for `compose_it!` for information on `work_low` and `work_prom`.
+
+### Keyword Arguments
+- `dospin` -- Specify whether or not to include the quaternions in the concatenation. Default is `true`
+- `work_low` -- Temporary vector to hold the low-level C pointers. See the `compose_it!` documentation for more details. Default is output from `prep_comp_work_low(m)`
+- `work_prom` -- Temporary vector of allocated `ComplexTPS`s when there is implicit promotion. See the `compose_it!` documentation for more details. Default is output from `prep_comp_work_prom(m, m2, m1)`
+"""
 function compose!(m::TPSAMap, m2::TPSAMap, m1::TPSAMap; dospin::Bool=true, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_comp_work_low(m), work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS}}}}=prep_comp_work_prom(m,m2,m1))
   # TPSAMap setup:
   # For TPSA Map concatenation, we need to subtract w_0 (m2 x0) (Eq. 33)
@@ -74,13 +117,33 @@ end
 minv!(na::Cint, ma::Vector{Ptr{RTPSA}}, nb::Cint, mc::Vector{Ptr{RTPSA}}) = (@inline; GTPSA.mad_tpsa_minv!(na, ma, nb, mc))
 minv!(na::Cint, ma::Vector{Ptr{CTPSA}}, nb::Cint, mc::Vector{Ptr{CTPSA}}) = (@inline; GTPSA.mad_ctpsa_minv!(na, ma, nb, mc))
 
+"""
+    inv(m1::TaylorMap{S,T,U,V}; dospin::Bool=true, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_inv_work_low(m1)) where {S,T,U,V}
 
-function inv(m1::TaylorMap{S,T,U,V}; dospin::Bool=true, work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_inv_work_low(m1)) where {S,T,U,V}
+Inverts the `TaylorMap`.
+
+### Keyword Arguments
+- `dospin` -- Specify whether to invert the quaternion as well, default is `true`
+- `work_low` -- Temporary vector to hold the low-level C pointers. Default is output from `prep_inv_work_low`
+"""
+function inv(m1::TaylorMap{S,T,U,V}; dospin::Bool=true, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_inv_work_low(m1)) where {S,T,U,V}
   m = zero(m1)
-  inv!(m,m1,dospin=dospin,work_ref=work_ref,work_low=work_low)
+  inv!(m,m1,dospin=dospin,work_low=work_low)
   return m
 end
 
+"""
+    inv!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}; dospin::Bool=true, work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_inv_work_low(m1)) where {S,T,U,V}
+
+In-place inversion of the `TaylorMap` setting `m = inv(m1)`. Aliasing `m === m1` is allowed, however 
+in this case a temporary vector must be used to store the scalar part of `m1` prior to inversion so 
+that the entrance/exit coordinates of the map can be properly handled.
+
+### Keyword Arguments
+- `dospin` -- Specify whether to invert the quaternion as well, default is `true`
+- `work_ref` -- If `m === m1`, then a temporary vector must be used to store the scalar part. If not provided and `m === m1`, this temporary will be created internally. Default is `nothing`
+- `work_low` -- Temporary vector to hold the low-level C pointers. Default is output from `prep_inv_work_low`
+"""
 function inv!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}; dospin::Bool=true, work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_inv_work_low(m1)) where {S,T,U,V}
   desc = getdesc(m1)
   nn = numnn(desc)
@@ -106,11 +169,11 @@ function inv!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}; dospin::Bool=true, 
     end
     map!(t->t[0], ref, view(m1.x,1:nv))
   elseif !isnothing(work_ref)
-    @warn "work_ref provided to inv!, but !(m1 === m)"
+    #@warn "work_ref provided to inv!, but !(m1 === m)"
   end
 
   # add immutable parameters to outx
-  @inbounds m.x[nv+1:nn] = view(m1.x, nv+1:nn)
+  @inbounds m.x[nv+1:nn] .= view(m1.x, nv+1:nn)
 
   map!(t->t.tpsa, m1x_low, m1.x)
   map!(t->t.tpsa, outx_low, m.x)
@@ -127,7 +190,7 @@ function inv!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}; dospin::Bool=true, 
 
   if m1 === m
     for i=1:nv
-      @inbounds m.x[i][0] = m1.x0[i]
+      @inbounds m.x[i][0] = m.x0[i]
       @inbounds m.x0[i] = ref[i]
     end
   else
@@ -235,7 +298,7 @@ function cutord!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}, order::Integer; 
     #GTPSA.cutord!(m1.x[i].tpsa, m.x[i].tpsa, convert(Cint, ord))
   end
   # add immutable parameters to outx
-  @inbounds m.x[nv+1:nn] = view(m1.x, nv+1:nn)
+  @inbounds m.x[nv+1:nn] .= view(m1.x, nv+1:nn)
 
   if !isnothing(m1.Q) && dospin
     for i=1:4

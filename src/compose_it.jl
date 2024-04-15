@@ -92,9 +92,9 @@ function compose_it!(m::$t, m2::$t, m1::$t; dospin::Bool=true, work_low::Tuple{V
 
   # add immutable parameters to outx
   if eltype(m.x) == eltype(m1.x)
-    @inbounds m.x[nv+1:nn] = view(m1.x, nv+1:nn)
+    @inbounds m.x[nv+1:nn] .= view(m1.x, nv+1:nn)
   else
-    @inbounds m.x[nv+1:nn] = view(m2.x, nv+1:nn)
+    @inbounds m.x[nv+1:nn] .= view(m2.x, nv+1:nn)
   end
 
   # Do the composition, promoting if necessary
