@@ -45,7 +45,7 @@ import GTPSA: Desc,
 export TaylorMap, Quaternion, Probe, TPSAMap, DAMap, TPSAMap, checksymp, mul!,
         normalize!, dot, to_SO3, read_fpp_map, cutord, cutord!, gofix, gofix!, 
         normal, compose!, I, jacobian, jacobiant, linear_a, moveback_unstable!, normalize_evecs!,
-        mat_eigen, mat_eigen!, locate_modes!, S
+        mat_eigen, mat_eigen!, locate_modes!, S, check_eigen, check_evecs_norm
 
 
 include("quaternion.jl")
