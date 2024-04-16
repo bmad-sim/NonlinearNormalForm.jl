@@ -55,7 +55,7 @@ function read_fpp_map(file)
     data=data[idx:end,:]
   end
   # dont forget params
-  m.x[nv+1:nn] = complexparams(d)
+  m.x[nv+1:nn] .= complexparams(d)
 
 
   # spin?

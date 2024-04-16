@@ -18,6 +18,7 @@ import Base: ∘,
 
 using LinearAlgebra,
       SkewLinearAlgebra,
+      #StaticArrays,
       Printf,
       Reexport,
       DelimitedFiles

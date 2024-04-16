@@ -69,12 +69,12 @@ function $t(m::TaylorMap{S,T,U,V}; use::Union{Descriptor,TaylorMap,Probe{S,T,U,V
 
   # use same parameters if same descriptor (use=nothing)
   if isnothing(use) || getdesc(use) == desc
-    @inbounds x[nv+1:nn] = view(m.x, nv+1:nn)
+    @inbounds x[nv+1:nn] .= view(m.x, nv+1:nn)
   else
     if T == TPS
-      @inbounds x[nv+1:nn] = params(getdesc(first(x)))
+      @inbounds x[nv+1:nn] .= params(getdesc(first(x)))
     else
-      @inbounds x[nv+1:nn] = complexparams(getdesc(first(x)))
+      @inbounds x[nv+1:nn] .= complexparams(getdesc(first(x)))
     end
   end
 
@@ -121,9 +121,9 @@ function $t(p::Probe{S,T,U,V}; use::Union{Descriptor,TaylorMap,Probe{S,T,U,V},No
   end
 
   if T == TPS
-    @inbounds x[nv+1:nn] = params(getdesc(first(x)))
+    @inbounds x[nv+1:nn] .= params(getdesc(first(x)))
   else
-    @inbounds x[nv+1:nn] = complexparams(getdesc(first(x)))
+    @inbounds x[nv+1:nn] .= complexparams(getdesc(first(x)))
   end
 
 
@@ -161,7 +161,7 @@ function $t(u::UndefInitializer, m::TaylorMap{S,T,U,V}) where {S,T,U,V}
   x = Vector{T}(undef, nn)
 
   # use same parameters if same descriptor (use=nothing)
-  @inbounds x[nv+1:nn] = view(m.x, nv+1:nn)
+  @inbounds x[nv+1:nn] .= view(m.x, nv+1:nn)
 
   if !isnothing(m.Q)
     q = Vector{T}(undef, 4)
@@ -203,9 +203,9 @@ function $t(x::Vector{T}=zeros(TPS, numvars(GTPSA.desc_current)); x0::Vector{S}=
   @inbounds x1[1:nv] = map(x->(T)(x, use=getdesc(use)), x)
 
   if T == TPS
-    @inbounds x1[nv+1:nn] = params(getdesc(first(x)))
+    @inbounds x1[nv+1:nn] .= params(getdesc(first(x)))
   else
-    @inbounds x1[nv+1:nn] = complexparams(getdesc(first(x)))
+    @inbounds x1[nv+1:nn] .= complexparams(getdesc(first(x)))
   end
 
   if isnothing(spin)
@@ -288,9 +288,9 @@ function $t(M; use::Union{Descriptor,TaylorMap,Probe{S,Union{TPS,ComplexTPS},U,V
   end
 
   if outT == TPS
-    @inbounds x1[nv+1:nn] = params(getdesc(first(x1)))
+    @inbounds x1[nv+1:nn] .= params(getdesc(first(x1)))
   else
-    @inbounds x1[nv+1:nn] = complexparams(getdesc(first(x1)))
+    @inbounds x1[nv+1:nn] .= complexparams(getdesc(first(x1)))
   end
 
   if isnothing(spin)
@@ -349,7 +349,7 @@ function zero(m::$t{S,T,U,V}) where {S,T,U,V}
   end
 
   # use same parameters 
-  @inbounds x[nv+1:nn] = view(m.x, nv+1:nn)
+  @inbounds x[nv+1:nn] .= view(m.x, nv+1:nn)
 
   if !isnothing(m.Q)
     q = Vector{T}(undef, 4)
@@ -368,6 +368,47 @@ function zero(m::$t{S,T,U,V}) where {S,T,U,V}
   end
 
   return $t(zeros(eltype(m.x0), nv), x, Q, E)
+end
+
+# special zero to make zero map based on passed m but with 
+# or specifically ComplexTPS or TPS
+function zero_typed(m::$t, T::Union{Type{TPS},Type{ComplexTPS}})
+  desc = getdesc(m)
+  nn = numnn(desc)
+  nv = numvars(desc)
+  np = numparams(desc)
+  
+  x = Vector{T}(undef, nn)
+  for i=1:nv
+    @inbounds x[i] = T(use=desc)
+  end
+
+  # use same parameters or allocate if necessary
+  if T == eltype(m.x)
+    @inbounds x[nv+1:nn] .= view(m.x, nv+1:nn)
+  elseif T == TPS
+    @inbounds x[nv+1:nn] .= params(desc)
+  else
+    @inbounds x[nv+1:nn] .= complexparams(desc)
+  end
+
+  if !isnothing(m.Q)
+    q = Vector{T}(undef, 4)
+    for i=1:4
+      @inbounds q[i] = T(use=desc)
+    end
+    Q = Quaternion(q)
+  else
+    Q = nothing
+  end
+
+  if !isnothing(m.E)
+    E = zeros(numtype(T), nv, nv)
+  else
+    E = nothing
+  end
+
+  return $t(zeros(numtype(T), nv), x, Q, E)
 end
 
 # identity map
@@ -389,7 +430,7 @@ function one(m::$t{S,T,U,V}) where {S,T,U,V}
   end
 
   # use same parameters 
-  @inbounds x[nv+1:nn] = view(m.x, nv+1:nn)
+  @inbounds x[nv+1:nn] .= view(m.x, nv+1:nn)
 
   if !isnothing(m.Q)
     q = Vector{T}(undef, 4)

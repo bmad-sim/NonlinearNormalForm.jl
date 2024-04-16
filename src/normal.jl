@@ -16,31 +16,59 @@ function normal(m::DAMap)
   tmp2 = zero(m)
   tmp3 = zero(m)
   comp_work_low, inv_work_low = prep_comp_inv_work_low(m)
-  #work_ref = prep_work_ref(m)
 
-  # 1: Go to the parameter dependent fixed point
-  gofix!(tmp1, m, 1, work_map=tmp2, comp_work_low=comp_work_low, inv_work_low=inv_work_low)
+  #if numparams(m) > 0
+    # 1: Go to the parameter dependent fixed point ------------------------------------------
+    gofix!(tmp1, m, 1, work_map=tmp2, comp_work_low=comp_work_low, inv_work_low=inv_work_low)
 
-  # Similarity transformation to make parameter part of jacobian = 0 (inv(a0)∘m∘a0)
-  compose!(tmp2, m, tmp1, work_low=comp_work_low,keep_scalar=false)
-  inv!(tmp3, tmp1, work_low=inv_work_low,dospin=false)
-  compose!(tmp1, tmp3, tmp2, work_low=comp_work_low,keep_scalar=false)
+    # tmp1 is a0 (linear transformation to parameter-dependent fixed point)
 
-  # tmp1 = m0 now 
+    # Similarity transformation to make parameter part of jacobian = 0 (m0 = inv(a0)∘m∘a0)
+    compose!(tmp2, m, tmp1, work_low=comp_work_low,keep_scalar=false)
+    inv!(tmp3, tmp1, work_low=inv_work_low,dospin=false)
+    compose!(tmp1, tmp3, tmp2, work_low=comp_work_low,keep_scalar=false)
 
-  # 2: do the linear normal form exactly 
+    # tmp1 is m0 (at parameter-dependent fixed point)
+  #else
+#    tmp1 = copy(m)
+  #end
+
+  # 2: do the linear normal form exactly --------------------------------------------------
   linear_a!(tmp2, tmp1, inverse=true)
 
   # tmp1 is still m0
   # tmp2 is inv(a1)
-
   # Now normalize linear map inv(a1)*m0*a1
   compose!(tmp3, tmp2, tmp1, work_low=comp_work_low,keep_scalar=false)
   inv!(tmp1, tmp2, work_low=inv_work_low)
   compose!(tmp2, tmp3, tmp1, work_low=comp_work_low,keep_scalar=false)
 
-  # Now tmp2 is m1
-  return tmp2
+  # tmp2 is m1 , if m is complex then w
+  m1 = tmp2
+
+  # 3: Go into phasors' basis = c*m1*inv(c) ------------------------------------------------
+  # we now need complex stuff if we don't already have it
+  if eltype(m.x) != ComplexTPS
+    ctmp1 = zero_typed(m1, ComplexTPS)
+    ctmp2 = zero(ctmp1)
+    comp_work_low, inv_work_low = prep_comp_inv_work_low(ctmp1)
+  else
+    ctmp1 = tmp1
+    ctmp2 = tmp3
+  end
+
+  work_prom = prep_comp_work_prom(ctmp2, m1, ctmp1) # will be nothing if there is no promotion
+
+  from_phasor!(ctmp1, m1) # ctmp4 = inv(c)
+  compose!(ctmp2, m1, ctmp1, work_low=comp_work_low,keep_scalar=false,work_prom=work_prom)
+  to_phasor!(ctmp1, m1) # ctmp4 = c
+  compose!(ctmp1, ctmp1, ctmp2, work_low=comp_work_low,keep_scalar=false)
+
+  # ctmp1 is map in phasors basis
+  
+
+
+  return ctmp1
 end
 
 function gofix!(a0::DAMap, m::DAMap, order=1; work_map::DAMap=zero(m), comp_work_low::Union{Nothing,Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}}=nothing, inv_work_low::Union{Nothing,Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}}=nothing)
@@ -113,6 +141,7 @@ function linear_a!(a1::DAMap, m0::DAMap; inverse=false)
   #work_matrix .= 0
 
   @views jacobiant!(work_matrix, m0.x[1:nhv])  # parameters never included
+  #println(work_matrix)
   F = mat_eigen!(work_matrix, phase_modes=false) # no need to phase modes. just a rotation
   
   for i=1:nhv
@@ -121,8 +150,6 @@ function linear_a!(a1::DAMap, m0::DAMap; inverse=false)
       work_matrix[2*j,i] = sqrt(2)*imag(F.vectors[i,2*j-1])
     end
   end
-
-  #work_matrix = [0 -1; 1 0]
 
   if !inverse # yes this is intentional... the inverse normalizing linear map requires NO inverse step here, where the non-inverse DOES
     work_matrix = inv(work_matrix) # no in-place inverter in Julia, and using this vs. GTPSA is easier + same speed
@@ -137,7 +164,39 @@ function linear_a!(a1::DAMap, m0::DAMap; inverse=false)
   return a1
 end
 
+# computes c^-1
+function from_phasor!(cinv::DAMap{S,T,U,V}, m::DAMap) where {S,T<:ComplexTPS,U,V}
+  nhv = numvars(m)
 
+  for i=1:Int(nhv/2)
+    # x_new = 1/sqrt(2)*(x+im*p)
+    cinv.x[2*i-1][2*i-1] = 1/sqrt(2)
+    cinv.x[2*i-1][2*i]   = complex(0,1/sqrt(2))
+
+    # p_new = 1/sqrt(2)*(x-im*p)
+    cinv.x[2*i][2*i-1] = 1/sqrt(2)
+    cinv.x[2*i][2*i]   = complex(0,-1/sqrt(2))
+  end
+  return
+end
+
+from_phasor(m::DAMap) = (cinv=zero_typed(m,ComplexTPS); from_phasor!(cinv,m); return cinv)
+
+# computes c
+function to_phasor!(c::DAMap{S,T,U,V}, m::DAMap) where {S,T<:ComplexTPS,U,V}
+  nhv = numvars(m)
+
+  for i=1:Int(nhv/2)
+    c.x[2*i-1][2*i-1] = 1/sqrt(2)
+    c.x[2*i-1][2*i]   = 1/sqrt(2)
+
+    c.x[2*i][2*i-1] = complex(0,-1/sqrt(2))
+    c.x[2*i][2*i]   = complex(0,1/sqrt(2))
+  end
+  return
+end
+
+to_phasor(m::DAMap) = (c=zero_typed(m,ComplexTPS); to_phasor!(c,m); return c)
 
 #=
 # Forward is inv(p)*m*p

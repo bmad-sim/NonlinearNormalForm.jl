@@ -59,6 +59,9 @@ function compose_it!(m::$t, m2::$t, m1::$t; dospin::Bool=true, work_low::Tuple{V
   @assert length(outx_low) >= nv "Incorrect length for work_low[1] = outx_low. Received $(length(outx_low)), should be >=$nv"
   @assert length(m2x_low) >= nv "Incorrect length for work_low[2] = m2x_low. Received $(length(m2x_low)), should be >=$nv"
   @assert length(m1x_low) >= nn "Incorrect length for work_low[3] = m1x_low. Received $(length(m1x_low)), should be >=$nn"
+  @assert eltype(outx_low) == lowtype(outT) "Incorrect eltype of work_low[1] = outx_low. Received $(eltype(outx_low)), should be $(lowtype(outT))"
+  @assert eltype(m2x_low) == lowtype(outT) "Incorrect eltype of work_low[2] = m2x_low. Received $(eltype(m2x_low)), should be $(lowtype(outT))"
+  @assert eltype(m1x_low) == lowtype(outT) "Incorrect eltype of work_low[3] = m1x_low. Received $(eltype(m1x_low)), should be $(lowtype(outT))"
   if !isnothing(m.Q) && dospin
     outQ_low = work_low[4]
     m2Q_low = work_low[5]
@@ -66,6 +69,8 @@ function compose_it!(m::$t, m2::$t, m1::$t; dospin::Bool=true, work_low::Tuple{V
     @assert length(m2Q_low) >= 4 "Incorrect length for m2Q_low: length(work_low[5]) < 4"
     @assert !(outQ_low === m1x_low) "m1x_low === outQ_low !! m1x_low must NOT be reused!"
     @assert !(m2Q_low === m1x_low) "m1x_low === m2Q_low !! m1x_low must NOT be reused!"
+    @assert eltype(outQ_low) == lowtype(outT) "Incorrect eltype of work_low[4] = outQ_low. Received $(eltype(outQ_low)), should be $(lowtype(outT))"
+    @assert eltype(m2Q_low) == lowtype(outT) "Incorrect eltype of work_low[5] = m2Q_low. Received $(eltype(m2x_low)), should be $(lowtype(outT))"
   end
 
   if outT != eltype(m1.x)
@@ -76,7 +81,7 @@ function compose_it!(m::$t, m2::$t, m1::$t; dospin::Bool=true, work_low::Tuple{V
   elseif outT != eltype(m2.x)
     m1x_prom = nothing
     m2x_prom = work_prom[1]
-    if isnothing(m.Q) && dospin
+    if !isnothing(m.Q) && dospin
       m2Q_prom = work_prom[2]
       @assert length(m2Q_prom) >= 4 "Incorrect length for work_prom[2] = m2Q_prom: Received $(length(m2Q_prom)), should be >=4"
     end

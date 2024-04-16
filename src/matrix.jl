@@ -14,7 +14,9 @@ the first component of that mode (e.g. the x, y, or z component, NOT the px, py,
 be fully real. This both makes the eigenvector "pretty", and in this case of weak coupling, ensures 
 that `vⱼ'*vⱼ₊₁` for j=(1, 2, 3) has a positive imaginary part for odd `j` so that the eigenvectors/
 eigenvalues for odd `j` are associated with the positive tune and even `j` the negative tune. This 
-phase factor is harmless/useless to include in a highly-coupled matrix,
+phase factor is harmless/useless to include in a highly-coupled matrix.
+
+For complex matrices, Julia's `eigen`, which is called by `mat_eigen`, is type-unstable.
 """
 function mat_eigen(mat; sort=true, phase_modes=true)
   F = eigen(mat)
@@ -61,7 +63,7 @@ function low_mat_eigen!(F, sort, phase_modes)
       F.values[2*modes] = F.values[2:2:nv]
 
     else # Plane locating is unsuccessful! 
-      @warn "Mode sorting of eigenvectors failed; eigenvectors in arbitrary order. Stable modes will be normalized, but no phase factor will be included."
+      #@warn "Mode sorting of eigenvectors failed; eigenvectors in arbitrary order. Stable modes will be normalized, but no phase factor will be included."
 
       # Normalize stable modes
       @views for i=1:Int((nv-num_unstable)/2)

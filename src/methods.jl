@@ -162,7 +162,7 @@ function inv!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}; dospin::Bool=true, 
   # if aliasing, must use vector to store x0
   if m1 === m
     if isnothing(work_ref)
-      ref = Vector{numtype(T)}(undef, nv)
+      ref = prep_work_ref(m) 
     else
       ref = work_ref
       @assert length(ref) >= nv "Cannot inv!: incorrect length for ref. Received $(length(ref)), must be >= $nv"
@@ -236,9 +236,9 @@ function complex(m::$t{S,T,U,V}) where {S,T,U,V}
 
   # use same parameters if complex already
   if T == ComplexTPS
-    @inbounds x[nv+1:nn] = view(m.x, nv+1:nn)
+    @inbounds x[nv+1:nn] .= view(m.x, nv+1:nn)
   else
-    @inbounds x[nv+1:nn] = complexparams(getdesc(first(x)))
+    @inbounds x[nv+1:nn] .= complexparams(getdesc(first(x)))
   end
 
   if !isnothing(m.Q)
