@@ -38,6 +38,8 @@ work_prom[1] = m2x_prom  # Length >= nv, Vector{ComplexTPS}
 work_prom[2] = m2Q_prom  # Length >= 4, Vector{ComplexTPS}
 ```
 Note that the `ComplexTPS`s in the vector(s) must be allocated and have the same `Descriptor`.
+
+If spin is included, not that the final quaternion concatenation step mul! will creat allocations
 """ 
 function compose_it!(m::$t, m2::$t, m1::$t; dospin::Bool=true, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_comp_work_low(m), work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS}}}}=prep_comp_work_prom(m,m2,m1))
   @assert !(m === m1) "Cannot compose_it!(m, m2, m1) with m === m1"
@@ -147,7 +149,7 @@ function compose_it!(m::$t, m2::$t, m1::$t; dospin::Bool=true, work_low::Tuple{V
     # First obtain q2(M(z0))
     GC.@preserve m1x_prom m2Q_prom compose!(Cint(4), m2Q_low, nv+np, m1x_low, outQ_low)
     # Now concatenate
-    mul!(m.Q, m1.Q, m.Q)
+    mul!(m.Q, m1.Q, m.Q) # ALLOCATIONS HERE!
   end
 
   return 

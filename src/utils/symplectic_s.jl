@@ -1,8 +1,14 @@
-# Generic symplectic skew symmetric S matrix (size inferred from 
-# other matrix) using SkewLinearAlgebra JMatrix
+"""
+Generic symplectic skew symmetric S matrix (size inferred from 
+other matrix in operations) using SkewLinearAlgebra's `JMatrix`
+"""
 struct SymplecticS end
 
-const S = SymplecticS()
+"""
+Generic symplectic skew symmetric S matrix (size inferred from 
+other matrix in operations) using SkewLinearAlgebra's `JMatrix`
+"""
+const S = SymplecticS
 
 (S::SymplecticS)(n::Integer) = JMatrix{Int8,+1}(n)
 
@@ -21,11 +27,7 @@ Returns `tranpose(M)*S*M - S`, where `S` is the skew-symmetric matrix
 containing all zeros. The non-symplectic parts of the matrix can be identified 
 by those nonzero elements in the result.
 """
-function checksymp(M::Matrix{T}) where T<:Number
-  s = size(M)
-  nv = first(s)
-  nv == last(s) || error("Non-square matrix!")
-  #iseven(nv) || error("Matrix contains odd number of rows/columns!")
+function checksymp(M)
   res = transpose(M)*S*M-S
   return res
 end

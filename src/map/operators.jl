@@ -1,5 +1,4 @@
 # --- powers ---
-
 function ^(m1::DAMap{S,T,U,V}, n::Integer) where {S,T,U,V}
   nv = numvars(m1)
   # Do it
@@ -63,55 +62,20 @@ function ^(m1::TPSAMap{S,T,U,V}, n::Integer) where {S,T,U,V}
   end
 end
 
-# --- others ---
 
 for t = (:DAMap, :TPSAMap)
 @eval begin
 
-function ∘(m2::$t,m1::$t)
-  @assert !isnothing(m1.Q) && !isnothing(m2.Q) || m1.Q == m2.Q "Cannot compose: one map includes spin, other does not"
-  @assert !isnothing(m1.E) && !isnothing(m2.E) || m1.E == m2.E "Cannot compose: one map includes radiation, other does not"
 
-  desc = getdesc(m1)
-  nn = numnn(desc)
-  nv = numvars(desc)
+# --- compose ---
+"""
+    ∘(m2::$($t),m1::$($t)) -> $($t)
 
-  outT = promote_type(eltype(m2.x),eltype(m1.x))
-  
-  # set up outx0
-  outx0 = Vector{numtype(outT)}(undef, nv)
+$($t) composition, $( $t == DAMap ? "ignoring the scalar part of `m1`" : "including the scalar part of `m1`")
+"""
+∘(m2::$t, m1::$t) = compose(m2, m1)
 
-  # Set up outx:
-  outx = Vector{outT}(undef, nn)
-  for i=1:nv  # no need to allocate immutable parameters taken care of inside compose_it!
-      @inbounds outx[i] = outT(use=desc)
-  end
-
-  # set up quaternion out:
-  if !isnothing(m1.Q)
-    outq = Vector{outT}(undef, 4)
-    for i=1:4
-      @inbounds outq[i] = outT(use=desc)
-    end
-    outQ = Quaternion(outq)
-  else
-    outQ = nothing
-  end
-
-  # set up radiation out
-  if isnothing(m1.E)
-    outE = nothing
-  else
-    outE = Matrix{numtype(outT)}(undef, nv, nv)
-  end
-
-  m = $t(outx0, outx, outQ, outE)
-  compose!(m, m2, m1)
-  
-  return m
-end
-
-# Basic operators
+# --- add ---
 function +(m2::$t{S,T,U,V},m1::$t{S,T,U,V}) where {S,T,U,V}
   if xor(isnothing(m2.Q), isnothing(m1.Q))
     error("Cannot +: one map includes spin, the other does not")
@@ -135,6 +99,7 @@ function +(m2::$t{S,T,U,V},m1::$t{S,T,U,V}) where {S,T,U,V}
   return $t(m2.x0+m1.x0, m2.x+m1.x, Q1, E1)
 end
 
+# --- subtract ---
 function -(m2::$t,m1::$t)
   if xor(isnothing(m2.Q), isnothing(m1.Q))
     error("Cannot -: one map includes spin, the other does not")
@@ -170,13 +135,13 @@ literal_pow(::typeof(^), m::$t{S,T,U,V}, vn::Val{n}) where {S,T,U,V,n} = ^(m,n)
 +(J::UniformScaling, m::$t) = +(m,J)
 -(m::$t, J::UniformScaling) = m - one(m)
 -(J::UniformScaling, m::$t) = one(m) - m
-∘(m::$t, J::UniformScaling) = DAMap(m)
+∘(m::$t, J::UniformScaling) = $t(m)
 ∘(J::UniformScaling, m::$t) = ∘(m,J)
 *(m::$t, J::UniformScaling) = ∘(m,J)
 *(J::UniformScaling, m::$t) = ∘(m,J)
-/(m::$t, J::UniformScaling) = DAMap(m)
+/(m::$t, J::UniformScaling) = $t(m)
 /(J::UniformScaling, m::$t) = inv(m)
 \(m::$t, J::UniformScaling) = inv(m)
-\(J::UniformScaling, m::$t) = DAMap(m)
+\(J::UniformScaling, m::$t) = $t(m)
 end
 end

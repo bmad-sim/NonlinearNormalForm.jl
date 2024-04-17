@@ -47,7 +47,7 @@ for t = (:DAMap, :TPSAMap)
 @eval begin
 
 """
-    $($t)TaylorMap{S,T,U,V}; use::Union{Descriptor,TaylorMap,Probe{S,T,U,V},Nothing}=nothing) where {S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing}}
+    $($t)(TaylorMap{S,T,U,V}; use::Union{Descriptor,TaylorMap,Probe{S,T,U,V},Nothing}=nothing) where {S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing}}
 
 Creates a new copy of the passed `TaylorMap` as a `$($t)`. 
 
@@ -336,7 +336,13 @@ function $t(M; use::Union{Descriptor,TaylorMap,Probe{S,Union{TPS,ComplexTPS},U,V
 end
 
 
-# zero map (empty but still identity in parameters)
+"""
+    zero(m::$($t){S,T,U,V}) where {S,T,U,V}
+
+Creates a $($t) with the same GTPSA `Descriptor`, and spin/radiation on/off,
+as `m` but with all zeros for each quantity (except for the immutable parameters 
+in `x[nv+1:nn]`, which will be copied from `m.x`)
+"""
 function zero(m::$t{S,T,U,V}) where {S,T,U,V}
   desc = getdesc(m)
   nn = numnn(desc)
@@ -370,8 +376,13 @@ function zero(m::$t{S,T,U,V}) where {S,T,U,V}
   return $t(zeros(eltype(m.x0), nv), x, Q, E)
 end
 
-# special zero to make zero map based on passed m but with 
-# or specifically ComplexTPS or TPS
+"""
+    zero_typed(m::$($t), T::Union{Type{TPS},Type{ComplexTPS}})
+
+Creates a $($t) with the same GTPSA `Descriptor`, and spin/radiation on/off,
+as `m` but with all zeros for each quantity (except for the immutable parameters 
+in `x[nv+1:nn]`, which will be copied from `m.x`) and with the specified type `T`.
+"""
 function zero_typed(m::$t, T::Union{Type{TPS},Type{ComplexTPS}})
   desc = getdesc(m)
   nn = numnn(desc)
@@ -411,7 +422,11 @@ function zero_typed(m::$t, T::Union{Type{TPS},Type{ComplexTPS}})
   return $t(zeros(numtype(T), nv), x, Q, E)
 end
 
-# identity map
+"""
+    one(m::$($t){S,T,U,V}) where {S,T,U,V}
+  
+Construct an identity map based on `m`.
+"""
 function one(m::$t{S,T,U,V}) where {S,T,U,V}
   desc = getdesc(m)
   nn = numnn(desc)
@@ -456,4 +471,4 @@ end
 end
 
 
-==(m1::TaylorMap, m2::TaylorMap) = (m1.x0 == m2.x0 && m1.x == m2.x && m1.Q == m2.Q && m1.E == m2.E)
+

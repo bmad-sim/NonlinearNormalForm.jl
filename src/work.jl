@@ -94,3 +94,11 @@ end
 function prep_work_ref(m1::TaylorMap{S,T,U,V}) where {S,T,U,V}
   return Vector{numtype(eltype(m1.x))}(undef, numvars(m1))
 end
+
+function prep_log_work_low(F::VectorField{T,U}) where {T,U}
+  nv = numvars(F)
+  Fx_low = Vector{lowtype(T)}(undef, nv)
+  m2x_low = Vector{lowtype(T)}(undef, nv)
+  m1x_low = Vector{lowtype(T)}(undef, nv)
+  return (Fx_low, m2x_low, m1x_low)
+end

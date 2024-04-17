@@ -17,7 +17,7 @@ function normal(m::DAMap)
   tmp3 = zero(m)
   comp_work_low, inv_work_low = prep_comp_inv_work_low(m)
 
-  #if numparams(m) > 0
+  if numparams(m) > 0
     # 1: Go to the parameter dependent fixed point ------------------------------------------
     gofix!(tmp1, m, 1, work_map=tmp2, comp_work_low=comp_work_low, inv_work_low=inv_work_low)
 
@@ -29,25 +29,27 @@ function normal(m::DAMap)
     compose!(tmp1, tmp3, tmp2, work_low=comp_work_low,keep_scalar=false)
 
     # tmp1 is m0 (at parameter-dependent fixed point)
-  #else
-#    tmp1 = copy(m)
-  #end
-
+  else
+    copy!(tmp1, m)
+  end
+  
   # 2: do the linear normal form exactly --------------------------------------------------
   linear_a!(tmp2, tmp1, inverse=true)
-
+ 
   # tmp1 is still m0
   # tmp2 is inv(a1)
   # Now normalize linear map inv(a1)*m0*a1
   compose!(tmp3, tmp2, tmp1, work_low=comp_work_low,keep_scalar=false)
-  inv!(tmp1, tmp2, work_low=inv_work_low)
+  inv!(tmp1, tmp2, work_low=inv_work_low,dopin=false)
   compose!(tmp2, tmp3, tmp1, work_low=comp_work_low,keep_scalar=false)
 
   # tmp2 is m1 , if m is complex then w
   m1 = tmp2
-
+  
   # 3: Go into phasors' basis = c*m1*inv(c) ------------------------------------------------
-  # we now need complex stuff if we don't already have it
+  # The nonlinear part of the normal form should be in the phasor's basis (see Eq. 3.88 in 
+  # Etienne's blue book)
+  # We now need complex stuff if we don't already have it
   if eltype(m.x) != ComplexTPS
     ctmp1 = zero_typed(m1, ComplexTPS)
     ctmp2 = zero(ctmp1)
@@ -56,19 +58,28 @@ function normal(m::DAMap)
     ctmp1 = tmp1
     ctmp2 = tmp3
   end
-
-  work_prom = prep_comp_work_prom(ctmp2, m1, ctmp1) # will be nothing if there is no promotion
-
-  from_phasor!(ctmp1, m1) # ctmp4 = inv(c)
-  compose!(ctmp2, m1, ctmp1, work_low=comp_work_low,keep_scalar=false,work_prom=work_prom)
-  to_phasor!(ctmp1, m1) # ctmp4 = c
-  compose!(ctmp1, ctmp1, ctmp2, work_low=comp_work_low,keep_scalar=false)
-
-  # ctmp1 is map in phasors basis
   
+  work_prom = prep_comp_work_prom(ctmp2, ctmp1, m1) # will be nothing if there is no promotion
+
+  to_phasor!(ctmp1,m1) # ctmp1 = c
+  compose!(ctmp2, ctmp1, m1, work_low=comp_work_low,keep_scalar=false,work_prom=work_prom)
+  from_phasor!(ctmp1, m1) # ctmp1 = inv(c)
+  compose!(ctmp2, ctmp2, ctmp1, work_low=comp_work_low,keep_scalar=false)
+
+  # ctmp2 is map in phasors basis
+  
+  # 4: Nonlinear algorithm --------------------------------------------------------------------
+  # Now we have m1, in the phasor's basis. Therefore the nonlinear part of the canonical 
+  # transformation a will have a factored Lie representation:
+  #
+  #         a₂∘a₃∘... = ...exp(F₃⋅∇)exp(F₂⋅∇)I
+  # 
+  # Next step is to get only the nonlinear part of ctmp1
+  # this can be done by inverting the linear part of ctmp1 and composing
+  # But for nonlinear we need a vector field type
 
 
-  return ctmp1
+  return ctmp2
 end
 
 function gofix!(a0::DAMap, m::DAMap, order=1; work_map::DAMap=zero(m), comp_work_low::Union{Nothing,Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}}=nothing, inv_work_low::Union{Nothing,Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}}=nothing)
@@ -146,7 +157,7 @@ function linear_a!(a1::DAMap, m0::DAMap; inverse=false)
   
   for i=1:nhv
     for j=1:nhpl
-      work_matrix[2*j-1,i] = sqrt(2)*real(F.vectors[i,2*j-1])
+      work_matrix[2*j-1,i] = sqrt(2)*real(F.vectors[i,2*j-1])  # See Eq. 3.74 in EBB for factor of 2
       work_matrix[2*j,i] = sqrt(2)*imag(F.vectors[i,2*j-1])
     end
   end

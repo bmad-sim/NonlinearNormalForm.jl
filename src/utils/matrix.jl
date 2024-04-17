@@ -63,7 +63,7 @@ function low_mat_eigen!(F, sort, phase_modes)
       F.values[2*modes] = F.values[2:2:nv]
 
     else # Plane locating is unsuccessful! 
-      #@warn "Mode sorting of eigenvectors failed; eigenvectors in arbitrary order. Stable modes will be normalized, but no phase factor will be included."
+      @warn "Mode sorting of eigenvectors failed; eigenvectors in arbitrary order. Stable modes will be normalized, but no phase factor will be included."
 
       # Normalize stable modes
       @views for i=1:Int((nv-num_unstable)/2)
@@ -257,7 +257,7 @@ function locate_modes!(evecs, evals=nothing; sort=true, modes=nothing)
   return true
 end
 
-
+#=
 function check_eigen(M, F::Eigen)
   return M*F.vectors-transpose(F.values).*F.vectors
 end
@@ -265,3 +265,4 @@ end
 function check_evecs_norm(evecs)
   return sum([norm(evecs[:,i]'*S*evecs[:,i].-(isodd(i) ? im : -im))  for i=1:size(evecs, 2)])
 end
+=#

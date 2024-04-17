@@ -2,64 +2,122 @@ module NonlinearNormalForm
 
 import Base: ∘,
              *,
-             literal_pow,
              +,
              -,
              /,
              \,
              ^,
-             show,
-             convert,
-             inv,
+             literal_pow,
+             inv, 
              zero,
              one,
              complex,
-             ==
+             log,
+             ==,
+             copy!,
+             convert,
+             show
+
+import LinearAlgebra: norm,
+                      dot,
+                      mul!
 
 using LinearAlgebra,
       SkewLinearAlgebra,
-      #StaticArrays,
       Printf,
       Reexport,
       DelimitedFiles
 
 @reexport using GTPSA
 
-import LinearAlgebra: norm, dot
-
+# We want these guys in our workspace:
 import GTPSA: Desc, 
               RTPSA, 
               CTPSA,
-              compose!,
-              jacobian, 
-              jacobiant, jacobiant!,
-              cutord,
-              cutord!,
-              clear!,
               getdesc,
               numvars,
               numparams,
-              numnn,
+              numnn, 
               numtype,
-              lowtype
+              lowtype,
 
-export TaylorMap, Quaternion, Probe, TPSAMap, DAMap, TPSAMap, checksymp, mul!,
-        normalize!, dot, to_SO3, read_fpp_map, cutord, cutord!, gofix, gofix!, 
-        normal, compose!, I, jacobian, jacobiant, linear_a, moveback_unstable!, normalize_evecs!,
-        mat_eigen, mat_eigen!, locate_modes!, S, check_eigen, check_evecs_norm, inv!, testallocs!
+              jacobian,
+              jacobiant,
+              clear!,
+              cutord,
+              cutord!,
+              getord,
+              getord!,
+              compose!
+              
 
 
-include("quaternion.jl")
+export        TaylorMap, 
+              Quaternion, 
+              Probe,      
+              TPSAMap, 
+              DAMap, 
+              
+              norm,
+              dot,
+              mul!,
+              inv!,
+              to_SO3,
+      
+              compose,
+              inv!,
+      
+              checksymp,
+              I,
+              S,
+      
+              read_fpp_map,
+      
+              mat_eigen,
+              mat_eigen!,
+              normalize_eigenmode!,
+              locate_modes!,
+              moveback_unstable!,
+      
+              normal!,
+              normal,
+              gofix!,
+              gofix,
+              linear_a!,
+              linear_a,
+              from_phasor!,
+              from_phasor,
+              to_phasor!,
+              to_phasor,
+
+              log!
+
+
+include("utils/quaternion.jl")
+include("utils/matrix.jl")
+include("utils/symplectic_s.jl")
+
 include("probe.jl")
-include("map.jl")
+include("map/ctors.jl")
+include("map/compose.jl")
+include("map/compose_it.jl")
+include("map/inv.jl")
+include("map/methods.jl")
+include("map/operators.jl")
+
+include("vectorfield/ctors.jl")
+include("vectorfield/methods.jl")
+
+include("utils/misc.jl")
+
 include("work.jl")
-include("compose_it.jl")
-include("operators.jl")
-include("show.jl")
-include("methods.jl")
 include("normal.jl")
-include("matrix.jl")
-include("symplectic_s.jl")
-include("utils.jl")
+
+include("show.jl")
+
+
+
+
+
 
 end

@@ -1,12 +1,8 @@
-#= 
-Simple differentiable (bi)quaternion bc Julia 
-doesn't seem to have anything...
+"""
+    Quaternion{T <: Number}
 
-Or Julia does have stuff but it requires 
-Quaternion{T<:Real} + im*Quaternion{T<:Real} 
-to fit in with the concrete Complex type
-presumably.
-=#
+Lightweight quaternion implementation for simulations.
+"""
 struct Quaternion{T <: Number}
   q::Vector{T}
 end
@@ -15,10 +11,16 @@ convert(::Type{Quaternion{S}}, Q::Quaternion{T}) where {S,T} = Quaternion(map(x-
 Quaternion(Q::Quaternion{T}) where T <: Number = Quaternion(map(x->T(x), Q.q))
 
 Quaternion(t::T) where T <: Number = Quaternion([one(t), zero(t), zero(t), zero(t)])
-Quaternion(n::Nothing) = Quaternion{Nothing}(Nothing[])
+Quaternion(::Nothing) = Quaternion{Nothing}(Nothing[])
 
 ==(Q1::Quaternion, Q2::Quaternion) = Q1.q == Q2.q
 
+"""
+    mul!(Q3::Quaternion, Q1::Quaternion{S}, Q2::Quaternion{T}) where {S,T}
+
+Multiplies the quaternions `Q1*Q2` and stores the result in-place in `Q3`. 
+Aliasing of all three arguments is allowed.
+"""
 function mul!(Q3::Quaternion, Q1::Quaternion{S}, Q2::Quaternion{T}) where {S,T}
   q1 = Q1.q
   q2 = Q2.q
@@ -37,15 +39,14 @@ function mul!(Q3::Quaternion, Q1::Quaternion{S}, Q2::Quaternion{T}) where {S,T}
   Q3.q[4] = @FastGTPSA  D+(E-F-G+H)/2
 end
 
-function Base.:+(Q1::Quaternion, Q2::Quaternion)
-  return Quaternion(Q1.q .+ Q2.q)
-end
++(Q1::Quaternion, Q2::Quaternion) = Quaternion(Q1.q .+ Q2.q)
+-(Q1::Quaternion, Q2::Quaternion) = Quaternion(Q1.q .- Q2.q)
 
-function LinearAlgebra.norm(Q1::Quaternion)
+function norm(Q1::Quaternion)
   return sqrt(dot(Q1,Q1))
 end
 
-function Base.:*(Q1::Quaternion, Q2::Quaternion)
+function *(Q1::Quaternion, Q2::Quaternion)
   q1 = Q1.q
   q2 = Q2.q
   E = @FastGTPSA (q1[2]+q1[4])*(q2[2]+q2[3])
@@ -61,13 +62,13 @@ function Base.:*(Q1::Quaternion, Q2::Quaternion)
   return Quaternion([out1,out2,out3,out4])
 end
 
-function LinearAlgebra.dot(Q1::Quaternion, Q2::Quaternion)
+function dot(Q1::Quaternion, Q2::Quaternion)
   q1 = Q1.q
   q2 = Q2.q
   return  conj(q1[1])*q2[1]+conj(q1[2])*q2[2]+conj(q1[3])*q2[3]+conj(q1[4])*q2[4]
 end
 
-function Base.inv(Q1::Quaternion)
+function inv(Q1::Quaternion)
   q1 = Q1.q
   out1 = q1./dot(Q1,Q1)
   return Quaternion([out1[1], -out1[2], -out1[3], -out1[4]])

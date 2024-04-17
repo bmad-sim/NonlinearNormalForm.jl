@@ -1,8 +1,11 @@
-# helper functions
-getdesc(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap}) = Descriptor(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.x).tpsa).d))
-numvars(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.x).tpsa).d)).nv
-numparams(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.x).tpsa).d)).np
-numnn(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.x).tpsa).d)).nn
+# --- helper functions to get the numvars/numparams/descriptor in any context ---
+
+# GTPSA provides these functions for only pure TPS/ComplexTPSs
+
+getdesc(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap,VectorField}) = Descriptor(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.x).tpsa).d))
+numvars(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap,VectorField}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.x).tpsa).d)).nv
+numparams(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap,VectorField}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.x).tpsa).d)).np
+numnn(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap,VectorField}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.x).tpsa).d)).nn
 
 getdesc(t::Vector{<:Union{TPS,ComplexTPS}}) = Descriptor(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(t).tpsa).d))
 numvars(t::Vector{<:Union{TPS,ComplexTPS}}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(t).tpsa).d)).nv
@@ -14,11 +17,7 @@ numvars(m::Quaternion{<:Union{ComplexTPS,TPS}}) = unsafe_load(Base.unsafe_conver
 numparams(m::Quaternion{<:Union{ComplexTPS,TPS}}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.q).tpsa).d)).np
 numnn(m::Quaternion{<:Union{ComplexTPS,TPS}}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.q).tpsa).d)).nn
 
-numtype(m::Union{Probe{<:Real,T,<:Any,<:Any},<:TaylorMap{<:Number,T,<:Any,<:Any}}) where {T<:Union{TPS,ComplexTPS}} = numtype(T)
-
-jacobian(m::TaylorMap;include_params=false) = jacobian(view(m.x, 1:numvars(m)),include_params=include_params)
-jacobiant(m::TaylorMap;include_params=false) = jacobiant(view(m.x, 1:numvars(m)), include_params=include_params)
-checksymp(m::TaylorMap) = checksymp(jacobian(m))
+numtype(m::Union{Probe{<:Real,T,<:Any,<:Any},<:TaylorMap{<:Number,T,<:Any,<:Any},VectorField{T,<:Any}}) where {T<:Union{TPS,ComplexTPS}} = numtype(T)
 
 
 function read_fpp_map(file)
@@ -341,44 +340,6 @@ function exppb(F::Vector{<:Union{TPS,ComplexTPS}}, m::Vector{<:Union{TPS,Complex
   return mc
 end
 
-# --- logpb ---
-logpb!(na::Cint, ma::Vector{Ptr{RTPSA}}, mb::Vector{Ptr{RTPSA}}, mc::Vector{Ptr{RTPSA}}) = (@inline; mad_tpsa_logpb!(na, ma, mb, mc))
-logpb!(na::Cint, ma::Vector{Ptr{CTPSA}}, mb::Vector{Ptr{CTPSA}}, mc::Vector{Ptr{CTPSA}}) = (@inline; mad_ctpsa_logpb!(na, ma, mb, mc))
-
-"""
-    logpb(mf::Vector{<:Union{TPS,ComplexTPS}}, mi::Vector{<:Union{TPS,ComplexTPS}}=vars(first(F)))
-
-Given a final map `mf` and initial map `mi`, this function calculates the vector field `F`
-such that `mf=exp(F⋅∇)mi`. If `mi` is not provided, it is assumed to be the identity.
-
-```julia-repl
-julia> d = Descriptor(2,10); x = vars()[1]; p = vars()[2];
-
-julia> time = 0.01; k = 2; m = 0.01;
-
-julia> h = p^2/(2m) + 1/2*k*x^2;
-
-julia> hf = getvectorfield(h);
-
-julia> map = exppb(-time*hf);
-
-julia> logpb(map) == -time*hf
-true
-```
-"""
-function logpb(mf::Vector{<:Union{TPS,ComplexTPS}}, mi::Vector{<:Union{TPS,ComplexTPS}}=vars(first(mf)))
-  desc = unsafe_load(Base.unsafe_convert(Ptr{Desc}, unsafe_load(mf[1].tpsa).d))
-  if length(mf) != desc.nv || length(mi) != desc.nv
-    error("Vector length != number of variables in the GTPSA")
-  end
-  ma1, mb1 = promote(mf, mi)
-  m1 = map(t->t.tpsa, ma1) 
-  m2 = map(t->t.tpsa, mb1) 
-  mc = zero.(ma1)
-  m3 = map(t->t.tpsa, mc)
-  GC.@preserve ma1 mb1 logpb!(Cint(length(mf)), m1, m2, m3)  
-  return mc
-end
 
 # --- F . grad ---
 fgrad!(na::Cint, ma::Vector{Ptr{RTPSA}}, b::Ptr{RTPSA}, c::Ptr{RTPSA}) = (@inline; mad_tpsa_fgrad!(na, ma, b, c))
@@ -418,49 +379,7 @@ function norm(ma::Vector{<:Union{TPS,ComplexTPS}})
   return mnrm(Cint(length(ma)), map(x->x.tpsa, ma))
 end
 =#
-# --- map inversion ---
-minv!(na::Cint, ma::Vector{Ptr{RTPSA}}, mc::Vector{Ptr{RTPSA}}) = (@inline; mad_tpsa_minv!(na, ma, mc))
-minv!(na::Cint, ma::Vector{Ptr{CTPSA}}, mc::Vector{Ptr{CTPSA}}) = (@inline; mad_ctpsa_minv!(na, ma, mc))
 
-"""
-    inv(ma::Vector{<:Union{TPS,ComplexTPS}})
-
-Inverts the map `ma` such that `ma ∘ inv(ma) = 1` in the variables.
-
-# Example
-
-```julia-repl
-
-julia> d = Descriptor(2,10); x = vars()[1]; p = vars()[2];
-
-julia> time = 0.01; k = 2; m = 0.01;
-
-julia> h = p^2/(2m) + 1/2*k*x^2;
-
-julia> hf = getvectorfield(h);
-
-julia> map = exppb(-time*hf, [x, p]);
-
-julia> map ∘ inv(map)
-2-element Vector{TPS}:
-  Out  Coefficient                Order   Exponent
--------------------------------------------------
-   1:   1.0000000000000000e+00      1      1   0
--------------------------------------------------
-   2:   1.0000000000000002e+00      1      0   1
-```
-"""
-function inv(ma::Vector{<:Union{TPS,ComplexTPS}})
-  desc = unsafe_load(Base.unsafe_convert(Ptr{Desc}, unsafe_load(ma[1].tpsa).d))
-  if length(ma) != desc.nv
-    error("Map length != number of variables in the GTPSA")
-  end
-  mc = zero.(ma)
-  ma1 = map(x->x.tpsa, ma)
-  mc1 = map(x->x.tpsa, mc)
-  minv!(Cint(length(ma)), ma1, mc1)
-  return mc
-end
 
 # --- partial inversion ---
 pminv!(na::Cint, ma::Vector{Ptr{RTPSA}}, mc::Vector{Ptr{RTPSA}}, select::Vector{Cint}) = (@inline; mad_tpsa_pminv!(na, ma, mc, select))
