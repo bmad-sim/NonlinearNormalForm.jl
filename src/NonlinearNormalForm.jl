@@ -48,10 +48,7 @@ import GTPSA: Desc,
               cutord!,
               getord,
               getord!,
-              compose!,
-
-              pb
-              
+              compose!             
 
 
 export        TaylorMap, 
@@ -59,6 +56,7 @@ export        TaylorMap,
               Probe,      
               TPSAMap, 
               DAMap, 
+              VectorField,
               
               norm,
               dot,
@@ -99,6 +97,7 @@ export        TaylorMap,
 include("utils/quaternion.jl")
 include("utils/matrix.jl")
 include("utils/symplectic_s.jl")
+include("utils/gtpsa.jl")
 
 include("probe.jl")
 include("map/ctors.jl")

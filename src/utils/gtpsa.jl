@@ -1,3 +1,7 @@
+
+
+
+
 # From GTPSA:
 # --- Poisson bracket ---
 # Low-level calls
@@ -101,49 +105,6 @@ end
 
 
 
-
-# --- getvectorfield ---
-vec2fld!(na::Cint, tpsa::Ptr{RTPSA}, m::Vector{Ptr{RTPSA}}) = (@inline; mad_tpsa_vec2fld!(na, tpsa, m))
-vec2fld!(na::Cint, ctpsa::Ptr{CTPSA}, m::Vector{Ptr{CTPSA}}) = (@inline; mad_ctpsa_vec2fld!(na, ctpsa, m))
-
-"""
-    getvectorfield(h::Union{TPS,ComplexTPS})::Vector{<:typeof(h)}
-
-Assuming the variables in the TPSA are canonically-conjugate, and ordered so that the canonically-
-conjugate variables are consecutive (q₁, p₁, q₂, p₂, ...), calculates the vector field (Hamilton's 
-equations) from the passed Hamiltonian, defined as `[∂h/∂p₁, -∂h/∂q₁, ...]`
-
-# Example
-```julia-repl
-julia> d = Descriptor(2,10); x = vars();
-
-julia> h = (x[1]^2 + x[2]^2)/2
-TPS:
- Coefficient                Order   Exponent
-  5.0000000000000000e-01      2      2   0
-  5.0000000000000000e-01      2      0   2
-
-
-julia> getvectorfield(h)
-2-element Vector{TPS}:
-  Out  Coefficient                Order   Exponent
--------------------------------------------------
-   1:  -1.0000000000000000e+00      1      0   1
--------------------------------------------------
-   2:   1.0000000000000000e+00      1      1   0
-```
-"""
-function getvectorfield(h::Union{TPS,ComplexTPS})::Vector{<:typeof(h)}
-  desc = unsafe_load(Base.unsafe_convert(Ptr{Desc}, unsafe_load(h.tpsa).d))
-  na = desc.nv
-  mc = Vector{typeof(h)}(undef, na)
-  for i in eachindex(mc)
-    mc[i] = zero(h)
-  end
-  m = map(t->t.tpsa, mc)
-  vec2fld!(na, h.tpsa, m)
-  return mc
-end
 
 # --- gethamiltonian ---
 fld2vec!(na::Cint, ma::Vector{Ptr{RTPSA}}, tpsa::Ptr{RTPSA}) = (@inline; mad_tpsa_fld2vec!(na, ma, tpsa))

@@ -3,8 +3,20 @@
 liebra!(na::Cint, m1::Vector{Ptr{RTPSA}}, m2::Vector{Ptr{RTPSA}}, m3::Vector{Ptr{RTPSA}}) = (@inline; GTPSA.mad_tpsa_liebra!(na, m1, m2, m3))
 liebra!(na::Cint, m1::Vector{Ptr{CTPSA}}, m2::Vector{Ptr{CTPSA}}, m3::Vector{Ptr{CTPSA}}) = (@inline; GTPSA.mad_ctpsa_liebra!(na, m1, m2, m3))
 
-function lb(G::VectorField{T,U}, F::VectorField{T,U}, H::VectorField{T,U}) where {T,U}
+"""
+    lb(F::VectorField{T,U}, H::VectorField{T,U}) where {T,U}
 
+Computes the Lie bracket of the vector fields `F` and `H`. Explicity, and including 
+spin (with the lower case letter for the quaternion of the vector field), this is:
+
+`(G,g) = ⟨(F,f) , (H,h)⟩ = (F⋅∇H-H⋅∇F , [h,f]+F⋅∇h-G⋅∇f)`
+
+where `[h,f] = h*f - f*h` is just a quaternion commutator. See Equation 44.52 in the Bmad manual
+"""
+function lb(F::VectorField{T,U}, H::VectorField{T,U}) where {T,U}
+  G = zero(F)
+  lb!(G,F,H)
+  return G
 end
 
 
@@ -13,18 +25,12 @@ end
 
 Computes the Lie bracket of the vector fields `F` and `H`, and stores the result in `G`. 
 See `lb` for more details.
-Explicity, and including spin (with the lower case letter for the quaternion of the vector 
-field), this is:
-
-`(G,g) = ⟨(F,f) , (H,h)⟩ = (F⋅∇H-H⋅∇F , [h,f]+F⋅∇h-G⋅∇f)`
-
-where `[h,f] = h*f - f*h` is just a quaternion commutator. See Equation 44.52 in the Bmad manual
 
 ### Keyword Arguments
 - `work_low` -- Tuple of 3 vectors of type `lowtype(T)` of length `>=nv`
 - `work_Q`   -- `Quaternion{T}` if spin is included in the vector field, else `nothing`
 """
-function lb!(G::VectorField{T,U}, F::VectorField{T,U}, H::VectorField{T,U}; work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_lb_work_low(F), work_Q::Union{Nothing,U}=nothing) where {T,U}
+function lb!(G::VectorField{T,U}, F::VectorField{T,U}, H::VectorField{T,U}; work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_lb_work_low(F), work_Q::Union{U,Nothing}=prep_vf_work_Q(F)) where {T,U}
   nv = numvars(F)
   Fx_low = work_low[1]
   Hx_low = work_low[2]
@@ -44,10 +50,6 @@ function lb!(G::VectorField{T,U}, F::VectorField{T,U}, H::VectorField{T,U}; work
 
   # Spin (Eq. 44.51 in Bmad manual, NOT handled by GTPSA):
   if U != Nothing
-    if isnothing(work_Q)
-      work_Q = Quaternion(first(F.Q))
-    end
-
     # first [h,f] (this part involves quaternion multiplication so will be slow)
     mul!(G.Q, H.Q, F.Q)
     mul!(work_Q, F.Q, H.Q)
@@ -70,6 +72,32 @@ function lb!(G::VectorField{T,U}, F::VectorField{T,U}, H::VectorField{T,U}; work
   end
   return
 end
+
+# --- exp ---
+function exp!(m::DAMap{S,T,U,V}, F::VectorField{T,U}, mi::DAMap{S,T,U,V}; work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_lb_work_low(F), work_Q::Union{U,Nothing}=prep_vf_work_Q(F)) where {S,T,U,V}
+  mx_low = work_low[1]
+  Fx_low = work_low[2]
+  mix_low = work_low[3]
+  
+  @assert length(mx_low) >= nv "Incorrect length for work_low[2] = mx_low; received $(length(mx_low)), should be >=$nv"
+  @assert length(Fx_low) >= nv "Incorrect length for work_low[1] = Fx_low; received $(length(Fx_low)), should be >=$nv"
+  @assert length(mix_low) >= nv "Incorrect length for work_low[3] = mix_low; received $(length(mix_low)), should be >=$nv"
+  @assert eltype(mx_low) == lowtype(T) "Incorrect eltype of work_low[2] = mx_low. Received $(eltype(mx_low)), should be $(lowtype(T))"
+  @assert eltype(Fx_low) == lowtype(T) "Incorrect eltype of work_low[1] = Fx_low. Received $(eltype(Fx_low)), should be $(lowtype(T))"
+  @assert eltype(mix_low) == lowtype(T) "Incorrect eltype of work_low[3] = mix_low. Received $(eltype(mix_low)), should be $(lowtype(T))"
+
+  # Orbital part exp(F⋅∇)m = m + F⋅∇m + (F⋅∇)²m/2! + ... (use GTPSA):
+  map!(t->t.tpsa, mx_low, m)
+  map!(t->t.tpsa, Fx_low, F.x)
+  map!(t->t.tpsa, mix_low, mi)
+  exppb!(numvars(F), F, mi, m)  
+
+  # Spin:
+  if U != Nothing
+
+  end
+end
+
 
 # --- log ---
 
