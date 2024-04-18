@@ -40,7 +40,7 @@ function normal(m::DAMap)
   # tmp2 is inv(a1)
   # Now normalize linear map inv(a1)*m0*a1
   compose!(tmp3, tmp2, tmp1, work_low=comp_work_low,keep_scalar=false)
-  inv!(tmp1, tmp2, work_low=inv_work_low,dopin=false)
+  inv!(tmp1, tmp2, work_low=inv_work_low,dospin=false)
   compose!(tmp2, tmp3, tmp1, work_low=comp_work_low,keep_scalar=false)
 
   # tmp2 is m1 , if m is complex then w
@@ -157,8 +157,8 @@ function linear_a!(a1::DAMap, m0::DAMap; inverse=false)
   
   for i=1:nhv
     for j=1:nhpl
-      work_matrix[2*j-1,i] = sqrt(2)*real(F.vectors[i,2*j-1])  # See Eq. 3.74 in EBB for factor of 2
-      work_matrix[2*j,i] = sqrt(2)*imag(F.vectors[i,2*j-1])
+      work_matrix[2*j-1,i] = sqrt(2)*real(F.vectors[i,2*j])  # See Eq. 3.74 in EBB for factor of 2
+      work_matrix[2*j,i] = sqrt(2)*imag(F.vectors[i,2*j])
     end
   end
 

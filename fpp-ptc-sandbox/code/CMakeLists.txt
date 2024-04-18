@@ -27,6 +27,7 @@ set (EXE_SPECS
   cmake_files/cmake.z_matt
   cmake_files/cmake.z_simple_operations
   cmake_files/cmake.normal_simple
+  cmake_files/cmake.z_vf_Lie_sub
 )
 
 

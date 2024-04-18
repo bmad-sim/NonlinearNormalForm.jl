@@ -48,7 +48,9 @@ import GTPSA: Desc,
               cutord!,
               getord,
               getord!,
-              compose!
+              compose!,
+
+              pb
               
 
 
@@ -90,7 +92,8 @@ export        TaylorMap,
               to_phasor!,
               to_phasor,
 
-              log!
+              log!,
+              pb
 
 
 include("utils/quaternion.jl")
