@@ -1,6 +1,19 @@
 # --- copy! ---
 function copy!(F::VectorField{T,U}, F1::VectorField{T,U}) where {T,U}
+  desc = getdesc(m)
+  nv = numvars(desc)
 
+  for i=1:nv
+    copy!(F.x[i], F1.x[i])
+  end
+
+  if !isnothing(F.Q)
+    for i=1:4
+      copy!(F.Q.q[i], F1.Q.q[i])
+    end
+  end
+
+  return m
 end
 
 # --- Lie bracket including spin ---
