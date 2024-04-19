@@ -1,7 +1,3 @@
-
-
-
-
 # From GTPSA:
 # --- Poisson bracket ---
 # Low-level calls
@@ -72,7 +68,7 @@ fgrad!(na::Cint, ma::Vector{Ptr{RTPSA}}, b::Ptr{RTPSA}, c::Ptr{RTPSA}) = (@inlin
 fgrad!(na::Cint, ma::Vector{Ptr{CTPSA}}, b::Ptr{CTPSA}, c::Ptr{CTPSA}) = (@inline; mad_ctpsa_fgrad!(na, ma, b, c))
 
 
-function fgrad!(g::T, F::Vector{<:T}, h::T; work_low::Vector{<:Union{TPS,ComplexTPS}}=Vector{lowtype(h)}(undef, numvars(h))) where {T<:Union{TPS,ComplexTPS}}
+function fgrad!(g::T, F::Vector{<:T}, h::T; work_low::Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}=Vector{lowtype(h)}(undef, numvars(h))) where {T<:Union{TPS,ComplexTPS}}
   nv = numvars(h)
   @assert length(F) == nv "Incorrect length of F; received $(length(F)), should be $nv"
   @assert length(work_low) >= nv "Incorrect length for work_low; received $(length(work_low)), should be >=$nv"
@@ -85,7 +81,7 @@ end
 """
     fgrad(F::Vector{<:T}, h::T) where {T<:Union{TPS,ComplexTPS}}    
 
-Calculates `F⋅∇g`.
+Calculates `F⋅∇h`.
 """
 function fgrad(F::Vector{<:T}, h::T) where {T<:Union{TPS,ComplexTPS}}
   g = zero(h)
@@ -94,6 +90,51 @@ function fgrad(F::Vector{<:T}, h::T) where {T<:Union{TPS,ComplexTPS}}
 end
 
 
+# --- exp(F . grad) m ---
+exppb!(na::Cint, ma::Vector{Ptr{RTPSA}}, mb::Vector{Ptr{RTPSA}}, mc::Vector{Ptr{RTPSA}}) = (@inline; mad_tpsa_exppb!(na, ma, mb, mc))
+exppb!(na::Cint, ma::Vector{Ptr{CTPSA}}, mb::Vector{Ptr{CTPSA}}, mc::Vector{Ptr{CTPSA}}) = (@inline; mad_ctpsa_exppb!(na, ma, mb, mc))
+
+"""
+    exppb(F::Vector{<:Union{TPS,ComplexTPS}}, m::Vector{<:Union{TPS,ComplexTPS}}=vars(first(F)))
+
+Calculates `exp(F⋅∇)m = m + F⋅∇m + (F⋅∇)²m/2! + ...`. If `m` is not provided, it is assumed 
+to be the identity. 
+
+# Example
+
+```julia-repl
+julia> d = Descriptor(2,10); x = vars()[1]; p = vars()[2];
+
+julia> time = 0.01; k = 2; m = 0.01;
+
+julia> h = p^2/(2m) + 1/2*k*x^2;
+
+julia> hf = getvectorfield(h);
+
+julia> map = exppb(-time*hf, [x, p])
+2-element Vector{TPS}:
+  Out  Coefficient                Order   Exponent
+-------------------------------------------------
+   1:   9.9001665555952290e-01      1      1   0
+   1:   9.9666999841313930e-01      1      0   1
+-------------------------------------------------
+   2:  -1.9933399968262787e-02      1      1   0
+   2:   9.9001665555952378e-01      1      0   1
+```
+"""
+function exppb(F::Vector{<:Union{TPS,ComplexTPS}}, m::Vector{<:Union{TPS,ComplexTPS}}=vars(first(F)))
+  descF = unsafe_load(Base.unsafe_convert(Ptr{Desc}, unsafe_load(F[1].tpsa).d))
+  if length(F) != descF.nv
+    error("Vector length != number of variables in the GTPSA")
+  end
+  ma1, mb1 = promote(F, m)
+  m1 = map(t->t.tpsa, ma1) 
+  m2 = map(t->t.tpsa, mb1) 
+  mc = zero.(ma1)
+  m3 = map(t->t.tpsa, mc)
+  GC.@preserve ma1 mb1 exppb!(Cint(length(F)), m1, m2, m3)  
+  return mc
+end
 
 
 
@@ -157,51 +198,7 @@ function gethamiltonian(F::Vector{<:Union{TPS,ComplexTPS}})
 end
 
 
-# --- exp(F . grad) m ---
-exppb!(na::Cint, ma::Vector{Ptr{RTPSA}}, mb::Vector{Ptr{RTPSA}}, mc::Vector{Ptr{RTPSA}}) = (@inline; mad_tpsa_exppb!(na, ma, mb, mc))
-exppb!(na::Cint, ma::Vector{Ptr{CTPSA}}, mb::Vector{Ptr{CTPSA}}, mc::Vector{Ptr{CTPSA}}) = (@inline; mad_ctpsa_exppb!(na, ma, mb, mc))
 
-"""
-    exppb(F::Vector{<:Union{TPS,ComplexTPS}}, m::Vector{<:Union{TPS,ComplexTPS}}=vars(first(F)))
-
-Calculates `exp(F⋅∇)m = m + F⋅∇m + (F⋅∇)²m/2! + ...`. If `m` is not provided, it is assumed 
-to be the identity. 
-
-# Example
-
-```julia-repl
-julia> d = Descriptor(2,10); x = vars()[1]; p = vars()[2];
-
-julia> time = 0.01; k = 2; m = 0.01;
-
-julia> h = p^2/(2m) + 1/2*k*x^2;
-
-julia> hf = getvectorfield(h);
-
-julia> map = exppb(-time*hf, [x, p])
-2-element Vector{TPS}:
-  Out  Coefficient                Order   Exponent
--------------------------------------------------
-   1:   9.9001665555952290e-01      1      1   0
-   1:   9.9666999841313930e-01      1      0   1
--------------------------------------------------
-   2:  -1.9933399968262787e-02      1      1   0
-   2:   9.9001665555952378e-01      1      0   1
-```
-"""
-function exppb(F::Vector{<:Union{TPS,ComplexTPS}}, m::Vector{<:Union{TPS,ComplexTPS}}=vars(first(F)))
-  descF = unsafe_load(Base.unsafe_convert(Ptr{Desc}, unsafe_load(F[1].tpsa).d))
-  if length(F) != descF.nv
-    error("Vector length != number of variables in the GTPSA")
-  end
-  ma1, mb1 = promote(F, m)
-  m1 = map(t->t.tpsa, ma1) 
-  m2 = map(t->t.tpsa, mb1) 
-  mc = zero.(ma1)
-  m3 = map(t->t.tpsa, mc)
-  GC.@preserve ma1 mb1 exppb!(Cint(length(F)), m1, m2, m3)  
-  return mc
-end
 
 
 

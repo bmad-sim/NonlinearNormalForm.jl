@@ -1,3 +1,8 @@
+# --- copy! ---
+function copy!(F::VectorField{T,U}, F1::VectorField{T,U}) where {T,U}
+
+end
+
 # --- Lie bracket including spin ---
 # GTPSA only provides routines for orbital part:
 liebra!(na::Cint, m1::Vector{Ptr{RTPSA}}, m2::Vector{Ptr{RTPSA}}, m3::Vector{Ptr{RTPSA}}) = (@inline; GTPSA.mad_tpsa_liebra!(na, m1, m2, m3))
@@ -21,7 +26,7 @@ end
 
 
 """
-    lb!(G::VectorField{T,U}, F::VectorField{T,U}, H::VectorField{T,U}; work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_lb_work_low(F), work_Q::Union{Nothing,U}=nothing) where {T,U}
+    lb!(G::VectorField{T,U}, F::VectorField{T,U}, H::VectorField{T,U}; work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_vf_work_low(F), work_Q::Union{Nothing,U}=nothing) where {T,U}
 
 Computes the Lie bracket of the vector fields `F` and `H`, and stores the result in `G`. 
 See `lb` for more details.
@@ -49,7 +54,7 @@ function lb!(G::VectorField{T,U}, F::VectorField{T,U}, H::VectorField{T,U}; work
   liebra!(nv, Fx_low, Hx_low, Gx_low)
 
   # Spin (Eq. 44.51 in Bmad manual, NOT handled by GTPSA):
-  if U != Nothing
+  if !isnothing(F.Q)
     # first [h,f] (this part involves quaternion multiplication so will be slow)
     mul!(G.Q, H.Q, F.Q)
     mul!(work_Q, F.Q, H.Q)
@@ -73,29 +78,80 @@ function lb!(G::VectorField{T,U}, F::VectorField{T,U}, H::VectorField{T,U}; work
   return
 end
 
-# --- exp ---
-function exp!(m::DAMap{S,T,U,V}, F::VectorField{T,U}, mi::DAMap{S,T,U,V}; work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_lb_work_low(F), work_Q::Union{U,Nothing}=prep_vf_work_Q(F)) where {S,T,U,V}
-  mx_low = work_low[1]
-  Fx_low = work_low[2]
-  mix_low = work_low[3]
-  
-  @assert length(mx_low) >= nv "Incorrect length for work_low[2] = mx_low; received $(length(mx_low)), should be >=$nv"
-  @assert length(Fx_low) >= nv "Incorrect length for work_low[1] = Fx_low; received $(length(Fx_low)), should be >=$nv"
-  @assert length(mix_low) >= nv "Incorrect length for work_low[3] = mix_low; received $(length(mix_low)), should be >=$nv"
-  @assert eltype(mx_low) == lowtype(T) "Incorrect eltype of work_low[2] = mx_low. Received $(eltype(mx_low)), should be $(lowtype(T))"
-  @assert eltype(Fx_low) == lowtype(T) "Incorrect eltype of work_low[1] = Fx_low. Received $(eltype(Fx_low)), should be $(lowtype(T))"
-  @assert eltype(mix_low) == lowtype(T) "Incorrect eltype of work_low[3] = mix_low. Received $(eltype(mix_low)), should be $(lowtype(T))"
 
-  # Orbital part exp(F⋅∇)m = m + F⋅∇m + (F⋅∇)²m/2! + ... (use GTPSA):
-  map!(t->t.tpsa, mx_low, m)
-  map!(t->t.tpsa, Fx_low, F.x)
-  map!(t->t.tpsa, mix_low, mi)
-  exppb!(numvars(F), F, mi, m)  
+# --- Lie operator (VectorField) acting on DAMap ---
+function *(F::VectorField{T,U}, m1::DAMap{S,T,U,V}) where {S,T,U,V}
+  m = zero(m1)
+  mul!(m, F, m1)
+  return m
+end
 
-  # Spin:
-  if U != Nothing
+function mul!(m::DAMap{S,T,U,V}, F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work_low::Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}=Fx_low=Vector{lowtype(first(F.x))}(undef, numvars(F)), work_Q::Union{U,Nothing}=prep_vf_work_Q(F)) where {S,T,U,V}
+  nv = numvars(F)
 
+  @assert length(work_low) >= nv "Incorrect length for work_low; received $(length(work_low)), should be >=$nv"
+  @assert eltype(work_low) == lowtype(T) "Incorrect eltype of work_low. Received $(eltype(work_low)), should be $(lowtype(T))"
+
+  # Orbital part F⋅∇m1 :
+  for i=1:nv
+    fgrad!(m.x[i], F.x, m1.x[i], work_low=work_low)
   end
+
+  # Spin F⋅∇q + qf (quaternion part acts in reverse order):
+  if !isnothing(F.Q)
+    for i=1:4
+      fgrad!(m.Q.q[i], F.x, m1.Q.q[i], work_low=work_low)
+    end
+
+    mul!(work_Q, m1.Q, F.Q)
+    for i=1:4
+      add!(m.Q.q[i], m.Q.q[i], work_Q.q[i])
+    end
+  end
+  return
+end
+
+
+# --- exp(F)*m ---
+# Because GTPSA's "`exppb`" does not include the quaternion, I write 
+# my own version of this routine. It is very simple
+
+function exp!(m::DAMap{S,T,U,V}, F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work_F::VectorField{T,U}=zero(F), work_map::DAMap{S,T,U,V}=zero(m1), work_low::Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}=Fx_low=Vector{lowtype(first(F.x))}(undef, numvars(F)), work_Q::Union{U,Nothing}=prep_vf_work_Q(F)) where {S,T,U,V}
+  nv = numvars(F)
+
+  @assert length(work_low) >= nv "Incorrect length for work_low; received $(length(work_low)), should be >=$nv"
+  @assert eltype(work_low) == lowtype(T) "Incorrect eltype of work_low. Received $(eltype(work_low)), should be $(lowtype(T))"
+
+  # The convergence checks are taken exactly from GTPSA
+  nmax = 100
+  nrm_min1 = 1e-9
+  nrm_min2 = 100*eps(numtype(T))*nv
+  nrm_ = 0
+  conv = false
+
+  copy!(m, m1)
+  copy!(work_F,F)
+
+  for i=1:nmax
+    div!(work_F,work_F,i)
+    mul!(work_map,work_F,m,work_low=work_low,work_Q=work_Q)
+    add!(m,m,work_map)
+    # Check norm of orbital part (also done no quaternion in FPP)
+    nrm = 0
+    for i=1:nv
+      nrm += norm(work_map.x[i])
+    end
+
+    # Check convergence
+    if nrm <= nrm_min2 || conv && nrm >= nrm_
+      # converged
+    end
+
+    if nrm <= nrm_min1
+      conv = true
+    end
+  end
+
 end
 
 

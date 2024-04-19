@@ -41,6 +41,10 @@ import GTPSA: Desc,
               numtype,
               lowtype,
 
+              add!,
+              sub!,
+              div!,
+
               jacobian,
               jacobiant,
               clear!,

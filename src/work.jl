@@ -95,7 +95,7 @@ function prep_work_ref(m1::TaylorMap{S,T,U,V}) where {S,T,U,V}
   return Vector{numtype(eltype(m1.x))}(undef, numvars(m1))
 end
 
-function prep_vf_work_low(F::VectorField{T,U}) where {T,U}
+function prep_lb_work_low(F::VectorField{T,U}) where {T,U}
   nv = numvars(F)
   Fx_low = Vector{lowtype(T)}(undef, nv)
   Hx_low = Vector{lowtype(T)}(undef, nv)
@@ -104,7 +104,7 @@ function prep_vf_work_low(F::VectorField{T,U}) where {T,U}
 end
 
 function prep_vf_work_Q(F::VectorField{T,U}) where {T,U}
-  if U != Nothing
+  if !isnothing(F.Q)
     return Quaternion(first(F.Q))
   else
     return nothing

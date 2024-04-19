@@ -75,54 +75,6 @@ $($t) composition, $( $t == DAMap ? "ignoring the scalar part of `m1`" : "includ
 """
 ∘(m2::$t, m1::$t) = compose(m2, m1)
 
-# --- add ---
-function +(m2::$t{S,T,U,V},m1::$t{S,T,U,V}) where {S,T,U,V}
-  if xor(isnothing(m2.Q), isnothing(m1.Q))
-    error("Cannot +: one map includes spin, the other does not")
-  end
-  if xor(isnothing(m2.E), isnothing(m1.E))
-    error("Cannot +: one map includes radiation, the other does not")
-  end
-
-  if !isnothing(m2.Q)
-    Q1 = Quaternion(m2.Q.q+m1.Q.q)
-  else
-    Q1 = nothing
-  end
-
-  if !isnothing(m2.E)
-    E1 =  m2.E+m1.E
-  else
-    E1 = nothing
-  end
-
-  return $t(m2.x0+m1.x0, m2.x+m1.x, Q1, E1)
-end
-
-# --- subtract ---
-function -(m2::$t,m1::$t)
-  if xor(isnothing(m2.Q), isnothing(m1.Q))
-    error("Cannot -: one map includes spin, the other does not")
-  end
-  if xor(isnothing(m2.E), isnothing(m1.E))
-    error("Cannot -: one map includes radiation, the other does not")
-  end
-
-  if !isnothing(m2.Q)
-    Q1 = Quaternion(m2.Q.q-m1.Q.q)
-  else
-    Q1 = nothing
-  end
-
-  if !isnothing(m2.E)
-    E1 =  m2.E-m1.E
-  else
-    E1 = nothing
-  end
-
-  return $t(m2.x0-m1.x0, m2.x-m1.x, Q1, E1)
-end
-
 literal_pow(::typeof(^), m::$t{S,T,U,V}, vn::Val{n}) where {S,T,U,V,n} = ^(m,n)
 
 # Also allow * for simpliticty and \ and / because why not
@@ -143,5 +95,105 @@ literal_pow(::typeof(^), m::$t{S,T,U,V}, vn::Val{n}) where {S,T,U,V,n} = ^(m,n)
 /(J::UniformScaling, m::$t) = inv(m)
 \(m::$t, J::UniformScaling) = inv(m)
 \(J::UniformScaling, m::$t) = $t(m)
+end
+end
+
+
+# Define operators:
+for ops = (("add!", :+), ("sub!",:-), ("mul!",:*), ("div!",:/))
+@eval begin
+function $(Meta.parse(ops[1]))(m::TaylorMap, a, m1::TaylorMap)
+  nv = numvars(m)
+  nn = numnn(m)
+
+  m.x0 .= m1.x0
+
+  for i=1:nv
+    $(Meta.parse(ops[1]))(m.x[i], a, m1.x[i])
+  end
+  m.x[nv+1:nn] .= view(m.x, nv+1:nn)
+
+  if !isnothing(m.Q)
+    for i=1:4
+      $(Meta.parse(ops[1]))(m.Q.q[i], a, m1.Q.q[i])
+    end
+  end
+
+  if !isnothing(m.E)
+    m.E .= m1.E
+  end
+  return
+end
+
+function $(Meta.parse(ops[1]))(m::TaylorMap, m1::TaylorMap, a)
+  nv = numvars(m)
+  nn = numnn(m)
+
+  m.x0 .= m1.x0
+
+  for i=1:nv
+    $(Meta.parse(ops[1]))(m.x[i], m1.x[i], a)
+  end
+  m.x[nv+1:nn] .= view(m.x, nv+1:nn)
+
+  if !isnothing(m.Q)
+    for i=1:4
+      $(Meta.parse(ops[1]))(m.Q.q[i], m1.Q.q[i], a)
+    end
+  end
+
+  if !isnothing(m.E)
+    m.E .= m1.E
+  end
+  return
+end
+
+
+function $(ops[2])(a, m1::TaylorMap)
+  m = zero(m1)
+  $(Meta.parse(ops[1]))(m, a, m1)
+  return m
+end
+
+function $(ops[2])(m1::TaylorMap, a)
+  m = zero(m1)
+  $(Meta.parse(ops[1]))(m, m1, a)
+  return m
+end
+
+end
+end
+
+# For add and subtract, define methods for maps (* and / already defined with composition op)
+for ops = (("add!", :+), ("sub!",:-))
+@eval begin
+function $(Meta.parse(ops[1]))(m::TaylorMap, m1::TaylorMap, m2::TaylorMap)
+  nv = numvars(m)
+  nn = numnn(m)
+
+  m.x0 .= m1.x0
+
+  for i=1:nv
+    $(Meta.parse(ops[1]))(m.x[i], m1.x[i], m2.x[i])
+  end
+  m.x[nv+1:nn] .= view(m.x, nv+1:nn)
+
+  if !isnothing(m.Q)
+    for i=1:4
+      $(Meta.parse(ops[1]))(m.Q.q[i], m1.Q.q[i], m2.Q.q[i])
+    end
+  end
+
+  if !isnothing(m.E)
+    m.E .= m1.E
+  end
+  return
+end
+
+function $(ops[2])(m1::TaylorMap, m2::TaylorMap)
+  m = zero(m1)
+  $(Meta.parse(ops[1]))(m, m1, m2)
+  return m
+end
 end
 end

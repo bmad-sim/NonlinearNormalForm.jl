@@ -48,10 +48,20 @@ do i=1,3
  vfr%q%x(i)=vfr%q%x(i) *sca !  to make map near the identity for log
 enddo
 
+
  
 Identity=1
 
 m=exp(vf,Identity)    !  m = exp(vf.grad)Identity    ! 
+
+write(*,*) "m before mul:"
+call print(m)
+
+m = 2.0d0*m
+write(*,*) "m after mul:"
+call print(m)
+stop
+
 A=exp(vfr)   !  A = exp(vfr.grad)Identity   Identity is optional.
 
 

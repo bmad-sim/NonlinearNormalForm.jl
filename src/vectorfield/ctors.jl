@@ -1,3 +1,8 @@
+"""
+
+
+Lie operator to act on maps. Can be turned into a map with exp(:F:)
+"""
 struct VectorField{T<:Union{TPS,ComplexTPS}, U<:Union{Quaternion{T},Nothing}}
   x::Vector{T}  
   Q::U           
