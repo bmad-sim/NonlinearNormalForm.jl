@@ -51,12 +51,13 @@ end
 # --- zero ---
 function zero(F::VectorField{T,U}) where {T,U}
   desc = getdesc(F)
+  nv = numvars(desc)
   x = Vector{T}(undef, nv)
   for i=1:nv
     @inbounds x[i] = T(use=desc)
   end
 
-  if isnothing(spin)
+  if isnothing(F.Q)
     Q = nothing
   else
     q = Vector{T}(undef, 4)

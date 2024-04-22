@@ -149,13 +149,13 @@ function $(Meta.parse(ops[1]))(m::TaylorMap, m1::TaylorMap, a)
 end
 
 
-function $(ops[2])(a, m1::TaylorMap)
+function $(ops[2])(a::Number, m1::TaylorMap)
   m = zero(m1)
   $(Meta.parse(ops[1]))(m, a, m1)
   return m
 end
 
-function $(ops[2])(m1::TaylorMap, a)
+function $(ops[2])(m1::TaylorMap, a::Number)
   m = zero(m1)
   $(Meta.parse(ops[1]))(m, m1, a)
   return m

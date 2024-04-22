@@ -376,34 +376,32 @@ function zero(m::$t{S,T,U,V}) where {S,T,U,V}
   return $t(zeros(eltype(m.x0), nv), x, Q, E)
 end
 
-"""
-    zero_typed(m::$($t), T::Union{Type{TPS},Type{ComplexTPS}})
-
-Creates a $($t) with the same GTPSA `Descriptor`, and spin/radiation on/off,
-as `m` but with all zeros for each quantity (except for the immutable parameters 
-in `x[nv+1:nn]`, which will be copied from `m.x`) and with the specified type `T`.
-"""
-function zero_typed(m::$t, T::Union{Type{TPS},Type{ComplexTPS}})
-  desc = getdesc(m)
+function zero(::Type{$t{S,T,U,V}}; use::Union{Descriptor,TaylorMap,Probe{<:Any,Union{TPS,ComplexTPS},<:Any,<:Any}}=GTPSA.desc_current) where {S,T,U,V}
+  desc = getdesc(use)
   nn = numnn(desc)
   nv = numvars(desc)
   np = numparams(desc)
-  
+
+  x0 = zeros(S, nv)
+
   x = Vector{T}(undef, nn)
   for i=1:nv
     @inbounds x[i] = T(use=desc)
   end
 
-  # use same parameters or allocate if necessary
-  if T == eltype(m.x)
-    @inbounds x[nv+1:nn] .= view(m.x, nv+1:nn)
-  elseif T == TPS
-    @inbounds x[nv+1:nn] .= params(desc)
+  if use isa Union{TaylorMap,Probe} && eltype(use.x) == T
+    # use same parameters 
+    @inbounds x[nv+1:nn] .= view(use.x, nv+1:nn)
   else
-    @inbounds x[nv+1:nn] .= complexparams(desc)
+    # allocate
+    if T == TPS
+      x[nv+1:nn] .= params(desc)
+    else
+      x[nv+1:nn] .= complexparams(desc)
+    end
   end
 
-  if !isnothing(m.Q)
+  if U != Nothing
     q = Vector{T}(undef, 4)
     for i=1:4
       @inbounds q[i] = T(use=desc)
@@ -413,13 +411,13 @@ function zero_typed(m::$t, T::Union{Type{TPS},Type{ComplexTPS}})
     Q = nothing
   end
 
-  if !isnothing(m.E)
-    E = zeros(numtype(T), nv, nv)
+  if V != Nothing
+    E = zeros(S, nv, nv)
   else
     E = nothing
   end
 
-  return $t(zeros(numtype(T), nv), x, Q, E)
+  return $t(x0, x, Q, E)
 end
 
 """
@@ -465,6 +463,52 @@ function one(m::$t{S,T,U,V}) where {S,T,U,V}
   end
 
   return $t(zeros(eltype(m.x0), nv), x, Q, E)
+end
+
+function one(::Type{$t{S,T,U,V}}; use::Union{Descriptor,TaylorMap,Probe{S,Union{TPS,ComplexTPS},U,V}}=GTPSA.desc_current) where {S,T,U,V}
+  desc = getdesc(use)
+  nn = numnn(desc)
+  nv = numvars(desc)
+  np = numparams(desc)
+
+  x0 = zeros(S, nv)
+
+  x = Vector{T}(undef, nn)
+  for i=1:nv
+    @inbounds x[i] = T(use=desc)
+    x[i][i] = 1
+  end
+
+  if use isa Union{TaylorMap,Probe} && eltype(use.x) == T
+    # use same parameters 
+    @inbounds x[nv+1:nn] .= view(m.x, nv+1:nn)
+  else
+    # allocate
+    if T == TPS
+      x[nv+1:nn] .= params(desc)
+    else
+      x[nv+1:nn] .= complexparams(desc)
+    end
+  end
+
+  if U != Nothing
+    q = Vector{T}(undef, 4)
+    for i=1:4
+      @inbounds q[i] = T(use=desc)
+    end
+    q[1][0] = 1
+    Q = Quaternion(q)
+  else
+    Q = nothing
+  end
+
+  if V != Nothing
+    E = zeros(S, nv, nv)
+  else
+    E = nothing
+  end
+
+  return $t(x0, x, Q, E)
 end
 
 end

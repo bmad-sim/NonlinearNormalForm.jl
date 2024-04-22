@@ -64,8 +64,8 @@ end
 
 
 # --- F . grad ---
-fgrad!(na::Cint, ma::Vector{Ptr{RTPSA}}, b::Ptr{RTPSA}, c::Ptr{RTPSA}) = (@inline; mad_tpsa_fgrad!(na, ma, b, c))
-fgrad!(na::Cint, ma::Vector{Ptr{CTPSA}}, b::Ptr{CTPSA}, c::Ptr{CTPSA}) = (@inline; mad_ctpsa_fgrad!(na, ma, b, c))
+fgrad!(na::Cint, ma::Vector{Ptr{RTPSA}}, b::Ptr{RTPSA}, c::Ptr{RTPSA}) = (@inline; GTPSA.mad_tpsa_fgrad!(na, ma, b, c))
+fgrad!(na::Cint, ma::Vector{Ptr{CTPSA}}, b::Ptr{CTPSA}, c::Ptr{CTPSA}) = (@inline; GTPSA.mad_ctpsa_fgrad!(na, ma, b, c))
 
 
 function fgrad!(g::T, F::Vector{<:T}, h::T; work_low::Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}=Vector{lowtype(h)}(undef, numvars(h))) where {T<:Union{TPS,ComplexTPS}}
@@ -74,7 +74,7 @@ function fgrad!(g::T, F::Vector{<:T}, h::T; work_low::Vector{<:Union{Ptr{RTPSA},
   @assert length(work_low) >= nv "Incorrect length for work_low; received $(length(work_low)), should be >=$nv"
   @assert eltype(work_low) == lowtype(T) "Incorrect eltype of work_low; received $(eltype(work_low)), should be $(lowtype(T))"
   map!(t->t.tpsa, work_low, F)
-  fgrad!(nv, work_low, h, g)
+  fgrad!(nv, work_low, h.tpsa, g.tpsa)
   return
 end
 
@@ -91,8 +91,8 @@ end
 
 
 # --- exp(F . grad) m ---
-exppb!(na::Cint, ma::Vector{Ptr{RTPSA}}, mb::Vector{Ptr{RTPSA}}, mc::Vector{Ptr{RTPSA}}) = (@inline; mad_tpsa_exppb!(na, ma, mb, mc))
-exppb!(na::Cint, ma::Vector{Ptr{CTPSA}}, mb::Vector{Ptr{CTPSA}}, mc::Vector{Ptr{CTPSA}}) = (@inline; mad_ctpsa_exppb!(na, ma, mb, mc))
+exppb!(na::Cint, ma::Vector{Ptr{RTPSA}}, mb::Vector{Ptr{RTPSA}}, mc::Vector{Ptr{RTPSA}}) = (@inline; GTPSA.mad_tpsa_exppb!(na, ma, mb, mc))
+exppb!(na::Cint, ma::Vector{Ptr{CTPSA}}, mb::Vector{Ptr{CTPSA}}, mc::Vector{Ptr{CTPSA}}) = (@inline; GTPSA.mad_ctpsa_exppb!(na, ma, mb, mc))
 
 """
     exppb(F::Vector{<:Union{TPS,ComplexTPS}}, m::Vector{<:Union{TPS,ComplexTPS}}=vars(first(F)))

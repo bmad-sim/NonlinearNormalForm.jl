@@ -51,7 +51,7 @@ function normal(m::DAMap)
   # Etienne's blue book)
   # We now need complex stuff if we don't already have it
   if eltype(m.x) != ComplexTPS
-    ctmp1 = zero_typed(m1, ComplexTPS)
+    ctmp1 = zero(complex(typeof(m)),use=m)
     ctmp2 = zero(ctmp1)
     comp_work_low, inv_work_low = prep_comp_inv_work_low(ctmp1)
   else
@@ -191,7 +191,11 @@ function from_phasor!(cinv::DAMap{S,T,U,V}, m::DAMap) where {S,T<:ComplexTPS,U,V
   return
 end
 
-from_phasor(m::DAMap) = (cinv=zero_typed(m,ComplexTPS); from_phasor!(cinv,m); return cinv)
+function from_phasor(m::DAMap)
+  cinv=zero(complex(typeof(m)),use=m);
+  from_phasor!(cinv,m);
+  return cinv
+end
 
 # computes c
 function to_phasor!(c::DAMap{S,T,U,V}, m::DAMap) where {S,T<:ComplexTPS,U,V}
@@ -207,7 +211,11 @@ function to_phasor!(c::DAMap{S,T,U,V}, m::DAMap) where {S,T<:ComplexTPS,U,V}
   return
 end
 
-to_phasor(m::DAMap) = (c=zero_typed(m,ComplexTPS); to_phasor!(c,m); return c)
+function to_phasor(m::DAMap)
+  c=zero(complex(typeof(m)),use=m);
+  to_phasor!(c,m);
+  return c
+end
 
 #=
 # Forward is inv(p)*m*p

@@ -51,6 +51,12 @@ function complex(m::$t{S,T,U,V}) where {S,T,U,V}
   end
   return $t(x0, x, Q, E)
 end
+
+# --- complex type ---
+function complex(::Type{$t{S,T,U,V}}) where {S,T,U,V}
+  return $t{ComplexF64,ComplexTPS,U == Nothing ? Nothing : Quaternion{ComplexTPS}, V == Nothing ? Nothing : ComplexF64}
+end
+
 end
 end
 

@@ -1,6 +1,6 @@
 # --- copy! ---
 function copy!(F::VectorField{T,U}, F1::VectorField{T,U}) where {T,U}
-  desc = getdesc(m)
+  desc = getdesc(F)
   nv = numvars(desc)
 
   for i=1:nv
@@ -13,7 +13,36 @@ function copy!(F::VectorField{T,U}, F1::VectorField{T,U}) where {T,U}
     end
   end
 
-  return m
+  return F
+end
+
+# --- complex ---
+function complex(F::VectorField{T,U}) where {T,U}
+  desc = getdesc(F)
+  nn = numnn(desc)
+  nv = numvars(desc)
+  
+  x = Vector{ComplexTPS}(undef, nv)
+  for i=1:nv
+    @inbounds x[i] = ComplexTPS(F.x[i],use=desc)
+  end
+
+  if !isnothing(m.Q)
+    q = Vector{ComplexTPS}(undef, 4)
+    for i=1:4
+      @inbounds q[i] = ComplexTPS(F.Q.q[i],use=desc)
+    end
+    Q = Quaternion(q)
+  else
+    Q = nothing
+  end
+
+  return VectorField(x,Q)
+end
+
+# --- complex type ---
+function complex(::Type{VectorField{T,U}}) where {T,U}
+  return VectorField{ComplexTPS, U == Nothing ? Nothing : Quaternion{ComplexTPS}}
 end
 
 # --- Lie bracket including spin ---
@@ -24,7 +53,7 @@ liebra!(na::Cint, m1::Vector{Ptr{CTPSA}}, m2::Vector{Ptr{CTPSA}}, m3::Vector{Ptr
 """
     lb(F::VectorField{T,U}, H::VectorField{T,U}) where {T,U}
 
-Computes the Lie bracket of the vector fields `F` and `H`. Explicity, and including 
+Computes the Lie bracket of the vector fields `F` and `H`. Explicitly, and including 
 spin (with the lower case letter for the quaternion of the vector field), this is:
 
 `(G,g) = ⟨(F,f) , (H,h)⟩ = (F⋅∇H-H⋅∇F , [h,f]+F⋅∇h-G⋅∇f)`
@@ -68,6 +97,7 @@ function lb!(G::VectorField{T,U}, F::VectorField{T,U}, H::VectorField{T,U}; work
 
   # Spin (Eq. 44.51 in Bmad manual, NOT handled by GTPSA):
   if !isnothing(F.Q)
+    @assert !(G === F) && !(G === H) "Aliasing the solution in lb! with spin is not allowed"
     # first [h,f] (this part involves quaternion multiplication so will be slow)
     mul!(G.Q, H.Q, F.Q)
     mul!(work_Q, F.Q, H.Q)
@@ -99,11 +129,18 @@ function *(F::VectorField{T,U}, m1::DAMap{S,T,U,V}) where {S,T,U,V}
   return m
 end
 
-function mul!(m::DAMap{S,T,U,V}, F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work_low::Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}=Fx_low=Vector{lowtype(first(F.x))}(undef, numvars(F)), work_Q::Union{U,Nothing}=prep_vf_work_Q(F)) where {S,T,U,V}
+
+"""
+
+
+"""
+function mul!(m::DAMap{S,T,U,V}, F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work_low::Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}=Vector{lowtype(first(F.x))}(undef, numvars(F)), work_Q::Union{U,Nothing}=prep_vf_work_Q(F)) where {S,T,U,V}
   nv = numvars(F)
 
   @assert length(work_low) >= nv "Incorrect length for work_low; received $(length(work_low)), should be >=$nv"
   @assert eltype(work_low) == lowtype(T) "Incorrect eltype of work_low. Received $(eltype(work_low)), should be $(lowtype(T))"
+  @assert !(m === m1) "Aliasing m === m1 is not allowed for mul!"
+
 
   # Orbital part F⋅∇m1 :
   for i=1:nv
@@ -112,11 +149,14 @@ function mul!(m::DAMap{S,T,U,V}, F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work_l
 
   # Spin F⋅∇q + qf (quaternion part acts in reverse order):
   if !isnothing(F.Q)
+    mul!(work_Q, m1.Q, F.Q)
+
+
     for i=1:4
       fgrad!(m.Q.q[i], F.x, m1.Q.q[i], work_low=work_low)
     end
 
-    mul!(work_Q, m1.Q, F.Q)
+    
     for i=1:4
       add!(m.Q.q[i], m.Q.q[i], work_Q.q[i])
     end
@@ -126,10 +166,16 @@ end
 
 
 # --- exp(F)*m ---
-# Because GTPSA's "`exppb`" does not include the quaternion, I write 
-# my own version of this routine. It is very simple
+function exp(F::VectorField{T,U}, m::Union{UniformScaling,DAMap{S,T,U,V}}=I) where {S,T,U,V}
+  if m isa UniformScaling 
+    m = one(DAMap{numtype(T),T,U,Nothing},use=getdesc(F))
+  end
+  mf = zero(m)
+  exp!(mf, F, m)
+  return mf
+end
 
-function exp!(m::DAMap{S,T,U,V}, F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work_F::VectorField{T,U}=zero(F), work_map::DAMap{S,T,U,V}=zero(m1), work_low::Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}=Fx_low=Vector{lowtype(first(F.x))}(undef, numvars(F)), work_Q::Union{U,Nothing}=prep_vf_work_Q(F)) where {S,T,U,V}
+function exp!(m::DAMap{S,T,U,V}, F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work_map::DAMap{S,T,U,V}=zero(m1), work_low::Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}=Fx_low=Vector{lowtype(first(F.x))}(undef, numvars(F)), work_Q::Union{U,Nothing}=prep_vf_work_Q(F)) where {S,T,U,V}
   nv = numvars(F)
 
   @assert length(work_low) >= nv "Incorrect length for work_low; received $(length(work_low)), should be >=$nv"
@@ -139,32 +185,122 @@ function exp!(m::DAMap{S,T,U,V}, F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work_F
   nmax = 100
   nrm_min1 = 1e-9
   nrm_min2 = 100*eps(numtype(T))*nv
-  nrm_ = 0
+  nrm_ =Inf
   conv = false
 
-  copy!(m, m1)
-  copy!(work_F,F)
+  tmp = zero(m1)
+  tmp2 = zero(m1)
 
-  for i=1:nmax
-    div!(work_F,work_F,i)
-    mul!(work_map,work_F,m,work_low=work_low,work_Q=work_Q)
-    add!(m,m,work_map)
-    # Check norm of orbital part (also done no quaternion in FPP)
+  copy!(tmp, m1)
+  copy!(m, m1)
+
+  j = 1
+  while j < nmax
+    div!(tmp, tmp, j)
+    mul!(tmp2, F, tmp)
+    add!(m, m, tmp2)
+    copy!(tmp, tmp2)
     nrm = 0
     for i=1:nv
-      nrm += norm(work_map.x[i])
+      nrm += norm(tmp2.x[i])
     end
 
     # Check convergence
-    if nrm <= nrm_min2 || conv && nrm >= nrm_
-      # converged
+    if nrm <= nrm_min2 || conv && nrm >= nrm_ # done
+      println("converged at j = ", j)
+      return
     end
 
-    if nrm <= nrm_min1
+    if nrm <= nrm_min1 # convergence reached just refine a bit
+      conv = true
+    end
+    nrm_ = nrm
+    j += 1
+  end
+
+#=
+  for i=1:nv
+    nrm_ = typemax(Float64)
+    conv = false
+
+    copy!(tmp, m1.x[i])
+    println(tmp)
+    copy!(m.x[i], m1.x[i])
+    nrm = 0
+j=1
+    while j <= 100
+      #println(j)
+      #println("F = ", F)
+      #println("tmp = ", tmp)
+      tmp /= j
+      fgrad!(tmp2, F.x, tmp)
+      m.x[i] += tmp2
+      #println("m.x[$i] = ", m)
+      copy!(tmp, tmp2)
+      nrm = norm(tmp2)
+      #println(tmp2)
+      #println(nrm)
+
+      # Check convergence
+      if nrm <= nrm_min2 || conv && nrm >= nrm_ # done
+        println("converged at j = ", j)
+        #copy!(m, tmp)
+        j = 101
+      end
+
+      if nrm <= nrm_min1 # convergence reached just refine a bit
+        conv = true
+      end
+      nrm_ = nrm
+      j += 1
+    end
+  end=#
+#=
+
+
+
+  for i=1:nmax
+    work_F = work_F / i
+    # Orbital part F⋅∇m1 :
+    for i=1:nv
+      fgrad!(Cint(nv),map(t->t.tpsa, work_F.x), work_map.x[i].tpsa, tmp2.x[i].tpsa)
+      #fgrad!(work_map.x[i], F.x, work_map.x[i], work_low=work_low)
+    end
+
+    tmp += tmp2
+    copy!(work_map, tmp2)
+    #work_map = work_F*work_map
+    #tmp += work_map
+
+    #div!(work_F,work_F,i)
+    #println("i = ", i)
+    #println("F = ", work_F)
+    #println("work_map")
+    #mul!(tmp,work_F,work_map,work_low=work_low,work_Q=work_Q)
+    #add!(m,m,tmp)
+
+
+    #copy!(work_map,tmp)
+    # Check norm of orbital part (also done no quaternion in FPP)
+    nrm = 0
+    for i=1:nv
+      nrm += norm(tmp2.x[i])
+    end
+    println(nrm)
+
+    # Check convergence
+    if nrm <= nrm_min2 || conv && nrm >= nrm_ # done
+      copy!(m, tmp)
+      return
+    end
+
+    if nrm <= nrm_min1 # convergence reached just refine a bit
       conv = true
     end
   end
 
+  nrm_ = nrm
+  @warn "exp! convergence not reached for $nmax iterations"=#
 end
 
 

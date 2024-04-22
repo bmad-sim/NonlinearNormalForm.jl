@@ -13,6 +13,7 @@ import Base: ∘,
              one,
              complex,
              log,
+             exp,
              ==,
              copy!,
              convert,
@@ -113,6 +114,7 @@ include("map/operators.jl")
 
 include("vectorfield/ctors.jl")
 include("vectorfield/methods.jl")
+include("vectorfield/operators.jl")
 
 include("utils/misc.jl")
 

@@ -1,48 +1,48 @@
-# FIX!!!! Define operators:
+# Operators with scalars:
 for ops = (("add!", :+), ("sub!",:-), ("mul!",:*), ("div!",:/))
-  @eval begin
-  function $(Meta.parse(ops[1]))(m::TaylorMap, a, m1::TaylorMap)
-    nv = numvars(m)
-    nn = numnn(m)
-  
-    m.x0 .= m1.x0
-  
-    for i=1:nv
-      $(Meta.parse(ops[1]))(m.x[i], a, m1.x[i])
-    end
-    m.x[nv+1:nn] .= view(m.x, nv+1:nn)
-  
-    if !isnothing(m.Q)
-      for i=1:4
-        $(Meta.parse(ops[1]))(m.Q.q[i], a, m1.Q.q[i])
-      end
-    end
-  
-    if !isnothing(m.E)
-      m.E .= m1.E
-    end
-    return
+@eval begin
+function $(Meta.parse(ops[1]))(F::VectorField, a, F1::VectorField)
+  nv = numvars(F)
+
+  for i=1:nv
+    $(Meta.parse(ops[1]))(F.x[i], a, F1.x[i])
   end
-  
-  function $(Meta.parse(ops[1]))(m::TaylorMap, m1::TaylorMap, a)
-    nv = numvars(m)
-    nn = numnn(m)
-  
-    m.x0 .= m1.x0
-  
-    for i=1:nv
-      $(Meta.parse(ops[1]))(m.x[i], m1.x[i], a)
+
+  if !isnothing(F.Q)
+    for i=1:4
+      $(Meta.parse(ops[1]))(F.Q.q[i], a, F1.Q.q[i])
     end
-    m.x[nv+1:nn] .= view(m.x, nv+1:nn)
-  
-    if !isnothing(m.Q)
-      for i=1:4
-        $(Meta.parse(ops[1]))(m.Q.q[i], m1.Q.q[i], a)
-      end
-    end
-  
-    if !isnothing(m.E)
-      m.E .= m1.E
-    end
-    return
   end
+  return
+end
+
+function $(Meta.parse(ops[1]))(F::VectorField, F1::VectorField, a)
+  nv = numvars(F)
+
+  for i=1:nv
+    $(Meta.parse(ops[1]))(F.x[i], F1.x[i], a)
+  end
+
+  if !isnothing(F.Q)
+    for i=1:4
+      $(Meta.parse(ops[1]))(F.Q.q[i], F1.Q.q[i], a)
+    end
+  end
+
+  return
+end
+
+function $(ops[2])(a::Number, F1::VectorField)
+  F = zero(F1)
+  $(Meta.parse(ops[1]))(F, a, F1)
+  return F
+end
+
+function $(ops[2])(F1::VectorField, a::Number)
+  F = zero(F1)
+  $(Meta.parse(ops[1]))(F, F1, a)
+  return F
+end
+
+end
+end
