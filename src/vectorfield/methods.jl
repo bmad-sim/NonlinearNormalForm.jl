@@ -175,27 +175,29 @@ function exp(F::VectorField{T,U}, m::Union{UniformScaling,DAMap{S,T,U,V}}=I) whe
   return mf
 end
 
-function exp!(m::DAMap{S,T,U,V}, F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work_map::DAMap{S,T,U,V}=zero(m1), work_low::Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}=Fx_low=Vector{lowtype(first(F.x))}(undef, numvars(F)), work_Q::Union{U,Nothing}=prep_vf_work_Q(F)) where {S,T,U,V}
+function exp!(m::DAMap{S,T,U,V}, F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work_map::DAMap{S,T,U,V}=zero(m1), work_low::Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}=Vector{lowtype(first(F.x))}(undef, numvars(F)), work_Q::Union{U,Nothing}=prep_vf_work_Q(F)) where {S,T,U,V}
   nv = numvars(F)
 
   @assert length(work_low) >= nv "Incorrect length for work_low; received $(length(work_low)), should be >=$nv"
   @assert eltype(work_low) == lowtype(T) "Incorrect eltype of work_low. Received $(eltype(work_low)), should be $(lowtype(T))"
 
+ # exppb!(nv, map(t->t.tpsa, F.x), map(t->t.tpsa, m1.x), map(t->t.tpsa,m.x))
+#return
   # The convergence checks are taken exactly from GTPSA
+  
   nmax = 100
   nrm_min1 = 1e-9
   nrm_min2 = 100*eps(numtype(T))*nv
   nrm_ =Inf
   conv = false
 
-  tmp = zero(m1)
+  tmp = work_map
   tmp2 = zero(m1)
 
   copy!(tmp, m1)
   copy!(m, m1)
 
-  j = 1
-  while j < nmax
+  for j=1:nmax
     div!(tmp, tmp, j)
     mul!(tmp2, F, tmp)
     add!(m, m, tmp2)
@@ -207,7 +209,7 @@ function exp!(m::DAMap{S,T,U,V}, F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work_m
 
     # Check convergence
     if nrm <= nrm_min2 || conv && nrm >= nrm_ # done
-      println("converged at j = ", j)
+      #println("converged at j = ", j)
       return
     end
 
@@ -215,16 +217,18 @@ function exp!(m::DAMap{S,T,U,V}, F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work_m
       conv = true
     end
     nrm_ = nrm
-    j += 1
   end
+  #=
 
-#=
+  tmp = TPS()
+  tmp2 = TPS()
+
   for i=1:nv
     nrm_ = typemax(Float64)
     conv = false
 
     copy!(tmp, m1.x[i])
-    println(tmp)
+    #println(tmp)
     copy!(m.x[i], m1.x[i])
     nrm = 0
 j=1
@@ -243,7 +247,7 @@ j=1
 
       # Check convergence
       if nrm <= nrm_min2 || conv && nrm >= nrm_ # done
-        println("converged at j = ", j)
+       # println("converged at j = ", j)
         #copy!(m, tmp)
         j = 101
       end
