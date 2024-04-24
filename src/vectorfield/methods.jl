@@ -4,12 +4,12 @@ function copy!(F::VectorField{T,U}, F1::VectorField{T,U}) where {T,U}
   nv = numvars(desc)
 
   for i=1:nv
-    copy!(F.x[i], F1.x[i])
+   @inbounds copy!(F.x[i], F1.x[i])
   end
 
   if !isnothing(F.Q)
     for i=1:4
-      copy!(F.Q.q[i], F1.Q.q[i])
+      @inbounds copy!(F.Q.q[i], F1.Q.q[i])
     end
   end
 
@@ -88,6 +88,7 @@ function lb!(G::VectorField{T,U}, F::VectorField{T,U}, H::VectorField{T,U}; work
   @assert eltype(Fx_low) == lowtype(T) "Incorrect eltype of work_low[1] = Fx_low. Received $(eltype(Fx_low)), should be $(lowtype(T))"
   @assert eltype(Hx_low) == lowtype(T) "Incorrect eltype of work_low[2] = Hx_low. Received $(eltype(Hx_low)), should be $(lowtype(T))"
   @assert eltype(Gx_low) == lowtype(T) "Incorrect eltype of work_low[3] = Gx_low. Received $(eltype(Gx_low)), should be $(lowtype(T))"
+  @assert !(G === F) && !(G === H) "Aliasing any source arguments with the destination in lb! is not allowed"
 
   # Orbital part (Eq. 44.51 in Bmad manual, handled by GTPSA):
   map!(t->t.tpsa, Fx_low, F.x)
@@ -97,25 +98,24 @@ function lb!(G::VectorField{T,U}, F::VectorField{T,U}, H::VectorField{T,U}; work
 
   # Spin (Eq. 44.51 in Bmad manual, NOT handled by GTPSA):
   if !isnothing(F.Q)
-    @assert !(G === F) && !(G === H) "Aliasing the solution in lb! with spin is not allowed"
     # first [h,f] (this part involves quaternion multiplication so will be slow)
     mul!(G.Q, H.Q, F.Q)
     mul!(work_Q, F.Q, H.Q)
     for i=1:4
-      sub!(G.Q.q[i], G.Q.q[i], work_Q[i])
+      @inbounds sub!(G.Q.q[i], G.Q.q[i], work_Q[i])
     end
 
     # then +F⋅∇h 
     tmp = work_Q.Q.q[1]
     for i=1:4
-      fgrad!(tmp, F.x, H.Q.q[i], work_low=Fx_low)
-      add!(G.Q.q[i], G.Q.q[i], tmp)
+      @inbounds fgrad!(tmp, F.x, H.Q.q[i], work_low=Fx_low)
+      @inbounds add!(G.Q.q[i], G.Q.q[i], tmp)
     end
     
     # finally -G⋅∇f
     for i=1:4
-      fgrad!(tmp, G.x, F.Q.q[i], work_low=Fx_low)
-      sub!(G.Q.q[i], G.Q.q[i], tmp)
+      @inbounds fgrad!(tmp, G.x, F.Q.q[i], work_low=Fx_low)
+      @inbounds sub!(G.Q.q[i], G.Q.q[i], tmp)
     end
   end
   return
@@ -123,16 +123,31 @@ end
 
 
 # --- Lie operator (VectorField) acting on DAMap ---
-function *(F::VectorField{T,U}, m1::DAMap{S,T,U,V}) where {S,T,U,V}
+# GTPSA provides fgrad with is used, but nothing for spin
+"""
+    *(F::VectorField{T,U}, m1::DAMap{S,T,U,V}) where {S,T,U,V}
+
+Calculates a Lie operator `VectorField` acting on a `DAMap`. Explicity, if spin is 
+included that is `F * m = (F.x, F.Q) * (m.x, m.Q) = (F.x ⋅ ∇ m.x , F.x ⋅ ∇ m.Q + m.Q*F.Q)`
+"""
+function *(F::VectorField{T,U}, m1::Union{DAMap{S,T,U,V},UniformScaling}) where {S,T,U,V}
+  if m1 isa UniformScaling 
+    m1 = one(DAMap{numtype(T),T,U,Nothing},use=getdesc(F))
+  end
   m = zero(m1)
   mul!(m, F, m1)
   return m
 end
 
-
 """
+    mul!(m::DAMap{S,T,U,V}, F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work_low::Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}=Vector{lowtype(first(F.x))}(undef, numvars(F)), work_Q::Union{U,Nothing}=prep_vf_work_Q(F)) where {S,T,U,V}
 
+Computes the Lie operator `F` acting on a `DAMap` `m1`, and stores the result in `m`.
+Explicity, that is `F * m = (F.x, F.Q) * (m.x, m.Q) = (F.x ⋅ ∇ m.x , F.x ⋅ ∇ m.Q + m.Q*F.Q)`
 
+### Keyword Arguments
+- `work_low` -- Vector with eltype `lowtype(T)` and length `>=nv`
+- `work_Q`   -- `Quaternion{T}` if spin is included in the vector field, else `nothing`
 """
 function mul!(m::DAMap{S,T,U,V}, F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work_low::Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}=Vector{lowtype(first(F.x))}(undef, numvars(F)), work_Q::Union{U,Nothing}=prep_vf_work_Q(F)) where {S,T,U,V}
   nv = numvars(F)
@@ -144,21 +159,19 @@ function mul!(m::DAMap{S,T,U,V}, F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work_l
 
   # Orbital part F⋅∇m1 :
   for i=1:nv
-    fgrad!(m.x[i], F.x, m1.x[i], work_low=work_low)
+    @inbounds fgrad!(m.x[i], F.x, m1.x[i], work_low=work_low)
   end
 
   # Spin F⋅∇q + qf (quaternion part acts in reverse order):
   if !isnothing(F.Q)
     mul!(work_Q, m1.Q, F.Q)
 
-
     for i=1:4
-      fgrad!(m.Q.q[i], F.x, m1.Q.q[i], work_low=work_low)
+      @inbounds fgrad!(m.Q.q[i], F.x, m1.Q.q[i], work_low=work_low)
     end
-
     
     for i=1:4
-      add!(m.Q.q[i], m.Q.q[i], work_Q.q[i])
+      @inbounds add!(m.Q.q[i], m.Q.q[i], work_Q.q[i])
     end
   end
   return
@@ -166,50 +179,61 @@ end
 
 
 # --- exp(F)*m ---
-function exp(F::VectorField{T,U}, m::Union{UniformScaling,DAMap{S,T,U,V}}=I) where {S,T,U,V}
-  if m isa UniformScaling 
-    m = one(DAMap{numtype(T),T,U,Nothing},use=getdesc(F))
+# While GTPSA provides this for only the orbital part, it separately converges 
+# each variable and does not include spin. Here I include spin and do the entire map at once.
+function exp(F::VectorField{T,U}, m1::Union{UniformScaling,DAMap{S,T,U,V}}=I) where {S,T,U,V}
+  if m1 isa UniformScaling 
+    m1 = one(DAMap{numtype(T),T,U,Nothing},use=getdesc(F))
   end
-  mf = zero(m)
-  exp!(mf, F, m)
-  return mf
+  m = zero(m1)
+  exp!(m, F, m1)
+  return m
 end
 
-function exp!(m::DAMap{S,T,U,V}, F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work_map::DAMap{S,T,U,V}=zero(m1), work_low::Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}=Vector{lowtype(first(F.x))}(undef, numvars(F)), work_Q::Union{U,Nothing}=prep_vf_work_Q(F)) where {S,T,U,V}
+
+"""
+    exp!(m::DAMap{S,T,U,V}, F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work_maps::Tuple{Vararg{DAMap{S,T,U,V}}}=(zero(m1),zero(m1)), work_low::Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}=Vector{lowtype(first(F.x))}(undef, numvars(F)), work_Q::Union{U,Nothing}=prep_vf_work_Q(F)) where {S,T,U,V}
+
+Computes `exp(F)*m1`, and stores the result in `m`. Explicity, this is
+`exp(F)*m1 = m1 + F*m1 + 1/2*F*(F*m1) + 1/6*F*(F*(F*m1)) + ...`, where `*` is
+the operation of a `VectorField` on the map. See the documentation for `mul!` for 
+more details of this operation.
+
+### Keyword Arguments
+- `work_maps` -- Tuple of 2 `DAMap`s of the same type as `m1`
+- `work_low` -- Vector with eltype `lowtype(T)` and length `>=nv`
+- `work_Q`   -- `Quaternion{T}` if spin is included in the vector field, else `nothing`
+"""
+function exp!(m::DAMap{S,T,U,V}, F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work_maps::Tuple{Vararg{DAMap{S,T,U,V}}}=(zero(m1),zero(m1)), work_low::Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}=Vector{lowtype(first(F.x))}(undef, numvars(F)), work_Q::Union{U,Nothing}=prep_vf_work_Q(F)) where {S,T,U,V}
   nv = numvars(F)
 
   @assert length(work_low) >= nv "Incorrect length for work_low; received $(length(work_low)), should be >=$nv"
   @assert eltype(work_low) == lowtype(T) "Incorrect eltype of work_low. Received $(eltype(work_low)), should be $(lowtype(T))"
+  tmp = work_maps[1]
+  tmp2 = work_maps[2]
 
- # exppb!(nv, map(t->t.tpsa, F.x), map(t->t.tpsa, m1.x), map(t->t.tpsa,m.x))
-#return
-  # The convergence checks are taken exactly from GTPSA
-  
+  # convergence parameters taken exactly from GTPSA
   nmax = 100
   nrm_min1 = 1e-9
   nrm_min2 = 100*eps(numtype(T))*nv
   nrm_ =Inf
   conv = false
 
-  tmp = work_map
-  tmp2 = zero(m1)
-
   copy!(tmp, m1)
   copy!(m, m1)
 
   for j=1:nmax
     div!(tmp, tmp, j)
-    mul!(tmp2, F, tmp)
+    mul!(tmp2, F, tmp, work_low=work_low, work_Q=work_Q)
     add!(m, m, tmp2)
     copy!(tmp, tmp2)
-    nrm = 0
+    nrm = 0.
     for i=1:nv
-      nrm += norm(tmp2.x[i])
+      @inbounds nrm += norm(tmp2.x[i])
     end
 
     # Check convergence
     if nrm <= nrm_min2 || conv && nrm >= nrm_ # done
-      #println("converged at j = ", j)
       return
     end
 
@@ -218,110 +242,40 @@ function exp!(m::DAMap{S,T,U,V}, F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work_m
     end
     nrm_ = nrm
   end
-  #=
-
-  tmp = TPS()
-  tmp2 = TPS()
-
-  for i=1:nv
-    nrm_ = typemax(Float64)
-    conv = false
-
-    copy!(tmp, m1.x[i])
-    #println(tmp)
-    copy!(m.x[i], m1.x[i])
-    nrm = 0
-j=1
-    while j <= 100
-      #println(j)
-      #println("F = ", F)
-      #println("tmp = ", tmp)
-      tmp /= j
-      fgrad!(tmp2, F.x, tmp)
-      m.x[i] += tmp2
-      #println("m.x[$i] = ", m)
-      copy!(tmp, tmp2)
-      nrm = norm(tmp2)
-      #println(tmp2)
-      #println(nrm)
-
-      # Check convergence
-      if nrm <= nrm_min2 || conv && nrm >= nrm_ # done
-       # println("converged at j = ", j)
-        #copy!(m, tmp)
-        j = 101
-      end
-
-      if nrm <= nrm_min1 # convergence reached just refine a bit
-        conv = true
-      end
-      nrm_ = nrm
-      j += 1
-    end
-  end=#
-#=
-
-
-
-  for i=1:nmax
-    work_F = work_F / i
-    # Orbital part F⋅∇m1 :
-    for i=1:nv
-      fgrad!(Cint(nv),map(t->t.tpsa, work_F.x), work_map.x[i].tpsa, tmp2.x[i].tpsa)
-      #fgrad!(work_map.x[i], F.x, work_map.x[i], work_low=work_low)
-    end
-
-    tmp += tmp2
-    copy!(work_map, tmp2)
-    #work_map = work_F*work_map
-    #tmp += work_map
-
-    #div!(work_F,work_F,i)
-    #println("i = ", i)
-    #println("F = ", work_F)
-    #println("work_map")
-    #mul!(tmp,work_F,work_map,work_low=work_low,work_Q=work_Q)
-    #add!(m,m,tmp)
-
-
-    #copy!(work_map,tmp)
-    # Check norm of orbital part (also done no quaternion in FPP)
-    nrm = 0
-    for i=1:nv
-      nrm += norm(tmp2.x[i])
-    end
-    println(nrm)
-
-    # Check convergence
-    if nrm <= nrm_min2 || conv && nrm >= nrm_ # done
-      copy!(m, tmp)
-      return
-    end
-
-    if nrm <= nrm_min1 # convergence reached just refine a bit
-      conv = true
-    end
-  end
-
-  nrm_ = nrm
-  @warn "exp! convergence not reached for $nmax iterations"=#
+  @warn "exp! convergence not reached for $nmax iterations"
 end
 
 
 # --- log ---
 
+# See Bmad manual Ch. 47 for log definition using Lie operators (no matrices!!)
+function log(m1::DAMap{S,T,U,V}) where {S,T,U,V}
+  nv = numvars(m1)
+  F = zero(VectorField{T,U},use=m1)
+  tmp = m1 - I
+  F.x = tmp.x[1:nv]
+  F.Q  = tmp.Q
+
+  for i=1:1000
+    mt = exp(F,m1)
+    
+  end
+
+  # Start with first approx for vector field F = (t,u) = (M-I, q-1)
+
+
+
+  eps2 = -1/2*F*tmp  # eqn 47.6
+  T3 = F + eps2
+
+end
+
+
 """
 
-Instead of using GTPSA's `logpb`, we need a log that will work with `VectorField`s including 
-a quaternion. Therefore I am writing my own.
-
-If we formulate the matrix of monomials, the log is easy. But this is gross and slow.
-
-Therefore we use the fast algorithm described in Ch. 47 of Bmad manual
-
-
 """
-function log!(mf::DAMap{S,T,U,V}, m::DAMap{S,T,U,V}) where {S,T,U,V}
+function log!(F::VectorField{T,U}, m1::DAMap{S,T,U,V}) where {S,T,U,V}
+
 
 end
 
@@ -343,8 +297,8 @@ end
 
 
 
-logpb!(na::Cint, ma::Vector{Ptr{RTPSA}}, mb::Vector{Ptr{RTPSA}}, mc::Vector{Ptr{RTPSA}}) = (@inline; mad_tpsa_logpb!(na, ma, mb, mc))
-logpb!(na::Cint, ma::Vector{Ptr{CTPSA}}, mb::Vector{Ptr{CTPSA}}, mc::Vector{Ptr{CTPSA}}) = (@inline; mad_ctpsa_logpb!(na, ma, mb, mc))
+logpb!(na::Cint, ma::Vector{Ptr{RTPSA}}, mb::Vector{Ptr{RTPSA}}, mc::Vector{Ptr{RTPSA}}) = (@inline; GTPSA.mad_tpsa_logpb!(na, ma, mb, mc))
+logpb!(na::Cint, ma::Vector{Ptr{CTPSA}}, mb::Vector{Ptr{CTPSA}}, mc::Vector{Ptr{CTPSA}}) = (@inline; GTPSA.mad_ctpsa_logpb!(na, ma, mb, mc))
 
 
 

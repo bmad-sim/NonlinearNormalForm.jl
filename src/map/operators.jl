@@ -109,13 +109,13 @@ function $(Meta.parse(ops[1]))(m::TaylorMap, a, m1::TaylorMap)
   m.x0 .= m1.x0
 
   for i=1:nv
-    $(Meta.parse(ops[1]))(m.x[i], a, m1.x[i])
+    @inbounds $(Meta.parse(ops[1]))(m.x[i], a, m1.x[i])
   end
-  m.x[nv+1:nn] .= view(m.x, nv+1:nn)
+  @inbounds m.x[nv+1:nn] .= view(m.x, nv+1:nn)
 
   if !isnothing(m.Q)
     for i=1:4
-      $(Meta.parse(ops[1]))(m.Q.q[i], a, m1.Q.q[i])
+      @inbounds $(Meta.parse(ops[1]))(m.Q.q[i], a, m1.Q.q[i])
     end
   end
 
@@ -132,13 +132,13 @@ function $(Meta.parse(ops[1]))(m::TaylorMap, m1::TaylorMap, a)
   m.x0 .= m1.x0
 
   for i=1:nv
-    $(Meta.parse(ops[1]))(m.x[i], m1.x[i], a)
+    @inbounds $(Meta.parse(ops[1]))(m.x[i], m1.x[i], a)
   end
-  m.x[nv+1:nn] .= view(m.x, nv+1:nn)
+  @inbounds m.x[nv+1:nn] .= view(m.x, nv+1:nn)
 
   if !isnothing(m.Q)
     for i=1:4
-      $(Meta.parse(ops[1]))(m.Q.q[i], m1.Q.q[i], a)
+      @inbounds $(Meta.parse(ops[1]))(m.Q.q[i], m1.Q.q[i], a)
     end
   end
 
@@ -174,13 +174,13 @@ function $(Meta.parse(ops[1]))(m::TaylorMap, m1::TaylorMap, m2::TaylorMap)
   m.x0 .= m1.x0
 
   for i=1:nv
-    $(Meta.parse(ops[1]))(m.x[i], m1.x[i], m2.x[i])
+    @inbounds $(Meta.parse(ops[1]))(m.x[i], m1.x[i], m2.x[i])
   end
-  m.x[nv+1:nn] .= view(m.x, nv+1:nn)
+  @inbounds m.x[nv+1:nn] .= view(m.x, nv+1:nn)
 
   if !isnothing(m.Q)
     for i=1:4
-      $(Meta.parse(ops[1]))(m.Q.q[i], m1.Q.q[i], m2.Q.q[i])
+      @inbounds $(Meta.parse(ops[1]))(m.Q.q[i], m1.Q.q[i], m2.Q.q[i])
     end
   end
 

@@ -72,11 +72,11 @@ function copy!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}) where {S,T,U,V}
     copy!(m.x[i], m1.x[i])
   end
 
-  m.x[nv+1:nn] .= view(m1.x, nv+1:nn)
+  @inbounds m.x[nv+1:nn] .= view(m1.x, nv+1:nn)
 
   if !isnothing(m1.Q)
     for i=1:4
-      copy!(m.Q.q[i], m1.Q.q[i])
+      @inbounds copy!(m.Q.q[i], m1.Q.q[i])
     end
   end
 

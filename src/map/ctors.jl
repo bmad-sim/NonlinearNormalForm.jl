@@ -376,7 +376,7 @@ function zero(m::$t{S,T,U,V}) where {S,T,U,V}
   return $t(zeros(eltype(m.x0), nv), x, Q, E)
 end
 
-function zero(::Type{$t{S,T,U,V}}; use::Union{Descriptor,TaylorMap,Probe{<:Any,Union{TPS,ComplexTPS},<:Any,<:Any}}=GTPSA.desc_current) where {S,T,U,V}
+function zero(::Type{$t{S,T,U,V}}; use::Union{Descriptor,TPS,ComplexTPS,TaylorMap,Probe{<:Any,Union{TPS,ComplexTPS},<:Any,<:Any}}=GTPSA.desc_current) where {S,T,U,V}
   desc = getdesc(use)
   nn = numnn(desc)
   nv = numvars(desc)
@@ -395,9 +395,9 @@ function zero(::Type{$t{S,T,U,V}}; use::Union{Descriptor,TaylorMap,Probe{<:Any,U
   else
     # allocate
     if T == TPS
-      x[nv+1:nn] .= params(desc)
+      @inbounds x[nv+1:nn] .= params(desc)
     else
-      x[nv+1:nn] .= complexparams(desc)
+      @inbounds x[nv+1:nn] .= complexparams(desc)
     end
   end
 
@@ -465,7 +465,7 @@ function one(m::$t{S,T,U,V}) where {S,T,U,V}
   return $t(zeros(eltype(m.x0), nv), x, Q, E)
 end
 
-function one(::Type{$t{S,T,U,V}}; use::Union{Descriptor,TaylorMap,Probe{S,Union{TPS,ComplexTPS},U,V}}=GTPSA.desc_current) where {S,T,U,V}
+function one(::Type{$t{S,T,U,V}}; use::Union{Descriptor,TPS,ComplexTPS,TaylorMap,Probe{S,Union{TPS,ComplexTPS},U,V}}=GTPSA.desc_current) where {S,T,U,V}
   desc = getdesc(use)
   nn = numnn(desc)
   nv = numvars(desc)
@@ -485,9 +485,9 @@ function one(::Type{$t{S,T,U,V}}; use::Union{Descriptor,TaylorMap,Probe{S,Union{
   else
     # allocate
     if T == TPS
-      x[nv+1:nn] .= params(desc)
+      @inbounds x[nv+1:nn] .= params(desc)
     else
-      x[nv+1:nn] .= complexparams(desc)
+      @inbounds x[nv+1:nn] .= complexparams(desc)
     end
   end
 

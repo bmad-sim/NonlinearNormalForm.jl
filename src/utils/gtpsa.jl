@@ -73,6 +73,7 @@ function fgrad!(g::T, F::Vector{<:T}, h::T; work_low::Vector{<:Union{Ptr{RTPSA},
   @assert length(F) == nv "Incorrect length of F; received $(length(F)), should be $nv"
   @assert length(work_low) >= nv "Incorrect length for work_low; received $(length(work_low)), should be >=$nv"
   @assert eltype(work_low) == lowtype(T) "Incorrect eltype of work_low; received $(eltype(work_low)), should be $(lowtype(T))"
+  @assert !(g === h) "Aliasing g === h not allowed for fgrad!"
   map!(t->t.tpsa, work_low, F)
   fgrad!(nv, work_low, h.tpsa, g.tpsa)
   return
@@ -88,56 +89,6 @@ function fgrad(F::Vector{<:T}, h::T) where {T<:Union{TPS,ComplexTPS}}
   fgrad!(g, F, h)
   return g
 end
-
-
-# --- exp(F . grad) m ---
-exppb!(na::Cint, ma::Vector{Ptr{RTPSA}}, mb::Vector{Ptr{RTPSA}}, mc::Vector{Ptr{RTPSA}}) = (@inline; GTPSA.mad_tpsa_exppb!(na, ma, mb, mc))
-exppb!(na::Cint, ma::Vector{Ptr{CTPSA}}, mb::Vector{Ptr{CTPSA}}, mc::Vector{Ptr{CTPSA}}) = (@inline; GTPSA.mad_ctpsa_exppb!(na, ma, mb, mc))
-
-"""
-    exppb(F::Vector{<:Union{TPS,ComplexTPS}}, m::Vector{<:Union{TPS,ComplexTPS}}=vars(first(F)))
-
-Calculates `exp(F⋅∇)m = m + F⋅∇m + (F⋅∇)²m/2! + ...`. If `m` is not provided, it is assumed 
-to be the identity. 
-
-# Example
-
-```julia-repl
-julia> d = Descriptor(2,10); x = vars()[1]; p = vars()[2];
-
-julia> time = 0.01; k = 2; m = 0.01;
-
-julia> h = p^2/(2m) + 1/2*k*x^2;
-
-julia> hf = getvectorfield(h);
-
-julia> map = exppb(-time*hf, [x, p])
-2-element Vector{TPS}:
-  Out  Coefficient                Order   Exponent
--------------------------------------------------
-   1:   9.9001665555952290e-01      1      1   0
-   1:   9.9666999841313930e-01      1      0   1
--------------------------------------------------
-   2:  -1.9933399968262787e-02      1      1   0
-   2:   9.9001665555952378e-01      1      0   1
-```
-"""
-function exppb(F::Vector{<:Union{TPS,ComplexTPS}}, m::Vector{<:Union{TPS,ComplexTPS}}=vars(first(F)))
-  descF = unsafe_load(Base.unsafe_convert(Ptr{Desc}, unsafe_load(F[1].tpsa).d))
-  if length(F) != descF.nv
-    error("Vector length != number of variables in the GTPSA")
-  end
-  ma1, mb1 = promote(F, m)
-  m1 = map(t->t.tpsa, ma1) 
-  m2 = map(t->t.tpsa, mb1) 
-  mc = zero.(ma1)
-  m3 = map(t->t.tpsa, mc)
-  GC.@preserve ma1 mb1 exppb!(Cint(length(F)), m1, m2, m3)  
-  return mc
-end
-
-
-
 
 
 
@@ -203,21 +154,7 @@ end
 
 
 
-# --- mnrm ---
-mnrm(na::Cint, ma::Vector{Ptr{RTPSA}})::Float64 = mad_tpsa_mnrm(na, ma)
-mnrm(na::Cint, ma::Vector{Ptr{CTPSA}})::ComplexF64 = mad_ctpsa_mnrm(na, ma)
 
-#=
-"""
-    norm(ma::Vector{<:Union{TPS,ComplexTPS}})
-
-Calculates the norm of the map `ma`, defined as `sum(norm.(ma))` or the 
-sum of the absolute value of all coefficients in each TPS.
-"""
-function norm(ma::Vector{<:Union{TPS,ComplexTPS}})
-  return mnrm(Cint(length(ma)), map(x->x.tpsa, ma))
-end
-=#
 
 
 # --- partial inversion ---

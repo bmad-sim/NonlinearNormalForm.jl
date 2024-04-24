@@ -68,3 +68,27 @@ function zero(F::VectorField{T,U}) where {T,U}
   end
   return VectorField(x,Q)
 end
+
+function zero(::Type{VectorField{T,U}}; use::Union{Descriptor,TPS,ComplexTPS,TaylorMap,Probe{<:Any,Union{TPS,ComplexTPS},<:Any,<:Any}}=GTPSA.desc_current) where {T,U}
+  desc = getdesc(use)
+  nn = numnn(desc)
+  nv = numvars(desc)
+  np = numparams(desc)
+
+  x = Vector{T}(undef, nn)
+  for i=1:nv
+    @inbounds x[i] = T(use=desc)
+  end
+
+  if U != Nothing
+    q = Vector{T}(undef, 4)
+    for i=1:4
+      @inbounds q[i] = T(use=desc)
+    end
+    Q = Quaternion(q)
+  else
+    Q = nothing
+  end
+
+  return VectorField{T,U}(x, Q)
+end
