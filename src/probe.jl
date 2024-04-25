@@ -1,22 +1,3 @@
-#=
-Probe is used for tracking. As a parametric type, 
-the orbital/spin part can contain either a Float64 or 
-a real Truncated Power Series. 
-
-Because of Julia's JIT + multiple dispatch, we actually
-could use only one Probe both for particle tracking and 
-TPS tracking (no slowdowns expected).
-
-Parametric type as generic as possible to eventually allow 
-differentiating through.
-=#
-struct Probe{S,T,U<:Union{Quaternion{T},Nothing},V<:Union{Matrix{S},Nothing}}
-  x0::Vector{S}   # Entrance coordinates
-  x::Vector{T}    # Out coordinates
-  Q::U            # Quaternion
-  E::V            # Stochastic matrix
-end
-
 function Probe(x::Vector{T}; x0::Vector{S}=zeros(length(x)), Q::U=nothing, E::V=nothing, spin::Union{Bool,Nothing}=nothing, radiation::Union{Bool,Nothing}=nothing) where {S,T,U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing}}
   length(x) == length(x0) || error("Length of orbital ray != length of reference orbit vector!")
 

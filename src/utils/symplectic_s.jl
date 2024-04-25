@@ -8,7 +8,7 @@ struct SymplecticS end
 Generic symplectic skew symmetric S matrix (size inferred from 
 other matrix in operations) using SkewLinearAlgebra's `JMatrix`
 """
-const S = SymplecticS
+const S = SymplecticS()
 
 (S::SymplecticS)(n::Integer) = JMatrix{Int8,+1}(n)
 

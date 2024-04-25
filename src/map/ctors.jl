@@ -1,53 +1,8 @@
-"""
-    TaylorMap{S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix{S},Nothing}}
-
-Abstract type for `TPSAMap` and `DAMap` used for normal form analysis. 
-
-All `TaylorMap`s contain `x0` and `x` as the entrance coordinates and transfer map 
-as a truncated power series respectively. If spin is included, a field `Q` containing 
-a `Quaternion` as a truncated power series is included, else `Q` is `nothing`. If 
-radiation is included, a field `E` contains a matrix of the envelope for stochastic 
-radiation, else `E` is nothing.
-
-### Fields
-- `x0` -- Entrance coordinates of the map, Taylor expansion point
-- `x`  -- Orbital ray as a truncated power series, expansion around `x0` + scalar part equal to EXIT coordinates of map
-- `Q`  -- `Quaternion` as a truncated power series if spin is included, else `nothing`
-- `E`  -- Matrix of the envelope for stochastic radiation if included, else `nothing`
-"""
-abstract type TaylorMap{S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix{S},Nothing}} end 
-
-"""
-    DAMap{S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix{S},Nothing}} <: TaylorMap{S,T,U,V}
-
-`TaylorMap` that composes and inverses as a `DAMap` (with the scalar part ignored).
-See `TaylorMap` for more information.
-"""
-struct DAMap{S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix{S},Nothing}} <: TaylorMap{S,T,U,V}
-  x0::Vector{S}    # Entrance value of map
-  x::Vector{T}     # Expansion around x0, with scalar part equal to EXIT value of map wrt initial coordinates x0
-  Q::U             # Quaternion for spin
-  E::V             # Envelope for stochastic radiation
-end
-
-"""
-    TPSAMap{S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix{S},Nothing}} <: TaylorMap{S,T,U,V}
-
-`TaylorMap` that composes and inverses as a `TPSAMap` (with the scalar part included).
-See `TaylorMap` for more information.
-"""
-struct TPSAMap{S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix{S},Nothing}}  <: TaylorMap{S,T,U,V}
-  x0::Vector{S}    # Entrance value of map
-  x::Vector{T}     # Expansion around x0, with scalar part equal to EXIT value of map wrt initial coordinates x0
-  Q::U             # Quaternion for spin
-  E::V             # Envelope for stochastic radiation
-end
-
 for t = (:DAMap, :TPSAMap)
 @eval begin
 
 """
-    $($t)(TaylorMap{S,T,U,V}; use::Union{Descriptor,TaylorMap,Probe{S,T,U,V},Nothing}=nothing) where {S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing}}
+    $($t)(TaylorMap{S,T,U,V}; use::UseType=nothing) where {S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing}}
 
 Creates a new copy of the passed `TaylorMap` as a `$($t)`. 
 
@@ -56,7 +11,7 @@ specified (could be another `Descriptor`, `TaylorMap`, or a `Probe` containing `
 copy of `m` as a new $($(t)) will have the same `Descriptor` as in `use.` The number of variables 
 and parameters must agree, however the orders may be different.
 """
-function $t(m::TaylorMap{S,T,U,V}; use::Union{Descriptor,TaylorMap,Probe{S,T,U,V},Nothing}=nothing) where {S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing}}
+function $t(m::TaylorMap{S,T,U,V}; use::UseType=nothing) where {S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing}}
   desc = getdesc(m)
   nv = numvars(desc)
   np = numparams(desc)
@@ -98,7 +53,7 @@ function $t(m::TaylorMap{S,T,U,V}; use::Union{Descriptor,TaylorMap,Probe{S,T,U,V
 end
 
 """
-    $($t)(p::Probe{S,T,U,V}; use::Union{Descriptor,TaylorMap,Probe{S,T,U,V},Nothing}=nothing) where {S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing}}
+    $($t)(p::Probe{S,T,U,V}; use::UseType=nothing) where {S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing}}
 
 Creates a `$($t)` from the `Probe`, which must contain `TPS`s. 
 
@@ -107,7 +62,7 @@ specified (could be another `Descriptor`, `TaylorMap`, or a `Probe` containing `
 `p` promoted to a $($(t)) will have the same `Descriptor` as in `use.` The number of variables 
 and parameters must agree, however the orders may be different.
 """
-function $t(p::Probe{S,T,U,V}; use::Union{Descriptor,TaylorMap,Probe{S,T,U,V},Nothing}=nothing) where {S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing}}
+function $t(p::Probe{S,T,U,V}; use::UseType=nothing) where {S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing}}
   desc = getdesc(p)
   nv = numvars(desc)
   np = numparams(desc)
@@ -147,30 +102,39 @@ function $t(p::Probe{S,T,U,V}; use::Union{Descriptor,TaylorMap,Probe{S,T,U,V},No
 end
 
 """
-    $($t)(u::UndefInitializer, m::TaylorMap{S,T,U,V}) where {S,T,U,V}
+    $($t){S,T,U,V}(u::UndefInitializer; use::UseType=GTPSA.desc_current) where {S,T,U,V}
 
-Creates an undefined `$($t)` based on `m` (same `Descriptor` and with
-radiation/spin on/off.)
+Creates an undefined `$($t){S,T,U,V}` with same `Descriptor` as `use`. The immutable 
+parameters will be allocated if `use` is not a `TaylorMap`, else the immutable parameters 
+from `use` will be used.
 """
-function $t(u::UndefInitializer, m::TaylorMap{S,T,U,V}) where {S,T,U,V}
-  desc = getdesc(m)
+function $t{S,T,U,V}(u::UndefInitializer; use::UseType=GTPSA.desc_current) where {S,T,U,V}
+  desc = getdesc(use)
   nv = numvars(desc)
   np = numparams(desc)
   nn = numnn(desc)
   x0 = Vector{S}(undef, nv)
   x = Vector{T}(undef, nn)
 
-  # use same parameters if same descriptor (use=nothing)
-  @inbounds x[nv+1:nn] .= view(m.x, nv+1:nn)
+  # use same parameters if use isa TaylorMap and T == eltype(use.x)
+  if use isa TaylorMap && T == eltype(use.x)
+    @inbounds x[nv+1:nn] .= view(use.x, nv+1:nn)
+  else # allocate
+    if T == TPS
+      @inbounds x[nv+1:nn] .= params(desc)
+    else
+      @inbounds x[nv+1:nn] .= complexparams(desc)
+    end
+  end
 
-  if !isnothing(m.Q)
+  if U != Nothing
     q = Vector{T}(undef, 4)
     Q = Quaternion(q)
   else
     Q = nothing
   end
 
-  if !isnothing(m.E)
+  if V != Nothing
     E = Matrix{S}(undef, nv, nv)
   else
     E = nothing

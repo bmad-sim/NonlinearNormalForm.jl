@@ -1,14 +1,17 @@
 # --- norm ---
-function norm(m::TaylorMap)
-  n = norm(m.x0) + norm(norm.(m.x))
+function norm(m::Union{TaylorMap,VectorField})
+  nrm = zero(numtype(m))
+
+  nv = numvars(m)
+  for i=1:nv
+    @inbounds nrm += norm(m.x[i])
+  end
+  
   if !isnothing(m.Q)
-    n += norm(m.Q.q)
+    nrm += norm(m.Q.q)
   end
 
-  if !isnothing(m.E)
-    n += norm(m.E)
-  end
-  return n
+  return nrm
 end
 
 # --- complex ---

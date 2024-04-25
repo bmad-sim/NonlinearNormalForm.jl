@@ -1,4 +1,4 @@
-# --- powers ---
+# --- map powers ---
 function ^(m1::DAMap{S,T,U,V}, n::Integer) where {S,T,U,V}
   nv = numvars(m1)
   # Do it
@@ -82,15 +82,13 @@ literal_pow(::typeof(^), m::$t{S,T,U,V}, vn::Val{n}) where {S,T,U,V,n} = ^(m,n)
 /(m2::$t,m1::$t) = m2∘inv(m1) 
 \(m2::$t,m1::$t) = inv(m2)∘m1
 
-# Uniform scaling (identity map)
-+(m::$t, J::UniformScaling) = m + one(m)
-+(J::UniformScaling, m::$t) = +(m,J)
--(m::$t, J::UniformScaling) = m - one(m)
--(J::UniformScaling, m::$t) = one(m) - m
+# Uniform scaling for * (∘) and /, \
+compose!(m::$t, m1::$t, J::UniformScaling) = copy!(m, m1)
+compose!(m::$t, J::UniformScaling, m1::$t) = copy!(m, m1)
 ∘(m::$t, J::UniformScaling) = $t(m)
-∘(J::UniformScaling, m::$t) = ∘(m,J)
-*(m::$t, J::UniformScaling) = ∘(m,J)
-*(J::UniformScaling, m::$t) = ∘(m,J)
+∘(J::UniformScaling, m::$t) = $t(m)
+*(m::$t, J::UniformScaling) = $t(m)
+*(J::UniformScaling, m::$t) = $t(m)
 /(m::$t, J::UniformScaling) = $t(m)
 /(J::UniformScaling, m::$t) = inv(m)
 \(m::$t, J::UniformScaling) = inv(m)
@@ -98,87 +96,22 @@ literal_pow(::typeof(^), m::$t{S,T,U,V}, vn::Val{n}) where {S,T,U,V,n} = ^(m,n)
 end
 end
 
-
-# Define operators:
-for ops = (("add!", :+), ("sub!",:-), ("mul!",:*), ("div!",:/))
-@eval begin
-function $(Meta.parse(ops[1]))(m::TaylorMap, a, m1::TaylorMap)
-  nv = numvars(m)
-  nn = numnn(m)
-
-  m.x0 .= m1.x0
-
-  for i=1:nv
-    @inbounds $(Meta.parse(ops[1]))(m.x[i], a, m1.x[i])
-  end
-  @inbounds m.x[nv+1:nn] .= view(m.x, nv+1:nn)
-
-  if !isnothing(m.Q)
-    for i=1:4
-      @inbounds $(Meta.parse(ops[1]))(m.Q.q[i], a, m1.Q.q[i])
-    end
-  end
-
-  if !isnothing(m.E)
-    m.E .= m1.E
-  end
-  return
-end
-
-function $(Meta.parse(ops[1]))(m::TaylorMap, m1::TaylorMap, a)
-  nv = numvars(m)
-  nn = numnn(m)
-
-  m.x0 .= m1.x0
-
-  for i=1:nv
-    @inbounds $(Meta.parse(ops[1]))(m.x[i], m1.x[i], a)
-  end
-  @inbounds m.x[nv+1:nn] .= view(m.x, nv+1:nn)
-
-  if !isnothing(m.Q)
-    for i=1:4
-      @inbounds $(Meta.parse(ops[1]))(m.Q.q[i], m1.Q.q[i], a)
-    end
-  end
-
-  if !isnothing(m.E)
-    m.E .= m1.E
-  end
-  return
-end
-
-
-function $(ops[2])(a::Number, m1::TaylorMap)
-  m = zero(m1)
-  $(Meta.parse(ops[1]))(m, a, m1)
-  return m
-end
-
-function $(ops[2])(m1::TaylorMap, a::Number)
-  m = zero(m1)
-  $(Meta.parse(ops[1]))(m, m1, a)
-  return m
-end
-
-end
-end
-
-# For add and subtract, define methods for maps (* and / already defined with composition op)
+# --- add and subtract for maps/UniformScaling (other operators defined already) ---
+# For our in-place operators, we assume that `m` is an allocated map, so the 
+# immutable parameters are already in there and we do not need to worry about them
 for ops = (("add!", :+), ("sub!",:-))
 @eval begin
-function $(Meta.parse(ops[1]))(m::TaylorMap, m1::TaylorMap, m2::TaylorMap)
+
+function $(Meta.parse(ops[1]))(m::TaylorMap, m1::TaylorMap, m2::TaylorMap; dospin::Bool=true)
   nv = numvars(m)
-  nn = numnn(m)
 
   m.x0 .= m1.x0
 
   for i=1:nv
     @inbounds $(Meta.parse(ops[1]))(m.x[i], m1.x[i], m2.x[i])
   end
-  @inbounds m.x[nv+1:nn] .= view(m.x, nv+1:nn)
 
-  if !isnothing(m.Q)
+  if !isnothing(m.Q) && dospin
     for i=1:4
       @inbounds $(Meta.parse(ops[1]))(m.Q.q[i], m1.Q.q[i], m2.Q.q[i])
     end
@@ -190,10 +123,143 @@ function $(Meta.parse(ops[1]))(m::TaylorMap, m1::TaylorMap, m2::TaylorMap)
   return
 end
 
+function $(Meta.parse(ops[1]))(m::TaylorMap, J::UniformScaling, m1::TaylorMap; dospin::Bool=true)
+  nv = numvars(m)
+
+  m.x0 .= m1.x0
+
+  for i=1:nv
+    @inbounds copy!(m.x[i], m1.x[i])
+    @inbounds m.x[i][i] = $(ops[2])(1, m.x[i][i])
+  end
+
+  if !isnothing(m.Q) && dospin
+    for i=1:4
+      @inbounds copy!(m.Q.q[i], m1.Q.q[i])
+    end
+    m.Q.q[1][0] = $(ops[2])(1, m.Q.q[1][0])
+  end
+
+  if !isnothing(m.E)
+    m.E .= m1.E
+  end
+  return
+end
+
+function $(Meta.parse(ops[1]))(m::TaylorMap, m1::TaylorMap, J::UniformScaling; dospin::Bool=true)
+  nv = numvars(m)
+
+  m.x0 .= m1.x0
+
+  for i=1:nv
+    @inbounds copy!(m.x[i], m1.x[i])
+    @inbounds m.x[i][i] = $(ops[2])(m.x[i][i], 1)
+  end
+
+  if !isnothing(m.Q) && dospin
+    for i=1:4
+      @inbounds copy!(m.Q.q[i], m1.Q.q[i])
+    end
+    m.Q.q[1][0] = $(ops[2])(m.Q.q[1][0], 1)
+  end
+
+  if !isnothing(m.E)
+    m.E .= m1.E
+  end
+  return
+end
+
 function $(ops[2])(m1::TaylorMap, m2::TaylorMap)
-  m = zero(m1)
+  # Promote if necessary:
+  if eltype(m1.x) == ComplexTPS
+    m = zero(m1)
+  else
+    m = zero(m2)
+  end
   $(Meta.parse(ops[1]))(m, m1, m2)
   return m
 end
+
+function $(ops[2])(m1::TaylorMap, J::UniformScaling)
+  m = zero(m1)
+  $(Meta.parse(ops[1]))(m, m1, J)
+  return m
+end
+
+
+function $(ops[2])(J::UniformScaling, m1::TaylorMap)
+  m = zero(m1)
+  $(Meta.parse(ops[1]))(m, J, m1)
+  return m
+end
+
+end
+end
+
+
+# --- add, subtract, multiply, divide for scalars ---
+for ops = (("add!", :+), ("sub!",:-), ("mul!",:*), ("div!",:/))
+@eval begin
+function $(Meta.parse(ops[1]))(m::TaylorMap, a::Number, m1::TaylorMap; dospin::Bool=true)
+
+  m.x0 .= m1.x0
+
+  for i=1:nv
+    @inbounds $(Meta.parse(ops[1]))(m.x[i], a, m1.x[i])
+  end
+
+  if !isnothing(m.Q) && dospin
+    for i=1:4
+      @inbounds $(Meta.parse(ops[1]))(m.Q.q[i], a, m1.Q.q[i])
+    end
+  end
+
+  if !isnothing(m.E)
+    m.E .= m1.E
+  end
+  return
+end
+
+function $(Meta.parse(ops[1]))(m::TaylorMap, m1::TaylorMap, a::Number; dospin::Bool=true)
+  nv = numvars(m)
+
+  m.x0 .= m1.x0
+
+  for i=1:nv
+    @inbounds $(Meta.parse(ops[1]))(m.x[i], m1.x[i], a)
+  end
+
+  if !isnothing(m.Q) && dospin
+    for i=1:4
+      @inbounds $(Meta.parse(ops[1]))(m.Q.q[i], m1.Q.q[i], a)
+    end
+  end
+
+  if !isnothing(m.E)
+    m.E .= m1.E
+  end
+  return
+end
+
+function $(ops[2])(a::Number, m1::TaylorMap)
+  if a isa Complex
+    m = zero(complex(typeof(m1)), use=m1)
+  else
+    m = zero(m1)
+  end
+  $(Meta.parse(ops[1]))(m, a, m1)
+  return m
+end
+
+function $(ops[2])(m1::TaylorMap, a::Number)
+  if a isa Complex
+    m = zero(complex(typeof(m1)), use=m1)
+  else
+    m = zero(m1)
+  end
+  $(Meta.parse(ops[1]))(m, m1, a)
+  return m
+end
+
 end
 end

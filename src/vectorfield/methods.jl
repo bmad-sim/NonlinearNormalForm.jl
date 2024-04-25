@@ -1,5 +1,5 @@
 # --- copy! ---
-function copy!(F::VectorField{T,U}, F1::VectorField{T,U}) where {T,U}
+function copy!(F::VectorField{T,U}, F1::Union{VectorField{T,U},TaylorMap{S,T,U,V}}) where {S,T,U,V}
   desc = getdesc(F)
   nv = numvars(desc)
 
@@ -156,7 +156,7 @@ function mul!(m::DAMap{S,T,U,V}, F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work_l
   @assert eltype(work_low) == lowtype(T) "Incorrect eltype of work_low. Received $(eltype(work_low)), should be $(lowtype(T))"
   @assert !(m === m1) "Aliasing m === m1 is not allowed for mul!"
 
-
+  m.x0 .= m1.x0
   # Orbital part F⋅∇m1 :
   for i=1:nv
     @inbounds fgrad!(m.x[i], F.x, m1.x[i], work_low=work_low)
@@ -174,6 +174,11 @@ function mul!(m::DAMap{S,T,U,V}, F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work_l
       @inbounds add!(m.Q.q[i], m.Q.q[i], work_Q.q[i])
     end
   end
+
+  if !isnothing(m.E)
+    m.E .= m1.E
+  end
+
   return
 end
 
@@ -197,7 +202,8 @@ end
 Computes `exp(F)*m1`, and stores the result in `m`. Explicity, this is
 `exp(F)*m1 = m1 + F*m1 + 1/2*F*(F*m1) + 1/6*F*(F*(F*m1)) + ...`, where `*` is
 the operation of a `VectorField` on the map. See the documentation for `mul!` for 
-more details of this operation.
+more details of this operation. If the linear part of `F` is zero, then the 
+number of iterations is equal to the number of higher orders left.
 
 ### Keyword Arguments
 - `work_maps` -- Tuple of 2 `DAMap`s of the same type as `m1`
@@ -206,34 +212,39 @@ more details of this operation.
 """
 function exp!(m::DAMap{S,T,U,V}, F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work_maps::Tuple{Vararg{DAMap{S,T,U,V}}}=(zero(m1),zero(m1)), work_low::Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}=Vector{lowtype(first(F.x))}(undef, numvars(F)), work_Q::Union{U,Nothing}=prep_vf_work_Q(F)) where {S,T,U,V}
   nv = numvars(F)
-
+  #GTPSA.mad_tpsa_exppb!(nv, map(t->t.tpsa, F.x), map(t->t.tpsa, view(m1.x, 1:nv)), map(t->t.tpsa, view(m.x,1:nv)))
+  
   @assert length(work_low) >= nv "Incorrect length for work_low; received $(length(work_low)), should be >=$nv"
   @assert eltype(work_low) == lowtype(T) "Incorrect eltype of work_low. Received $(eltype(work_low)), should be $(lowtype(T))"
   tmp = work_maps[1]
   tmp2 = work_maps[2]
 
-  # convergence parameters taken exactly from GTPSA
   nmax = 100
   nrm_min1 = 1e-9
   nrm_min2 = 100*eps(numtype(T))*nv
   nrm_ =Inf
   conv = false
+  slow = false
 
   copy!(tmp, m1)
   copy!(m, m1)
 
   for j=1:nmax
+    if !slow && j == 25
+      slow=true
+    end
+
     div!(tmp, tmp, j)
     mul!(tmp2, F, tmp, work_low=work_low, work_Q=work_Q)
     add!(m, m, tmp2)
     copy!(tmp, tmp2)
-    nrm = 0.
-    for i=1:nv
-      @inbounds nrm += norm(tmp2.x[i])
-    end
+    nrm = norm(tmp2)
 
     # Check convergence
     if nrm <= nrm_min2 || conv && nrm >= nrm_ # done
+      if slow
+        @warn "exp! slow convergence: required n = $(j) iterations"
+      end
       return
     end
 
@@ -248,17 +259,81 @@ end
 
 # --- log ---
 
-# See Bmad manual Ch. 47 for log definition using Lie operators (no matrices!!)
+# See Bmad manual Ch. 47 for calculation of log using Lie operators
 function log(m1::DAMap{S,T,U,V}) where {S,T,U,V}
   nv = numvars(m1)
+
+  nmax = 100
+  nrm_min1 = 1e-9
+  nrm_min2 = 100*eps(numtype(T))*nv
+
+  epsone = norm(m1)/1000
+
+  # Choose the initial guess for the VectorField to be (M,q) - (I,1):
   F = zero(VectorField{T,U},use=m1)
+  sub!(F, m1, I)
+
+  # Now we will iterate:
+  for i=1:nmax
+
+    # First, rotate back our guess:
+    mt = exp(-F, m1)
+
+    # Now we have (I,1) + (t,u) where (t,u) is the leftover garbage we want to be 0
+    # solve for the vector field that gives us our garbage map
+    # this will be exp(T)(I,1) = (I,1) + (t,u)
+    # to second order in (t,u) is 
+    # G = (t,u) + epsilon_2 where 
+    # epsilon_2 = (t dot grad t, t dot grad u + u^2)
+    # get the garbage as a VectorField
+    T = zero(F)
+    sub!(T,mt,I)
+
+    # Let the vector field act on the garbage map
+    eps2 = T*(mt-I)
+
+    # Finally get our approximation 
+    add!(T,T,eps2)
+
+    # Now we can see that  M = exp(F)exp(T) approximately
+    # CBH formula would be exact combination for exp(F)exp(T)=exp(G)
+    # but if the leftover stuff is still big then we can just approximately
+    # with linear term (adding F+T trivially)
+
+    if norm(T) < epsone # small! use CBH!
+      add!(F,F,T+1/2*lb(F,T))
+    else # big! just linear!
+      add!(F,F,T)
+    end
+  end
+
+  #= get rid of scalar part?
+  ref = Vector{numtype(T)}(undef, nv)
+  for i=1:nv
+    @inbounds ref[i] = m1.x[i][0]
+    m1.x[i][0] = 0
+  end=#
+
+  # The idea is to do linear iteration until the norm of 
+  # the residual map is < 1000x the norm of the original 
+  # map, then use CBH to converge faster
+
+  # When CBH theorem is used, we should test to see if convergence 
+  # is actually faster when calculating higher order terms each step, 
+  # or if iterating more times with only second order terms is faster
+
+  F = zero(VectorField{T,U},use=m1)
+
+
+  
+
   tmp = m1 - I
   F.x = tmp.x[1:nv]
   F.Q  = tmp.Q
 
-  for i=1:1000
+  for i=1:nmax
     mt = exp(F,m1)
-    
+
   end
 
   # Start with first approx for vector field F = (t,u) = (M-I, q-1)

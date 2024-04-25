@@ -98,9 +98,9 @@ function gofix!(a0::DAMap, m::DAMap, order=1; work_map::DAMap=zero(m), comp_work
   end
 
   # 1: v = map-identity in harmonic planes, identity in spin
-  for i=1:nv
-    @inbounds copy!(a0.x[i], m.x[i])
-    @inbounds a0.x[i][i] -= 1
+  sub!(a0, m, I, dospin=false)
+  if !isnothing(a0.Q)
+    a0.Q.q[1][0] = 0
   end
 
   # 2: map is cut to order 2 or above
@@ -115,11 +115,10 @@ function gofix!(a0::DAMap, m::DAMap, order=1; work_map::DAMap=zero(m), comp_work
   compose!(a0,a0,work_map,work_low=comp_work_low,dospin=false,keep_scalar=false)
 
   # 5: add back in identity
-  for i=1:nv
-    @inbounds a0.x0[i] = m.x0[i]
-    @inbounds a0.x[i][i] += 1
-  end
-  
+  add!(a0, a0, I, dospin=false)
+
+  a0.x0 .= m.x0
+
   if !isnothing(m.Q)
     a0.Q.q[1][0] = 1
   end

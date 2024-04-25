@@ -1,14 +1,3 @@
-"""
-
-
-Lie operator to act on maps. Can be turned into a map with exp(:F:)
-"""
-struct VectorField{T<:Union{TPS,ComplexTPS}, U<:Union{Quaternion{T},Nothing}}
-  x::Vector{T}  
-  Q::U           
-end
-
-
 # --- getvectorfield ---
 vec2fld!(na::Cint, tpsa::Ptr{RTPSA}, m::Vector{Ptr{RTPSA}}) = (@inline; GTPSA.mad_tpsa_vec2fld!(na, tpsa, m))
 vec2fld!(na::Cint, ctpsa::Ptr{CTPSA}, m::Vector{Ptr{CTPSA}}) = (@inline; GTPSA.mad_ctpsa_vec2fld!(na, ctpsa, m))
@@ -47,6 +36,57 @@ function VectorField(h::T; Q::U=nothing, spin::Union{Bool,Nothing}=nothing, work
   end
   return VectorField(x, Q1)
 end
+
+"""
+    VectorField{T,U}(u::UndefInitializer; use::UseType=GTPSA.desc_current) where {T,U}
+
+Creates an undefined `VectorField{T,U}` with same number of variables as `use`.
+"""
+function VectorField{T,U}(u::UndefInitializer; use::UseType=GTPSA.desc_current) where {T,U}
+  desc = getdesc(use)
+  nv = numvars(desc)
+  x = Vector{T}(undef, nv)
+
+  if U != Nothing
+    q = Vector{T}(undef, 4)
+    Q = Quaternion(q)
+  else
+    Q = nothing
+  end
+
+  return VectorField(x,Q)
+end
+
+"""
+    VectorField{T,U}(u::UndefInitializer, nv::Integer) where {T,U}
+
+Creates an undefined `VectorField{T,U}` with specified number of variables `nv`.
+"""
+function VectorField{T,U}(u::UndefInitializer, nv::Integer) where {T,U}
+  x = Vector{T}(undef, nv)
+
+  if U != Nothing
+    q = Vector{T}(undef, 4)
+    Q = Quaternion(q)
+  else
+    Q = nothing
+  end
+
+  return VectorField(x,Q)
+end
+
+
+#=
+"""
+    VectorField(m::DAMap{S,T,U,V}) where {S,T,U,V}
+
+Create a `VectorField` from the orbital (and quaternion) part
+of the `DAMap`.
+"""
+function VectorField(m::DAMap{S,T,U,V}) where {S,T,U,V}
+
+
+end=#
 
 # --- zero ---
 function zero(F::VectorField{T,U}) where {T,U}

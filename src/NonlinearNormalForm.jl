@@ -99,7 +99,17 @@ export        TaylorMap,
               pb
 
 
+
+
+
+
+
+
+
+
+
 include("utils/quaternion.jl")
+include("types.jl")
 include("utils/matrix.jl")
 include("utils/symplectic_s.jl")
 include("utils/gtpsa.jl")
