@@ -1,3 +1,16 @@
+# --- unary ---
+function +(F1::VectorField)
+  F = zero(F1)
+  copy!(F,F1)
+  return F
+end
+
+function -(F1::VectorField)
+  F = -1*F1
+  return F
+end
+
+
 # --- add and subtract for VectorFields/Maps/UniformScaling (mul defined already for VectorField*Map) ---
 for ops = (("add!", :+), ("sub!",:-))
 @eval begin

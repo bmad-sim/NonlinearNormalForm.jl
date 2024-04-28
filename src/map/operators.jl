@@ -96,6 +96,18 @@ compose!(m::$t, J::UniformScaling, m1::$t) = copy!(m, m1)
 end
 end
 
+# --- unary ---
+function +(m1::TaylorMap)
+  m = zero(m1)
+  copy!(m,m1)
+  return m
+end
+
+function -(m1::TaylorMap)
+  m = -1*m1
+  return m
+end
+
 # --- add and subtract for maps/UniformScaling (other operators defined already) ---
 # For our in-place operators, we assume that `m` is an allocated map, so the 
 # immutable parameters are already in there and we do not need to worry about them

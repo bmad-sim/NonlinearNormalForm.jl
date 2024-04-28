@@ -260,24 +260,38 @@ end
 # --- log ---
 
 # See Bmad manual Ch. 47 for calculation of log using Lie operators
-function log(m1::DAMap{S,T,U,V}) where {S,T,U,V}
+# 3 work_maps
+# 1 work_Q
+# 1 work_low length >= nv
+# 2 work_vfs
+function log!(F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_lb_work_low(F), work_Q::Union{U,Nothing}=prep_vf_work_Q(F)) where {S,T,U,V}
   nv = numvars(m1)
-
   nmax = 100
   nrm_min1 = 1e-9
   nrm_min2 = 100*eps(numtype(T))*nv
-
   epsone = norm(m1)/1000
+  conv = false 
+  slow = false
 
-  # Choose the initial guess for the VectorField to be (M,q) - (I,1):
-  F = zero(VectorField{T,U},use=m1)
+
+  # exp requires 2 work_maps, 1 work_low (>= nv length), 1 work_Q
+  # mul (called by exp) requires work_low and work_Q
+  # lb requires 3 work_low (>=nv length), and work_Q
+
+  work_maps = (zero(m1), zero(m1), zero(m1))
+  work_vfs = (zero(F), zero(F))
+
+  # Choose the initial guess for the VectorField to be (M,q) - (I,1)
   sub!(F, m1, I)
+
 
   # Now we will iterate:
   for i=1:nmax
 
     # First, rotate back our guess:
-    mt = exp(-F, m1)
+    mul!(F, -1, F)
+    exp!(work_maps[3], F, m1, work_maps=work_maps, work_low=work_low[1], work_Q=work_Q)
+    mul!(F, -1, F)
 
     # Now we have (I,1) + (t,u) where (t,u) is the leftover garbage we want to be 0
     # solve for the vector field that gives us our garbage map
@@ -285,73 +299,42 @@ function log(m1::DAMap{S,T,U,V}) where {S,T,U,V}
     # to second order in (t,u) is 
     # G = (t,u) + epsilon_2 where 
     # epsilon_2 = (t dot grad t, t dot grad u + u^2)
-    # get the garbage as a VectorField
-    T = zero(F)
-    sub!(T,mt,I)
+    # get the garbage as a VectorField and as a map
+    sub!(work_maps[3], work_maps[3], I)
+    copy!(work_vfs[1], work_maps[3])
 
     # Let the vector field act on the garbage map
-    eps2 = T*(mt-I)
+    mul!(work_maps[2], work_vfs[1], work_maps[3], work_low=work_low[1], work_Q=work_Q)
 
     # Finally get our approximation 
-    add!(T,T,eps2)
+    add!(work_vfs[1], work_vfs[1], work_maps[2])
 
-    # Now we can see that  M = exp(F)exp(T) approximately
-    # CBH formula would be exact combination for exp(F)exp(T)=exp(G)
+    # Now we can see that  M = exp(F)exp(G) approximately
+    # CBH formula would be exact combination for exp(F)exp(G)=exp(H)
     # but if the leftover stuff is still big then we can just approximately
-    # with linear term (adding F+T trivially)
+    # with linear term (adding F+G trivially)
 
-    if norm(T) < epsone # small! use CBH!
-      add!(F,F,T+1/2*lb(F,T))
+    if norm(work_vfs[1]) < epsone # small! use CBH!
+      lb!(work_vfs[2], F, work_vfs[1], work_low=work_low, work_Q=work_Q)
+      mul!(work_vfs[2], 0.5, work_vfs[2])
+      add!(work_vfs[1], work_vfs[1], work_vfs[2])
+      add!(F,F,work_vfs[1])
     else # big! just linear!
-      add!(F,F,T)
+      add!(F,F,work_vfs[1])
     end
   end
 
-  #= get rid of scalar part?
-  ref = Vector{numtype(T)}(undef, nv)
-  for i=1:nv
-    @inbounds ref[i] = m1.x[i][0]
-    m1.x[i][0] = 0
-  end=#
-
-  # The idea is to do linear iteration until the norm of 
-  # the residual map is < 1000x the norm of the original 
-  # map, then use CBH to converge faster
-
-  # When CBH theorem is used, we should test to see if convergence 
-  # is actually faster when calculating higher order terms each step, 
-  # or if iterating more times with only second order terms is faster
-
-  F = zero(VectorField{T,U},use=m1)
-
-
-  
-
-  tmp = m1 - I
-  F.x = tmp.x[1:nv]
-  F.Q  = tmp.Q
-
-  for i=1:nmax
-    mt = exp(F,m1)
-
-  end
-
-  # Start with first approx for vector field F = (t,u) = (M-I, q-1)
-
-
-
-  eps2 = -1/2*F*tmp  # eqn 47.6
-  T3 = F + eps2
-
+  return F
 end
 
 
 """
 
 """
-function log!(F::VectorField{T,U}, m1::DAMap{S,T,U,V}) where {S,T,U,V}
-
-
+function log(m1::DAMap{S,T,U,V}) where {S,T,U,V}
+  F = zero(VectorField{T,U},use=m1)
+  log!(F,m1)
+  return F
 end
 
 
