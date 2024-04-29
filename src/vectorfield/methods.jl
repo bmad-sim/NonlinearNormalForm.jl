@@ -230,7 +230,7 @@ function exp!(m::DAMap{S,T,U,V}, F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work_m
   copy!(m, m1)
 
   for j=1:nmax
-    if !slow && j == 25
+    if j == 25
       slow=true
     end
 
@@ -254,6 +254,7 @@ function exp!(m::DAMap{S,T,U,V}, F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work_m
     nrm_ = nrm
   end
   @warn "exp! convergence not reached for $nmax iterations"
+  return 
 end
 
 
@@ -267,12 +268,13 @@ end
 function log!(F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work::Tuple{DAMap{S,T,U,V},DAMap{S,T,U,V},DAMap{S,T,U,V},VectorField{T,U},VectorField{T,U}}=prep_log_work(m1), work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_lb_work_low(F), work_Q::Union{U,Nothing}=prep_vf_work_Q(F)) where {S,T,U,V}
   nv = numvars(m1)
   nmax = 100
+  nrm0 = norm(m1)
   nrm_min1 = 1e-9
   nrm_min2 = 100*eps(numtype(T))*nv
   epsone = norm(m1)/1000
   conv = false 
   slow = false
-
+  nrm_ = Inf
 
   # exp requires 2 work_maps, 1 work_low (>= nv length), 1 work_Q
   # mul (called by exp) requires work_low and work_Q
@@ -284,10 +286,11 @@ function log!(F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work::Tuple{DAMap{S,T,U,V
   # Choose the initial guess for the VectorField to be (M,q) - (I,1)
   sub!(F, m1, I)
 
-
   # Now we will iterate:
-  for i=1:nmax
-
+  for j=1:nmax
+    if j==25
+      slow=true
+    end
     # First, rotate back our guess:
     mul!(F, -1, F)
     exp!(work_maps[3], F, m1, work_maps=work_maps, work_low=work_low[1], work_Q=work_Q)
@@ -322,9 +325,26 @@ function log!(F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work::Tuple{DAMap{S,T,U,V
     else # big! just linear!
       add!(F,F,work_vfs[1])
     end
+
+    nrm = norm(work_vfs[1])/nrm0
+
+    if nrm <= nrm_min2 || conv && nrm >= nrm_
+      if slow
+        @warn "exp! slow convergence: required n = $(j) iterations"
+      end
+      return
+    end
+
+    if nrm <= nrm_min1
+      conv = true
+    end
+
+    nrm_ = nrm
   end
 
-  return F
+
+  @warn "exp! convergence not reached for $nmax iterations"
+  return
 end
 
 
