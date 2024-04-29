@@ -14,7 +14,7 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
 DelimitedFiles = "1"
-GTPSA = "0.5.1"
+GTPSA = "0.5.2"
 Reexport = "1"
 julia = "1.9"
 

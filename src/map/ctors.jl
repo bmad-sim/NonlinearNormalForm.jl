@@ -429,7 +429,7 @@ function one(m::$t{S,T,U,V}) where {S,T,U,V}
   return $t(zeros(eltype(m.x0), nv), x, Q, E)
 end
 
-function one(::Type{$t{S,T,U,V}}; use::Union{Descriptor,TPS,ComplexTPS,TaylorMap,Probe{S,Union{TPS,ComplexTPS},U,V}}=GTPSA.desc_current) where {S,T,U,V}
+function one(::Type{$t{S,T,U,V}}; use::Union{Descriptor,TPS,ComplexTPS,TaylorMap,Probe{<:Any,Union{TPS,ComplexTPS},Union{Nothing,Quaternion{Union{TPS,ComplexTPS}}},<:Any}}=GTPSA.desc_current) where {S,T,U,V}
   desc = getdesc(use)
   nn = numnn(desc)
   nv = numvars(desc)

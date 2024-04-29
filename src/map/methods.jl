@@ -8,7 +8,9 @@ function norm(m::Union{TaylorMap,VectorField})
   end
   
   if !isnothing(m.Q)
-    nrm += norm(m.Q.q)
+    for i=1:4
+      @inbounds nrm += norm(m.Q.q[i])
+    end
   end
 
   return nrm

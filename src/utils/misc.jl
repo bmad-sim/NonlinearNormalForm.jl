@@ -32,7 +32,6 @@ function rand(::Type{<:TaylorMap{S,T,U,V}}; use::Union{Descriptor,TPS,ComplexTPS
   end
 
   F = VectorField{T,U}(h)
-
   m = exp(F)
 
   if U != Nothing

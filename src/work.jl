@@ -105,7 +105,7 @@ end
 
 function prep_vf_work_Q(F::VectorField{T,U}) where {T,U}
   if !isnothing(F.Q)
-    return Quaternion(first(F.Q))
+    return Quaternion(first(F.Q.q))
   else
     return nothing
   end
