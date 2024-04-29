@@ -10,8 +10,8 @@ function Probe(x::Vector{T}; x0::Vector{S}=zeros(length(x)), Q::U=nothing, E::V=
       Q1 = Q1
     end
   else
-    # error("For no spin tracking, please omit the spin kwarg or set spin=nothing") # For type stability
-    Q1 = nothing # For type instability
+    error("For no spin tracking, please omit the spin kwarg or set spin=nothing") # For type stability
+    #Q1 = nothing # For type instability
   end
 
   if isnothing(radiation)
@@ -24,8 +24,8 @@ function Probe(x::Vector{T}; x0::Vector{S}=zeros(length(x)), Q::U=nothing, E::V=
       E1 = E
     end
   else
-    # error("For no radiation, please omit the radiation kwarg or set radiation=nothing") # For type stability
-    E1 = nothing # for type instability
+    error("For no radiation, please omit the radiation kwarg or set radiation=nothing") # For type stability
+    #E1 = nothing # for type instability
   end
 
   return Probe{S,T,typeof(Q1),typeof(E1)}(x0, x, Q1, E)

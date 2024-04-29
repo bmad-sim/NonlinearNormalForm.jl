@@ -18,6 +18,40 @@ numnn(m::Quaternion{<:Union{ComplexTPS,TPS}}) = unsafe_load(Base.unsafe_convert(
 
 numtype(m::Union{Probe{<:Real,T,<:Any,<:Any},<:TaylorMap{<:Number,T,<:Any,<:Any},VectorField{T,<:Any}}) where {T<:Union{TPS,ComplexTPS}} = numtype(T)
 
+
+# --- random symplectic map ---
+function rand(::Type{<:TaylorMap{S,T,U,V}}; use::Union{Descriptor,TPS,ComplexTPS}=GTPSA.desc_current) where {S,T,U,V}
+  nv = numvars(use)
+
+  h = T(use=use)
+  len = length(h)
+
+  #  random coefficients for hamiltonian except 0th and 1st order terms
+  for i=nv+1:len-1
+    h[i] = rand(numtype(T))
+  end
+
+  F = VectorField{T,U}(h)
+
+  m = exp(F)
+
+  if U != Nothing
+    q = Vector{T}(undef, 4)
+    for i=1:4
+      @inbounds q[i] = rand(T,use=use)
+    end
+    q = q/sqrt(dot(q,q))
+    m.Q.q .= q
+  end
+
+  return m
+end
+
+
+
+
+
+
 function read_fpp_map(file)
   data = readdlm(file, skipblanks=true)
   nv = data[findfirst(t->t=="Dimensional", data)- CartesianIndex(0,1)]

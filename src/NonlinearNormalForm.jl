@@ -17,7 +17,8 @@ import Base: ∘,
              ==,
              copy!,
              convert,
-             show
+             show,
+             rand
 
 import LinearAlgebra: norm,
                       dot,

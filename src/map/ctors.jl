@@ -195,8 +195,8 @@ function $t(x::Vector{T}=zeros(TPS, numvars(GTPSA.desc_current)); x0::Vector{S}=
       Q1 = Quaternion(q)
     end
   else
-    # error("For no spin tracking, please omit the spin kwarg or set spin=nothing") # For type stability
-    Q1 = nothing # For type instability
+    error("For no spin tracking, please omit the spin kwarg or set spin=nothing") # For type stability
+    #Q1 = nothing # For type instability
   end
 
   if isnothing(radiation)
@@ -209,8 +209,8 @@ function $t(x::Vector{T}=zeros(TPS, numvars(GTPSA.desc_current)); x0::Vector{S}=
       E1 = E
     end
   else
-    # error("For no radiation, please omit the radiation kwarg or set radiation=nothing") # For type stability
-    E1 = nothing # for type instability
+    error("For no radiation, please omit the radiation kwarg or set radiation=nothing") # For type stability
+    #E1 = nothing # for type instability
   end
 
   return $t{S,T,typeof(Q1),typeof(E1)}(copy(x0), x1, Q1, E1)
@@ -278,8 +278,8 @@ function $t(M; use::Union{Descriptor,TaylorMap,Probe{S,Union{TPS,ComplexTPS},U,V
       Q1 = Quaternion(q)
     end
   else
-    # error("For no spin tracking, please omit the spin kwarg or set spin=nothing") # For type stability
-    Q1 = nothing # For type instability
+    error("For no spin tracking, please omit the spin kwarg or set spin=nothing") # For type stability
+    #Q1 = nothing # For type instability
   end
 
   if isnothing(radiation)
@@ -292,8 +292,8 @@ function $t(M; use::Union{Descriptor,TaylorMap,Probe{S,Union{TPS,ComplexTPS},U,V
       E1 = E
     end
   else
-    # error("For no radiation, please omit the radiation kwarg or set radiation=nothing") # For type stability
-    E1 = nothing # for type instability
+    error("For no radiation, please omit the radiation kwarg or set radiation=nothing") # For type stability
+    #E1 = nothing # for type instability
   end
 
   return $t{eltype(M),outT,typeof(Q1),typeof(E1)}(copy(x0), x1, Q1, E1)
