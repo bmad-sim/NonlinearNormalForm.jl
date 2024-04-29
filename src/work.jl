@@ -112,5 +112,5 @@ function prep_vf_work_Q(F::VectorField{T,U}) where {T,U}
 end
 
 function prep_log_work(m::DAMap{S,T,U,V}) where {S,T,U,V}
-  return (zero(m), zero(m), zero(m), zero(VectorField{T,U},use=m1), zero(VectorField{T,U},use=m1))
+  return (zero(m), zero(m), zero(m), zero(VectorField{T,U},use=m), zero(VectorField{T,U},use=m))
 end

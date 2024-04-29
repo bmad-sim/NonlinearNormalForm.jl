@@ -37,6 +37,34 @@ function VectorField(h::T; Q::U=nothing, spin::Union{Bool,Nothing}=nothing, work
   return VectorField(x, Q1)
 end
 
+function VectorField{T,U}(h::T; Q::Union{U,Nothing}=nothing, work_low::Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}=Vector{lowtype(h)}(undef,numvars(h))) where {T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing}}
+  nv = numvars(h)
+  @assert length(work_low) >= nv "Incorrect length for work_low; received $(length(work_low)), require >=$nv"
+
+  x = Vector{T}(undef, nv)
+  for i=1:nv
+    @inbounds x[i] = T(use=h)
+  end
+
+  map!(t->t.tpsa, work_low, x)
+  vec2fld!(nv, h.tpsa, work_low)
+
+  if U != Nothing
+    if isnothing(Q)
+      Q1 = Quaternion(h)
+    else
+      Q1 = Q
+    end
+  else
+    if !isnothing(Q)
+      error("Quaternion cannot be specified in constructor for VectorField{$T,$U}")
+    end
+    Q1 = nothing
+  end
+
+  return VectorField(x, Q1)
+end
+
 """
     VectorField{T,U}(u::UndefInitializer; use::UseType=GTPSA.desc_current) where {T,U}
 
