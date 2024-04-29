@@ -31,8 +31,8 @@ function VectorField(h::T; Q::U=nothing, spin::Union{Bool,Nothing}=nothing, work
       Q1 = Q1
     end
   else
-    # error("For no spin tracking, please omit the spin kwarg or set spin=nothing") # For type stability
-    Q1 = nothing # For type instability
+    error("For no spin tracking, please omit the spin kwarg or set spin=nothing") # For type stability
+    #Q1 = nothing # For type instability
   end
   return VectorField(x, Q1)
 end

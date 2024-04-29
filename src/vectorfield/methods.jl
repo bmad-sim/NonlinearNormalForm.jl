@@ -264,7 +264,7 @@ end
 # 1 work_Q
 # 1 work_low length >= nv
 # 2 work_vfs
-function log!(F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_lb_work_low(F), work_Q::Union{U,Nothing}=prep_vf_work_Q(F)) where {S,T,U,V}
+function log!(F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work::Tuple{DAMap{S,T,U,V},DAMap{S,T,U,V},DAMap{S,T,U,V},VectorField{T,U},VectorField{T,U}}=prep_log_work(m1), work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_lb_work_low(F), work_Q::Union{U,Nothing}=prep_vf_work_Q(F)) where {S,T,U,V}
   nv = numvars(m1)
   nmax = 100
   nrm_min1 = 1e-9
@@ -278,8 +278,8 @@ function log!(F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work_low::Tuple{Vararg{Ve
   # mul (called by exp) requires work_low and work_Q
   # lb requires 3 work_low (>=nv length), and work_Q
 
-  work_maps = (zero(m1), zero(m1), zero(m1))
-  work_vfs = (zero(F), zero(F))
+  work_maps = (work[1], work[2], work[3])
+  work_vfs = (work[4], work[5])
 
   # Choose the initial guess for the VectorField to be (M,q) - (I,1)
   sub!(F, m1, I)
