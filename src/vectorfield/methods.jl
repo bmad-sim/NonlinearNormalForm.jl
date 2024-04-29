@@ -267,11 +267,14 @@ end
 # 2 work_vfs
 function log!(F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work::Tuple{DAMap{S,T,U,V},DAMap{S,T,U,V},DAMap{S,T,U,V},VectorField{T,U},VectorField{T,U}}=prep_log_work(m1), work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_lb_work_low(F), work_Q::Union{U,Nothing}=prep_vf_work_Q(F)) where {S,T,U,V}
   nv = numvars(m1)
+  #logpb!(nv, map(t->t.tpsa, m1.x), map(t->t.tpsa, vars()), map(t->t.tpsa, F.x))
+  #return
   nmax = 100
   nrm0 = norm(m1)
   nrm_min1 = 1e-9
   nrm_min2 = 100*eps(numtype(T))*nv
-  epsone = norm(m1)/1000
+  nrm0 = norm(m1)
+  epsone = nrm0/1000
   conv = false 
   slow = false
   nrm_ = Inf
@@ -288,7 +291,7 @@ function log!(F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work::Tuple{DAMap{S,T,U,V
 
   # Now we will iterate:
   for j=1:nmax
-    if j==25
+    if j == 25
       slow=true
     end
     # First, rotate back our guess:
@@ -330,7 +333,7 @@ function log!(F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work::Tuple{DAMap{S,T,U,V
 
     if nrm <= nrm_min2 || conv && nrm >= nrm_
       if slow
-        @warn "exp! slow convergence: required n = $(j) iterations"
+        @warn "log! slow convergence: required n = $(j) iterations"
       end
       return
     end
@@ -341,9 +344,7 @@ function log!(F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work::Tuple{DAMap{S,T,U,V
 
     nrm_ = nrm
   end
-
-
-  @warn "exp! convergence not reached for $nmax iterations"
+  @warn "log! convergence not reached for $(nmax) iterations"
   return
 end
 
