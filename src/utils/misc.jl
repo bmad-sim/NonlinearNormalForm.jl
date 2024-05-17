@@ -20,10 +20,49 @@ numtype(m::Union{Probe{<:Real,T,<:Any,<:Any},<:TaylorMap{<:Number,T,<:Any,<:Any}
 
 
 # --- random symplectic map ---
-function rand(::Type{<:TaylorMap{S,T,U,V}}; use::Union{Descriptor,TPS,ComplexTPS}=GTPSA.desc_current) where {S,T,U,V}
-  nv = numvars(use)
+function rand(t::Union{Type{DAMap},Type{TPSAMap}}; spin::Union{Bool,Nothing}=nothing, radiation::Union{Bool,Nothing}=nothing, use::Union{Descriptor,TPS,ComplexTPS}=GTPSA.desc_current)
+  if isnothing(spin)
+    U = Nothing
+  else
+    if spin
+      U = Quaternion{TPS}
+    else
+      U = Nothing
+    end
+  end
 
-  h = T(use=use)
+  if isnothing(radiation)
+    V = Nothing
+  else
+    if spin
+      V = Float64
+    else
+      V = Nothing
+    end
+  end
+
+  return rand(t{Float64,TPS,U,V},use=use)
+end
+
+function rand(t::Union{Type{DAMap{S,T,U,V}},Type{TPSAMap{S,T,U,V}}}; use::Union{Descriptor,TPS,ComplexTPS}=GTPSA.desc_current) where {S,T,U,V}
+  desc = getdesc(use)
+  desc.desc != C_NULL || error("No Descriptor defined!")
+
+  # Must create a descriptor that is one order higher than use to create VectorField
+  nv = numvars(desc)
+  np = numparams(desc)
+  nn = numnn(desc)
+  no = unsafe_wrap(Vector{UInt8}, unsafe_load(desc.desc).no, nn)
+  mo = unsafe_load(desc.desc).mo
+
+  if np > 0
+    po = unsafe_load(desc.desc).po
+    @views dtmp = Descriptor(no[1:nv].+1, mo+1, no[nv+1:nn].+1, po+1)
+  else
+    @views dtmp = Descriptor(no[1:nv].+1, mo+1)
+  end
+  
+  h = T(use=dtmp)
   len = length(h)
 
   #  random coefficients for hamiltonian except 0th and 1st order terms
@@ -32,12 +71,22 @@ function rand(::Type{<:TaylorMap{S,T,U,V}}; use::Union{Descriptor,TPS,ComplexTPS
   end
 
   F = VectorField{T,U}(h)
-  m = exp(F)
+  mtmp = exp(F)
+
+  # Make a copy and change the descriptor
+  if t == DAMap{S,T,U,V}
+    m = DAMap(mtmp,use=desc)
+  else
+    m = TPSAMap(mtmp,use=desc)
+  end
+
+  # Reset GTPSA descriptor
+  GTPSA.desc_current=desc
 
   if U != Nothing
     q = Vector{T}(undef, 4)
     for i=1:4
-      @inbounds q[i] = rand(T,use=use)
+      @inbounds q[i] = rand(T,use=desc)
     end
     q = q/sqrt(dot(q,q))
     m.Q.q .= q

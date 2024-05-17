@@ -102,11 +102,11 @@ function lb!(G::VectorField{T,U}, F::VectorField{T,U}, H::VectorField{T,U}; work
     mul!(G.Q, H.Q, F.Q)
     mul!(work_Q, F.Q, H.Q)
     for i=1:4
-      @inbounds sub!(G.Q.q[i], G.Q.q[i], work_Q[i])
+      @inbounds sub!(G.Q.q[i], G.Q.q[i], work_Q.q[i])
     end
 
     # then +F⋅∇h 
-    tmp = work_Q.Q.q[1]
+    tmp = work_Q.q[1]
     for i=1:4
       @inbounds fgrad!(tmp, F.x, H.Q.q[i], work_low=Fx_low)
       @inbounds add!(G.Q.q[i], G.Q.q[i], tmp)
