@@ -18,7 +18,7 @@ The Lie map and Hamiltonian map are respectively expressed as
 
 $$\mathcal{M} = \exp{(\hat{F})} \ , \ \ \ \ \ \ \vec{\zeta}= \exp{(\hat{F})}\vec{x}$$
 
-where $\hat{F}$ is a \textit{Lie operator} generating the map. If the system is Hamiltonian, the generator of the map would simply be a Poisson bracket, however vector fields are used so the formalism applies correctly even for nearly-Hamiltonian maps.
+where $\hat{F}$ is a _Lie operator_ generating the map. If the system is Hamiltonian, the generator of the map would simply be a Poisson bracket, however vector fields are used so the formalism applies correctly even for nearly-Hamiltonian maps.
 
 
 ## Setup
