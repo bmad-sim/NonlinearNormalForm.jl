@@ -12,7 +12,14 @@ While transfer maps act on phase space variables, the useful Lie representation 
 
 $\mathcal{M}_{\vec{\zeta}}$ is a [Koopman operator](https://en.wikipedia.org/wiki/Composition_operator). This replaces the nonlinear problem of a finite dimension (describing how the phase space variables transform to infinite order in the phase space variables), to a linear problem of infinite dimension (describing how each monomial coefficient in the Hamiltonian map transforms). The number of monomial coefficients is simply truncated at some order, chosen by the user.
 
-Because the problem is now linear, the transformation of the monomial coefficients could be expressed using a (truncated) matrix, however this is notoriously slow and inconvenient to work with. A Lie algebraic formulation is much more elegant, simple, and faster to use.
+Because the problem is now linear, the transformation of the monomial coefficients could be expressed using a (truncated) matrix, however this is notoriously slow and inconvenient to work with. A Lie algebraic formulation is much more elegant, simpler, and faster to use.
+
+We define 
+Hamilton's equations expressed using the Poisson bracket are
+
+$$ \frac{d}{dt} q = -\lbrace H, q\rbrace\ , \ \ \ \ \ \  \frac{d}{dt} p = -\lbrace H, p\rbrace \ . $$
+
+For simplicity, we now define an operator using the Poisson bracket: $:f:g \triangleq \lbrace f, q \rbrace$
 
 The Lie map and Hamiltonian map are respectively expressed as 
 
