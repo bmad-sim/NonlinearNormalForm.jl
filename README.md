@@ -25,7 +25,7 @@ $$:f:g \triangleq \lbrace f, q \rbrace$$
 
 The Lie map and Hamiltonian map for an infinitesimal timestep $dt$ are respectively expressed as 
 
-$$\mathcal{M}\_{t_0\rightarrow t_0+dt} = \exp{(:-H\ dt:)} \ , \ \ \ \ \ \ \vec{\zeta}\_{t_0\rightarrow t_0+\Delta t}= \exp{(:-H\ dt:)}\vec{x}$$
+$$\mathcal{M}\_{t_0\rightarrow t_0+dt} = \exp{(dt:-H:)} \ , \ \ \ \ \ \ \vec{\zeta}\_{t_0\rightarrow t_0+\Delta t}= \exp{(dt:-H:)}\vec{x}$$
 
 where $H$ is the Hamiltonian, a scalar function. While using the Hamiltonian as a generator of the time evolution (canonical transformation) in this way is useful, it is not always practical. In a particle tracking code for example, the motion may not always be exactly symplectic, e.g. when there is some small dissipation due to synchrotron radiation emission. In this case, a Hamiltonian cannot be obtained from an integrator, however the force field $\vec{F}$ on the particle is of course known from the integrator. Using the operator isomorphism $\vec{F}\cdot\vec{\nabla} \triangleq \ :-H: $, we can instead write
 
