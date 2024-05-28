@@ -6,7 +6,9 @@
 
 ## Overview
 
-This package provides routines for calculating parameter-dependent normal forms of nonlinear Hamiltonian (and nearly Hamiltonian) maps expressed as truncated power series in the variables, using Lie algebraic methods. Basically, given some map, it computes the canonical transformation of the variables to coordinates where the nonlinear motion lies on circles in phase space. 
+_This package is still in an early development stage_
+
+This package provides routines for calculating parameter-dependent normal forms of nonlinear Hamiltonian (and nearly Hamiltonian) maps expressed as truncated power series in the variables, using Lie algebraic methods. Basically, given some map, it computes the canonical transformation of the variables to coordinates where the nonlinear motion lies on circles in phase space. This allows calculation of invariants of the motion, and when leaving one resonance in the map, a single-resonance normal form. This package may be of particular interest to those in accelerator physics, electron microscopy, and astronomy.
 
 While transfer maps act on phase space variables, the useful Lie representation of the map acts on functions of the phase space variables; e.g. for some Hamiltonian map $\vec{\zeta}(\vec{x})$, the Lie map $\mathcal{M}\_{\vec{\zeta}}$ acts as $$\mathcal{M}\_{\vec{\zeta}}f=f\circ\vec{\zeta} \ .$$  
 
@@ -44,3 +46,9 @@ To use this package, in the Julia REPL run:
 ```juliai
 import Pkg; Pkg.add(path="https://github.com/bmad-sim/NonlinearNormalForm.jl")
 ```
+
+## Basic Usage
+
+This package imports and reexports [`GTPSA.jl`](https://github.com/bmad-sim/GTPSA.jl), a library for computing real and complex truncated power series to arbitrary orders in the variables and parameters. Before using `NonlinearNormalForm.jl`, you should have some familiarity with `GTPSA.jl`. 
+
+
