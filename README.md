@@ -14,24 +14,33 @@ $\mathcal{M}_{\vec{\zeta}}$ is a [Koopman operator](https://en.wikipedia.org/wik
 
 Because the problem is now linear, the transformation of the monomial coefficients could be expressed using a (truncated) matrix, however this is notoriously slow and inconvenient to work with. A Lie algebraic formulation is much more elegant, simpler, and faster to use.
 
-We define 
 Hamilton's equations expressed using the Poisson bracket are
 
 $$ \frac{d}{dt} q = -\lbrace H, q\rbrace\ , \ \ \ \ \ \  \frac{d}{dt} p = -\lbrace H, p\rbrace \ . $$
 
-For simplicity, we now define an operator using the Poisson bracket: $:f:g \triangleq \lbrace f, q \rbrace$
+For simplicity, we define an operator using the Poisson bracket as 
+$$:f:g \triangleq \lbrace f, q \rbrace$$
 
-The Lie map and Hamiltonian map are respectively expressed as 
+The Lie map and Hamiltonian map for an infinitesimal timestep $dt$ are respectively expressed as 
 
-$$\mathcal{M} = \exp{(\hat{F})} \ , \ \ \ \ \ \ \vec{\zeta}= \exp{(\hat{F})}\vec{x}$$
+$$\mathcal{M}\_{t_0\rightarrow t_0+dt} = \exp{(:-H\ dt:)} \ , \ \ \ \ \ \ \vec{\zeta}\_{t_0\rightarrow t_0+\Delta t}= \exp{(:-H\ dt:)}\vec{x}$$
 
-where $\hat{F}$ is a _Lie operator_ generating the map. If the system is Hamiltonian, the generator of the map would simply be a Poisson bracket, however vector fields are used so the formalism applies correctly even for nearly-Hamiltonian maps.
+where $H$ is the Hamiltonian, a scalar function. While using the Hamiltonian as a generator of the time evolution (canonical transformation) in this way is useful, it is not always practical. In a particle tracking code for example, the motion may not always be exactly symplectic, e.g. when there is some small dissipation due to synchrotron radiation emission. In this case, a Hamiltonian cannot be obtained from an integrator, however the force field $\vec{F}$ on the particle is of course known from the integrator. Using the operator isomorphism $\vec{F}\cdot\vec{\nabla} \triangleq \ :-H: $, we can instead write
+
+<!--- $$\mathcal{M}\_{t_0\rightarrow t_0+dt} = \exp{(\vec{F}\cdot\vec{\nabla}\ dt)} \ , \ \ \ \ \ \ \vec{\zeta}\_{t_0\rightarrow t_0+\Delta t}= \exp{(:-H\ dt:)}\vec{x}$$
+
+An isomorphism can be used to express the above equations, which use the Hamiltonian, to instead use the force field
+
+
+
+
+a _Lie operator_ generating the map. If the system is Hamiltonian, the generator of the map would simply be a Poisson bracket, however vector fields are used so the formalism applies correctly even for nearly-Hamiltonian maps. --->
 
 
 ## Setup
 
 To use this package, in the Julia REPL run:
 
-```julia
+```juliai
 import Pkg; Pkg.add(path="https://github.com/bmad-sim/NonlinearNormalForm.jl")
 ```
