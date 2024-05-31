@@ -11,7 +11,15 @@ function testallocs!(m, tmp1, tmp2, comp_work_low, inv_work_low, work_ref)
   return
 end
 
-function normal(m::DAMap)
+# This is same as normal but pretty and slow
+function normal_simple(m::DAMap)
+  a0 = (m-I)^-1 ∘ zero(m)
+  m1 = a0^-1 ∘ m ∘ a0
+
+
+end
+
+function normal(m::DAMap{S,T,U,V}) where {S,T,U,V}
   tmp1 = zero(m)
   tmp2 = zero(m)
   tmp3 = zero(m)
@@ -35,7 +43,7 @@ function normal(m::DAMap)
   
   # 2: do the linear normal form exactly --------------------------------------------------
   linear_a!(tmp2, tmp1, inverse=true)
- 
+
   # tmp1 is still m0
   # tmp2 is inv(a1)
   # Now normalize linear map inv(a1)*m0*a1
@@ -72,12 +80,29 @@ function normal(m::DAMap)
   # Now we have m1, in the phasor's basis. Therefore the nonlinear part of the canonical 
   # transformation a will have a factored Lie representation:
   #
-  #         a₂∘a₃∘... = ...exp(F₃⋅∇)exp(F₂⋅∇)I
+  #         a₂∘a₃∘... = ...exp(F₃)exp(F₂)I
   # 
   # Next step is to get only the nonlinear part of ctmp1
   # this can be done by inverting the linear part of ctmp1 and composing
-  # But for nonlinear we need a vector field type
+  mo = getdesc(m).mo
+  nv = numvars(m)
+  n = Vector{VectorField{T,U}}(undef, mo)  # For now, analog to c_factored_lie, likely will make separate type
+  for i=2:mo
+    # Get current order + identity
+    getord!(ctmp1, ctmp2, i)
+    add!(ctmp1,ctmp1,I)
 
+    # get vector field
+    G = log(ctmp1)
+    n[i] = zero(G)
+
+    # Now kill the terms if not a tune shift!!
+    for j=1:nv
+
+
+    end
+
+  end
 
   return ctmp2
 end
@@ -174,6 +199,12 @@ function linear_a!(a1::DAMap, m0::DAMap; inverse=false)
   return a1
 end
 
+function linear_a(m0::DAMap; inverse=false)
+  a1 = zero(m0)
+  linear_a!(a1, m0, inverse=inverse)
+  return a1
+end
+
 # computes c^-1
 function from_phasor!(cinv::DAMap{S,T,U,V}, m::DAMap) where {S,T<:ComplexTPS,U,V}
   nhv = numvars(m)
@@ -215,6 +246,7 @@ function to_phasor(m::DAMap)
   to_phasor!(c,m);
   return c
 end
+
 
 #=
 # Forward is inv(p)*m*p

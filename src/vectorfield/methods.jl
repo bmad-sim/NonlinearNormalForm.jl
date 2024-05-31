@@ -221,7 +221,7 @@ function exp!(m::DAMap{S,T,U,V}, F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work_m
 
   nmax = 100
   nrm_min1 = 1e-9
-  nrm_min2 = 100*eps(numtype(T))*nv
+  nrm_min2 = 100*eps(Float64)*nv
   nrm_ =Inf
   conv = false
   slow = false
@@ -238,7 +238,7 @@ function exp!(m::DAMap{S,T,U,V}, F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work_m
     mul!(tmp2, F, tmp, work_low=work_low, work_Q=work_Q)
     add!(m, m, tmp2)
     copy!(tmp, tmp2)
-    nrm = norm(tmp2)
+    nrm = norm(norm(tmp2))
 
     # Check convergence
     if nrm <= nrm_min2 || conv && nrm >= nrm_ # done
@@ -283,8 +283,8 @@ function log!(F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work::Tuple{DAMap{S,T,U,V
   nmax = 100
   nrm0 = norm(m1)
   nrm_min1 = 1e-9
-  nrm_min2 = 100*eps(numtype(T))*nv
-  nrm0 = norm(m1)
+  nrm_min2 = 100*eps(Float64)*nv
+  nrm0 = norm(norm(m1))
   epsone = nrm0/1000
   conv = false 
   slow = false
@@ -331,7 +331,7 @@ function log!(F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work::Tuple{DAMap{S,T,U,V
     # but if the leftover stuff is still big then we can just approximately
     # with linear term (adding F+G trivially)
 
-    if norm(work_vfs[1]) < epsone # small! use CBH!
+    if norm(norm(work_vfs[1])) < epsone # small! use CBH!
       lb!(work_vfs[2], F, work_vfs[1], work_low=work_low, work_Q=work_Q)
       mul!(work_vfs[2], 0.5, work_vfs[2])
       add!(work_vfs[1], work_vfs[1], work_vfs[2])
@@ -340,7 +340,7 @@ function log!(F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work::Tuple{DAMap{S,T,U,V
       add!(F,F,work_vfs[1])
     end
 
-    nrm = norm(work_vfs[1])/nrm0
+    nrm = norm(norm(work_vfs[1])/nrm0)
 
     if nrm <= nrm_min2 || conv && nrm >= nrm_
       if slow
