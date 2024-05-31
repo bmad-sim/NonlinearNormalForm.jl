@@ -44,6 +44,10 @@ function rand(t::Union{Type{DAMap},Type{TPSAMap}}; spin::Union{Bool,Nothing}=not
   return rand(t{Float64,TPS,U,V},use=use)
 end
 
+
+"""
+Generate map symplectic up to order in Descriptor
+"""
 function rand(t::Union{Type{DAMap{S,T,U,V}},Type{TPSAMap{S,T,U,V}}}; use::Union{Descriptor,TPS,ComplexTPS}=GTPSA.desc_current) where {S,T,U,V}
   desc = getdesc(use)
   desc.desc != C_NULL || error("No Descriptor defined!")
