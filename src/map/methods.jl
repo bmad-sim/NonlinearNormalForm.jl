@@ -111,11 +111,11 @@ function clear!(m::TaylorMap)
 end
 
 # --- jacobian/jacobiant --- 
-jacobian(m::TaylorMap;include_params=false) = jacobian(view(m.x, 1:numvars(m)),include_params=include_params)
-jacobiant(m::TaylorMap;include_params=false) = jacobiant(view(m.x, 1:numvars(m)), include_params=include_params)
+jacobian(m::TaylorMap;include_params=false) = GTPSA.jacobian(view(m.x, 1:numvars(m)),include_params=include_params)
+jacobiant(m::TaylorMap;include_params=false) = GTPSA.jacobiant(view(m.x, 1:numvars(m)), include_params=include_params)
 
 # --- checksymp ---
-checksymp(m::TaylorMap) = checksymp(jacobian(m))
+checksymp(m::TaylorMap) = checksymp(GTPSA.jacobian(m))
 
 # --- cutord ---
 function cutord(m1::TaylorMap{S,T,U,V}, order::Integer, spin_order::Integer=order; dospin::Bool=true) where {S,T,U,V}

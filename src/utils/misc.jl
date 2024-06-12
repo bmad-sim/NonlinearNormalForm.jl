@@ -48,7 +48,12 @@ end
 """
 Generate map symplectic up to order in Descriptor
 """
-function rand(t::Union{Type{DAMap{S,T,U,V}},Type{TPSAMap{S,T,U,V}}}; use::Union{Descriptor,TPS,ComplexTPS}=GTPSA.desc_current) where {S,T,U,V}
+function rand(t::Union{Type{DAMap{S,T,U,V}},Type{TPSAMap{S,T,U,V}}}; require_stable::Bool=false, use::Union{Descriptor,TPS,ComplexTPS}=GTPSA.desc_current) where {S,T,U,V}
+  if require_stable # make hamiltonian in phasors basis then reverse
+    
+    
+  end
+  
   desc = getdesc(use)
   desc.desc != C_NULL || error("No Descriptor defined!")
 
@@ -66,6 +71,10 @@ function rand(t::Union{Type{DAMap{S,T,U,V}},Type{TPSAMap{S,T,U,V}}}; use::Union{
     @views dtmp = Descriptor(no[1:nv].+1, mo+1)
   end
   
+  # If require_stable, we need to go into phasors basis
+
+
+
   h = T(use=dtmp)
   len = length(h)
 

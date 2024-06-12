@@ -1,7 +1,7 @@
 program normal_simple
 use pointer_lattice
 implicit none
-type(c_damap) T,N
+type(c_damap) T,N,m,a1,ri,m1
 type(c_taylor) r2,cs_invariant
 type(c_normal_form) Normal_form
 real(dp) mat(2,2),alpha,beta,gamma
@@ -21,13 +21,28 @@ state=only_2d0
 ! Initializes FPP to order 2
 call init(state,2,0)
 !call ptc_ini_no_append ! initializes PTC
-call alloc(T); call alloc(N);
+call alloc(T); call alloc(N); call alloc(a1); call alloc(ri); call alloc(m1);
 call alloc(r2);call alloc(cs_invariant);
 call alloc(Normal_form)
 mat(1,1)=1; mat(1,2)=1;mat(2,1)=-0.4_dp; mat(2,2)=0.6_dp;
 ! Matrix mat(2,2) put into a c_damap to create T
 T=mat
-call print(T)
+!call print(T)
+!call c_gofix(m,a0)
+!m=c_simil(a0,m,-1)
+!call print(m)
+call c_linear_a(T, a1)
+call print(a1)
+!stop
+m1=c_simil(a1,T,-1)
+!call print(m1)
+ri=from_phasor(-1)
+m1=c_simil(ri,m1,1)
+call print(m1)
+stop
+
+
+
 call c_normal_new(T,Normal_form)
 N=Normal_form%Atot**(-1)*T*Normal_form%Atot
 ! Creating x^2+p^2 which is the invariant of a rotation

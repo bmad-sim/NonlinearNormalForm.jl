@@ -10,6 +10,7 @@ import Base: ∘,
              literal_pow,
              inv, 
              zero,
+             zeros,
              one,
              complex,
              log,
@@ -74,6 +75,8 @@ export        TaylorMap,
               inv!,
       
               checksymp,
+              jacobian,
+              jacobiant,
               I,
               S,
       
@@ -127,11 +130,10 @@ include("vectorfield/ctors.jl")
 include("vectorfield/methods.jl")
 include("vectorfield/operators.jl")
 
-include("utils/misc.jl")
-
 include("work.jl")
 include("normal.jl")
 
+include("utils/misc.jl")
 include("show.jl")
 
 

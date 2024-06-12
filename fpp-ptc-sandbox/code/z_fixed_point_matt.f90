@@ -4,7 +4,7 @@ program example
    implicit none 
    integer no,nd,i,nv,k,j(lnv),n,np
    type(c_taylor)  F_FLOQUET,F_FLOQUET_cs,cs,nu_spin,nu_spin1
-   type(c_damap) m,m1,m2,a_ori,as,a0,a1,a2,a_cs,id
+   type(c_damap) m,m1,m2,a_ori,as,a0,a1,a2,a_cs,id,ri
    type(c_vector_field) vf1,vf2,vfr,h_rot1,h_rot2,h_rot0
    real(dp) r1,r2,sca,decrement,closed_orbit(6),normb
    complex(dp) c1,mat(6,6)
@@ -29,7 +29,7 @@ program example
    character(255) filename
    n_cai=-i_
    np=2
-   no=2; nd= 3;    ! no: the order of the polynomial    nv: the number of variables   
+   no=1; nd= 3;    ! no: the order of the polynomial    nv: the number of variables   
    c_lda_used=15000
    use_quaternion=.true.
     
@@ -37,7 +37,8 @@ program example
    allocate(phase(nd),phase1(nd))
     
    call alloc(F_FLOQUET,F_FLOQUET_cs,cs,nu_spin,nu_spin1)      ! must be constructed after init
-   call alloc(vf1,vf2,vfr,h_rot1,h_rot2,h_rot0)      
+   call alloc(vf1,vf2,vfr,h_rot1,h_rot2,h_rot0)  
+   call alloc(ri)    
    call alloc(m,m1,m2,a_ori,as,a0,a1,a2,a_cs,id)      ! 
    call alloc(phase)
    call alloc(phase1)
@@ -58,17 +59,17 @@ program example
    
    k1=0.36d0
    k2l= 1.2d0
-   vkick(1)=morph(1.d0.mono.7)+1.d-4
+   vkick(1)=morph(1.d0.mono.7)
    vkick(2)=morph(1.d0.mono.8)  !+.23d0
    !c_%ndpt=1 ! rf off
 
     closed_orbit=0
-   !closed_orbit(1) = -4.0442788590574703e-7
-   !closed_orbit(2) = -6.654652444059091e-8
-   !closed_orbit(3) = 1.511019672182745e-5
-   !closed_orbit(4) = -5.5202889999456834e-5
-   !closed_orbit(5) = -1.2991550531522366e-16
-   !closed_orbit(6) = 1.7942099750917895e-7
+   closed_orbit(1) = -4.0442788590574703e-7
+   closed_orbit(2) = -6.654652444059091e-8
+   closed_orbit(3) = 1.511019672182745e-5
+   closed_orbit(4) = -5.5202889999456834e-5
+   closed_orbit(5) = -1.2991550531522366e-16
+   closed_orbit(6) = 1.7942099750917895e-7
    !call find_fix_point(closed_orbit, k1 , k2l, kick,vkick )
     
    xs0=closed_orbit
@@ -97,9 +98,21 @@ program example
    call track_ring(xs,xs,k1,k2l,kick,vkick)
       m=xs
     !  call print(m)
-    call c_gofix(m,a0)
+    !call c_gofix(m,a0)
+
+    call c_normal(m,normal)
+    call print(normal%a1)
+    stop
     m=c_simil(a0,m,-1)
+    !call print(m)
     call c_linear_a(m, a1)
+    m1=c_simil(a1,m,-1)
+    !call print(m1)
+    ri=from_phasor(-1)
+    m1=c_simil(ri,m1,1)
+    call print(m1)
+    ! call print(m)
+    !call print(a1)mk
     !call print)
     stop
 

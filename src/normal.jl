@@ -1,25 +1,92 @@
-function testallocs!(m, tmp1, tmp2, comp_work_low, inv_work_low, work_ref)
-  a0 = tmp1
-  work_map = tmp2
+function normal(m::DAMap)
+  # 1: Go to parameter-dependent fixed point
+  a0 = (cutord(m,2)-I)^-1 ∘ zero(m) + I  # zero(m) is zero in variables but identity in parameters
+  m0 = a0^-1 ∘ m ∘ a0
 
-  # 1: Go to the parameter dependent fixed point
-  gofix!(a0, m, 1, work_map=work_map, comp_work_low=comp_work_low, inv_work_low=inv_work_low)
-  # Similarity transformation to make parameter part of jacobian = 0 (inv(a0)∘m∘a0)
-  compose!(work_map, m, a0, work_low=comp_work_low,keep_scalar=false)
-  inv!(a0, a0, work_ref=work_ref, work_low=inv_work_low,dospin=false)
-  compose!(a0, a0, work_map, work_low=comp_work_low,keep_scalar=false)
-  return
+  # 2: Do the linear normal form exactly
+  a1 = linear_a(m0)
+  return a1
+  m1 = a1^-1 ∘ m0 ∘ a1
+
+  # 3: Go into phasor's basis
+  c = from_phasor(m1)
+  m1 = c ∘ m1 ∘ c^-1
+  # return m1
+
+  # ---- Nonlinear -----
+  # 4: Nonlinear algorithm
+  # order by order
+  # check if tune shift and kill
+  R_inv = inv(getord(m1, 1, 0, dospin=false), dospin=false) # R is diagonal matrix
+  R_inv.Q.q[1][0] = 1
+
+  # Store the tunes
+  nv = numvars(m)
+  np = numparams(m)
+  eg = Vector{numtype(eltype(R_inv.x))}(undef, nv)
+  for i=1:nv
+    eg[i] = R_inv.x[i][i]
+  end
+
+  mo = unsafe_load(NonlinearNormalForm.getdesc(m).desc).mo
+
+  an = one(m1)
+  ker = one(m1)
+  # Kernel - these are tune shifts we leave in the map
+  for i = 2:mo
+    # Here, we have 
+    # m1 = ℛ(ℐ+ϵ²𝒞₂) 
+    # get rid of ℛ:
+    nonl = m1 ∘ R_inv
+    nonl = getord(nonl, i)  # Get only the leading order to stay in symplectic group
+    # now nonl = ℐ+ϵ²𝒞₂
+
+    F =  zero(VectorField, use=m1)  # temporary to later exponentiate
+    Fker =  zero(VectorField, use=m1)  # temporary to later exponentiate
+    # For each variable in the nonlinear map
+    for j=1:nv
+      v = Ref{ComplexF64}()
+      m = Vector{UInt8}(undef, nv+np)
+      idx = GTPSA.cycle!(nonl.x[j].tpsa, Cint(j), nv+np, m, v)
+      while idx > 0
+        # Tune shifts should be left in the map (kernel) because we cannot remove them
+        # if there is radiation, we technically could remove them
+        je = convert(Vector{Int}, m)
+        je[j] -= 1
+        t = 0
+        for k = 1:2:nv
+          t += abs(je[k]-je[k+1])
+        end
+
+        if t != 0  # then remove it
+          lam = 1
+          for k = 1:nv
+            lam *= eg[k]^je[k]
+          end
+          #println(m)
+          F.x[j] += mono(m,use=getdesc(m1))*v[]/(1-lam)
+          #println(lam)
+        else
+          Fker.x[j] += mono(m,use=getdesc(m1))*v[]
+        end
+
+        idx = GTPSA.cycle!(nonl.x[j].tpsa, Cint(idx), nv+np, m, v)
+      end
+    end
+    kert = exp(Fker)
+    ker = kert ∘ ker
+    ant = exp(F)
+    an = ant ∘ an
+    m1 = ant^-1 ∘ m1 ∘ ant
+  end
+
+  # to check if correct, remove linear part and take log
+  #at = a0∘a1∘
+  return an
 end
 
-# This is same as normal but pretty and slow
-function normal_simple(m::DAMap)
-  a0 = (m-I)^-1 ∘ zero(m)
-  m1 = a0^-1 ∘ m ∘ a0
-
-
-end
-
-function normal(m::DAMap{S,T,U,V}) where {S,T,U,V}
+# 2x faster but not as pretty
+function normal_fast(m::DAMap{S,T,U,V}) where {S,T,U,V}
   tmp1 = zero(m)
   tmp2 = zero(m)
   tmp3 = zero(m)
@@ -75,7 +142,7 @@ function normal(m::DAMap{S,T,U,V}) where {S,T,U,V}
   compose!(ctmp2, ctmp2, ctmp1, work_low=comp_work_low,keep_scalar=false)
 
   # ctmp2 is map in phasors basis
-  
+  return ctmp2
   # 4: Nonlinear algorithm --------------------------------------------------------------------
   # Now we have m1, in the phasor's basis. Therefore the nonlinear part of the canonical 
   # transformation a will have a factored Lie representation:
@@ -151,6 +218,19 @@ function gofix!(a0::DAMap, m::DAMap, order=1; work_map::DAMap=zero(m), comp_work
   return a0
 end
 
+function testallocs!(m, tmp1, tmp2, comp_work_low, inv_work_low, work_ref)
+  a0 = tmp1
+  work_map = tmp2
+
+  # 1: Go to the parameter dependent fixed point
+  gofix!(a0, m, 1, work_map=work_map, comp_work_low=comp_work_low, inv_work_low=inv_work_low)
+  # Similarity transformation to make parameter part of jacobian = 0 (inv(a0)∘m∘a0)
+  compose!(work_map, m, a0, work_low=comp_work_low,keep_scalar=false)
+  inv!(a0, a0, work_ref=work_ref, work_low=inv_work_low,dospin=false)
+  compose!(a0, a0, work_map, work_low=comp_work_low,keep_scalar=false)
+  return
+end
+
 function gofix(m::DAMap, order=1; work_map::DAMap=zero(m), comp_work_low::Union{Nothing,Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}}=nothing, inv_work_low::Union{Nothing,Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}}=nothing)
   a0 = zero(m)
   gofix!(a0, m, 1, work_map=work_map, comp_work_low=comp_work_low, inv_work_low=inv_work_low)
@@ -175,14 +255,14 @@ function linear_a!(a1::DAMap, m0::DAMap; inverse=false)
   #@assert size(work_matrix) == (nhv, nhv) "Incorrect size for work_matrix: received $(size(work_matrix)), require $(tuple(nhv, nhv))"
   #work_matrix .= 0
 
-  @views jacobiant!(work_matrix, m0.x[1:nhv])  # parameters never included
+  @views GTPSA.jacobiant!(work_matrix, m0.x[1:nhv])  # parameters never included
   #println(work_matrix)
   F = mat_eigen!(work_matrix, phase_modes=false) # no need to phase modes. just a rotation
   
   for i=1:nhv
     for j=1:nhpl
-      work_matrix[2*j-1,i] = sqrt(2)*real(F.vectors[i,2*j])  # See Eq. 3.74 in EBB for factor of 2
-      work_matrix[2*j,i] = sqrt(2)*imag(F.vectors[i,2*j])
+      work_matrix[2*j,i] = sqrt(2)*real(F.vectors[i,2*j])  # See Eq. 3.74 in EBB for factor of 2
+      work_matrix[2*j-1,i] = sqrt(2)*imag(F.vectors[i,2*j])
     end
   end
 
@@ -196,6 +276,12 @@ function linear_a!(a1::DAMap, m0::DAMap; inverse=false)
       @inbounds a1.x[i][j] = work_matrix[i,j]
     end
   end
+
+  # Make spin identity
+  if !isnothing(m0.Q)
+    a1.Q.q[1][0] = 1
+  end
+
   return a1
 end
 
@@ -209,6 +295,7 @@ end
 function from_phasor!(cinv::DAMap{S,T,U,V}, m::DAMap) where {S,T<:ComplexTPS,U,V}
   nhv = numvars(m)
 
+  clear!(cinv)
   for i=1:Int(nhv/2)
     # x_new = 1/sqrt(2)*(x+im*p)
     cinv.x[2*i-1][2*i-1] = 1/sqrt(2)
@@ -218,6 +305,11 @@ function from_phasor!(cinv::DAMap{S,T,U,V}, m::DAMap) where {S,T<:ComplexTPS,U,V
     cinv.x[2*i][2*i-1] = 1/sqrt(2)
     cinv.x[2*i][2*i]   = complex(0,-1/sqrt(2))
   end
+
+  if U != Nothing
+    cinv.Q.q[1][0] = 1
+  end
+
   return
 end
 
@@ -231,6 +323,7 @@ end
 function to_phasor!(c::DAMap{S,T,U,V}, m::DAMap) where {S,T<:ComplexTPS,U,V}
   nhv = numvars(m)
 
+  clear!(c)
   for i=1:Int(nhv/2)
     c.x[2*i-1][2*i-1] = 1/sqrt(2)
     c.x[2*i-1][2*i]   = 1/sqrt(2)
@@ -238,6 +331,11 @@ function to_phasor!(c::DAMap{S,T,U,V}, m::DAMap) where {S,T<:ComplexTPS,U,V}
     c.x[2*i][2*i-1] = complex(0,-1/sqrt(2))
     c.x[2*i][2*i]   = complex(0,1/sqrt(2))
   end
+
+  if U != Nothing
+    c.Q.q[1][0] = 1
+  end
+
   return
 end
 

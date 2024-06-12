@@ -201,14 +201,14 @@ function track_ring(p0; N_fodo=50, k1=0.36, k2l=1.2, hkicks=zeros(N_fodo), vkick
 end
 
 function track_ring0()
-  vkicks = [1e-4, zeros(49)...]  # first vertical coil has strength 1e-4 
+  vkicks = [0, zeros(49)...]  # first vertical coil has strength 1e-4 
 
   # Calculate closed orbit:
   orbit(z) = norm(track_ring(Probe(z), vkicks=vkicks).x - z)
   x0 = optimize(orbit, zeros(6),g_tol=1e-25).minimizer 
 
   # Now expand along closed orbit
-  d = Descriptor(6,2,2,2)
+  d = Descriptor(6,1,2,1)
   x = vars()
   k = params()
 

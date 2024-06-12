@@ -137,13 +137,13 @@ function zero(F::VectorField{T,U}) where {T,U}
   return VectorField(x,Q)
 end
 
-function zero(::Type{VectorField{T,U}}; use::Union{Descriptor,TPS,ComplexTPS,TaylorMap,Probe{<:Any,Union{TPS,ComplexTPS},<:Any,<:Any}}=GTPSA.desc_current) where {T,U}
+function zero(::Type{VectorField{T,U}}; use::UseType=GTPSA.desc_current) where {T,U}
   desc = getdesc(use)
   nn = numnn(desc)
   nv = numvars(desc)
   np = numparams(desc)
 
-  x = Vector{T}(undef, nn)
+  x = Vector{T}(undef, nv)
   for i=1:nv
     @inbounds x[i] = T(use=desc)
   end
@@ -159,4 +159,28 @@ function zero(::Type{VectorField{T,U}}; use::Union{Descriptor,TPS,ComplexTPS,Tay
   end
 
   return VectorField{T,U}(x, Q)
+end
+
+function zero(::Type{VectorField}; use::Union{TaylorMap{S,T,U,V},VectorField{T,U},Nothing}=nothing) where {S,T,U,V}
+  if isnothing(use)
+    return zero(VectorField{TPS,Nothing})
+  else
+    return zero(VectorField{T,U}, use=use)
+  end
+end
+
+function zeros(::Type{VectorField}, dims::Integer; use::Union{TaylorMap{S,T,U,V},VectorField{T,U},Nothing}=nothing) where {S,T,U,V}
+  if isnothing(use)
+    A = TPS
+    B = Nothing
+    use = GTPSA.desc_current
+  else
+    A = T
+    B = U
+  end
+  F = Vector{VectorField{A,B}}(undef, dims)
+  for i=1:dims
+    F[i] = zero(VectorField{A,B},use=use)
+  end
+  return F
 end
