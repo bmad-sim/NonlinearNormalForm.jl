@@ -31,19 +31,20 @@ T=mat
 !call c_gofix(m,a0)
 !m=c_simil(a0,m,-1)
 !call print(m)
-call c_linear_a(T, a1)
-call print(a1)
+!call c_linear_a(T, a1)
+!call print(a1)
 !stop
-m1=c_simil(a1,T,-1)
+!m1=c_simil(a1,T,-1)
 !call print(m1)
-ri=from_phasor(-1)
-m1=c_simil(ri,m1,1)
-call print(m1)
-stop
+!ri=from_phasor(-1)
+!m1=c_simil(ri,m1,1)
+!call print(m1)
+!stop
 
 
 
 call c_normal_new(T,Normal_form)
+stop
 N=Normal_form%Atot**(-1)*T*Normal_form%Atot
 ! Creating x^2+p^2 which is the invariant of a rotation
 r2=(1.0_dp.cmono.1)**2+(1.0_dp.cmono.2)**2
@@ -53,6 +54,7 @@ write(mf,*) " The map T"
 call print(T,mf);write(mf,*);
 write(mf,*) " The map A"
 call print(Normal_form%Atot,mf);write(mf,*);
+stop
 write(mf,*) " The map N : a rotation"
 call print(N,mf);write(mf,*);
 write(mf,*) " The invariant of the normal form ";write(mf,*);

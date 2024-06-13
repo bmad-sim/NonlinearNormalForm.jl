@@ -5,13 +5,17 @@ function normal(m::DAMap)
 
   # 2: Do the linear normal form exactly
   a1 = linear_a(m0)
-  return a1
+  #atot = a0∘a1 
+  #eturn inv(atot)*m*atot
+
   m1 = a1^-1 ∘ m0 ∘ a1
+  #println(m1)
+  #return m1
 
   # 3: Go into phasor's basis
   c = from_phasor(m1)
   m1 = c ∘ m1 ∘ c^-1
-  # return m1
+  # return a0 ∘ a1 agrees with Atot exactly up to here for orbital including parameters
 
   # ---- Nonlinear -----
   # 4: Nonlinear algorithm
@@ -28,6 +32,9 @@ function normal(m::DAMap)
     eg[i] = R_inv.x[i][i]
   end
 
+  #println(R_inv)
+  #println(m1)
+
   mo = unsafe_load(NonlinearNormalForm.getdesc(m).desc).mo
 
   an = one(m1)
@@ -38,11 +45,14 @@ function normal(m::DAMap)
     # m1 = ℛ(ℐ+ϵ²𝒞₂) 
     # get rid of ℛ:
     nonl = m1 ∘ R_inv
+    nonl = nonl ∘ inv(ker)
     nonl = getord(nonl, i)  # Get only the leading order to stay in symplectic group
     # now nonl = ℐ+ϵ²𝒞₂
+   # println(nonl)
 
-    F =  zero(VectorField, use=m1)  # temporary to later exponentiate
-    Fker =  zero(VectorField, use=m1)  # temporary to later exponentiate
+
+    F =  zero(m1) #zero(VectorField, use=m1)  # temporary to later exponentiate
+    Fker =  zero(m1) #zero(VectorField, use=m1)  # temporary to later exponentiate
     # For each variable in the nonlinear map
     for j=1:nv
       v = Ref{ComplexF64}()
@@ -64,25 +74,38 @@ function normal(m::DAMap)
             lam *= eg[k]^je[k]
           end
           #println(m)
+          #println("Killing monomial ", je, " = ", v[])
           F.x[j] += mono(m,use=getdesc(m1))*v[]/(1-lam)
           #println(lam)
         else
+          je[j] += 1
+          
           Fker.x[j] += mono(m,use=getdesc(m1))*v[]
         end
 
         idx = GTPSA.cycle!(nonl.x[j].tpsa, Cint(idx), nv+np, m, v)
       end
     end
-    kert = exp(Fker)
+    kert = I + Fker
     ker = kert ∘ ker
-    ant = exp(F)
-    an = ant ∘ an
+    ant = I + F
+
+    println(kert)
+
+    #println(F.x[1])
+    #println("======================")
+    an = an ∘ ant
     m1 = ant^-1 ∘ m1 ∘ ant
+  #println(m1.x[1])
+    
+
   end
 
+  an = inv(c)∘an∘c
+  
   # to check if correct, remove linear part and take log
   #at = a0∘a1∘
-  return an
+  return a0 ∘ a1 ∘ an
 end
 
 # 2x faster but not as pretty

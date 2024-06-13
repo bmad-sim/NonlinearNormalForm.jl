@@ -213,7 +213,7 @@ end
 for ops = (("add!", :+), ("sub!",:-), ("mul!",:*), ("div!",:/))
 @eval begin
 function $(Meta.parse(ops[1]))(m::TaylorMap, a::Number, m1::TaylorMap; dospin::Bool=true)
-
+  nv = numvars(m)
   m.x0 .= m1.x0
 
   for i=1:nv

@@ -22,6 +22,7 @@ program example
    real(dp) :: lrad = 0 
    type(probe_8) xs
    type(probe) xs0
+   type(c_universal_taylor) h_res
    real(dp), parameter:: a = 0.00115965218128d0
    real(dp), parameter:: gamma_0 = 40.5d0/a
    logical :: quaternion_on=.true.
@@ -29,7 +30,7 @@ program example
    character(255) filename
    n_cai=-i_
    np=2
-   no=1; nd= 3;    ! no: the order of the polynomial    nv: the number of variables   
+   no=3; nd= 3;    ! no: the order of the polynomial    nv: the number of variables   
    c_lda_used=15000
    use_quaternion=.true.
     
@@ -57,19 +58,19 @@ program example
    call alloc(xs)
    
    
-   k1=0.36d0
+   k1=0.36d0+morph(1.d0.mono.8)
    k2l= 1.2d0
    vkick(1)=morph(1.d0.mono.7)
-   vkick(2)=morph(1.d0.mono.8)  !+.23d0
+   !vkick(2)=morph(1.d0.mono.8)  !+.23d0
    !c_%ndpt=1 ! rf off
 
     closed_orbit=0
-   closed_orbit(1) = -4.0442788590574703e-7
-   closed_orbit(2) = -6.654652444059091e-8
-   closed_orbit(3) = 1.511019672182745e-5
-   closed_orbit(4) = -5.5202889999456834e-5
-   closed_orbit(5) = -1.2991550531522366e-16
-   closed_orbit(6) = 1.7942099750917895e-7
+   !closed_orbit(1) = -4.0442788590574703e-7
+   !closed_orbit(2) = -6.654652444059091e-8
+   !closed_orbit(3) = 1.511019672182745e-5
+   !closed_orbit(4) = -5.5202889999456834e-5
+   !closed_orbit(5) = -1.2991550531522366e-16
+   !closed_orbit(6) = 1.7942099750917895e-7
    !call find_fix_point(closed_orbit, k1 , k2l, kick,vkick )
     
    xs0=closed_orbit
@@ -97,20 +98,45 @@ program example
    !stop
    call track_ring(xs,xs,k1,k2l,kick,vkick)
       m=xs
-    !  call print(m)
+     !! call print(m)
     !call c_gofix(m,a0)
 
-    call c_normal(m,normal)
-    call print(normal%a1)
-    stop
-    m=c_simil(a0,m,-1)
+    call c_normal_new_no_fac(m,normal,doberz=.true.)
+    m = ci_phasor()*normal%Atot**(-1) * m * normal%Atot *c_phasor()
+
+    write(*,*) "R ====================== "  
+  call clean(m,m,prec=1.d-6)
+  call print(m%v(1))
+  stop
+
+    !call c_normal_new(m,normal)
+    
+    m1 = ci_phasor()*(normal%Atot.cut.2)**(-1) * m * (normal%Atot.cut.2) *c_phasor()
+  
+  call clean(m,m,prec=1.d-6)
+  call print(m%v(1))
+  call print(m1%v(1))
+  stop
+  a0=m.cut.2
+  m=a0**(-1)*m
+  vf1=ln(m)
+  call clean(vf1,vf1,prec=1.d-6)
+  call d_field_for_demin(vf1,h_res)
+  call clean(h_res,h_res,prec=1.d-4)
+  call print(h_res,6)
+stop
+    !write(*,*) "A a rotation ====================== "
+    call print(normal%Atot)
+    !call print(normal%a1)
+    !stop
+    !m=c_simil(a0,m,-1)
     !call print(m)
-    call c_linear_a(m, a1)
-    m1=c_simil(a1,m,-1)
+   ! call c_linear_a(m, a1)
+    !m1=c_simil(a1,m,-1)
     !call print(m1)
-    ri=from_phasor(-1)
-    m1=c_simil(ri,m1,1)
-    call print(m1)
+   ! ri=from_phasor(-1)
+   ! m1=c_simil(ri,m1,1)
+   ! call print(m1)
     ! call print(m)
     !call print(a1)mk
     !call print)
