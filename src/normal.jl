@@ -1,28 +1,26 @@
 function normal(m::DAMap)
   # 1: Go to parameter-dependent fixed point
-  a0 = (cutord(m,2)-I)^-1 ∘ zero(m) + I  # zero(m) is zero in variables but identity in parameters
+  a0 = gofix(m) #(cutord(m,2)-I)^-1 ∘ zero(m) + I  # zero(m) is zero in variables but identity in parameters
   m0 = a0^-1 ∘ m ∘ a0
 
   # 2: Do the linear normal form exactly
   a1 = linear_a(m0)
-  #atot = a0∘a1 
-  #eturn inv(atot)*m*atot
 
   m1 = a1^-1 ∘ m0 ∘ a1
-  #println(m1)
-  #return m1
 
   # 3: Go into phasor's basis
   c = from_phasor(m1)
   m1 = c ∘ m1 ∘ c^-1
-  # return a0 ∘ a1 agrees with Atot exactly up to here for orbital including parameters
+
 
   # ---- Nonlinear -----
   # 4: Nonlinear algorithm
   # order by order
   # check if tune shift and kill
   R_inv = inv(getord(m1, 1, 0, dospin=false), dospin=false) # R is diagonal matrix
-  R_inv.Q.q[1][0] = 1
+  if !isnothing(R_inv.Q)
+    R_inv.Q.q[1][0] = 1
+  end
 
   # Store the tunes
   nv = numvars(m)
@@ -87,18 +85,22 @@ function normal(m::DAMap)
       end
     end
     kert = I + Fker
-    ker = kert ∘ ker
-    ant = I + F
-
-    println(kert)
-
-    #println(F.x[1])
-    #println("======================")
-    an = an ∘ ant
-    m1 = ant^-1 ∘ m1 ∘ ant
-  #println(m1.x[1])
+    #println("kert =============================")
+    #println(kert) 
     
+    ant = I + F
+    #return ant
+    #println("\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$")
+    #println("ant =============================")
+    #println(ant)
 
+    ker = kert ∘ ker
+    an = an ∘ ant
+    #return m1 
+    m1 = inv(ant) ∘ m1 ∘ ant
+    #println("\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$")
+    #println("m1 =============================")
+    #println(m1.x[1]) 
   end
 
   an = inv(c)∘an∘c

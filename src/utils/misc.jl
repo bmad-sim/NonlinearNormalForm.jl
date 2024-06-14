@@ -121,7 +121,7 @@ function read_fpp_map(file)
   nn = nv+np
   # Make the TPSA
   d = Descriptor(nv, no, np, no)
-  m = complex(DAMap(spin=true)) #repeat([ComplexTPS(use=d)], nv), Q=Quaternion([ComplexTPS(1,use=d), repeat([ComplexTPS(use=d)], 3)...]))
+  m = complex(DAMap()) #repeat([ComplexTPS(use=d)], nv), Q=Quaternion([ComplexTPS(1,use=d), repeat([ComplexTPS(use=d)], 3)...]))
 
   idx=3
   data=data[3:end,:]
@@ -132,7 +132,8 @@ function read_fpp_map(file)
     while data[idx,1] >= 0
       a = data[idx,2]
       b = data[idx,3]
-      ords = data[idx,4:end]
+      ords = data[idx,4:4+nn-1]
+      #println(ords)
       m.x[i][collect(Int, ords)] = a + im*b
       idx += 1
       count += 1
@@ -148,6 +149,7 @@ function read_fpp_map(file)
   end
   # dont forget params
   m.x[nv+1:nn] .= complexparams(d)
+  return m
 
 
   # spin?

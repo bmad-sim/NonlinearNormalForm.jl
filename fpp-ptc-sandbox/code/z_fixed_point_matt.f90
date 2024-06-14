@@ -104,9 +104,9 @@ program example
     call c_normal_new_no_fac(m,normal,doberz=.true.)
     m = ci_phasor()*normal%Atot**(-1) * m * normal%Atot *c_phasor()
 
-    write(*,*) "R ====================== "  
-  call clean(m,m,prec=1.d-6)
-  call print(m%v(1))
+    !write(*,*) "R ====================== "  
+  !@call clean(m,m,prec=1.d-6)
+  !call print(m%v(1))
   stop
 
     !call c_normal_new(m,normal)
