@@ -212,7 +212,7 @@ function track_ring0()
   x = vars()
   k = params()
 
-  p = Probe(x+x0, x0=x0, spin=true)
+  p = Probe(x+x0, x0=x0)
   p = track_ring(p,k1=0.36+k[2], vkicks=[vkicks[1]+k[1], 0, zeros(TPS,48)...]) # first and second coil are knobs
 
   # Make DAMap

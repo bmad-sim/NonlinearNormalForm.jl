@@ -101,8 +101,15 @@ program example
      !! call print(m)
     !call c_gofix(m,a0)
 
-    call c_normal_new_no_fac(m,normal,doberz=.true.)
+    call c_normal_new_no_fac(m,normal,doberz=.false.)
     m = ci_phasor()*normal%Atot**(-1) * m * normal%Atot *c_phasor()
+       
+
+   call clean(m,m,prec=1.d-13)
+
+     call print(m)
+  stop
+
 
     !write(*,*) "R ====================== "  
   !@call clean(m,m,prec=1.d-6)

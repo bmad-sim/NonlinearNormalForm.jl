@@ -23,12 +23,12 @@ program example
   write(6,*) " If deltap/p0 is a canonical variable  enter 3"
   write(6,*) " else enter 2"
   !read(5,*) nd
-  nd=1
+  nd=2
   !if(nd/=2.and.nd/=3) stop 44
   if(nd==1) ndpt = 0
   if(nd==2) ndpt = 0
   if(nd==3) ndpt = 6  ! BMAD choice
-  no=3;     ! no: the order of the polynomial    nv: the number of variables   
+  no=6;     ! no: the order of the polynomial    nv: the number of variables   
   np=2
   c_lda_used=15000
   use_quaternion=.true.
@@ -100,10 +100,11 @@ program example
    m=mt(i)*m
   enddo
    
-   
+   call print(m)
+   stop
   
 
-  call c_normal_new_no_fac(m,normal,dospin=.false.,phase=phase,nu_spin=nu_spin,doberz=.true.)
+  call c_normal_new_no_fac(m,normal,dospin=.false.,phase=phase,nu_spin=nu_spin)
   !write(*,*) "atot =========================="
   !call print(normal%atot)
   !stop
@@ -117,15 +118,16 @@ program example
   write(6,'(A,1x,g23.16,/)') "The spin tune  is ",normal%spin_tune 
    
   
-  m=normal%atot**(-1)
+  m=normal%atot**(-1)*m*normal%atot
     
-  call print(m)
-  stop
+
   
   m=ci_phasor()*m*c_phasor()
-  
-  
+
    call clean(m,m,prec=1.d-13)
+
+     call print(m)
+  stop
 
    
    

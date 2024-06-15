@@ -100,7 +100,11 @@ export        TaylorMap,
               to_phasor,
 
               log!,
-              pb
+              pb,
+
+
+
+              inv_with_log
 
 
 
@@ -122,14 +126,14 @@ include("probe.jl")
 include("map/ctors.jl")
 include("map/compose.jl")
 include("map/compose_it.jl")
-include("map/inv.jl")
+
 include("map/methods.jl")
 include("map/operators.jl")
 
 include("vectorfield/ctors.jl")
 include("vectorfield/methods.jl")
 include("vectorfield/operators.jl")
-
+include("map/inv.jl")
 include("work.jl")
 include("normal.jl")
 

@@ -230,7 +230,7 @@ function exp!(m::DAMap{S,T,U,V}, F::VectorField{T,U}, m1::DAMap{S,T,U,V}; work_m
   copy!(m, m1)
 
   for j=1:nmax
-    println("at iteration $j")
+    #println("at iteration $j")
     if j == 25
       slow=true
     end

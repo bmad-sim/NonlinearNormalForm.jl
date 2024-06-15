@@ -17,6 +17,26 @@ function inv(m1::TaylorMap{S,T,U,V}; dospin::Bool=true, work_low::Tuple{Vararg{V
   return m
 end
 
+
+function inv!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}; dospin::Bool=true, work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing, work_low=nothing) where {S,T,U,V}
+  lin = cutord(m1, 2)
+  np = numparams(m1)
+  nn = numnn(m1)
+  nv = numvars(m1)
+  M = zeros(numtype(m1), nn, nn)
+  M[1:nv,1:nn] = jacobian(lin,include_params=true)
+  for i=1:np
+    M[nv+i,nv+i] = 1
+  end
+  lin_inv = DAMap(inv(M)[1:nv,1:nn],use=m1)
+  n1 = lin_inv*m1
+  F = log(n1)
+  n1 = exp(-F)
+  copy!(m, n1*lin_inv)
+  return
+end
+
+#=
 """
     inv!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}; dospin::Bool=true, work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_inv_work_low(m1)) where {S,T,U,V}
 
@@ -87,3 +107,4 @@ function inv!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}; dospin::Bool=true, 
   
   return 
 end
+=#

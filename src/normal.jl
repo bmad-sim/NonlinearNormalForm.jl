@@ -49,8 +49,8 @@ function normal(m::DAMap)
    # println(nonl)
 
 
-    F =  zero(m1) #zero(VectorField, use=m1)  # temporary to later exponentiate
-    Fker =  zero(m1) #zero(VectorField, use=m1)  # temporary to later exponentiate
+    F =  zero(VectorField, use=m1)  # temporary to later exponentiate
+    Fker =  zero(VectorField, use=m1)  # temporary to later exponentiate
     # For each variable in the nonlinear map
     for j=1:nv
       v = Ref{ComplexF64}()
@@ -84,11 +84,11 @@ function normal(m::DAMap)
         idx = GTPSA.cycle!(nonl.x[j].tpsa, Cint(idx), nv+np, m, v)
       end
     end
-    kert = I + Fker
+    kert = exp(Fker)#I + Fker
     #println("kert =============================")
     #println(kert) 
     
-    ant = I + F
+    ant = exp(F) #I + F
     #return ant
     #println("\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$")
     #println("ant =============================")
@@ -109,6 +109,7 @@ function normal(m::DAMap)
   #at = a0∘a1∘
   return a0 ∘ a1 ∘ an
 end
+
 
 # 2x faster but not as pretty
 function normal_fast(m::DAMap{S,T,U,V}) where {S,T,U,V}
