@@ -8,8 +8,8 @@ Creates a new copy of the passed `TaylorMap` as a `$($t)`.
 
 If `use` is not specified, then the same GTPSA `Descriptor` as `m` will be used. If `use` is 
 specified (could be another `Descriptor`, `TaylorMap`, or a `Probe` containing `TPS`s), then the 
-copy of `m` as a new $($(t)) will have the same `Descriptor` as in `use.` The number of variables 
-and parameters must agree, however the orders may be different.
+copy of `m` as a new $($(t)) will have the same `Descriptor` as in `use.` The total number of variables + 
+parameters must agree, however the orders may be different.
 """
 function $t(m::TaylorMap{S,T,U,V}; use::UseType=nothing) where {S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing}}
   if isnothing(use)
@@ -80,7 +80,7 @@ Creates a `$($t)` from the `Probe`, which must contain `TPS`s.
 
 If `use` is not specified, then the same GTPSA `Descriptor` as `p` will be used. If `use` is 
 specified (could be another `Descriptor`, `TaylorMap`, or a `Probe` containing `TPS`s), then the 
-`p` promoted to a $($(t)) will have the same `Descriptor` as in `use.` The number of variables 
+`p` promoted to a $($(t)) will have the same `Descriptor` as in `use.` The total number of variables + 
 and parameters must agree, however the orders may be different.
 """
 function $t(p::Probe{S,T,U,V}; use::UseType=nothing) where {S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing}}
@@ -198,7 +198,7 @@ arguments `spin` and `radiation` may be set to `true` to construct a $($t) with 
 matrix, or `false` for no spin/radiation. Note that setting `spin`/`radiation` to any `Bool` value without `Q` or `E` 
 specified is type-unstable. This constructor also checks for consistency in the length of the orbital ray and GTPSA 
 `Descriptor`. The `use` kwarg may also be used to change the `Descriptor` of the TPSs, provided the number of variables 
-and parameters agree (orders may be different).
++ parameters agree (orders may be different).
 """
 function $t(; x::Union{Vector{<:Union{TPS,ComplexTPS}},Nothing}=nothing, x0::Union{Vector,Nothing}=nothing, Q::Union{Quaternion{<:Union{TPS,ComplexTPS}},Nothing}=nothing, E::Union{Matrix,Nothing}=nothing,  spin::Union{Bool,Nothing}=nothing, radiation::Union{Bool,Nothing}=nothing, use::UseType=nothing)
   if isnothing(use)
