@@ -12,18 +12,24 @@ copy of `m` as a new $($(t)) will have the same `Descriptor` as in `use.` The nu
 and parameters must agree, however the orders may be different.
 """
 function $t(m::TaylorMap{S,T,U,V}; use::UseType=nothing) where {S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing}}
-  desc = getdesc(m)
-  nv = numvars(desc)
-  np = numparams(desc)
-  nn = numnn(desc)
-  x = Vector{T}(undef, nn)
+  if isnothing(use)
+    use = getdesc(m)
+  else
+    nn == numnn(m) || error("Number of variables + parameters in GTPSAs for `m` and `use` disagree!")
+  end
   
+  nv = numvars(use)
+  np = numparams(use)
+  nn = numnn(use)
+
+
+  x = Vector{T}(undef, nn)
   for i=1:nv
-    @inbounds x[i] = T(m.x[i], use=getdesc(use))
+    x[i] = T(m.x[i], use=getdesc(use))
   end
 
   # use same parameters if same descriptor (use=nothing)
-  if isnothing(use) || getdesc(use) == desc
+  if isnothing(use) || getdesc(use) == getdesc(m)
     @inbounds x[nv+1:nn] .= view(m.x, nv+1:nn)
   else
     if T == TPS
@@ -43,13 +49,28 @@ function $t(m::TaylorMap{S,T,U,V}; use::UseType=nothing) where {S,T<:Union{TPS,C
     Q = nothing
   end
 
+  x0 = Vector{S}(undef, nv)
+  if nv > numvars(m)  # Increasing dimensionality
+    x0[1:numvars(m)] .= m.x0
+    x0[numvars(m)+1:nv] .= 0
+  else    # Reducing or keeping same dimensionality
+    x0[1:nv] .= view(m.x0, 1:nv)
+  end
+
   if !isnothing(m.E)
-    E = copy(m.E)
+    E = similar(m.E, nv, nv)
+    if nv > numvars(m)  # Increasing dimensionality
+      E[1:numvars(m),1:numvars(m)] .= view(m.E, 1:numvars(m), 1:numvars(m))
+      E[numvars(m)+1:nv,:] .= 0
+      E[:,numvars(m)+1:nv] .= 0
+    else
+      E[1:nv,1:nv] .= view(m.E, 1:nv, 1:nv)
+    end
   else
     E = nothing
   end
-
-  return $t{S,T,U,V}(copy(m.x0), x, Q, E)
+  
+  return $t{S,T,U,V}(x0, x, Q, E)
 end
 
 """
@@ -63,16 +84,26 @@ specified (could be another `Descriptor`, `TaylorMap`, or a `Probe` containing `
 and parameters must agree, however the orders may be different.
 """
 function $t(p::Probe{S,T,U,V}; use::UseType=nothing) where {S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing}}
-  desc = getdesc(p)
-  nv = numvars(desc)
-  np = numparams(desc)
-  nn = numnn(desc)
+  if isnothing(use)
+    use = getdesc(p)
+  else
+    numnn(use) == numnn(p) || error("Number of variables + parameters in GTPSAs for `p` and `use` disagree!")
+  end
+  
+  nv = numvars(use)
+  np = numparams(use)
+  nn = numnn(use)
+  
   x = Vector{T}(undef, nn)
 
-  length(p.x) == nv || error("Length of orbital ray ($(length(p.x))) inconsistent with number of variables in GTPSA ($(nv))")
+  length(p.x) == numvars(p) || error("Length of orbital ray ($(length(p.x))) inconsistent with number of variables in GTPSA ($(nv))")
   
-  for i=1:nv
+  for i=1:numvars(p)
     @inbounds x[i] = T(p.x[i], use=getdesc(use))
+  end
+
+  for i=numvars(p)+1:nv
+    @inbounds x[i] = T(use=getdesc(use))
   end
 
   if T == TPS
@@ -92,13 +123,28 @@ function $t(p::Probe{S,T,U,V}; use::UseType=nothing) where {S,T<:Union{TPS,Compl
     Q = nothing
   end
 
+  x0 = Vector{S}(undef, nv)
+  if nv > numvars(p)  # Increasing dimensionality
+    x0[1:numvars(p)] .= p.x0
+    x0[numvars(p)+1:nv] .= 0
+  else    # Reducing or keeping same dimensionality
+    x0[1:nv] .= view(p.x0, 1:nv)
+  end
+
   if !isnothing(p.E)
-    E = copy(p.E)
+    E = similar(p.E, nv, nv)
+    if nv > numvars(p)  # Increasing dimensionality
+      E[1:numvars(p),1:numvars(p)] .= view(p.E, 1:numvars(p), 1:numvars(p))
+      E[numvars(p)+1:nv,:] .= 0
+      E[:,numvars(p)+1:nv] .= 0
+    else
+      E[1:nv,1:nv] .= view(p.E, 1:nv, 1:nv)
+    end
   else
     E = nothing
   end
-
-  return $t{S,T,U,V}(copy(p.x0), x, Q, E)
+  
+  return $t{S,T,U,V}(x0, x, Q, E)
 end
 
 """
@@ -154,22 +200,38 @@ specified is type-unstable. This constructor also checks for consistency in the 
 `Descriptor`. The `use` kwarg may also be used to change the `Descriptor` of the TPSs, provided the number of variables 
 and parameters agree (orders may be different).
 """
-function $t(x::Vector{T}=zeros(TPS, numvars(GTPSA.desc_current)); x0::Vector{S}=zeros(numtype(first(x)), numvars(x)), Q::U=nothing, E::V=nothing,  spin::Union{Bool,Nothing}=nothing, radiation::Union{Bool,Nothing}=nothing, use::UseType=nothing) where {S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing}}
-  nv = numvars(x)
-  np = numparams(x)
-  nn = numnn(x)
+function $t(; x::Union{Vector{<:Union{TPS,ComplexTPS}},Nothing}=nothing, x0::Union{Vector,Nothing}=nothing, Q::Union{Quaternion{<:Union{TPS,ComplexTPS}},Nothing}=nothing, E::Union{Matrix,Nothing}=nothing,  spin::Union{Bool,Nothing}=nothing, radiation::Union{Bool,Nothing}=nothing, use::UseType=nothing)
+  if isnothing(use)
+    use = GTPSA.desc_current
+  end
 
-  length(x) == length(x0) || error("Length of orbital ray != length of reference orbit vector!")
-  numvars(x) == length(x) || error("Length of orbital ray inconsistent with number of variables in GTPSA!")
+  nv = numvars(use)
+  np = numparams(use)
+  nn = numnn(use)
 
-
-  x1 = Vector{T}(undef, nn)
-  @inbounds x1[1:nv] = map(x->(T)(x, use=getdesc(use)), x)
-
-  if T == TPS
-    @inbounds x1[nv+1:nn] .= params(getdesc(first(x)))
+  if isnothing(x)
+    x1 = Vector{TPS}(undef, nn)
+    for i=1:nv
+      @inbounds x1[i] = TPS(use=use)
+    end
   else
-    @inbounds x1[nv+1:nn] .= complexparams(getdesc(first(x)))
+    numvars(use) == numvars(x) || error("Number of variables in GTPSAs for `x` and `use` disagree!")
+    numvars(x) == length(x) || error("Length of orbital ray inconsistent with number of variables in GTPSA!")
+    x1 = Vector{eltype(x)}(undef, nn)
+    @inbounds x1[1:nv] .= view(x, 1:nv)
+  end
+
+  if eltype(x1) == TPS
+    @inbounds x1[nv+1:nn] .= params(getdesc(use))
+  else
+    @inbounds x1[nv+1:nn] .= complexparams(getdesc(use))
+  end
+
+  if isnothing(x0)
+    x01 = zeros(numtype(first(x1)), nv)
+  else
+    numvars(x1) == length(x0) || error("Number of variables != length of reference orbit vector!")
+    x01 = copy(x0)
   end
 
   if isnothing(spin)
@@ -177,9 +239,9 @@ function $t(x::Vector{T}=zeros(TPS, numvars(GTPSA.desc_current)); x0::Vector{S}=
       Q1 = Q
     else
       (!isnothing(use) || getdesc(x) == getdesc(Q)) || error("Orbital ray Descriptor different from quaternion Descriptor!")
-      q = Vector{T}(undef, 4)
+      q = Vector{eltype(x1)}(undef, 4)
       for i=1:4
-        @inbounds q[i] = T(Q.q[i],use=getdesc(use))
+        @inbounds q[i] = (eltype(x1))(Q.q[i],use=getdesc(use))
       end
       Q1 = Quaternion(q)
     end
@@ -188,9 +250,9 @@ function $t(x::Vector{T}=zeros(TPS, numvars(GTPSA.desc_current)); x0::Vector{S}=
       Q1 = Quaternion(first(x1)) # implicilty uses use descriptor
     else
       (!isnothing(use) || getdesc(x) == getdesc(Q)) || error("Orbital ray Descriptor different from quaternion Descriptor!")
-      q = Vector{T}(undef, 4)
+      q = Vector{eltype(x1)}(undef, 4)
       for i=1:4
-        @inbounds q[i] = T(Q.q[i],use=getdesc(use))
+        @inbounds q[i] = (eltype(x1))(Q.q[i],use=getdesc(use))
       end
       Q1 = Quaternion(q)
     end
@@ -213,7 +275,7 @@ function $t(x::Vector{T}=zeros(TPS, numvars(GTPSA.desc_current)); x0::Vector{S}=
     #E1 = nothing # for type instability
   end
 
-  return $t{S,T,typeof(Q1),typeof(E1)}(copy(x0), x1, Q1, E1)
+  return $t(x01, x1, Q1, E1)
 end
 
 """

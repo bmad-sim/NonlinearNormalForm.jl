@@ -34,8 +34,8 @@ function rand(t::Union{Type{DAMap},Type{TPSAMap}}; spin::Union{Bool,Nothing}=not
   if isnothing(radiation)
     V = Nothing
   else
-    if spin
-      V = Float64
+    if radiation
+      V = Matrix{Float64}
     else
       V = Nothing
     end
