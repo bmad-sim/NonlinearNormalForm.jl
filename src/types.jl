@@ -1,6 +1,6 @@
 
 """
-    TaylorMap{S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix{S},Nothing}}
+    TaylorMap{S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix{S},Nothing},W<:Union{Nothing,Bool}}
 
 Abstract type for `TPSAMap` and `DAMap` used for normal form analysis. 
 
@@ -10,53 +10,67 @@ a `Quaternion` as a truncated power series is included, else `Q` is `nothing`. I
 radiation is included, a field `E` contains a matrix of the envelope for stochastic 
 radiation, else `E` is nothing.
 
+If all planes are exhibiting pseudo-harmonic oscillations, then `idpt` is `nothing`. 
+If the last plane is coasting, then `idpt` specifies which variable in the last plane 
+is constant (energy-like): `idpt=false` if the variable with index `NV-1` is constant, or 
+`idpt=true` is the variable with index `NV` is constant.
+
 ### Fields
-- `x0` -- Entrance coordinates of the map, Taylor expansion point
-- `x`  -- Orbital ray as a truncated power series, expansion around `x0` + scalar part equal to EXIT coordinates of map
-- `Q`  -- `Quaternion` as a truncated power series if spin is included, else `nothing`
-- `E`  -- Matrix of the envelope for stochastic radiation if included, else `nothing`
+- `x0`   -- Entrance coordinates of the map, Taylor expansion point
+- `x`    -- Orbital ray as a truncated power series, expansion around `x0` + scalar part equal to EXIT coordinates of map
+- `Q`    -- `Quaternion` as a truncated power series if spin is included, else `nothing`
+- `E`    -- Matrix of the envelope for stochastic radiation if included, else `nothing`
+- `idpt` -- If the last plane is coasting, then `idpt=false` if the first variable in last plane is constant (energy-like) or `true` if the second. If no coasting, then `idpt=nothing`
 """
-abstract type TaylorMap{S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix{S},Nothing}} end 
+abstract type TaylorMap{S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix{S},Nothing},W<:Union{Nothing,Bool}} end 
 
 """
-    DAMap{S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix{S},Nothing}} <: TaylorMap{S,T,U,V}
+    DAMap{S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix{S},Nothing},W<:Union{Nothing,Bool}} <: TaylorMap{S,T,U,V,W}
 
 `TaylorMap` that composes and inverses as a `DAMap` (with the scalar part ignored).
 See `TaylorMap` for more information.
 """
-struct DAMap{S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix{S},Nothing}} <: TaylorMap{S,T,U,V}
+struct DAMap{S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix{S},Nothing},W<:Union{Nothing,Bool}} <: TaylorMap{S,T,U,V,W}
   x0::Vector{S}    # Entrance value of map
   x::Vector{T}     # Expansion around x0, with scalar part equal to EXIT value of map wrt initial coordinates x0
   Q::U             # Quaternion for spin
   E::V             # Envelope for stochastic radiation
+  idpt::W          # Specifies index of constant (energy-like) variable
 end
 
 """
-    TPSAMap{S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix{S},Nothing}} <: TaylorMap{S,T,U,V}
+    TPSAMap{S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix{S},Nothing},W<:Union{Nothing,Bool}} <: TaylorMap{S,T,U,V,W}
 
 `TaylorMap` that composes and inverses as a `TPSAMap` (with the scalar part included).
 See `TaylorMap` for more information.
 """
-struct TPSAMap{S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix{S},Nothing}}  <: TaylorMap{S,T,U,V}
+struct TPSAMap{S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix{S},Nothing},W<:Union{Nothing,Bool}} <: TaylorMap{S,T,U,V,W}
   x0::Vector{S}    # Entrance value of map
   x::Vector{T}     # Expansion around x0, with scalar part equal to EXIT value of map wrt initial coordinates x0
   Q::U             # Quaternion for spin
   E::V             # Envelope for stochastic radiation
+  idpt::W          # Specifies index of constant (energy-like) variable
 end
 
 """
-    Probe{S,T,U<:Union{Quaternion{T},Nothing},V<:Union{Matrix{S},Nothing}}
+    Probe{S,T,U<:Union{Quaternion{T},Nothing},V<:Union{Matrix{S},Nothing},W<:Union{Nothing,Bool}}
 
 Parametric type used for tracking. The orbital/spin part can contain 
 either scalars or `TPS`s. If spin is included, the field `Q` is a `Quaternion` 
 with the same type as `x`, else `Q` is `nothing`. If radiation is included, 
 the field `E` contains the stochastic matrix with `eltype(E)==S`, else `E` is `nothing`.
+
+If all planes are exhibiting pseudo-harmonic oscillations, then `idpt` is `nothing`. 
+If the last plane is coasting, then `idpt` specifies which variable in the last plane 
+is constant (energy-like): `idpt=false` if the variable with index `NV-1` is constant, or 
+`idpt=true` is the variable with index `NV` is constant.
 """
-struct Probe{S,T,U<:Union{Quaternion{T},Nothing},V<:Union{Matrix{S},Nothing}}
+struct Probe{S,T,U<:Union{Quaternion{T},Nothing},V<:Union{Matrix{S},Nothing},W<:Union{Nothing,Bool}}
   x0::Vector{S}   # Entrance coordinates
   x::Vector{T}    # Out coordinates
   Q::U            # Quaternion
   E::V            # Stochastic matrix
+  idpt::W         # Specifies index of constant (energy-like) variable
 end
 
 """

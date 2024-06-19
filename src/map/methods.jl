@@ -19,7 +19,7 @@ end
 # --- complex ---
 for t = (:DAMap, :TPSAMap)
 @eval begin    
-function complex(m::$t{S,T,U,V}) where {S,T,U,V}
+function complex(m::$t)
   desc = getdesc(m)
   nn = numnn(desc)
   nv = numvars(desc)
@@ -33,6 +33,7 @@ function complex(m::$t{S,T,U,V}) where {S,T,U,V}
   end
 
   # use same parameters if complex already
+  T = eltype(m.x)
   if T == ComplexTPS
     @inbounds x[nv+1:nn] .= view(m.x, nv+1:nn)
   else
@@ -54,19 +55,19 @@ function complex(m::$t{S,T,U,V}) where {S,T,U,V}
   else
     E = nothing
   end
-  return $t(x0, x, Q, E)
+  return $t(x0, x, Q, E, m.idpt)
 end
 
 # --- complex type ---
-function complex(::Type{$t{S,T,U,V}}) where {S,T,U,V}
-  return $t{ComplexF64,ComplexTPS,U == Nothing ? Nothing : Quaternion{ComplexTPS}, V == Nothing ? Nothing : ComplexF64}
+function complex(::Type{$t{S,T,U,V,W}}) where {S,T,U,V,W}
+  return $t{ComplexF64,ComplexTPS,U == Nothing ? Nothing : Quaternion{ComplexTPS}, V == Nothing ? Nothing : ComplexF64, W}
 end
 
 end
 end
 
 # --- copy! ---
-function copy!(m::TaylorMap, m1::TaylorMap) # where {S1,T1,U1,V1,S2,T2,U2,V2}
+function copy!(m::TaylorMap, m1::TaylorMap)
   m.x0 .= m1.x0
   desc = getdesc(m)
   nn = numnn(desc)
@@ -125,6 +126,8 @@ function cutord(m1::TaylorMap{S,T,U,V}, order::Integer, spin_order::Integer=orde
 end
 
 function cutord!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}, order::Integer, spin_order::Integer=order; dospin::Bool=true) where {S,T,U,V}
+  checkidpt(m, m1)
+  
   desc = getdesc(m1)
   nv = numvars(desc)
   np = numparams(desc)
@@ -155,6 +158,8 @@ function getord(m1::TaylorMap{S,T,U,V}, order::Integer, spin_order::Integer=orde
 end
 
 function getord!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}, order::Integer, spin_order::Integer=order; dospin::Bool=true) where {S,T,U,V}
+  checkidpt(m, m1)
+  
   desc = getdesc(m1)
   nv = numvars(desc)
   np = numparams(desc)

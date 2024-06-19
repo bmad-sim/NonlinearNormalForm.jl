@@ -2,7 +2,7 @@ for t = (:DAMap, :TPSAMap)
 @eval begin
 
 """
-    $($t)(TaylorMap{S,T,U,V}; use::UseType=nothing) where {S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing}}
+    $($t)(m::TaylorMap{S,T,U,V,W}; use::UseType=nothing, idpt::Union{Nothing,Bool}=m.idpt) where {S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing},W<:Union{Nothing,Bool}}
 
 Creates a new copy of the passed `TaylorMap` as a `$($t)`. 
 
@@ -10,12 +10,14 @@ If `use` is not specified, then the same GTPSA `Descriptor` as `m` will be used.
 specified (could be another `Descriptor`, `TaylorMap`, or a `Probe` containing `TPS`s), then the 
 copy of `m` as a new $($(t)) will have the same `Descriptor` as in `use.` The total number of variables + 
 parameters must agree, however the orders may be different.
+
+If `idpt` is not specified, then the same `idpt` as `m` will be used, else that specified will be used.
 """
-function $t(m::TaylorMap{S,T,U,V}; use::UseType=nothing) where {S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing}}
+function $t(m::TaylorMap{S,T,U,V,W}; use::UseType=nothing, idpt::Union{Nothing,Bool}=m.idpt) where {S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing},W<:Union{Nothing,Bool}}
   if isnothing(use)
     use = getdesc(m)
   else
-    nn == numnn(m) || error("Number of variables + parameters in GTPSAs for `m` and `use` disagree!")
+    numnn(use) == numnn(m) || error("Number of variables + parameters in GTPSAs for `m` and `use` disagree!")
   end
   
   nv = numvars(use)
@@ -69,12 +71,12 @@ function $t(m::TaylorMap{S,T,U,V}; use::UseType=nothing) where {S,T<:Union{TPS,C
   else
     E = nothing
   end
-  
-  return $t{S,T,U,V}(x0, x, Q, E)
+
+  return $t{S,T,U,V,typeof(idpt)}(x0, x, Q, E, idpt)
 end
 
 """
-    $($t)(p::Probe{S,T,U,V}; use::UseType=nothing) where {S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing}}
+    $($t)(p::Probe{S,T,U,V,W}; use::UseType=nothing, idpt::Union{Nothing,Bool}=p.idpt) where {S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing},W<:Union{Nothing,Bool}}
 
 Creates a `$($t)` from the `Probe`, which must contain `TPS`s. 
 
@@ -82,8 +84,10 @@ If `use` is not specified, then the same GTPSA `Descriptor` as `p` will be used.
 specified (could be another `Descriptor`, `TaylorMap`, or a `Probe` containing `TPS`s), then the 
 `p` promoted to a $($(t)) will have the same `Descriptor` as in `use.` The total number of variables + 
 and parameters must agree, however the orders may be different.
+
+If `idpt` is not specified, then the same `idpt` as `m` will be used, else that specified will be used.
 """
-function $t(p::Probe{S,T,U,V}; use::UseType=nothing) where {S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing}}
+function $t(p::Probe{S,T,U,V,W}; use::UseType=nothing, idpt::Union{Nothing,Bool}=p.idpt) where {S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing},W<:Union{Nothing,Bool}}
   if isnothing(use)
     use = getdesc(p)
   else
@@ -143,18 +147,18 @@ function $t(p::Probe{S,T,U,V}; use::UseType=nothing) where {S,T<:Union{TPS,Compl
   else
     E = nothing
   end
-  
-  return $t{S,T,U,V}(x0, x, Q, E)
+
+  return $t{S,T,U,V,typeof(idpt)}(x0, x, Q, E, idpt)
 end
 
 """
-    $($t){S,T,U,V}(u::UndefInitializer; use::UseType=GTPSA.desc_current) where {S,T,U,V}
+    $($t){S,T,U,V,W}(u::UndefInitializer; use::UseType=GTPSA.desc_current, idpt::W=nothing) where {S,T,U,V,W}
 
 Creates an undefined `$($t){S,T,U,V}` with same `Descriptor` as `use`. The immutable 
 parameters will be allocated if `use` is not a `TaylorMap`, else the immutable parameters 
 from `use` will be used.
 """
-function $t{S,T,U,V}(u::UndefInitializer; use::UseType=GTPSA.desc_current) where {S,T,U,V}
+function $t{S,T,U,V,W}(u::UndefInitializer; use::UseType=GTPSA.desc_current, idpt::W=nothing) where {S,T,U,V,W}
   desc = getdesc(use)
   nv = numvars(desc)
   np = numparams(desc)
@@ -186,11 +190,11 @@ function $t{S,T,U,V}(u::UndefInitializer; use::UseType=GTPSA.desc_current) where
     E = nothing
   end
 
-  return $t(x0, x, Q, E)
+  return $t(x0, x, Q, E, idpt)
 end
 
 """
-    $($t)(x::Vector{T}=zeros(TPS, numvars(GTPSA.desc_current)); x0::Vector{S}=zeros(numtype(first(x)), numvars(x)), Q::U=nothing, E::V=nothing,  spin::Union{Bool,Nothing}=nothing, radiation::Union{Bool,Nothing}=nothing, use::UseType=nothing) where {S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing}}
+    $($t)(; x::Union{Vector{<:Union{TPS,ComplexTPS}},Nothing}=nothing, x0::Union{Vector,Nothing}=nothing, Q::Union{Quaternion{<:Union{TPS,ComplexTPS}},Nothing}=nothing, E::Union{Matrix,Nothing}=nothing,  spin::Union{Bool,Nothing}=nothing, radiation::Union{Bool,Nothing}=nothing, idpt::Union{Nothing,Bool}=nothing, use::UseType=nothing)
 
 Constructs a $($t) with the passed vector of `TPS`/`ComplexTPS` as the orbital ray, and optionally the entrance 
 coordinates `x0`, `Quaternion` for spin `Q`, and stochastic matrix `E` as keyword arguments. The helper keyword 
@@ -200,7 +204,7 @@ specified is type-unstable. This constructor also checks for consistency in the 
 `Descriptor`. The `use` kwarg may also be used to change the `Descriptor` of the TPSs, provided the number of variables 
 + parameters agree (orders may be different).
 """
-function $t(; x::Union{Vector{<:Union{TPS,ComplexTPS}},Nothing}=nothing, x0::Union{Vector,Nothing}=nothing, Q::Union{Quaternion{<:Union{TPS,ComplexTPS}},Nothing}=nothing, E::Union{Matrix,Nothing}=nothing,  spin::Union{Bool,Nothing}=nothing, radiation::Union{Bool,Nothing}=nothing, use::UseType=nothing)
+function $t(; x::Union{Vector{<:Union{TPS,ComplexTPS}},Nothing}=nothing, x0::Union{Vector,Nothing}=nothing, Q::Union{Quaternion{<:Union{TPS,ComplexTPS}},Nothing}=nothing, E::Union{Matrix,Nothing}=nothing,  spin::Union{Bool,Nothing}=nothing, radiation::Union{Bool,Nothing}=nothing, idpt::Union{Nothing,Bool}=nothing, use::UseType=nothing)
   if isnothing(use)
     use = GTPSA.desc_current
   end
@@ -275,11 +279,11 @@ function $t(; x::Union{Vector{<:Union{TPS,ComplexTPS}},Nothing}=nothing, x0::Uni
     #E1 = nothing # for type instability
   end
 
-  return $t(x01, x1, Q1, E1)
+  return $t(x01, x1, Q1, E1, idpt)
 end
 
 """
-    $($t)(M; use::UseType=GTPSA.desc_current, x0::Vector{S}=zeros(eltype(M), size(M,1)), Q::U=nothing, E::V=nothing,  spin::Union{Bool,Nothing}=nothing, radiation::Union{Bool,Nothing}=nothing) where {S,U<:Union{Quaternion{<:Union{TPS,ComplexTPS}},Nothing},V<:Union{Matrix,Nothing}}
+    $($t)(M; use::UseType=GTPSA.desc_current, x0::Vector{S}=zeros(eltype(M), size(M,1)), Q::U=nothing, E::V=nothing,  spin::Union{Bool,Nothing}=nothing, radiation::Union{Bool,Nothing}=nothing, idpt::Union{Nothing,Bool}=nothing) where {S,U<:Union{Quaternion{<:Union{TPS,ComplexTPS}},Nothing},V<:Union{Matrix,Nothing}}
 
 `M` must represent a matrix with linear indexing.
 
@@ -290,14 +294,14 @@ matrix, or `false` for no spin/radiation. Note that setting `spin`/`radiation` t
 specified is type-unstable. This constructor also checks for consistency in the length of the orbital ray and GTPSA 
 `Descriptor`.
 """
-function $t(M; use::UseType=GTPSA.desc_current, x0::Vector{S}=zeros(eltype(M), size(M,1)), Q::U=nothing, E::V=nothing,  spin::Union{Bool,Nothing}=nothing, radiation::Union{Bool,Nothing}=nothing) where {S,U<:Union{Quaternion{<:Union{TPS,ComplexTPS}},Nothing},V<:Union{Matrix,Nothing}}
+function $t(M; use::UseType=GTPSA.desc_current, x0::Vector{S}=zeros(eltype(M), numvars(use)), Q::U=nothing, E::V=nothing,  spin::Union{Bool,Nothing}=nothing, radiation::Union{Bool,Nothing}=nothing, idpt::Union{Nothing,Bool}=nothing) where {S,U<:Union{Quaternion{<:Union{TPS,ComplexTPS}},Nothing},V<:Union{Matrix,Nothing}}
   Base.require_one_based_indexing(M)
   nv = numvars(use)
   np = numparams(use)
   nn = numnn(use)
 
   nv == length(x0) || error("Number of variables in GTPSA Descriptor != length of reference orbit vector!")
-  nv == size(M,1) || error("Number of rows in transfer matrix inconsistent with number of variables in GTPSA!")
+  nv >= size(M,1) || error("Number of rows in transfer matrix > number of variables in GTPSA!")
 
   if eltype(M) <: Complex
     outT = ComplexTPS
@@ -306,11 +310,15 @@ function $t(M; use::UseType=GTPSA.desc_current, x0::Vector{S}=zeros(eltype(M), s
   end
 
   x1 = Vector{outT}(undef, nn)
-  for i=1:nv
+  for i=1:size(M,1)
     @inbounds x1[i] = (outT)(use=getdesc(use))
     for j=1:size(M,2)
       @inbounds x1[i][j] = M[i,j]
     end
+  end
+
+  for i=size(M,1)+1:nv
+    @inbounds x1[i] = (outT)(use=getdesc(use))
   end
 
   if outT == TPS
@@ -358,35 +366,35 @@ function $t(M; use::UseType=GTPSA.desc_current, x0::Vector{S}=zeros(eltype(M), s
     #E1 = nothing # for type instability
   end
 
-  return $t{eltype(M),outT,typeof(Q1),typeof(E1)}(copy(x0), x1, Q1, E1)
+  return $t{eltype(M),outT,typeof(Q1),typeof(E1),typeof(idpt)}(copy(x0), x1, Q1, E1,idpt)
 end
 
 
 """
-    zero(m::$($t){S,T,U,V}) where {S,T,U,V}
+    zero(m::$($t))
 
 Creates a $($t) with the same GTPSA `Descriptor`, and spin/radiation on/off,
 as `m` but with all zeros for each quantity (except for the immutable parameters 
 in `x[nv+1:nn]`, which will be copied from `m.x`)
 """
-function zero(m::$t{S,T,U,V}) where {S,T,U,V}
+function zero(m::$t)
   desc = getdesc(m)
   nn = numnn(desc)
   nv = numvars(desc)
   np = numparams(desc)
   
-  x = Vector{T}(undef, nn)
+  x = Vector{eltype(m.x)}(undef, nn)
   for i=1:nv
-    @inbounds x[i] = T(use=desc)
+    @inbounds x[i] = (eltype(m.x))(use=desc)
   end
 
   # use same parameters 
   @inbounds x[nv+1:nn] .= view(m.x, nv+1:nn)
 
   if !isnothing(m.Q)
-    q = Vector{T}(undef, 4)
+    q = Vector{eltype(m.x)}(undef, 4)
     for i=1:4
-      @inbounds q[i] = T(use=desc)
+      @inbounds q[i] = (eltype(m.x))(use=desc)
     end
     Q = Quaternion(q)
   else
@@ -399,10 +407,10 @@ function zero(m::$t{S,T,U,V}) where {S,T,U,V}
     E = nothing
   end
 
-  return $t(zeros(eltype(m.x0), nv), x, Q, E)
+  return $t(zeros(eltype(m.x0), nv), x, Q, E, m.idpt)
 end
 
-function zero(::Type{$t{S,T,U,V}}; use::UseType=GTPSA.desc_current) where {S,T,U,V}
+function zero(::Type{$t{S,T,U,V,W}}; use::UseType=GTPSA.desc_current, idpt::W=nothing) where {S,T,U,V,W}
   desc = getdesc(use)
   nn = numnn(desc)
   nv = numvars(desc)
@@ -443,19 +451,21 @@ function zero(::Type{$t{S,T,U,V}}; use::UseType=GTPSA.desc_current) where {S,T,U
     E = nothing
   end
 
-  return $t(x0, x, Q, E)
+  return $t(x0, x, Q, E, idpt)
 end
 
 """
-    one(m::$($t){S,T,U,V}) where {S,T,U,V}
+    one(m::$($t))
   
 Construct an identity map based on `m`.
 """
-function one(m::$t{S,T,U,V}) where {S,T,U,V}
+function one(m::$t)
   desc = getdesc(m)
   nn = numnn(desc)
   nv = numvars(desc)
   np = numparams(desc)
+
+  T = eltype(m.x)
   
   x = Vector{T}(undef, nn)
   if T == ComplexTPS
@@ -488,10 +498,10 @@ function one(m::$t{S,T,U,V}) where {S,T,U,V}
     E = nothing
   end
 
-  return $t(zeros(eltype(m.x0), nv), x, Q, E)
+  return $t(zeros(eltype(m.x0), nv), x, Q, E, m.idpt)
 end
 
-function one(::Type{$t{S,T,U,V}}; use::UseType=GTPSA.desc_current) where {S,T,U,V}
+function one(::Type{$t{S,T,U,V,W}}; use::UseType=GTPSA.desc_current, idpt::W=nothing) where {S,T,U,V,W}
   desc = getdesc(use)
   nn = numnn(desc)
   nv = numvars(desc)
@@ -534,7 +544,7 @@ function one(::Type{$t{S,T,U,V}}; use::UseType=GTPSA.desc_current) where {S,T,U,
     E = nothing
   end
 
-  return $t(x0, x, Q, E)
+  return $t(x0, x, Q, E, idpt)
 end
 
 end

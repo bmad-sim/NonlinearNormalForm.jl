@@ -115,6 +115,8 @@ for ops = (("add!", :+), ("sub!",:-))
 @eval begin
 
 function $(Meta.parse(ops[1]))(m::TaylorMap, m1::TaylorMap, m2::TaylorMap; dospin::Bool=true)
+  checkidpt(m, m1, m2)
+  
   nv = numvars(m)
 
   m.x0 .= m1.x0
@@ -136,6 +138,8 @@ function $(Meta.parse(ops[1]))(m::TaylorMap, m1::TaylorMap, m2::TaylorMap; dospi
 end
 
 function $(Meta.parse(ops[1]))(m::TaylorMap, J::UniformScaling, m1::TaylorMap; dospin::Bool=true)
+  checkidpt(m, m1)
+  
   nv = numvars(m)
 
   m.x0 .= m1.x0
@@ -159,6 +163,8 @@ function $(Meta.parse(ops[1]))(m::TaylorMap, J::UniformScaling, m1::TaylorMap; d
 end
 
 function $(Meta.parse(ops[1]))(m::TaylorMap, m1::TaylorMap, J::UniformScaling; dospin::Bool=true)
+  checkidpt(m, m1)
+
   nv = numvars(m)
 
   m.x0 .= m1.x0
@@ -182,6 +188,7 @@ function $(Meta.parse(ops[1]))(m::TaylorMap, m1::TaylorMap, J::UniformScaling; d
 end
 
 function $(ops[2])(m1::TaylorMap, m2::TaylorMap)
+  checkidpt(m1, m2)
   # Promote if necessary:
   if eltype(m1.x) == ComplexTPS
     m = zero(m1)
@@ -213,6 +220,8 @@ end
 for ops = (("add!", :+), ("sub!",:-), ("mul!",:*), ("div!",:/))
 @eval begin
 function $(Meta.parse(ops[1]))(m::TaylorMap, a::Number, m1::TaylorMap; dospin::Bool=true)
+  checkidpt(m, m1)
+  
   nv = numvars(m)
   m.x0 .= m1.x0
 
@@ -233,6 +242,8 @@ function $(Meta.parse(ops[1]))(m::TaylorMap, a::Number, m1::TaylorMap; dospin::B
 end
 
 function $(Meta.parse(ops[1]))(m::TaylorMap, m1::TaylorMap, a::Number; dospin::Bool=true)
+  checkidpt(m, m1)
+  
   nv = numvars(m)
 
   m.x0 .= m1.x0

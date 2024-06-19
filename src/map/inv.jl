@@ -3,7 +3,7 @@ minv!(na::Cint, ma::Vector{Ptr{RTPSA}}, nb::Cint, mc::Vector{Ptr{RTPSA}}) = (@in
 minv!(na::Cint, ma::Vector{Ptr{CTPSA}}, nb::Cint, mc::Vector{Ptr{CTPSA}}) = (@inline; GTPSA.mad_ctpsa_minv!(na, ma, nb, mc))
 
 """
-    inv(m1::TaylorMap{S,T,U,V}; dospin::Bool=true, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_inv_work_low(m1)) where {S,T,U,V}
+    inv(m1::TaylorMap; dospin::Bool=true, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_inv_work_low(m1))
 
 Inverts the `TaylorMap`.
 
@@ -11,14 +11,15 @@ Inverts the `TaylorMap`.
 - `dospin` -- Specify whether to invert the quaternion as well, default is `true`
 - `work_low` -- Temporary vector to hold the low-level C pointers. Default is output from `prep_inv_work_low`
 """
-function inv(m1::TaylorMap{S,T,U,V}; dospin::Bool=true, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_inv_work_low(m1)) where {S,T,U,V}
+function inv(m1::TaylorMap; dospin::Bool=true, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_inv_work_low(m1))
   m = zero(m1)
   inv!(m,m1,dospin=dospin,work_low=work_low)
   return m
 end
 
-
+#=
 function inv!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}; dospin::Bool=true, work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing, work_low=nothing) where {S,T,U,V}
+  checkidpt(m,m1)
   lin = cutord(m1, 2)
   np = numparams(m1)
   nn = numnn(m1)
@@ -28,17 +29,17 @@ function inv!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}; dospin::Bool=true, 
   for i=1:np
     M[nv+i,nv+i] = 1
   end
-  lin_inv = DAMap(inv(M)[1:nv,1:nn],use=m1)
+  lin_inv = DAMap(inv(M)[1:nv,1:nn],use=m1,idpt=m.idpt)
   n1 = lin_inv*m1
   F = log(n1)
-  n1 = exp(-F)
+  n1 = exp(-F,one(lin_inv))
   copy!(m, n1*lin_inv)
   return
 end
+=#
 
-#=
 """
-    inv!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}; dospin::Bool=true, work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_inv_work_low(m1)) where {S,T,U,V}
+    inv!(m::TaylorMap{S,T,U,V,W}, m1::TaylorMap{S,T,U,V,W}; dospin::Bool=true, work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_inv_work_low(m1)) where {S,T,U,V}
 
 In-place inversion of the `TaylorMap` setting `m = inv(m1)`. Aliasing `m === m1` is allowed, however 
 in this case a temporary vector must be used to store the scalar part of `m1` prior to inversion so 
@@ -49,10 +50,11 @@ that the entrance/exit coordinates of the map can be properly handled.
 - `work_ref` -- If `m === m1`, then a temporary vector must be used to store the scalar part. If not provided and `m === m1`, this temporary will be created internally. Default is `nothing`
 - `work_low` -- Temporary vector to hold the low-level C pointers. Default is output from `prep_inv_work_low`
 """
-function inv!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}; dospin::Bool=true, work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_inv_work_low(m1)) where {S,T,U,V}
+function inv!(m::TaylorMap{S,T,U,V,W}, m1::TaylorMap{S,T,U,V,W}; dospin::Bool=true, work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_inv_work_low(m1)) where {S,T,U,V,W}
   desc = getdesc(m1)
   nn = numnn(desc)
   nv = numvars(desc)
+  checkidpt(m, m1)
 
   outx_low = work_low[1]
   m1x_low = work_low[2]
@@ -107,4 +109,3 @@ function inv!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}; dospin::Bool=true, 
   
   return 
 end
-=#

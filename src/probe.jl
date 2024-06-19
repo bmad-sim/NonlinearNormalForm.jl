@@ -1,4 +1,4 @@
-function Probe(x::Vector{T}; x0::Vector{S}=zeros(length(x)), Q::U=nothing, E::V=nothing, spin::Union{Bool,Nothing}=nothing, radiation::Union{Bool,Nothing}=nothing) where {S,T,U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing}}
+function Probe(x::Vector{T}; x0::Vector{S}=zeros(length(x)), Q::U=nothing, E::V=nothing, spin::Union{Bool,Nothing}=nothing, radiation::Union{Bool,Nothing}=nothing, idpt::W=nothing) where {S,T,U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing},W<:Union{Nothing,Bool}}
   length(x) == length(x0) || error("Length of orbital ray != length of reference orbit vector!")
 
   if isnothing(spin)
@@ -28,12 +28,12 @@ function Probe(x::Vector{T}; x0::Vector{S}=zeros(length(x)), Q::U=nothing, E::V=
     #E1 = nothing # for type instability
   end
 
-  return Probe{S,T,typeof(Q1),typeof(E1)}(x0, x, Q1, E)
+  return Probe{S,T,typeof(Q1),typeof(E1),W}(x0, x, Q1, E, idpt)
 end
 
 
 # Copy ctor:
-function Probe(p::Probe{S,T,U,V}) where {S,T,U,V}
+function Probe(p::Probe{S,T,U,V,W}) where {S,T,U,V,W}
 
   x = Vector{T}(undef,length(p.x))
 
@@ -57,7 +57,7 @@ function Probe(p::Probe{S,T,U,V}) where {S,T,U,V}
     E = copy(m.E)
   end
 
-  return Probe{S,T,U,V}(copy(p.x0), x, Q, E)
+  return Probe{S,T,U,V,W}(copy(p.x0), x, Q, E, p.idpt)
 end
 
-==(p1::Probe, p2::Probe) = (p1.x0 == p2.x0 && p1.x == p2.x && p1.q == p2.q && p1.E == p2.E)
+==(p1::Probe, p2::Probe) = (p1.x0 == p2.x0 && p1.x == p2.x && p1.q == p2.q && p1.E == p2.E && p1.idpt == p2.idpt)

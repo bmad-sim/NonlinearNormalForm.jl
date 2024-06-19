@@ -48,6 +48,7 @@ function compose_it!(m::$t, m2::$t, m1::$t; dospin::Bool=true, work_low::Tuple{V
   @assert eltype(m.x) == promote_type(eltype(m2.x),eltype(m1.x)) "Cannot compose: output map orbital ray type $(eltype(m.x)) must be $(promote_type(eltype(m2.x),eltype(m1.x)))"
   @assert isnothing(m1.Q) && isnothing(m.Q) || eltype(m.Q.q) == promote_type(eltype(m2.Q.q),eltype(m1.Q.q)) "Cannot compose: output map quaternion type $(eltype(m.x)) must be $(promote_type(eltype(m2.x),eltype(m1.x)))"
   @assert isnothing(m1.E) && isnothing(m.E) || eltype(m.E) == promote_type(eltype(m2.E),eltype(m1.E)) "Cannot compose: output map stochastic matrix type $(eltype(m.E)) must be $(promote_type(eltype(m2.E),eltype(m1.E)))"
+  checkidpt(m, m2, m1)
 
   desc = getdesc(m1)
   nn = numnn(desc)

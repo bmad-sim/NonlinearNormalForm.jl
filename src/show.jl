@@ -52,6 +52,11 @@ function show(io::IO, m::Union{Probe,TaylorMap})
   !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || (println(io, "\t⋮"); return)
   println(io)
   lines_used[] += 1
+  if !isnothing(m.idpt)
+    !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || (println(io, "\t⋮"); return)
+    println("Last plane is coasting: variable #", numvars(m)-1+m.idpt, " is constant")
+    lines_used[] += 1
+  end
   !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || (println(io, "\t⋮"); return)
   println(io, "Orbital Ray ", typeof(m.x),":")
   lines_used[] += 1

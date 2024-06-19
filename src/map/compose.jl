@@ -127,9 +127,6 @@ for t = (:DAMap, :TPSAMap)
 $($t) composition, which calculates `m2 ∘ m1` $( $t == DAMap ? "ignoring the scalar part of `m1`" : "including the scalar part of `m1`")
 """
 function compose(m2::$t,m1::$t)
-  @assert !isnothing(m1.Q) && !isnothing(m2.Q) || m1.Q == m2.Q "Cannot compose: one map includes spin, other does not"
-  @assert !isnothing(m1.E) && !isnothing(m2.E) || m1.E == m2.E "Cannot compose: one map includes radiation, other does not"
-
   desc = getdesc(m1)
   nn = numnn(desc)
   nv = numvars(desc)
@@ -163,7 +160,7 @@ function compose(m2::$t,m1::$t)
     outE = Matrix{numtype(outT)}(undef, nv, nv)
   end
 
-  m = $t(outx0, outx, outQ, outE)
+  m = $t(outx0, outx, outQ, outE, m1.idpt)
   compose!(m, m2, m1)
   
   return m

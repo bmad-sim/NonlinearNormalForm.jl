@@ -18,9 +18,15 @@ numnn(m::Quaternion{<:Union{ComplexTPS,TPS}}) = unsafe_load(Base.unsafe_convert(
 
 numtype(m::Union{Probe{<:Real,T,<:Any,<:Any},<:TaylorMap{<:Number,T,<:Any,<:Any},VectorField{T,<:Any}}) where {T<:Union{TPS,ComplexTPS}} = numtype(T)
 
+maxord(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap,VectorField}) = unsafe_load(getdesc(m).desc).mo
+prmord(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap,VectorField}) = unsafe_load(getdesc(m).desc).po
+vpords(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap,VectorField}) = unsafe_wrap(Vector{UInt8}, unsafe_load(getdesc(m).desc).no, numnn(m))
+vords(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap,VectorField}) = unsafe_wrap(Vector{UInt8}, unsafe_load(getdesc(m).desc).no, numvars(m))
+pords(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap,VectorField}) = unsafe_wrap(Vector{UInt8}, unsafe_load(getdesc(m).desc).no, numparams(m))
+@inline checkidpt(m...) = all(x->x.idpt==first(m).idpt, m) || error("Maps have disagreeing idpt")
 
 # --- random symplectic map ---
-function rand(t::Union{Type{DAMap},Type{TPSAMap}}; spin::Union{Bool,Nothing}=nothing, radiation::Union{Bool,Nothing}=nothing, use::Union{Descriptor,TPS,ComplexTPS}=GTPSA.desc_current)
+function rand(t::Union{Type{DAMap},Type{TPSAMap}}; spin::Union{Bool,Nothing}=nothing, radiation::Union{Bool,Nothing}=nothing, use::Union{Descriptor,TPS,ComplexTPS}=GTPSA.desc_current, ndpt::Union{Nothing,Integer}=nothing)
   if isnothing(spin)
     U = Nothing
   else
@@ -113,7 +119,7 @@ end
 
 
 
-function read_fpp_map(file)
+function read_fpp_map(file; idpt::Union{Nothing,Bool}=nothing)
   data = readdlm(file, skipblanks=true)
   nv = data[findfirst(t->t=="Dimensional", data)- CartesianIndex(0,1)]
   no = data[findfirst(t->t=="NO", data) + CartesianIndex(0,2)]
@@ -121,7 +127,7 @@ function read_fpp_map(file)
   nn = nv+np
   # Make the TPSA
   d = Descriptor(nv, no, np, no)
-  m = complex(DAMap()) #repeat([ComplexTPS(use=d)], nv), Q=Quaternion([ComplexTPS(1,use=d), repeat([ComplexTPS(use=d)], 3)...]))
+  m = complex(DAMap(use=d,idpt=idpt)) #repeat([ComplexTPS(use=d)], nv), Q=Quaternion([ComplexTPS(1,use=d), repeat([ComplexTPS(use=d)], 3)...]))
 
   idx=3
   data=data[3:end,:]

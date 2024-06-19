@@ -1,16 +1,49 @@
 function normal(m::DAMap)
-  # 1: Go to parameter-dependent fixed point
-  a0 = gofix(m) #(cutord(m,2)-I)^-1 ∘ zero(m) + I  # zero(m) is zero in variables but identity in parameters
+  nn = numnn(m)
+
+  if !isnothing(m.idpt) # if coasting, set number of variables executing pseudo-harmonic oscillations
+    nhv = numvars(m)-2
+    #dt = Descriptor(vpords(m)[1:nhv], maxord(m), vpords(m)[nhv+1:nn],maxord(m))
+    #m_gofix = DAMap(m,use=dt,idpt=nothing)
+    eye = DAMap(I(nhv),use=m,idpt=m.idpt)
+    zer = zero(m); zer.x[nhv+1][nhv+1] = 1; zer.x[nhv+2][nhv+2] = 1
+    a0 = (cutord(m,2)-eye)^-1 * zer + eye
+    ndpt = numvars(m)-1+m.idpt
+    sgn = 1-2*m.idpt
+    nt = ndpt+sgn
+    for i=1:Int(nhv/2)
+      a0.x[nt] += sgn*a0.x[2*i][ndpt]*mono(2*i-1,use=getdesc(m)) - sgn*a0.x[2*i-1][ndpt]*mono(2*i,use=getdesc(m))
+    end
+  else
+    nhv = numvars(m)
+    a0 = (cutord(m_gofix,2)-I)^-1 ∘ zero(m_gofix) + I 
+  end
+
+  # 1: Go to parameter-dependent fixed point to first order
+ # zero(m) is zero in variables but identity in parameters
   m0 = a0^-1 ∘ m ∘ a0
 
   # 2: Do the linear normal form exactly
-  a1 = linear_a(m0)
+  Mt = GTPSA.jacobiant(m0.x[1:nhv])[1:nhv,:]  # parameters (+ coast) never included
+  F = mat_eigen(Mt, phase_modes=false) # Returns eigenvectors with vⱼ'*S*vⱼ = +im for odd j, and -im for even j
+  a1_inv_matrix = zeros(numvars(m),numvars(m))
+  for i=1:nhv
+    for j=1:Int(nhv/2)  # See Eqs. 2.48, 2.49 in EYB
+      a1_inv_matrix[2*j-1,i] = sqrt(2)*real(F.vectors[i,2*j-1])  # See Eq. 3.74 in EBB for factor of 2
+      a1_inv_matrix[2*j,i] = sqrt(2)*imag(F.vectors[i,2*j-1])  
+    end
+  end
+  a1_inv_matrix[nhv+1,nhv+1] = 1; a1_inv_matrix[nhv+2,nhv+2] = 1;
+
+  a1 = DAMap(inv(a1_inv_matrix),use=m0,idpt=m.idpt)
 
   m1 = a1^-1 ∘ m0 ∘ a1
 
   # 3: Go into phasor's basis
   c = from_phasor(m1)
   m1 = c ∘ m1 ∘ c^-1
+
+  return a0*a1
 
 
   # ---- Nonlinear -----
@@ -23,90 +56,67 @@ function normal(m::DAMap)
   end
 
   # Store the tunes
-  nv = numvars(m)
-  np = numparams(m)
-  eg = Vector{numtype(eltype(R_inv.x))}(undef, nv)
-  for i=1:nv
+  eg = Vector{numtype(eltype(R_inv.x))}(undef, nhv)
+  for i=1:nhv
     eg[i] = R_inv.x[i][i]
   end
 
-  #println(R_inv)
-  #println(m1)
-
-  mo = unsafe_load(NonlinearNormalForm.getdesc(m).desc).mo
+  mo = maxord(m)
 
   an = one(m1)
   ker = one(m1)
   # Kernel - these are tune shifts we leave in the map
   for i = 2:mo
     # Here, we have 
-    # m1 = ℛ(ℐ+ϵ²𝒞₂) 
+    # m1 = ℛexp(K)(ℐ+ϵ²𝒞₂) 
     # get rid of ℛ:
     nonl = m1 ∘ R_inv
-    nonl = nonl ∘ inv(ker)
+    nonl = nonl ∘ inv(ker) # get rid of kernal
     nonl = getord(nonl, i)  # Get only the leading order to stay in symplectic group
-    # now nonl = ℐ+ϵ²𝒞₂
-   # println(nonl)
-
+    # now nonl = ϵ²𝒞₂
 
     F =  zero(VectorField, use=m1)  # temporary to later exponentiate
     Fker =  zero(VectorField, use=m1)  # temporary to later exponentiate
+
     # For each variable in the nonlinear map
-    for j=1:nv
+    for j=1:nhv
       v = Ref{ComplexF64}()
-      m = Vector{UInt8}(undef, nv+np)
-      idx = GTPSA.cycle!(nonl.x[j].tpsa, Cint(j), nv+np, m, v)
+      ords = Vector{UInt8}(undef, nn)
+      idx = GTPSA.cycle!(nonl.x[j].tpsa, Cint(j), nn, ords, v)
       while idx > 0
         # Tune shifts should be left in the map (kernel) because we cannot remove them
         # if there is radiation, we technically could remove them
-        je = convert(Vector{Int}, m)
+        je = convert(Vector{Int}, ords)
         je[j] -= 1
         t = 0
-        for k = 1:2:nv
+        for k = 1:2:nhv
           t += abs(je[k]-je[k+1])
         end
 
         if t != 0  # then remove it
           lam = 1
-          for k = 1:nv
+          for k = 1:nhv
             lam *= eg[k]^je[k]
           end
-          #println(m)
-          #println("Killing monomial ", je, " = ", v[])
-          F.x[j] += mono(m,use=getdesc(m1))*v[]/(1-lam)
-          #println(lam)
-        else
+          F.x[j] += mono(ords,use=getdesc(m1))*v[]/(1-lam)
+        else # cannot remove it - add to kernel
           je[j] += 1
-          
-          Fker.x[j] += mono(m,use=getdesc(m1))*v[]
+          Fker.x[j] += mono(ords,use=getdesc(m1))*v[]
         end
 
-        idx = GTPSA.cycle!(nonl.x[j].tpsa, Cint(idx), nv+np, m, v)
+        idx = GTPSA.cycle!(nonl.x[j].tpsa, Cint(idx), nn, ords, v)
       end
     end
-    kert = exp(Fker)#I + Fker
-    #println("kert =============================")
-    #println(kert) 
-    
-    ant = exp(F) #I + F
-    #return ant
-    #println("\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$")
-    #println("ant =============================")
-    #println(ant)
+    kert = exp(Fker,one(m)) #I + Fker
+    ant = exp(F,one(m)) #I + F
 
     ker = kert ∘ ker
     an = an ∘ ant
-    #return m1 
     m1 = inv(ant) ∘ m1 ∘ ant
-    #println("\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$")
-    #println("m1 =============================")
-    #println(m1.x[1]) 
   end
 
   an = inv(c)∘an∘c
   
-  # to check if correct, remove linear part and take log
-  #at = a0∘a1∘
   return a0 ∘ a1 ∘ an
 end
 
@@ -201,6 +211,7 @@ function normal_fast(m::DAMap{S,T,U,V}) where {S,T,U,V}
 end
 
 function gofix!(a0::DAMap, m::DAMap, order=1; work_map::DAMap=zero(m), comp_work_low::Union{Nothing,Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}}=nothing, inv_work_low::Union{Nothing,Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}}=nothing)
+  checkidpt(a0,m,work_map)
   @assert !(a0 === m) "Aliasing `a0 === m` is not allowed."
   
   desc = getdesc(m)
@@ -264,6 +275,7 @@ function gofix(m::DAMap, order=1; work_map::DAMap=zero(m), comp_work_low::Union{
 end
 
 function linear_a!(a1::DAMap, m0::DAMap; inverse=false)
+  checkidpt(a1,m0)
   @assert !(a1 === m0) "Aliasing `a1 === m0` is not allowed."
   
   # We now get the eigenvectors of the compositional map ℳ (which acts on functions of phase space instead 
@@ -278,17 +290,13 @@ function linear_a!(a1::DAMap, m0::DAMap; inverse=false)
 
   work_matrix=zeros(numtype(m0), numvars(m0), numvars(m0))
 
-  #@assert size(work_matrix) == (nhv, nhv) "Incorrect size for work_matrix: received $(size(work_matrix)), require $(tuple(nhv, nhv))"
-  #work_matrix .= 0
-
   @views GTPSA.jacobiant!(work_matrix, m0.x[1:nhv])  # parameters never included
-  #println(work_matrix)
   F = mat_eigen!(work_matrix, phase_modes=false) # no need to phase modes. just a rotation
   
   for i=1:nhv
     for j=1:nhpl
-      work_matrix[2*j,i] = sqrt(2)*real(F.vectors[i,2*j])  # See Eq. 3.74 in EBB for factor of 2
-      work_matrix[2*j-1,i] = sqrt(2)*imag(F.vectors[i,2*j])
+      work_matrix[2*j-1,i] = sqrt(2)*real(F.vectors[i,2*j-1])  # See Eq. 3.74 in EBB for factor of 2
+      work_matrix[2*j,i] = sqrt(2)*imag(F.vectors[i,2*j-1])
     end
   end
 
@@ -318,7 +326,8 @@ function linear_a(m0::DAMap; inverse=false)
 end
 
 # computes c^-1
-function from_phasor!(cinv::DAMap{S,T,U,V}, m::DAMap) where {S,T<:ComplexTPS,U,V}
+function from_phasor!(cinv::DAMap, m::DAMap)
+  checkidpt(cinv,m)
   nhv = numvars(m)
 
   clear!(cinv)
@@ -332,7 +341,7 @@ function from_phasor!(cinv::DAMap{S,T,U,V}, m::DAMap) where {S,T<:ComplexTPS,U,V
     cinv.x[2*i][2*i]   = complex(0,-1/sqrt(2))
   end
 
-  if U != Nothing
+  if !isnothing(cinv.Q)
     cinv.Q.q[1][0] = 1
   end
 
@@ -340,13 +349,14 @@ function from_phasor!(cinv::DAMap{S,T,U,V}, m::DAMap) where {S,T<:ComplexTPS,U,V
 end
 
 function from_phasor(m::DAMap)
-  cinv=zero(complex(typeof(m)),use=m);
+  cinv=zero(complex(typeof(m)),use=m,idpt=m.idpt);
   from_phasor!(cinv,m);
   return cinv
 end
 
 # computes c
-function to_phasor!(c::DAMap{S,T,U,V}, m::DAMap) where {S,T<:ComplexTPS,U,V}
+function to_phasor!(c::DAMap, m::DAMap)
+  checkidpt(c,m)
   nhv = numvars(m)
 
   clear!(c)
@@ -358,7 +368,7 @@ function to_phasor!(c::DAMap{S,T,U,V}, m::DAMap) where {S,T<:ComplexTPS,U,V}
     c.x[2*i][2*i]   = complex(0,1/sqrt(2))
   end
 
-  if U != Nothing
+  if !isnothing(c.Q)
     c.Q.q[1][0] = 1
   end
 
@@ -366,7 +376,7 @@ function to_phasor!(c::DAMap{S,T,U,V}, m::DAMap) where {S,T<:ComplexTPS,U,V}
 end
 
 function to_phasor(m::DAMap)
-  c=zero(complex(typeof(m)),use=m);
+  c=zero(complex(typeof(m)),use=m,idpt=m.idpt);
   to_phasor!(c,m);
   return c
 end
