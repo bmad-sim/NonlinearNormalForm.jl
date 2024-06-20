@@ -17,7 +17,7 @@ function inv(m1::TaylorMap; dospin::Bool=true, work_low::Tuple{Vararg{Vector{<:U
   return m
 end
 
-
+#=
 function inv!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}; dospin::Bool=true, work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing, work_low=nothing) where {S,T,U,V}
   checkidpt(m,m1)
   lin = cutord(m1, 2)
@@ -36,8 +36,8 @@ function inv!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}; dospin::Bool=true, 
   copy!(m, n1*lin_inv)
   return
 end
+=#
 
-#=
 """
     inv!(m::TaylorMap{S,T,U,V,W}, m1::TaylorMap{S,T,U,V,W}; dospin::Bool=true, work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_inv_work_low(m1)) where {S,T,U,V}
 
@@ -109,4 +109,4 @@ function inv!(m::TaylorMap{S,T,U,V,W}, m1::TaylorMap{S,T,U,V,W}; dospin::Bool=tr
   
   return 
 end
-=#
+

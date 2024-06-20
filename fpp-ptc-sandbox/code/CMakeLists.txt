@@ -28,7 +28,8 @@ set (EXE_SPECS
   cmake_files/cmake.z_simple_operations
   cmake_files/cmake.normal_simple
   cmake_files/cmake.z_vf_Lie_sub
-  cmake_files/cmake.z_matt_fake_maps
+  cmake_files/cmake.z_coast_matt_fake_maps
+  cmake_files/cmake.z_radiation_matt_fake_maps
 )
 
 
