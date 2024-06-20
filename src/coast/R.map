@@ -1,4 +1,4 @@
-           6  Dimensional TPSA/DA map 
+           6  Dimensional TPSA/DA map
 
           1, NO =    3, NV =    8, INA =  184
  *********************************************
@@ -118,5 +118,5 @@
       NO =     3      NV =     8
    1   1.000000000000000       0.000000000000000       0  0  0  0  0  1  0  0
     -1   0.000000000000000       0.000000000000000       0  0  0  0  0  0  0  0
-  Spin Matrix is identity 
-  c_quaternion is identity 
+  Spin Matrix is identity
+  c_quaternion is identity

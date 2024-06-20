@@ -110,11 +110,6 @@ program example
   !stop
 
   call c_normal(m,normal,dospin=putspin,phase=phase,nu_spin=nu_spin)
-
-  m = normal%a2**(-1)*normal%a1**(-1)*m*normal%a1*normal%a2
-  call print(m)
-  stop
-  
   call print(phase(1))
   
   call clean(phase,phase,prec=1.d-5)
@@ -126,6 +121,10 @@ program example
    
   call print(phase)
   call print(nu_spin)
+
+  m = ci_phasor()
+  call print(m)
+  stop
   
   m=normal%atot**(-1)*m*normal%atot
   

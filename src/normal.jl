@@ -3,14 +3,13 @@ function normal(m::DAMap)
 
   if !isnothing(m.idpt) # if coasting, set number of variables executing pseudo-harmonic oscillations
     nhv = numvars(m)-2
-    #dt = Descriptor(vpords(m)[1:nhv], maxord(m), vpords(m)[nhv+1:nn],maxord(m))
-    #m_gofix = DAMap(m,use=dt,idpt=nothing)
     eye = DAMap(I(nhv),use=m,idpt=m.idpt)
-    zer = zero(m); zer.x[nhv+1][nhv+1] = 1; zer.x[nhv+2][nhv+2] = 1
-    a0 = (cutord(m,2)-eye)^-1 * zer + eye
     ndpt = numvars(m)-1+m.idpt
     sgn = 1-2*m.idpt
     nt = ndpt+sgn
+    zer = zero(m); zer.x[nt][nt]=1; zer.x[ndpt][ndpt] = 1
+    a0 = (cutord(m,2)-eye)^-1 * zer + eye
+    println(a0.x[5])
     for i=1:Int(nhv/2)
       a0.x[nt] += sgn*a0.x[2*i][ndpt]*mono(2*i-1,use=getdesc(m)) - sgn*a0.x[2*i-1][ndpt]*mono(2*i,use=getdesc(m))
     end
@@ -36,14 +35,11 @@ function normal(m::DAMap)
   a1_inv_matrix[nhv+1,nhv+1] = 1; a1_inv_matrix[nhv+2,nhv+2] = 1;
 
   a1 = DAMap(inv(a1_inv_matrix),use=m0,idpt=m.idpt)
-
   m1 = a1^-1 ∘ m0 ∘ a1
 
   # 3: Go into phasor's basis
   c = from_phasor(m1)
   m1 = c ∘ m1 ∘ c^-1
-
-  return a0*a1
 
 
   # ---- Nonlinear -----
@@ -56,7 +52,7 @@ function normal(m::DAMap)
   end
 
   # Store the tunes
-  eg = Vector{numtype(eltype(R_inv.x))}(undef, nhv)
+  eg = Vector{numtype(eltype(R_inv.x))}(undef, numvars(m))
   for i=1:nhv
     eg[i] = R_inv.x[i][i]
   end
@@ -79,7 +75,7 @@ function normal(m::DAMap)
     Fker =  zero(VectorField, use=m1)  # temporary to later exponentiate
 
     # For each variable in the nonlinear map
-    for j=1:nhv
+    for j=1:numvars(m)
       v = Ref{ComplexF64}()
       ords = Vector{UInt8}(undef, nn)
       idx = GTPSA.cycle!(nonl.x[j].tpsa, Cint(j), nn, ords, v)
@@ -95,7 +91,7 @@ function normal(m::DAMap)
 
         if t != 0  # then remove it
           lam = 1
-          for k = 1:nhv
+          for k = 1:nhv # ignore coasting plane
             lam *= eg[k]^je[k]
           end
           F.x[j] += mono(ords,use=getdesc(m1))*v[]/(1-lam)
@@ -328,9 +324,15 @@ end
 # computes c^-1
 function from_phasor!(cinv::DAMap, m::DAMap)
   checkidpt(cinv,m)
-  nhv = numvars(m)
-
   clear!(cinv)
+
+  nhv = numvars(m)
+  if !isnothing(m.idpt)
+    nhv -= 2
+    cinv.x[nhv+1][nhv+1] = 1
+    cinv.x[nhv+2][nhv+2] = 1
+  end
+
   for i=1:Int(nhv/2)
     # x_new = 1/sqrt(2)*(x+im*p)
     cinv.x[2*i-1][2*i-1] = 1/sqrt(2)
@@ -357,9 +359,16 @@ end
 # computes c
 function to_phasor!(c::DAMap, m::DAMap)
   checkidpt(c,m)
-  nhv = numvars(m)
-
   clear!(c)
+
+  nhv = numvars(m)
+  if !isnothing(m.idpt)
+    nhv -= 2
+    cinv.x[nhv+1][nhv+1] = 1
+    cinv.x[nhv+2][nhv+2] = 1
+  end
+
+
   for i=1:Int(nhv/2)
     c.x[2*i-1][2*i-1] = 1/sqrt(2)
     c.x[2*i-1][2*i]   = 1/sqrt(2)
