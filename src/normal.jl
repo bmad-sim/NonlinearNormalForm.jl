@@ -15,7 +15,7 @@ function normal(m::DAMap)
     end
   else
     nhv = numvars(m)
-    a0 = (cutord(m_gofix,2)-I)^-1 ∘ zero(m_gofix) + I 
+    a0 = (cutord(m,2)-I)^-1 ∘ zero(m) + I 
   end
 
   # 1: Go to parameter-dependent fixed point to first order
@@ -32,9 +32,11 @@ function normal(m::DAMap)
       a1_inv_matrix[2*j,i] = sqrt(2)*imag(F.vectors[i,2*j-1])  
     end
   end
-  a1_inv_matrix[nhv+1,nhv+1] = 1; a1_inv_matrix[nhv+2,nhv+2] = 1;
+  if !isnothing(m.idpt)
+    a1_inv_matrix[nhv+1,nhv+1] = 1; a1_inv_matrix[nhv+2,nhv+2] = 1;
+  end
 
-  a1 = DAMap(inv(a1_inv_matrix),use=m0,idpt=m.idpt)
+  a1 = DAMap(complex(inv(a1_inv_matrix)),use=m0,idpt=m.idpt,E=m.E)
   m1 = a1^-1 ∘ m0 ∘ a1
 
   # 3: Go into phasor's basis
@@ -114,6 +116,12 @@ function normal(m::DAMap)
   an = inv(c)∘an∘c
   
   return a0 ∘ a1 ∘ an
+end
+
+function equilibrium_moments(m::DAMap, a::DAMap)
+  !isnothing(m.E) || error("Map does not have radiation!")
+  !all(m.E .== 0) || error("No stochastic fluctuations in map (m.E .== 0)")
+
 end
 
 

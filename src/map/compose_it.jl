@@ -41,7 +41,7 @@ Note that the `ComplexTPS`s in the vector(s) must be allocated and have the same
 
 If spin is included, not that the final quaternion concatenation step mul! will creat allocations
 """ 
-function compose_it!(m::$t, m2::$t, m1::$t; dospin::Bool=true, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_comp_work_low(m), work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS}}}}=prep_comp_work_prom(m,m2,m1))
+function compose_it!(m::$t, m2::$t, m1::$t; dospin::Bool=true, doradiation::Bool=true, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_comp_work_low(m), work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS}}}}=prep_comp_work_prom(m,m2,m1))
   @assert !(m === m1) "Cannot compose_it!(m, m2, m1) with m === m1"
   @assert !isnothing(m1.Q) && !isnothing(m2.Q) || m1.Q == m2.Q "Cannot compose: one map includes spin, other does not"
   @assert !isnothing(m1.E) && !isnothing(m2.E) || m1.E == m2.E "Cannot compose: one map includes radiation, other does not"
@@ -151,6 +151,13 @@ function compose_it!(m::$t, m2::$t, m1::$t; dospin::Bool=true, work_low::Tuple{V
     GC.@preserve m1x_prom m2Q_prom compose!(Cint(4), m2Q_low, nv+np, m1x_low, outQ_low)
     # Now concatenate
     mul!(m.Q, m1.Q, m.Q) # ALLOCATIONS HERE!
+  end
+
+  # Stochastic radiation
+  # MAKE THIS FASTER!
+  if !isnothing(m.E) && doradiation
+    M = jacobian(m)
+    m.E .= M*m1.E*transpose(M) + m2.E
   end
 
   return 

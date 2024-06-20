@@ -119,7 +119,7 @@ end
 
 
 
-function read_fpp_map(file; idpt::Union{Nothing,Bool}=nothing)
+function read_fpp_map(file; idpt::Union{Nothing,Bool}=nothing,radiation::Bool=false)
   data = readdlm(file, skipblanks=true)
   nv = data[findfirst(t->t=="Dimensional", data)- CartesianIndex(0,1)]
   no = data[findfirst(t->t=="NO", data) + CartesianIndex(0,2)]
@@ -127,7 +127,7 @@ function read_fpp_map(file; idpt::Union{Nothing,Bool}=nothing)
   nn = nv+np
   # Make the TPSA
   d = Descriptor(nv, no, np, no)
-  m = complex(DAMap(use=d,idpt=idpt)) #repeat([ComplexTPS(use=d)], nv), Q=Quaternion([ComplexTPS(1,use=d), repeat([ComplexTPS(use=d)], 3)...]))
+  m = complex(DAMap(use=d,idpt=idpt,radiation=radiation)) #repeat([ComplexTPS(use=d)], nv), Q=Quaternion([ComplexTPS(1,use=d), repeat([ComplexTPS(use=d)], 3)...]))
 
   idx=3
   data=data[3:end,:]

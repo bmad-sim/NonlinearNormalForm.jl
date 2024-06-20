@@ -269,7 +269,7 @@ function $t(; x::Union{Vector{<:Union{TPS,ComplexTPS}},Nothing}=nothing, x0::Uni
     E1 = E
   elseif radiation
     if isnothing(E)
-      E1 = zeros(eltype(x0), nv, nv) 
+      E1 = zeros(eltype(x01), nv, nv) 
     else
       (nv,nv) == size(E) || error("Size of stochastic matrix inconsistent with number of variables!")
       E1 = E
@@ -356,7 +356,7 @@ function $t(M; use::UseType=GTPSA.desc_current, x0::Vector{S}=zeros(eltype(M), n
     E1 = E
   elseif radiation
     if isnothing(E)
-      E1 = zeros(eltype(x0), nv, nv) 
+      E1 = zeros(eltype(x01), nv, nv) 
     else
       (nv,nv) == size(E) || error("Size of stochastic matrix inconsistent with number of variables!")
       E1 = E
@@ -365,7 +365,6 @@ function $t(M; use::UseType=GTPSA.desc_current, x0::Vector{S}=zeros(eltype(M), n
     error("For no radiation, please omit the radiation kwarg or set radiation=nothing") # For type stability
     #E1 = nothing # for type instability
   end
-
   return $t{eltype(M),outT,typeof(Q1),typeof(E1),typeof(idpt)}(copy(x0), x1, Q1, E1,idpt)
 end
 

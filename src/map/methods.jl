@@ -60,7 +60,7 @@ end
 
 # --- complex type ---
 function complex(::Type{$t{S,T,U,V,W}}) where {S,T,U,V,W}
-  return $t{ComplexF64,ComplexTPS,U == Nothing ? Nothing : Quaternion{ComplexTPS}, V == Nothing ? Nothing : ComplexF64, W}
+  return $t{ComplexF64,ComplexTPS,U == Nothing ? Nothing : Quaternion{ComplexTPS}, V == Nothing ? Nothing : Matrix{ComplexF64}, W}
 end
 
 end
