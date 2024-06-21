@@ -40,8 +40,8 @@ function normal(m::DAMap)
   m1 = a1^-1 ∘ m0 ∘ a1
 
   # 3: Go into phasor's basis
-  c = from_phasor(m1)
-  m1 = c ∘ m1 ∘ c^-1
+  c = to_phasor(m1)
+  m1 = c^-1 ∘ m1 ∘ c
 
 
   # ---- Nonlinear -----
@@ -83,7 +83,7 @@ function normal(m::DAMap)
       idx = GTPSA.cycle!(nonl.x[j].tpsa, Cint(j), nn, ords, v)
       while idx > 0
         # Tune shifts should be left in the map (kernel) because we cannot remove them
-        # if there is radiation, we technically could remove them
+        # if there is damping, we technically could remove them
         je = convert(Vector{Int}, ords)
         je[j] -= 1
         t = 0
@@ -113,16 +113,88 @@ function normal(m::DAMap)
     m1 = inv(ant) ∘ m1 ∘ ant
   end
 
-  an = inv(c)∘an∘c
+  an = c∘an∘c^-1
   
   return a0 ∘ a1 ∘ an
 end
 
 function equilibrium_moments(m::DAMap, a::DAMap)
-  !isnothing(m.E) || error("Map does not have radiation!")
+  !isnothing(m.E) || error("Map does not have stochasticity")
   !all(m.E .== 0) || error("No stochastic fluctuations in map (m.E .== 0)")
 
+  # Moments Σ transform with map like MΣMᵀ + B 
+  # This is only linear because this is very complex to higher order not necessary
+  # For now we do not include parameters but I'd like to add this later
+  # To include parameters later, we would:
+  # First must go to parameter-dependent fixed point to all orders (obtained from factorization after 
+  # normal form) and then can get the a1 matrix around there
+  # tracking code would have to give stochastic matrix as a function of the parameters
+
+  # Let B = m.E (stochastic part)
+  # We want to find Σ such that Σ = MΣMᵀ + B  (fixed point)
+  # very easy to do in phasors basis
+  # fixed point transformation does nothing (note a0.E = Bₐ₀ = 0 of course and a0.x is identity in variable but not in parameters)
+  # When including parameters, fixed point transformation would have to be fully 
+  # nonlinear, probably obtained from factorized `a`
+  
+  # For now because excluding parameters I do not need a fixed point transformatio
+
+  # MΣMᵀ + B  = Σ
+  # A₁MA₁⁻¹ A₁Σ A₁ᵀ A₁⁻¹ᵀMᵀA₁ᵀ  + A₁BA₁ᵀ = A₁ΣA₁ᵀ
+  # We have R =  A₁MA₁⁻¹ , β = A₁BA₁ᵀ , σ = A₁ΣA₁ᵀ so
+  # RσRᵀ + β = σ
+  # Now go to phasors and CRC⁻¹=Λ=Λᵀ is diagonal - simple equation
+  # Let s = CσC⁻¹ and b = CβCᵀ:
+  # ΛsΛ + b = s
+  # solve simply
+
+  # we do A₁A₀
+  # Σ = MΣMᵀ + B
+
+  # M = GTPSA.jacobian(m)
+  # A1 = GTPSA.jacobian(a)
+  # C = GTPSA.jacobian(to_phasor(m))
+  
+  c = to_phasor(m)
+
+  R = inv(c)*inv(a)*m*a*c
+  b = R.E
+  Λ = GTPSA.jacobian(R)
+
+  return b
+
+  s = zeros(ComplexF64, numvars(m),numvars(m)) # beam envelope in phasors basis
+  emits = zeros(Float64, Int(numvars(m)/2)) # emittances
+
+  for i=1:numvars(m)
+    for j=1:numvars(m)
+      s[i,j] = 1/(1-Λ[i,i]*Λ[j,j])*b[i,j]
+    end
+  end
+
+  R.E .= s
+  return a*c*R*inv(c)*inv(a)
+
 end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # 2x faster but not as pretty
@@ -372,8 +444,8 @@ function to_phasor!(c::DAMap, m::DAMap)
   nhv = numvars(m)
   if !isnothing(m.idpt)
     nhv -= 2
-    cinv.x[nhv+1][nhv+1] = 1
-    cinv.x[nhv+2][nhv+2] = 1
+    c.x[nhv+1][nhv+1] = 1
+    c.x[nhv+2][nhv+2] = 1
   end
 
 

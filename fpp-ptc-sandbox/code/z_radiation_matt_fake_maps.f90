@@ -136,11 +136,44 @@ program example
   do i=1,c_%nd2
   m%v(i)=m%v(i)*decrement(i)
   enddo
-   call print(m)
-  
+! m1=m
+
+! do i=1,1000
+!  m1  = m1*m1
+! enddo
+ !call print(m1)
+   
+!do i=1,6
+!  write(6,format6) real(m1%e_ij(i,1:6) )
+!enddo
+!stop
+
   
   call c_normal(m,normal,dospin=putspin,phase=phase,nu_spin=nu_spin)
+  m1 = m*normal%atot
+     
+  !m = ci_phasor()*normal%atot**(-1)*m*normal%atot*c_phasor()
+  do i=1,6
+    write(6,format6) real(m1%e_ij(i,1:6))
+  enddo
   
+  write(*,*) "\n"
+  do i=1,6
+    write(6,format6) imag(m1%e_ij(i,1:6))
+  enddo
+  stop
+   
+
+stop
+  do i=1,6
+    write(6,format6) real(normal%s_ij0(i,1:6) )
+  enddo
+  stop
+
+  !write(*,*) "emit_1 = ", normal%emittance(1)
+  !write(*,*) "emit_2 = ", normal%emittance(2)
+  !write(*,*) "emit_3 = ", normal%emittance(3)
+  !stop
   !call print(phase(1))
   
   !call clean(phase,phase,prec=1.d-5)
@@ -149,9 +182,7 @@ program example
   write(6,'(A,3(1x,g23.16),/)') "The tune    is ",normal%tune(1:nd)
   write(6,'(A,3(1x,g23.16),/)') "The damping is ",normal%damping(1:nd)
   write(6,'(A,1x,g23.16,/)') "The spin tune  is ",normal%spin_tune 
-   
-  m = ci_phasor()*normal%atot**(-1)*m*normal%atot*c_phasor()
-   
+
     !m=ci_phasor()*m*c_phasor()
   
    

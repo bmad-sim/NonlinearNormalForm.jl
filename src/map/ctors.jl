@@ -194,17 +194,17 @@ function $t{S,T,U,V,W}(u::UndefInitializer; use::UseType=GTPSA.desc_current, idp
 end
 
 """
-    $($t)(; x::Union{Vector{<:Union{TPS,ComplexTPS}},Nothing}=nothing, x0::Union{Vector,Nothing}=nothing, Q::Union{Quaternion{<:Union{TPS,ComplexTPS}},Nothing}=nothing, E::Union{Matrix,Nothing}=nothing,  spin::Union{Bool,Nothing}=nothing, radiation::Union{Bool,Nothing}=nothing, idpt::Union{Nothing,Bool}=nothing, use::UseType=nothing)
+    $($t)(; x::Union{Vector{<:Union{TPS,ComplexTPS}},Nothing}=nothing, x0::Union{Vector,Nothing}=nothing, Q::Union{Quaternion{<:Union{TPS,ComplexTPS}},Nothing}=nothing, E::Union{Matrix,Nothing}=nothing,  spin::Union{Bool,Nothing}=nothing, stochastic::Union{Bool,Nothing}=nothing, idpt::Union{Nothing,Bool}=nothing, use::UseType=nothing)
 
 Constructs a $($t) with the passed vector of `TPS`/`ComplexTPS` as the orbital ray, and optionally the entrance 
 coordinates `x0`, `Quaternion` for spin `Q`, and stochastic matrix `E` as keyword arguments. The helper keyword 
-arguments `spin` and `radiation` may be set to `true` to construct a $($t) with an identity quaternion/stochastic 
-matrix, or `false` for no spin/radiation. Note that setting `spin`/`radiation` to any `Bool` value without `Q` or `E` 
+arguments `spin` and `stochastic` may be set to `true` to construct a $($t) with an identity quaternion/stochastic 
+matrix, or `false` for no spin/stochastic. Note that setting `spin`/`stochastic` to any `Bool` value without `Q` or `E` 
 specified is type-unstable. This constructor also checks for consistency in the length of the orbital ray and GTPSA 
 `Descriptor`. The `use` kwarg may also be used to change the `Descriptor` of the TPSs, provided the number of variables 
 + parameters agree (orders may be different).
 """
-function $t(; x::Union{Vector{<:Union{TPS,ComplexTPS}},Nothing}=nothing, x0::Union{Vector,Nothing}=nothing, Q::Union{Quaternion{<:Union{TPS,ComplexTPS}},Nothing}=nothing, E::Union{Matrix,Nothing}=nothing,  spin::Union{Bool,Nothing}=nothing, radiation::Union{Bool,Nothing}=nothing, idpt::Union{Nothing,Bool}=nothing, use::UseType=nothing)
+function $t(; x::Union{Vector{<:Union{TPS,ComplexTPS}},Nothing}=nothing, x0::Union{Vector,Nothing}=nothing, Q::Union{Quaternion{<:Union{TPS,ComplexTPS}},Nothing}=nothing, E::Union{Matrix,Nothing}=nothing,  spin::Union{Bool,Nothing}=nothing, stochastic::Union{Bool,Nothing}=nothing, idpt::Union{Nothing,Bool}=nothing, use::UseType=nothing)
   if isnothing(use)
     use = GTPSA.desc_current
   end
@@ -265,9 +265,9 @@ function $t(; x::Union{Vector{<:Union{TPS,ComplexTPS}},Nothing}=nothing, x0::Uni
     #Q1 = nothing # For type instability
   end
 
-  if isnothing(radiation)
+  if isnothing(stochastic)
     E1 = E
-  elseif radiation
+  elseif stochastic
     if isnothing(E)
       E1 = zeros(eltype(x01), nv, nv) 
     else
@@ -275,7 +275,7 @@ function $t(; x::Union{Vector{<:Union{TPS,ComplexTPS}},Nothing}=nothing, x0::Uni
       E1 = E
     end
   else
-    error("For no radiation, please omit the radiation kwarg or set radiation=nothing") # For type stability
+    error("For no stochastic, please omit the stochastic kwarg or set stochastic=nothing") # For type stability
     #E1 = nothing # for type instability
   end
 
@@ -283,18 +283,18 @@ function $t(; x::Union{Vector{<:Union{TPS,ComplexTPS}},Nothing}=nothing, x0::Uni
 end
 
 """
-    $($t)(M; use::UseType=GTPSA.desc_current, x0::Vector{S}=zeros(eltype(M), size(M,1)), Q::U=nothing, E::V=nothing,  spin::Union{Bool,Nothing}=nothing, radiation::Union{Bool,Nothing}=nothing, idpt::Union{Nothing,Bool}=nothing) where {S,U<:Union{Quaternion{<:Union{TPS,ComplexTPS}},Nothing},V<:Union{Matrix,Nothing}}
+    $($t)(M; use::UseType=GTPSA.desc_current, x0::Vector{S}=zeros(eltype(M), size(M,1)), Q::U=nothing, E::V=nothing,  spin::Union{Bool,Nothing}=nothing, stochastic::Union{Bool,Nothing}=nothing, idpt::Union{Nothing,Bool}=nothing) where {S,U<:Union{Quaternion{<:Union{TPS,ComplexTPS}},Nothing},V<:Union{Matrix,Nothing}}
 
 `M` must represent a matrix with linear indexing.
 
 Constructs a $($t) with the passed matrix of scalars `M` as the linear part of the `TaylorMap`, and optionally the entrance 
 coordinates `x0`, `Quaternion` for spin `Q`, and stochastic matrix `E` as keyword arguments. The helper keyword 
-arguments `spin` and `radiation` may be set to `true` to construct a $($t) with an identity quaternion/stochastic 
-matrix, or `false` for no spin/radiation. Note that setting `spin`/`radiation` to any `Bool` value without `Q` or `E` 
+arguments `spin` and `stochastic` may be set to `true` to construct a $($t) with an identity quaternion/stochastic 
+matrix, or `false` for no spin/stochastic. Note that setting `spin`/`stochastic` to any `Bool` value without `Q` or `E` 
 specified is type-unstable. This constructor also checks for consistency in the length of the orbital ray and GTPSA 
 `Descriptor`.
 """
-function $t(M; use::UseType=GTPSA.desc_current, x0::Vector{S}=zeros(eltype(M), numvars(use)), Q::U=nothing, E::V=nothing,  spin::Union{Bool,Nothing}=nothing, radiation::Union{Bool,Nothing}=nothing, idpt::Union{Nothing,Bool}=nothing) where {S,U<:Union{Quaternion{<:Union{TPS,ComplexTPS}},Nothing},V<:Union{Matrix,Nothing}}
+function $t(M; use::UseType=GTPSA.desc_current, x0::Vector{S}=zeros(eltype(M), numvars(use)), Q::U=nothing, E::V=nothing,  spin::Union{Bool,Nothing}=nothing, stochastic::Union{Bool,Nothing}=nothing, idpt::Union{Nothing,Bool}=nothing) where {S,U<:Union{Quaternion{<:Union{TPS,ComplexTPS}},Nothing},V<:Union{Matrix,Nothing}}
   Base.require_one_based_indexing(M)
   nv = numvars(use)
   np = numparams(use)
@@ -352,9 +352,9 @@ function $t(M; use::UseType=GTPSA.desc_current, x0::Vector{S}=zeros(eltype(M), n
     #Q1 = nothing # For type instability
   end
 
-  if isnothing(radiation)
+  if isnothing(stochastic)
     E1 = E
-  elseif radiation
+  elseif stochastic
     if isnothing(E)
       E1 = zeros(eltype(x01), nv, nv) 
     else
@@ -362,7 +362,7 @@ function $t(M; use::UseType=GTPSA.desc_current, x0::Vector{S}=zeros(eltype(M), n
       E1 = E
     end
   else
-    error("For no radiation, please omit the radiation kwarg or set radiation=nothing") # For type stability
+    error("For no stochastic, please omit the stochastic kwarg or set stochastic=nothing") # For type stability
     #E1 = nothing # for type instability
   end
   return $t{eltype(M),outT,typeof(Q1),typeof(E1),typeof(idpt)}(copy(x0), x1, Q1, E1,idpt)
@@ -372,7 +372,7 @@ end
 """
     zero(m::$($t))
 
-Creates a $($t) with the same GTPSA `Descriptor`, and spin/radiation on/off,
+Creates a $($t) with the same GTPSA `Descriptor`, and spin/stochastic on/off,
 as `m` but with all zeros for each quantity (except for the immutable parameters 
 in `x[nv+1:nn]`, which will be copied from `m.x`)
 """

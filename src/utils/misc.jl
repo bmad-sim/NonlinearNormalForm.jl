@@ -26,7 +26,7 @@ pords(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap,Vec
 @inline checkidpt(m...) = all(x->x.idpt==first(m).idpt, m) || error("Maps have disagreeing idpt")
 
 # --- random symplectic map ---
-function rand(t::Union{Type{DAMap},Type{TPSAMap}}; spin::Union{Bool,Nothing}=nothing, radiation::Union{Bool,Nothing}=nothing, use::Union{Descriptor,TPS,ComplexTPS}=GTPSA.desc_current, ndpt::Union{Nothing,Integer}=nothing)
+function rand(t::Union{Type{DAMap},Type{TPSAMap}}; spin::Union{Bool,Nothing}=nothing, stochastic::Union{Bool,Nothing}=nothing, use::Union{Descriptor,TPS,ComplexTPS}=GTPSA.desc_current, ndpt::Union{Nothing,Integer}=nothing)
   if isnothing(spin)
     U = Nothing
   else
@@ -37,10 +37,10 @@ function rand(t::Union{Type{DAMap},Type{TPSAMap}}; spin::Union{Bool,Nothing}=not
     end
   end
 
-  if isnothing(radiation)
+  if isnothing(stochastic)
     V = Nothing
   else
-    if radiation
+    if stochastic
       V = Matrix{Float64}
     else
       V = Nothing
@@ -119,15 +119,24 @@ end
 
 
 
-function read_fpp_map(file; idpt::Union{Nothing,Bool}=nothing,radiation::Bool=false)
+function read_fpp_map(file; idpt::Union{Nothing,Bool}=nothing)
   data = readdlm(file, skipblanks=true)
   nv = data[findfirst(t->t=="Dimensional", data)- CartesianIndex(0,1)]
   no = data[findfirst(t->t=="NO", data) + CartesianIndex(0,2)]
   np = data[findfirst(t->t=="NV", data) + CartesianIndex(0,2)] - nv
   nn = nv+np
+
+  # Check if map has stochasticity
+  stoch_idx = findfirst(t->t=="Stochastic", data)
+  if !isnothing(stoch_idx) && stoch_idx[2]== 1 # stochastic in first column meaning no "No"
+    stochastic = true
+  else
+    stochastic=nothing
+  end
+
   # Make the TPSA
   d = Descriptor(nv, no, np, no)
-  m = complex(DAMap(use=d,idpt=idpt,radiation=radiation)) #repeat([ComplexTPS(use=d)], nv), Q=Quaternion([ComplexTPS(1,use=d), repeat([ComplexTPS(use=d)], 3)...]))
+  m = complex(DAMap(use=d,idpt=idpt,stochastic=stochastic)) #repeat([ComplexTPS(use=d)], nv), Q=Quaternion([ComplexTPS(1,use=d), repeat([ComplexTPS(use=d)], 3)...]))
 
   idx=3
   data=data[3:end,:]
@@ -155,6 +164,20 @@ function read_fpp_map(file; idpt::Union{Nothing,Bool}=nothing,radiation::Bool=fa
   end
   # dont forget params
   m.x[nv+1:nn] .= complexparams(d)
+
+  # stochastic
+  if !isnothing(stochastic)
+    idx = findfirst(t->t=="Stochastic", data)[1]
+    data = data[idx+1:end,:]
+    for i=1:size(data, 1)
+      row = data[i,1]
+      col = data[i,2]
+      numstr = data[i,3]
+      comidx = findfirst(",", numstr)[1]
+      num = complex(parse(Float64, numstr[2:comidx-1]), parse(Float64,numstr[comidx+1:end-1]))
+      m.E[row,col] = num
+    end
+  end
   return m
 
 

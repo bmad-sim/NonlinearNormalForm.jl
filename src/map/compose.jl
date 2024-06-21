@@ -153,7 +153,7 @@ function compose(m2::$t,m1::$t)
     outQ = nothing
   end
 
-  # set up radiation out
+  # set up stochastic out
   if isnothing(m1.E)
     outE = nothing
   else

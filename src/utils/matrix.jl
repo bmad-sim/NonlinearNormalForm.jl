@@ -64,7 +64,7 @@ function low_mat_eigen!(F, sort, phase_modes)
 
     else # Plane locating is unsuccessful! 
       @warn "Mode sorting of eigenvectors failed; eigenvectors in arbitrary order. Stable modes will be normalized, but no phase factor will be included."
-
+      
       # Normalize stable modes
       @views for i=1:Int((nv-num_unstable)/2)
         normalize_eigenmode!(F.vectors[:,2*i-1:2*i], F.values[2*i-1:2*i], -1)

@@ -1,4 +1,4 @@
-function Probe(x::Vector{T}; x0::Vector{S}=zeros(length(x)), Q::U=nothing, E::V=nothing, spin::Union{Bool,Nothing}=nothing, radiation::Union{Bool,Nothing}=nothing, idpt::W=nothing) where {S,T,U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing},W<:Union{Nothing,Bool}}
+function Probe(x::Vector{T}; x0::Vector{S}=zeros(length(x)), Q::U=nothing, E::V=nothing, spin::Union{Bool,Nothing}=nothing, stochastic::Union{Bool,Nothing}=nothing, idpt::W=nothing) where {S,T,U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing},W<:Union{Nothing,Bool}}
   length(x) == length(x0) || error("Length of orbital ray != length of reference orbit vector!")
 
   if isnothing(spin)
@@ -14,9 +14,9 @@ function Probe(x::Vector{T}; x0::Vector{S}=zeros(length(x)), Q::U=nothing, E::V=
     #Q1 = nothing # For type instability
   end
 
-  if isnothing(radiation)
+  if isnothing(stochastic)
     E1 = E
-  elseif radiation
+  elseif stochastic
     if isnothing(E)
       E1 = zeros(eltype(x0), length(x), length(x)) 
     else
@@ -24,7 +24,7 @@ function Probe(x::Vector{T}; x0::Vector{S}=zeros(length(x)), Q::U=nothing, E::V=
       E1 = E
     end
   else
-    error("For no radiation, please omit the radiation kwarg or set radiation=nothing") # For type stability
+    error("For no stochasticity, please omit the stochastic kwarg or set stochastic=nothing") # For type stability
     #E1 = nothing # for type instability
   end
 
