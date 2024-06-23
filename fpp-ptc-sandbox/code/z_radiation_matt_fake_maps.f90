@@ -136,7 +136,12 @@ program example
   do i=1,c_%nd2
   m%v(i)=m%v(i)*decrement(i)
   enddo
-! m1=m
+ m1=m + m
+
+   do i=1,6
+    write(6,format6) real(m1%e_ij(i,1:6) )
+  enddo
+  stop
 
 ! do i=1,1000
 !  m1  = m1*m1
@@ -150,21 +155,21 @@ program example
 
   
   call c_normal(m,normal,dospin=putspin,phase=phase,nu_spin=nu_spin)
-  m1 = m*normal%atot
+  !m1 =ci_phasor()*normal%atot**(-1)*m*normal%atot*c_phasor()
      
   !m = ci_phasor()*normal%atot**(-1)*m*normal%atot*c_phasor()
-  do i=1,6
-    write(6,format6) real(m1%e_ij(i,1:6))
-  enddo
+  !do i=1,6
+  !  write(6,format6) real(%e_ij(i,1:6))
+  !enddo
   
-  write(*,*) "\n"
-  do i=1,6
-    write(6,format6) imag(m1%e_ij(i,1:6))
-  enddo
-  stop
+  !write(*,*) "\n"
+  !do i=1,6
+  !  write(6,format6) imag(m1%e_ij(i,1:6))
+ ! enddo
+ ! stop
    
 
-stop
+
   do i=1,6
     write(6,format6) real(normal%s_ij0(i,1:6) )
   enddo

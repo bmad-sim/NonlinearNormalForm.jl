@@ -23,7 +23,40 @@ prmord(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap,Ve
 vpords(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap,VectorField}) = unsafe_wrap(Vector{UInt8}, unsafe_load(getdesc(m).desc).no, numnn(m))
 vords(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap,VectorField}) = unsafe_wrap(Vector{UInt8}, unsafe_load(getdesc(m).desc).no, numvars(m))
 pords(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap,VectorField}) = unsafe_wrap(Vector{UInt8}, unsafe_load(getdesc(m).desc).no, numparams(m))
-@inline checkidpt(m...) = all(x->x.idpt==first(m).idpt, m) || error("Maps have disagreeing idpt")
+
+@inline checkidpt(m::TaylorMap...) = all(x->x.idpt==first(m).idpt, m) || error("Maps have disagreeing idpt")
+@inline checkspin(m...) = all(x->isnothing(x.Q), m) || all(x->!isnothing(x.Q), m) || error("Atleast one map/vector field includes spin while others do not")
+
+@inline checkop(m::TaylorMap...) = checkidpt(m...) && checkspin(m...)
+
+@inline function checkdestination(m::TaylorMap, maps::TaylorMap...)
+  # Checks that the output map has all types properly promoted
+  mapx0types = map(x->eltype(x.x0), maps)
+  outx0type = promote_type(mapx0types...)
+  eltype(m.x0) == outx0type || error("Output map reference orbit type $(eltype(m.x0)) must be $outx0type")
+
+  mapxtypes = map(x->numtype(eltype(x.x)),maps)
+  outxtype = promote_type(mapxtypes...)
+  eltype(m.x) == outxtype || error("Output map orbital ray type $(eltype(m.x)) must be $outxtype")
+
+  if !isnothing(m.Q)
+    mapQtypes = map(x->numtype(eltype(x.Q.q)), maps)
+    outQtype = promote_type(mapQtypes...)
+    eltype(m.Q) == outQtype || error("Output map quaternion type $(eltype(m.Q.q)) must be $outQtype")
+  end
+
+  # Part of the promotion is stochasticity:
+  # the output map must include stochasticity if any input includes stochasticity:
+  !isnothing(m.E) || all(x->isnothing(x.E), maps) || error("Output map must include stochastic matrix (at least 1 input map includes stochastic matrix)")
+
+  if isnothing(m.E)
+    maptypes = map(x->numtype(eltype(x.x)),maps)
+    stochtypes = map(x->isnothing(x.E) ? Float64 : eltype(x.E), maps)
+    outtype = promote_type(maptypes..., stochtypes...)
+    eltype(m.E) == outtype || error("Output map stochastic matrix type $(eltype(m.E)) must be $outtype")
+  end
+  return true
+end
 
 # --- random symplectic map ---
 function rand(t::Union{Type{DAMap},Type{TPSAMap}}; spin::Union{Bool,Nothing}=nothing, stochastic::Union{Bool,Nothing}=nothing, use::Union{Descriptor,TPS,ComplexTPS}=GTPSA.desc_current, ndpt::Union{Nothing,Integer}=nothing)

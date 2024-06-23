@@ -1,5 +1,5 @@
 # --- map powers ---
-function ^(m1::DAMap{S,T,U,V}, n::Integer) where {S,T,U,V}
+function ^(m1::DAMap, n::Integer)
   nv = numvars(m1)
   # Do it
   if n>0
@@ -39,7 +39,7 @@ function ^(m1::DAMap{S,T,U,V}, n::Integer) where {S,T,U,V}
   end
 end
 
-function ^(m1::TPSAMap{S,T,U,V}, n::Integer) where {S,T,U,V}
+function ^(m1::TPSAMap, n::Integer)
   # Do it
   if n>0
     work_low = prep_comp_work_low(m1)
@@ -116,6 +116,9 @@ for ops = (("add!", :+), ("sub!",:-))
 
 function $(Meta.parse(ops[1]))(m::TaylorMap, m1::TaylorMap, m2::TaylorMap; dospin::Bool=true)
   checkidpt(m, m1, m2)
+  checkspin(m, m1, m2)
+
+  assertstoch(m, m1, m2)
   
   nv = numvars(m)
 
@@ -132,13 +135,23 @@ function $(Meta.parse(ops[1]))(m::TaylorMap, m1::TaylorMap, m2::TaylorMap; dospi
   end
 
   if !isnothing(m.E)
-    m.E .= m1.E
+    m.E .= 0
+    if !isnothing(m1.E)
+      map!((mi,m1i)-> $(ops[2])(mi, m1i) , m.E, m.E, m1.E)
+    end
+
+    if !isnothing(m2.E)
+      map!((mi,m2i)-> $(ops[2])(mi, m2i) , m.E, m.E, m2.E)
+    end
   end
   return
 end
 
 function $(Meta.parse(ops[1]))(m::TaylorMap, J::UniformScaling, m1::TaylorMap; dospin::Bool=true)
   checkidpt(m, m1)
+  checkspin(m, m1)
+  
+  assertstoch(m,m1,m)
   
   nv = numvars(m)
 
@@ -156,14 +169,22 @@ function $(Meta.parse(ops[1]))(m::TaylorMap, J::UniformScaling, m1::TaylorMap; d
     m.Q.q[1][0] = $(ops[2])(1, m.Q.q[1][0])
   end
 
+
   if !isnothing(m.E)
-    m.E .= m1.E
+    m.E .= 0
+    if !isnothing(m1.E)
+      map!((mi,m1i)-> $(ops[2])(mi, m1i) , m.E, m.E, m1.E)
+    end
   end
+
   return
 end
 
 function $(Meta.parse(ops[1]))(m::TaylorMap, m1::TaylorMap, J::UniformScaling; dospin::Bool=true)
   checkidpt(m, m1)
+  checkspin(m, m1)
+
+  assertstoch(m,m1,m)
 
   nv = numvars(m)
 
@@ -182,13 +203,18 @@ function $(Meta.parse(ops[1]))(m::TaylorMap, m1::TaylorMap, J::UniformScaling; d
   end
 
   if !isnothing(m.E)
-    m.E .= m1.E
+    m.E .= 0
+    if !isnothing(m1.E)
+      map!((mi,m1i)-> $(ops[2])(mi, m1i) , m.E, m.E, m1.E)
+    end
   end
   return
 end
 
 function $(ops[2])(m1::TaylorMap, m2::TaylorMap)
   checkidpt(m1, m2)
+  checkspin(m1, m2)
+
   # Promote if necessary:
   if eltype(m1.x) == ComplexTPS
     m = zero(m1)
@@ -221,6 +247,7 @@ for ops = (("add!", :+), ("sub!",:-), ("mul!",:*), ("div!",:/))
 @eval begin
 function $(Meta.parse(ops[1]))(m::TaylorMap, a::Number, m1::TaylorMap; dospin::Bool=true)
   checkidpt(m, m1)
+  checkspin(m, m1)
   
   nv = numvars(m)
   m.x0 .= m1.x0
@@ -243,6 +270,7 @@ end
 
 function $(Meta.parse(ops[1]))(m::TaylorMap, m1::TaylorMap, a::Number; dospin::Bool=true)
   checkidpt(m, m1)
+  checkspin(m, m1)
   
   nv = numvars(m)
 

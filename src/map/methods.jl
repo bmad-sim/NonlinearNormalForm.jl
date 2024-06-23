@@ -68,6 +68,9 @@ end
 
 # --- copy! ---
 function copy!(m::TaylorMap, m1::TaylorMap)
+  checkidpt(m, m1)
+  checkspin(m, m1)
+
   m.x0 .= m1.x0
   desc = getdesc(m)
   nn = numnn(desc)
@@ -127,6 +130,7 @@ end
 
 function cutord!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}, order::Integer, spin_order::Integer=order; dospin::Bool=true) where {S,T,U,V}
   checkidpt(m, m1)
+  checkspin(m, m1)
   
   desc = getdesc(m1)
   nv = numvars(desc)
@@ -159,6 +163,7 @@ end
 
 function getord!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}, order::Integer, spin_order::Integer=order; dospin::Bool=true) where {S,T,U,V}
   checkidpt(m, m1)
+  checkspin(m, m1)
   
   desc = getdesc(m1)
   nv = numvars(desc)

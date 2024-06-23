@@ -83,4 +83,13 @@ struct VectorField{T<:Union{TPS,ComplexTPS}, U<:Union{Quaternion{T},Nothing}}
   Q::U           
 end
 
+
+
 UseType = Union{Descriptor, TPS, ComplexTPS, TaylorMap, Probe{<:Any,Union{TPS,ComplexTPS},<:Any,<:Any}, VectorField, Nothing}
+#=
+function promote_rule(m1::Type{TaylorMap{S1,T1,U,V1,W}}, m2::Type{TaylorMap{S2,T2,U,V2,W}}) where {S1,S2,T1,T2,U,V1,V2,W}
+  S = promote_rule(eltype(m1.x0), eltype(m2.x0))
+  T = promote_rule(eltype(m1.x), eltype(m2.x))
+  if !isnothing
+end =#
+

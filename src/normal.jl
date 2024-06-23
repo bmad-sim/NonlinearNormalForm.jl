@@ -36,7 +36,7 @@ function normal(m::DAMap)
     a1_inv_matrix[nhv+1,nhv+1] = 1; a1_inv_matrix[nhv+2,nhv+2] = 1;
   end
 
-  a1 = DAMap(complex(inv(a1_inv_matrix)),use=m0,idpt=m.idpt,E=m.E)
+  a1 = DAMap(complex(inv(a1_inv_matrix)),use=m0,idpt=m.idpt,E=zeros(ComplexF64, numvars(m),numvars(m)))
   m1 = a1^-1 ∘ m0 ∘ a1
 
   # 3: Go into phasor's basis
@@ -73,8 +73,8 @@ function normal(m::DAMap)
     nonl = getord(nonl, i)  # Get only the leading order to stay in symplectic group
     # now nonl = ϵ²𝒞₂
 
-    F =  zero(VectorField, use=m1)  # temporary to later exponentiate
-    Fker =  zero(VectorField, use=m1)  # temporary to later exponentiate
+    F =  zero(VectorField{eltype(m1.x),typeof(m1.Q)}, use=m1)  # temporary to later exponentiate
+    Fker =  zero(VectorField{eltype(m1.x),typeof(m1.Q)}, use=m1)  # temporary to later exponentiate
 
     # For each variable in the nonlinear map
     for j=1:numvars(m)
@@ -148,20 +148,13 @@ function equilibrium_moments(m::DAMap, a::DAMap)
   # ΛsΛ + b = s
   # solve simply
 
-  # we do A₁A₀
-  # Σ = MΣMᵀ + B
-
-  # M = GTPSA.jacobian(m)
-  # A1 = GTPSA.jacobian(a)
-  # C = GTPSA.jacobian(to_phasor(m))
-  
   c = to_phasor(m)
 
   R = inv(c)*inv(a)*m*a*c
   b = R.E
   Λ = GTPSA.jacobian(R)
 
-  return b
+  #return b
 
   s = zeros(ComplexF64, numvars(m),numvars(m)) # beam envelope in phasors basis
   emits = zeros(Float64, Int(numvars(m)/2)) # emittances
@@ -173,7 +166,7 @@ function equilibrium_moments(m::DAMap, a::DAMap)
   end
 
   R.E .= s
-  return a*c*R*inv(c)*inv(a)
+  return (a*c*R*inv(c)*inv(a)).E
 
 end
 

@@ -154,7 +154,7 @@ end
 """
     $($t){S,T,U,V,W}(u::UndefInitializer; use::UseType=GTPSA.desc_current, idpt::W=nothing) where {S,T,U,V,W}
 
-Creates an undefined `$($t){S,T,U,V}` with same `Descriptor` as `use`. The immutable 
+Creates an undefined `$($t){S,T,U,V,W}` with same `Descriptor` as `use`. The immutable 
 parameters will be allocated if `use` is not a `TaylorMap`, else the immutable parameters 
 from `use` will be used.
 """

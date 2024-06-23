@@ -160,7 +160,8 @@ function zero(::Type{VectorField{T,U}}; use::UseType=GTPSA.desc_current) where {
 
   return VectorField{T,U}(x, Q)
 end
-
+#= Here "use" makes it use the same spin, we want to reserve use only for GTPSA descriptor
+So these must be removed
 function zero(::Type{VectorField}; use::Union{TaylorMap{S,T,U,V},VectorField{T,U},Nothing}=nothing) where {S,T,U,V}
   if isnothing(use)
     return zero(VectorField{TPS,Nothing})
@@ -184,3 +185,4 @@ function zeros(::Type{VectorField}, dims::Integer; use::Union{TaylorMap{S,T,U,V}
   end
   return F
 end
+=#

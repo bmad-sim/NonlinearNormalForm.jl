@@ -28,6 +28,9 @@ See the documentation for `compose_it!` for information on `work_low` and `work_
 - `work_prom` -- Temporary vector of allocated `ComplexTPS`s when there is implicit promotion. See the `compose_it!` documentation for more details. Default is output from `prep_comp_work_prom(m, m2, m1)`
 """
 function compose!(m::DAMap, m2::DAMap, m1::DAMap; keep_scalar::Bool=true, work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing, dospin::Bool=true, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_comp_work_low(m), work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS}}}}=prep_comp_work_prom(m,m2,m1))
+  checkop(m, m2, m1)
+  checkpromotion(m, m2, m1)
+  
   # DAMap setup:
   desc = getdesc(m1)
   nv = numvars(desc)
@@ -89,6 +92,9 @@ See the documentation for `compose_it!` for information on `work_low` and `work_
 - `work_prom` -- Temporary vector of allocated `ComplexTPS`s when there is implicit promotion. See the `compose_it!` documentation for more details. Default is output from `prep_comp_work_prom(m, m2, m1)`
 """
 function compose!(m::TPSAMap, m2::TPSAMap, m1::TPSAMap; dospin::Bool=true, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_comp_work_low(m), work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS}}}}=prep_comp_work_prom(m,m2,m1))
+  checkop(m, m2, m1)
+  checkpromotion(m, m2, m1)
+  
   # TPSAMap setup:
   # For TPSA Map concatenation, we need to subtract w_0 (m2 x0) (Eq. 33)
   # Because we are still expressing in terms of z_0 (m1 x0)
@@ -127,6 +133,8 @@ for t = (:DAMap, :TPSAMap)
 $($t) composition, which calculates `m2 ∘ m1` $( $t == DAMap ? "ignoring the scalar part of `m1`" : "including the scalar part of `m1`")
 """
 function compose(m2::$t,m1::$t)
+  checkop(m2, m1)
+
   desc = getdesc(m1)
   nn = numnn(desc)
   nv = numvars(desc)
@@ -154,7 +162,7 @@ function compose(m2::$t,m1::$t)
   end
 
   # set up stochastic out
-  if isnothing(m1.E)
+  if isnothing(m1.E) && isnothing(m2.E)
     outE = nothing
   else
     outE = Matrix{numtype(outT)}(undef, nv, nv)

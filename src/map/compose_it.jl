@@ -42,13 +42,10 @@ Note that the `ComplexTPS`s in the vector(s) must be allocated and have the same
 If spin is included, not that the final quaternion concatenation step mul! will creat allocations
 """ 
 function compose_it!(m::$t, m2::$t, m1::$t; dospin::Bool=true, dostochastic::Bool=true, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_comp_work_low(m), work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS}}}}=prep_comp_work_prom(m,m2,m1))
+  checkop(m, m2, m1)
+  checkpromotion(m, m2, m1)
+ 
   @assert !(m === m1) "Cannot compose_it!(m, m2, m1) with m === m1"
-  @assert !isnothing(m1.Q) && !isnothing(m2.Q) || m1.Q == m2.Q "Cannot compose: one map includes spin, other does not"
-  @assert !isnothing(m1.E) && !isnothing(m2.E) || m1.E == m2.E "Cannot compose: one map includes stochasticity, other does not"
-  @assert eltype(m.x) == promote_type(eltype(m2.x),eltype(m1.x)) "Cannot compose: output map orbital ray type $(eltype(m.x)) must be $(promote_type(eltype(m2.x),eltype(m1.x)))"
-  @assert isnothing(m1.Q) && isnothing(m.Q) || eltype(m.Q.q) == promote_type(eltype(m2.Q.q),eltype(m1.Q.q)) "Cannot compose: output map quaternion type $(eltype(m.x)) must be $(promote_type(eltype(m2.x),eltype(m1.x)))"
-  @assert isnothing(m1.E) && isnothing(m.E) || eltype(m.E) == promote_type(eltype(m2.E),eltype(m1.E)) "Cannot compose: output map stochastic matrix type $(eltype(m.E)) must be $(promote_type(eltype(m2.E),eltype(m1.E)))"
-  checkidpt(m, m2, m1)
 
   desc = getdesc(m1)
   nn = numnn(desc)
@@ -156,8 +153,16 @@ function compose_it!(m::$t, m2::$t, m1::$t; dospin::Bool=true, dostochastic::Boo
   # Stochastic
   # MAKE THIS FASTER!
   if !isnothing(m.E) && dostochastic
-    M2 = jacobian(m2)   
-    m.E .= M2*m1.E*transpose(M2) + m2.E
+    if !isnothing(m1.E)
+      M2 = jacobian(m2)   
+      m.E .= M2*m1.E*transpose(M2) 
+    else 
+      m.E .= 0
+    end
+
+    if !isnothing(m2.E)
+      m.E .+= m2.E
+    end
   end
 
   return 

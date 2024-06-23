@@ -51,10 +51,11 @@ that the entrance/exit coordinates of the map can be properly handled.
 - `work_low` -- Temporary vector to hold the low-level C pointers. Default is output from `prep_inv_work_low`
 """
 function inv!(m::TaylorMap{S,T,U,V,W}, m1::TaylorMap{S,T,U,V,W}; dospin::Bool=true, work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_inv_work_low(m1)) where {S,T,U,V,W}
+  checkop(m, m1)
+
   desc = getdesc(m1)
   nn = numnn(desc)
   nv = numvars(desc)
-  checkidpt(m, m1)
 
   outx_low = work_low[1]
   m1x_low = work_low[2]
