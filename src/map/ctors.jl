@@ -2,7 +2,7 @@ for t = (:DAMap, :TPSAMap)
 @eval begin
 
 """
-    $($t)(m::TaylorMap{S,T,U,V,W}; use::UseType=nothing, idpt::Union{Nothing,Bool}=m.idpt) where {S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing},W<:Union{Nothing,Bool}}
+    $($t)(m::TaylorMap{S,T,U,V,W}; use::UseType=nothing, idpt::Union{Nothing,Bool}=m.idpt) where {S,T,U,V,W}
 
 Creates a new copy of the passed `TaylorMap` as a `$($t)`. 
 
@@ -13,7 +13,7 @@ parameters must agree, however the orders may be different.
 
 If `idpt` is not specified, then the same `idpt` as `m` will be used, else that specified will be used.
 """
-function $t(m::TaylorMap{S,T,U,V,W}; use::UseType=nothing, idpt::Union{Nothing,Bool}=m.idpt) where {S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing},W<:Union{Nothing,Bool}}
+function $t(m::TaylorMap{S,T,U,V,W}; use::UseType=nothing, idpt::Union{Nothing,Bool}=m.idpt) where {S,T,U,V,W}
   if isnothing(use)
     use = getdesc(m)
   else

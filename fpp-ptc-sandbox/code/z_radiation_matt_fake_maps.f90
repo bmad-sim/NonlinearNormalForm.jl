@@ -136,7 +136,7 @@ program example
   do i=1,c_%nd2
   m%v(i)=m%v(i)*decrement(i)
   enddo
- m1=m + m
+ m1=3.d0 + m
 
    do i=1,6
     write(6,format6) real(m1%e_ij(i,1:6) )

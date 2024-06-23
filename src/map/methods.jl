@@ -68,8 +68,7 @@ end
 
 # --- copy! ---
 function copy!(m::TaylorMap, m1::TaylorMap)
-  checkidpt(m, m1)
-  checkspin(m, m1)
+  checkinplace(m, m1)
 
   m.x0 .= m1.x0
   desc = getdesc(m)
@@ -122,16 +121,15 @@ jacobiant(m::TaylorMap;include_params=false) = GTPSA.jacobiant(view(m.x, 1:numva
 checksymp(m::TaylorMap) = checksymp(GTPSA.jacobian(m))
 
 # --- cutord ---
-function cutord(m1::TaylorMap{S,T,U,V}, order::Integer, spin_order::Integer=order; dospin::Bool=true) where {S,T,U,V}
+function cutord(m1::TaylorMap, order::Integer, spin_order::Integer=order; dospin::Bool=true)
   m = zero(m1)
   cutord!(m, m1, order, spin_order, dospin=dospin)
   return m
 end
 
-function cutord!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}, order::Integer, spin_order::Integer=order; dospin::Bool=true) where {S,T,U,V}
-  checkidpt(m, m1)
-  checkspin(m, m1)
-  
+function cutord!(m::TaylorMap, m1::TaylorMap, order::Integer, spin_order::Integer=order; dospin::Bool=true)
+  checkinplace(m, m1)
+
   desc = getdesc(m1)
   nv = numvars(desc)
   np = numparams(desc)
@@ -155,15 +153,14 @@ function cutord!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}, order::Integer, 
 end
 
 # --- getord ---
-function getord(m1::TaylorMap{S,T,U,V}, order::Integer, spin_order::Integer=order; dospin::Bool=true) where {S,T,U,V}
+function getord(m1::TaylorMap, order::Integer, spin_order::Integer=order; dospin::Bool=true)
   m = zero(m1)
   getord!(m, m1, order, spin_order, dospin=dospin)
   return m
 end
 
-function getord!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}, order::Integer, spin_order::Integer=order; dospin::Bool=true) where {S,T,U,V}
-  checkidpt(m, m1)
-  checkspin(m, m1)
+function getord!(m::TaylorMap, m1::TaylorMap, order::Integer, spin_order::Integer=order; dospin::Bool=true)
+  checkinplace(m, m1)
   
   desc = getdesc(m1)
   nv = numvars(desc)
