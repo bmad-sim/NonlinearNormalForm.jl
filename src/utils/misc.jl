@@ -40,7 +40,7 @@ pords(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap,Vec
   maps = filter(x->(x isa TaylorMap), stuff)
   mapsvfs = filter(x->(x isa Union{TaylorMap,VectorField}), stuff)
   nums = filter(x->(x isa Number), stuff)
-  numtypes = map(x->typeof(x), nums)
+  numtypes = map(x->typeof(x), nums) # scalars only affect x and Q, not x0 or E in FPP
 
   if m isa TaylorMap
     x0types = map(x->eltype(x.x0), maps)
@@ -63,7 +63,7 @@ pords(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap,Vec
   if m isa TaylorMap && !isnothing(m.E)
     xnumtypes = map(x->numtype(x),xtypes)
     Etypes = map(x->eltype(x.E), maps)
-    outtype = promote_type(xnumtypes..., Etypes..., numtypes...)
+    outtype = promote_type(xnumtypes..., Etypes...)
     eltype(m.E) == outtype || error("Output $(typeof(m)) stochastic matrix type $(eltype(m.E)) must be $outtype")
   end
 

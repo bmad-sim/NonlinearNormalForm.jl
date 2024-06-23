@@ -160,6 +160,7 @@ Explicity, that is `F * m = (F.x, F.Q) * (m.x, m.Q) = (F.x ⋅ ∇ m.x , F.x ⋅
 """
 function mul!(m::DAMap, F::VectorField, m1::DAMap; work_low::Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}=Vector{lowtype(first(F.x))}(undef, numvars(F)), work_Q::Union{Quaternion,Nothing}=prep_vf_work_Q(F))
   checkinplace(m, F, m1)
+
   T = eltype(m.x)
   nv = numvars(F)
 
@@ -225,8 +226,8 @@ number of iterations is equal to the number of higher orders left.
 """
 function exp!(m::DAMap, F::VectorField, m1::DAMap; work_maps::Tuple{Vararg{DAMap}}=(zero(m1),zero(m1)), work_low::Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}=Vector{lowtype(first(F.x))}(undef, numvars(F)), work_Q::Union{Quaternion,Nothing}=prep_vf_work_Q(F))
   checkinplace(m, F, m1, work_maps...)
-  T = eltype(m.x)
 
+  T = eltype(m.x)
   nv = numvars(F)
   #GTPSA.mad_ctpsa_exppb!(nv, map(t->t.tpsa, F.x), map(t->t.tpsa, view(m1.x, 1:nv)), map(t->t.tpsa, view(m.x,1:nv)))
   #return
