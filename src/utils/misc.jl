@@ -42,13 +42,15 @@ pords(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap,Vec
   nums = filter(x->(x isa Number), stuff)
   numtypes = map(x->typeof(x), nums) # scalars only affect x and Q, not x0 or E in FPP
 
+  xtypes = map(x->eltype(x.x), mapsvfs)
+  xnumtypes = map(x->numtype(x),xtypes)
+
   if m isa TaylorMap
     x0types = map(x->eltype(x.x0), maps)
-    outx0type = promote_type(x0types...)
+    outx0type = promote_type(x0types..., xnumtypes...) # reference orbit in composition is affected by orbital part
     eltype(m.x0) == outx0type || error("Output $(typeof(m)) reference orbit type $(eltype(m.x0)) must be $outx0type")
   end
 
-  xtypes = map(x->eltype(x.x), mapsvfs)
   outxtype = promote_type(xtypes..., numtypes...)
   eltype(m.x) == outxtype || error("Output $(typeof(m)) orbital ray type $(eltype(m.x)) must be $xtype")
 
@@ -61,7 +63,6 @@ pords(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap,Vec
   # Part of the promotion is stochasticity:
   # the output map must include stochasticity if any input includes stochasticity:
   if m isa TaylorMap && !isnothing(m.E)
-    xnumtypes = map(x->numtype(x),xtypes)
     Etypes = map(x->eltype(x.E), maps)
     outtype = promote_type(xnumtypes..., Etypes...)
     eltype(m.E) == outtype || error("Output $(typeof(m)) stochastic matrix type $(eltype(m.E)) must be $outtype")

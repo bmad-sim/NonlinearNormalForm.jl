@@ -2,7 +2,7 @@ for t = (:DAMap, :TPSAMap)
 @eval begin
 
 """
-    $($t)(m::TaylorMap{S,T,U,V,W}; use::UseType=nothing, idpt::Union{Nothing,Bool}=m.idpt) where {S,T,U,V,W}
+    $($t)(m::Union{TaylorMap{S,T,U,V,W},Probe{S,T,U,V,W}}; use::UseType=nothing, idpt::Union{Nothing,Bool}=m.idpt) where {S,T,U,V,W}
 
 Creates a new copy of the passed `TaylorMap` as a `$($t)`. 
 
@@ -13,142 +13,44 @@ parameters must agree, however the orders may be different.
 
 If `idpt` is not specified, then the same `idpt` as `m` will be used, else that specified will be used.
 """
-function $t(m::TaylorMap{S,T,U,V,W}; use::UseType=nothing, idpt::Union{Nothing,Bool}=m.idpt) where {S,T,U,V,W}
-  if isnothing(use)
-    use = getdesc(m)
-  else
-    numnn(use) == numnn(m) || error("Number of variables + parameters in GTPSAs for `m` and `use` disagree!")
-  end
+function $t(m::Union{TaylorMap{S,T,U,V,W},Probe{S,T,U,V,W}}; use::UseType=m, idpt::Union{Nothing,Bool}=m.idpt) where {S,T<:Union{TPS,ComplexTPS},U,V,W}
+  numnn(use) == numnn(m) || error("Number of variables + parameters in GTPSAs for `m` and `use` disagree!")
   
+  outm = $t{S,T,U,V,typeof(idpt)}(undef, use = use, idpt = idpt) # undefined map but parameters allocated
   nv = numvars(use)
-  np = numparams(use)
-  nn = numnn(use)
 
-
-  x = Vector{T}(undef, nn)
+  # allocate variables
   for i=1:nv
-    x[i] = T(m.x[i], use=getdesc(use))
+    @inbounds outm.x[i] = T(m.x[i], use=getdesc(use))
   end
 
-  # use same parameters if same descriptor (use=nothing)
-  if isnothing(use) || getdesc(use) == getdesc(m)
-    @inbounds x[nv+1:nn] .= view(m.x, nv+1:nn)
-  else
-    if T == TPS
-      @inbounds x[nv+1:nn] .= params(getdesc(first(x)))
-    else
-      @inbounds x[nv+1:nn] .= complexparams(getdesc(first(x)))
-    end
-  end
-
-  if !isnothing(m.Q)
-    q = Vector{T}(undef, 4)
+  # allocate quaternion if present
+  if !isnothing(outm.Q)
     for i=1:4
-      @inbounds q[i] = T(m.Q.q[i],use=getdesc(use))
+      @inbounds outm.Q.q[i] = T(m.Q.q[i],use=getdesc(use))
     end
-    Q = Quaternion(q)
-  else
-    Q = nothing
   end
 
-  x0 = Vector{S}(undef, nv)
+  # set the reference orbit properly
   if nv > numvars(m)  # Increasing dimensionality
-    x0[1:numvars(m)] .= m.x0
-    x0[numvars(m)+1:nv] .= 0
+    outm.x0[1:numvars(m)] .= m.x0
+    outm.x0[numvars(m)+1:nv] .= 0
   else    # Reducing or keeping same dimensionality
-    x0[1:nv] .= view(m.x0, 1:nv)
+    outm.x0[1:nv] .= view(m.x0, 1:nv)
   end
 
-  if !isnothing(m.E)
-    E = similar(m.E, nv, nv)
+  # set the stochastic matrix properly
+  if !isnothing(outm.E)
     if nv > numvars(m)  # Increasing dimensionality
-      E[1:numvars(m),1:numvars(m)] .= view(m.E, 1:numvars(m), 1:numvars(m))
-      E[numvars(m)+1:nv,:] .= 0
-      E[:,numvars(m)+1:nv] .= 0
+      outm.E[1:numvars(m),1:numvars(m)] .= view(m.E, 1:numvars(m), 1:numvars(m))
+      outm.E[numvars(m)+1:nv,:] .= 0
+      outm.E[:,numvars(m)+1:nv] .= 0
     else
-      E[1:nv,1:nv] .= view(m.E, 1:nv, 1:nv)
+      outm.E[1:nv,1:nv] .= view(m.E, 1:nv, 1:nv)
     end
-  else
-    E = nothing
   end
 
-  return $t{S,T,U,V,typeof(idpt)}(x0, x, Q, E, idpt)
-end
-
-"""
-    $($t)(p::Probe{S,T,U,V,W}; use::UseType=nothing, idpt::Union{Nothing,Bool}=p.idpt) where {S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing},W<:Union{Nothing,Bool}}
-
-Creates a `$($t)` from the `Probe`, which must contain `TPS`s. 
-
-If `use` is not specified, then the same GTPSA `Descriptor` as `p` will be used. If `use` is 
-specified (could be another `Descriptor`, `TaylorMap`, or a `Probe` containing `TPS`s), then the 
-`p` promoted to a $($(t)) will have the same `Descriptor` as in `use.` The total number of variables + 
-and parameters must agree, however the orders may be different.
-
-If `idpt` is not specified, then the same `idpt` as `m` will be used, else that specified will be used.
-"""
-function $t(p::Probe{S,T,U,V,W}; use::UseType=nothing, idpt::Union{Nothing,Bool}=p.idpt) where {S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing},W<:Union{Nothing,Bool}}
-  if isnothing(use)
-    use = getdesc(p)
-  else
-    numnn(use) == numnn(p) || error("Number of variables + parameters in GTPSAs for `p` and `use` disagree!")
-  end
-  
-  nv = numvars(use)
-  np = numparams(use)
-  nn = numnn(use)
-  
-  x = Vector{T}(undef, nn)
-
-  length(p.x) == numvars(p) || error("Length of orbital ray ($(length(p.x))) inconsistent with number of variables in GTPSA ($(nv))")
-  
-  for i=1:numvars(p)
-    @inbounds x[i] = T(p.x[i], use=getdesc(use))
-  end
-
-  for i=numvars(p)+1:nv
-    @inbounds x[i] = T(use=getdesc(use))
-  end
-
-  if T == TPS
-    @inbounds x[nv+1:nn] .= params(getdesc(first(x)))
-  else
-    @inbounds x[nv+1:nn] .= complexparams(getdesc(first(x)))
-  end
-
-
-  if !isnothing(p.Q)
-    q = Vector{T}(undef, 4)
-    for i=1:4
-      @inbounds q[i] = T(p.Q.q[i],use=getdesc(use))
-    end
-    Q = Quaternion(q)
-  else
-    Q = nothing
-  end
-
-  x0 = Vector{S}(undef, nv)
-  if nv > numvars(p)  # Increasing dimensionality
-    x0[1:numvars(p)] .= p.x0
-    x0[numvars(p)+1:nv] .= 0
-  else    # Reducing or keeping same dimensionality
-    x0[1:nv] .= view(p.x0, 1:nv)
-  end
-
-  if !isnothing(p.E)
-    E = similar(p.E, nv, nv)
-    if nv > numvars(p)  # Increasing dimensionality
-      E[1:numvars(p),1:numvars(p)] .= view(p.E, 1:numvars(p), 1:numvars(p))
-      E[numvars(p)+1:nv,:] .= 0
-      E[:,numvars(p)+1:nv] .= 0
-    else
-      E[1:nv,1:nv] .= view(p.E, 1:nv, 1:nv)
-    end
-  else
-    E = nothing
-  end
-
-  return $t{S,T,U,V,typeof(idpt)}(x0, x, Q, E, idpt)
+  return outm
 end
 
 """
@@ -166,6 +68,8 @@ function $t{S,T,U,V,W}(u::UndefInitializer; use::UseType=GTPSA.desc_current, idp
   x0 = Vector{S}(undef, nv)
   x = Vector{T}(undef, nn)
 
+  
+
   # use same parameters if use isa TaylorMap and T == eltype(use.x)
   if use isa TaylorMap && T == eltype(use.x)
     @inbounds x[nv+1:nn] .= view(use.x, nv+1:nn)
@@ -178,19 +82,19 @@ function $t{S,T,U,V,W}(u::UndefInitializer; use::UseType=GTPSA.desc_current, idp
   end
 
   if U != Nothing
-    q = Vector{T}(undef, 4)
+    q = Vector{eltype(U)}(undef, 4)
     Q = Quaternion(q)
   else
     Q = nothing
   end
 
   if V != Nothing
-    E = Matrix{S}(undef, nv, nv)
+    E = Matrix{eltype(V)}(undef, nv, nv)
   else
     E = nothing
   end
 
-  return $t(x0, x, Q, E, idpt)
+  return $t{S,T,U,V,W}(x0, x, Q, E, idpt)
 end
 
 """
@@ -377,36 +281,7 @@ as `m` but with all zeros for each quantity (except for the immutable parameters
 in `x[nv+1:nn]`, which will be copied from `m.x`)
 """
 function zero(m::$t)
-  desc = getdesc(m)
-  nn = numnn(desc)
-  nv = numvars(desc)
-  np = numparams(desc)
-  
-  x = Vector{eltype(m.x)}(undef, nn)
-  for i=1:nv
-    @inbounds x[i] = (eltype(m.x))(use=desc)
-  end
-
-  # use same parameters 
-  @inbounds x[nv+1:nn] .= view(m.x, nv+1:nn)
-
-  if !isnothing(m.Q)
-    q = Vector{eltype(m.x)}(undef, 4)
-    for i=1:4
-      @inbounds q[i] = (eltype(m.x))(use=desc)
-    end
-    Q = Quaternion(q)
-  else
-    Q = nothing
-  end
-
-  if !isnothing(m.E)
-    E = zeros(eltype(m.E), nv, nv)
-  else
-    E = nothing
-  end
-
-  return $t(zeros(eltype(m.x0), nv), x, Q, E, m.idpt)
+  return zero(typeof(m), use=m, idpt=m.idpt)
 end
 
 function zero(::Type{$t{S,T,U,V,W}}; use::UseType=GTPSA.desc_current, idpt::W=nothing) where {S,T,U,V,W}
@@ -435,9 +310,9 @@ function zero(::Type{$t{S,T,U,V,W}}; use::UseType=GTPSA.desc_current, idpt::W=no
   end
 
   if U != Nothing
-    q = Vector{T}(undef, 4)
+    q = Vector{eltype(U)}(undef, 4)
     for i=1:4
-      @inbounds q[i] = T(use=desc)
+      @inbounds q[i] = eltype(U)(use=desc)
     end
     Q = Quaternion(q)
   else
@@ -445,12 +320,12 @@ function zero(::Type{$t{S,T,U,V,W}}; use::UseType=GTPSA.desc_current, idpt::W=no
   end
 
   if V != Nothing
-    E = zeros(S, nv, nv)
+    E = zeros(eltype(V), nv, nv)
   else
     E = nothing
   end
 
-  return $t(x0, x, Q, E, idpt)
+  return $t{S,T,U,V,W}(x0, x, Q, E, idpt)
 end
 
 """
@@ -459,91 +334,22 @@ end
 Construct an identity map based on `m`.
 """
 function one(m::$t)
-  desc = getdesc(m)
-  nn = numnn(desc)
-  nv = numvars(desc)
-  np = numparams(desc)
-
-  T = eltype(m.x)
-  
-  x = Vector{T}(undef, nn)
-  if T == ComplexTPS
-    for i=1:nv
-      @inbounds x[i] = complexmono(i,use=desc)
-    end
-  else
-    for i=1:nv
-      @inbounds x[i] = mono(i,use=desc)
-    end
-  end
-
-  # use same parameters 
-  @inbounds x[nv+1:nn] .= view(m.x, nv+1:nn)
-
-  if !isnothing(m.Q)
-    q = Vector{T}(undef, 4)
-    @inbounds q[1] = one(first(x))
-    for i=2:4
-      @inbounds q[i] = T(use=desc)
-    end
-    Q = Quaternion(q)
-  else
-    Q = nothing
-  end
-
-  if !isnothing(m.E)
-    E = zeros(eltype(m.E), nv, nv)
-  else
-    E = nothing
-  end
-
-  return $t(zeros(eltype(m.x0), nv), x, Q, E, m.idpt)
+  return one(typeof(m), use=m, idpt=m.idpt)
 end
 
-function one(::Type{$t{S,T,U,V,W}}; use::UseType=GTPSA.desc_current, idpt::W=nothing) where {S,T,U,V,W}
-  desc = getdesc(use)
-  nn = numnn(desc)
-  nv = numvars(desc)
-  np = numparams(desc)
-
-  x0 = zeros(S, nv)
-
-  x = Vector{T}(undef, nn)
+function one(t::Type{$t{S,T,U,V,W}}; use::UseType=GTPSA.desc_current, idpt::W=nothing) where {S,T,U,V,W}
+  m = zero(t, use=use, idpt=idpt)
+  nv = numvars(m)
+  
   for i=1:nv
-    @inbounds x[i] = T(use=desc)
-    x[i][i] = 1
+    @inbounds m.x[i][i] = 1
   end
 
-  if use isa Union{TaylorMap,Probe} && eltype(use.x) == T
-    # use same parameters 
-    @inbounds x[nv+1:nn] .= view(m.x, nv+1:nn)
-  else
-    # allocate
-    if T == TPS
-      @inbounds x[nv+1:nn] .= params(desc)
-    else
-      @inbounds x[nv+1:nn] .= complexparams(desc)
-    end
+  if !isnothing(m.Q)
+    @inbounds m.Q.q[1][0] = 1
   end
 
-  if U != Nothing
-    q = Vector{T}(undef, 4)
-    for i=1:4
-      @inbounds q[i] = T(use=desc)
-    end
-    q[1][0] = 1
-    Q = Quaternion(q)
-  else
-    Q = nothing
-  end
-
-  if V != Nothing
-    E = zeros(S, nv, nv)
-  else
-    E = nothing
-  end
-
-  return $t(x0, x, Q, E, idpt)
+  return m
 end
 
 end

@@ -204,13 +204,8 @@ end
 
 function $(ops[2])(m1::TaylorMap, m2::TaylorMap)
   checkop(m1, m2)
-
-  # Promote if necessary:
-  if eltype(m1.x) == ComplexTPS
-    m = zero(m1)
-  else
-    m = zero(m2)
-  end
+  outtype = promote_type(typeof(m1),typeof(m2))
+  m = zero(outtype,use=m1,idpt=m1.idpt)
   $(Meta.parse(ops[1]))(m, m1, m2)
   return m
 end
@@ -281,21 +276,15 @@ function $(Meta.parse(ops[1]))(m::TaylorMap, m1::TaylorMap, a::Number; dospin::B
 end
 
 function $(ops[2])(a::Number, m1::TaylorMap)
-  if a isa Complex
-    m = zero(complex(typeof(m1)), use=m1)
-  else
-    m = zero(m1)
-  end
+  outtype = promote_type(typeof(m1),typeof(a))
+  m = zero(outtype,use=m1,idpt=m1.idpt)
   $(Meta.parse(ops[1]))(m, a, m1)
   return m
 end
 
 function $(ops[2])(m1::TaylorMap, a::Number)
-  if a isa Complex
-    m = zero(complex(typeof(m1)), use=m1)
-  else
-    m = zero(m1)
-  end
+  outtype = promote_type(typeof(m1),typeof(a))
+  m = zero(outtype,use=m1,idpt=m1.idpt)
   $(Meta.parse(ops[1]))(m, m1, a)
   return m
 end

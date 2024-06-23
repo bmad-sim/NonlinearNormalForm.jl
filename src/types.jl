@@ -86,10 +86,28 @@ end
 
 
 UseType = Union{Descriptor, TPS, ComplexTPS, TaylorMap, Probe{<:Any,Union{TPS,ComplexTPS},<:Any,<:Any}, VectorField, Nothing}
-#=
-function promote_rule(m1::Type{TaylorMap{S1,T1,U,V1,W}}, m2::Type{TaylorMap{S2,T2,U,V2,W}}) where {S1,S2,T1,T2,U,V1,V2,W}
-  S = promote_rule(eltype(m1.x0), eltype(m2.x0))
-  T = promote_rule(eltype(m1.x), eltype(m2.x))
-  if !isnothing
-end =#
+
+for t = (:DAMap, :TPSAMap)
+@eval begin    
+
+function promote_rule(::Type{$t{S,T,U,V,W}}, ::Type{G}) where {S,T,U,V,W,G<:Number}
+  outS = promote_type(S,G)
+  outT = promote_type(T,G)
+  U != Nothing ? outU = Quaternion{promote_type(eltype(U), G)} : outU = Nothing
+  V != Nothing ? outV = promote_type(Matrix{G},V) : outV = Nothing
+  return $t{outS,outT,outU,outV,W}
+end
+
+function promote_rule(::Type{$t{S1,T1,U1,V1,W}}, ::Type{$t{S2,T2,U2,V2,W}}) where {S1,S2,T1,T2,U1,U2,V1,V2,W} 
+  outS = promote_type(S1, S2, numtype(T1), numtype(T2))
+  outT = promote_type(T1, T2)fds
+  U1 != Nothing ? outU = Quaternion{promote_type(eltype(U2),eltype(U2))} : outU = Nothing
+  V1 != Nothing ? outV = promote_type(V1,V2) : outV = Nothing
+  return $t{outS,outT,outU,outV,W}
+end 
+
+end
+end
+
+
 

@@ -13,6 +13,8 @@ Quaternion(Q::Quaternion{T}) where T <: Number = Quaternion(map(x->T(x), Q.q))
 Quaternion(t::T) where T <: Number = Quaternion([one(t), zero(t), zero(t), zero(t)])
 Quaternion(::Nothing) = Quaternion{Nothing}(Nothing[])
 
+eltype(::Type{Quaternion{T}}) where T = T
+
 ==(Q1::Quaternion, Q2::Quaternion) = Q1.q == Q2.q
 
 """
