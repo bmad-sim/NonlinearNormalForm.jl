@@ -54,50 +54,6 @@ function $t(m::Union{TaylorMap{S,T,U,V,W},Probe{S,T,U,V,W}}; use::UseType=m, idp
 end
 
 """
-    $($t){S,T,U,V,W}(u::UndefInitializer; use::UseType=GTPSA.desc_current, idpt::W=nothing) where {S,T,U,V,W}
-
-Creates an undefined `$($t){S,T,U,V,W}` with same `Descriptor` as `use`. The immutable 
-parameters will be allocated if `use` is not a `TaylorMap`, else the immutable parameters 
-from `use` will be used.
-"""
-function $t{S,T,U,V,W}(u::UndefInitializer; use::UseType=GTPSA.desc_current, idpt::W=nothing) where {S,T,U,V,W}
-  desc = getdesc(use)
-  nv = numvars(desc)
-  np = numparams(desc)
-  nn = numnn(desc)
-  x0 = similar(S, nv) #S(undef, nv)
-  x = similar(T, nn) #(undef, nn)
-  Base.require_one_based_indexing(x0, x)
-  return S
-
-  # use same parameters if use isa TaylorMap and T == eltype(use.x)
-  if use isa TaylorMap && eltype(x) == eltype(use.x)
-    @inbounds x[nv+1:nn] .= view(use.x, nv+1:nn)
-  else # allocate
-    if eltype(T) == TPS
-      @inbounds x[nv+1:nn] .= params(desc)
-    else
-      @inbounds x[nv+1:nn] .= complexparams(desc)
-    end
-  end
-
-  if U != Nothing
-    q = similar(S, 4) #Vector{eltype(U)}(undef, 4)
-    Q = Quaternion(q)
-  else
-    Q = nothing
-  end
-
-  if V != Nothing
-    E = similar(V, nv, nv) #Matrix{eltype(V)}(undef, nv, nv)
-  else
-    E = nothing
-  end
-
-  return $t(x0, x, Q, E, idpt)
-end
-
-"""
     $($t)(;use::UseType=GTPSA.desc_current, x::Vector=vars(getdesc(use)), x0::Vector=zeros(numtype(eltype(x)), numvars(use)), Q::Union{Quaternion,Nothing}=nothing, E::Union{Matrix,Nothing}=nothing, idpt::Union{Bool,Nothing}=nothing, spin::Union{Bool,Nothing}=nothing, FD::Union{Bool,Nothing}=nothing) 
 
 Constructs a $($t) with the passed vector of `TPS`/`ComplexTPS` as the orbital ray, and optionally the entrance 
@@ -228,6 +184,50 @@ end
 
 
 """
+    $($t){S,T,U,V,W}(u::UndefInitializer; use::UseType=GTPSA.desc_current, idpt::W=nothing) where {S,T,U,V,W}
+
+Creates an undefined `$($t){S,T,U,V,W}` with same `Descriptor` as `use`. The immutable 
+parameters will be allocated if `use` is not a `TaylorMap`, else the immutable parameters 
+from `use` will be used.
+"""
+function $t{S,T,U,V,W}(u::UndefInitializer; use::UseType=GTPSA.desc_current, idpt::W=nothing) where {S,T,U,V,W}
+  desc = getdesc(use)
+  nv = numvars(desc)
+  np = numparams(desc)
+  nn = numnn(desc)
+  x0 = similar(S, nv) 
+  x = similar(T, nn) 
+  Base.require_one_based_indexing(x0, x)
+
+  # use same parameters if use isa TaylorMap and T == eltype(use.x)
+  if use isa TaylorMap && eltype(x) == eltype(use.x)
+    @inbounds x[nv+1:nn] .= view(use.x, nv+1:nn)
+  else # allocate
+    if eltype(T) == TPS
+      @inbounds x[nv+1:nn] .= params(desc)
+    else
+      @inbounds x[nv+1:nn] .= complexparams(desc)
+    end
+  end
+
+  if U != Nothing
+    q = similar(S, 4)
+    Q = Quaternion(q)
+  else
+    Q = nothing
+  end
+
+  if V != Nothing
+    E = similar(V, nv, nv)
+  else
+    E = nothing
+  end
+
+  return $t(x0, x, Q, E, idpt)
+end
+
+
+"""
     zero(m::$($t))
 
 Creates a $($t) with the same GTPSA `Descriptor`, and spin/FD on/off,
@@ -239,18 +239,22 @@ function zero(m::$t)
 end
 
 function zero(::Type{$t{S,T,U,V,W}}; use::UseType=GTPSA.desc_current, idpt::W=nothing) where {S,T,U,V,W}
+  m = $t{S,T,U,V,W}(undef, use=use, idpt=idpt)
+
   desc = getdesc(use)
   nn = numnn(desc)
   nv = numvars(desc)
   np = numparams(desc)
 
-  x0 = zeros(S, nv)
+  m.x0 .= 0
 
-  x = T(undef, nn)
   for i=1:nv
-    @inbounds x[i] = eltype(T)(use=desc)
+    @inbounds m.x[i] = eltype(m.x)(use=desc)
   end
 
+  if !isnothing(m.Q)
+
+  #= parameters taken care of by UndefInitializer
   if use isa Union{TaylorMap,Probe} && eltype(use.x) == T
     # use same parameters 
     @inbounds x[nv+1:nn] .= view(use.x, nv+1:nn)
@@ -262,6 +266,7 @@ function zero(::Type{$t{S,T,U,V,W}}; use::UseType=GTPSA.desc_current, idpt::W=no
       @inbounds x[nv+1:nn] .= complexparams(desc)
     end
   end
+  =#
 
   if U != Nothing
     q = Vector{eltype(U)}(undef, 4)
