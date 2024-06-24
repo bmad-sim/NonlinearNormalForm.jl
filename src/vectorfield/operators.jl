@@ -16,7 +16,7 @@ for ops = (("add!", :+), ("sub!",:-))
 @eval begin
   
 function $(Meta.parse(ops[1]))(F::VectorField, F1::Union{VectorField,TaylorMap}, F2::Union{VectorField,TaylorMap}; dospin::Bool=true)
-  checkspin(F,F1,F2)
+  checkinplace(F, F1, F2)
   
   nv = numvars(F)
 
@@ -34,7 +34,7 @@ function $(Meta.parse(ops[1]))(F::VectorField, F1::Union{VectorField,TaylorMap},
 end
 
 function $(Meta.parse(ops[1]))(F::VectorField, J::UniformScaling, F1::Union{VectorField,TaylorMap}; dospin::Bool=true)
-  checkspin(F,F1)
+  checkinplace(F, F1)
   
   nv = numvars(F)
 
@@ -54,7 +54,7 @@ function $(Meta.parse(ops[1]))(F::VectorField, J::UniformScaling, F1::Union{Vect
 end
 
 function $(Meta.parse(ops[1]))(F::VectorField, F1::Union{VectorField,TaylorMap}, J::UniformScaling; dospin::Bool=true)
-  checkspin(F,F1)
+  checkinplace(F, F1)
   
   nv = numvars(F)
 
@@ -74,7 +74,8 @@ function $(Meta.parse(ops[1]))(F::VectorField, F1::Union{VectorField,TaylorMap},
 end
 
 function $(ops[2])(F1::VectorField, F2::VectorField)
-  checkspin(F1,F1)
+  checkop(F1, F2)
+
   # Promote if necessary:
   if eltype(F1.x) == ComplexTPS
     F = zero(F1)
@@ -107,7 +108,7 @@ end
 for ops = (("add!", :+), ("sub!",:-), ("mul!",:*), ("div!",:/))
 @eval begin
 function $(Meta.parse(ops[1]))(F::VectorField, a::Number, F1::VectorField; dospin::Bool=true)
-  checkspin(F,F1)
+  checkinplace(F, F1, a)
   
   nv = numvars(F)
 
@@ -124,7 +125,8 @@ function $(Meta.parse(ops[1]))(F::VectorField, a::Number, F1::VectorField; dospi
 end
 
 function $(Meta.parse(ops[1]))(F::VectorField, F1::VectorField, a::Number; dospin::Bool=true)
-  checkspin(F,F1)
+  checkinplace(F, F1, a)
+
   nv = numvars(F)
 
   for i=1:nv

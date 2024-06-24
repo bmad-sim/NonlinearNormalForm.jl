@@ -115,10 +115,7 @@ for ops = (("add!", :+), ("sub!",:-))
 @eval begin
 
 function $(Meta.parse(ops[1]))(m::TaylorMap, m1::TaylorMap, m2::TaylorMap; dospin::Bool=true)
-  checkidpt(m, m1, m2)
-  checkspin(m, m1, m2)
-
-  assertstoch(m, m1, m2)
+  checkinplace(m, m1, m2)
   
   nv = numvars(m)
 
@@ -148,10 +145,7 @@ function $(Meta.parse(ops[1]))(m::TaylorMap, m1::TaylorMap, m2::TaylorMap; dospi
 end
 
 function $(Meta.parse(ops[1]))(m::TaylorMap, J::UniformScaling, m1::TaylorMap; dospin::Bool=true)
-  checkidpt(m, m1)
-  checkspin(m, m1)
-  
-  assertstoch(m,m1,m)
+  checkinplace(m, m1)
   
   nv = numvars(m)
 
@@ -181,10 +175,7 @@ function $(Meta.parse(ops[1]))(m::TaylorMap, J::UniformScaling, m1::TaylorMap; d
 end
 
 function $(Meta.parse(ops[1]))(m::TaylorMap, m1::TaylorMap, J::UniformScaling; dospin::Bool=true)
-  checkidpt(m, m1)
-  checkspin(m, m1)
-
-  assertstoch(m,m1,m)
+  checkinplace(m, m1)
 
   nv = numvars(m)
 
@@ -212,15 +203,9 @@ function $(Meta.parse(ops[1]))(m::TaylorMap, m1::TaylorMap, J::UniformScaling; d
 end
 
 function $(ops[2])(m1::TaylorMap, m2::TaylorMap)
-  checkidpt(m1, m2)
-  checkspin(m1, m2)
+  checkop(m1, m2)
+  m = zero_op(m1, m2)
 
-  # Promote if necessary:
-  if eltype(m1.x) == ComplexTPS
-    m = zero(m1)
-  else
-    m = zero(m2)
-  end
   $(Meta.parse(ops[1]))(m, m1, m2)
   return m
 end
@@ -246,8 +231,7 @@ end
 for ops = (("add!", :+), ("sub!",:-), ("mul!",:*), ("div!",:/))
 @eval begin
 function $(Meta.parse(ops[1]))(m::TaylorMap, a::Number, m1::TaylorMap; dospin::Bool=true)
-  checkidpt(m, m1)
-  checkspin(m, m1)
+  checkinplace(m, a, m1)
   
   nv = numvars(m)
   m.x0 .= m1.x0
@@ -269,8 +253,7 @@ function $(Meta.parse(ops[1]))(m::TaylorMap, a::Number, m1::TaylorMap; dospin::B
 end
 
 function $(Meta.parse(ops[1]))(m::TaylorMap, m1::TaylorMap, a::Number; dospin::Bool=true)
-  checkidpt(m, m1)
-  checkspin(m, m1)
+  checkinplace(m, a, m1)
   
   nv = numvars(m)
 
@@ -293,21 +276,15 @@ function $(Meta.parse(ops[1]))(m::TaylorMap, m1::TaylorMap, a::Number; dospin::B
 end
 
 function $(ops[2])(a::Number, m1::TaylorMap)
-  if a isa Complex
-    m = zero(complex(typeof(m1)), use=m1)
-  else
-    m = zero(m1)
-  end
+  m = zero_op(m1, a)
+
   $(Meta.parse(ops[1]))(m, a, m1)
   return m
 end
 
 function $(ops[2])(m1::TaylorMap, a::Number)
-  if a isa Complex
-    m = zero(complex(typeof(m1)), use=m1)
-  else
-    m = zero(m1)
-  end
+  m = zero_op(m1, a)
+  
   $(Meta.parse(ops[1]))(m, m1, a)
   return m
 end

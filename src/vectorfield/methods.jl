@@ -1,5 +1,7 @@
 # --- copy! ---
-function copy!(F::VectorField{T,U}, F1::Union{VectorField{T,U},TaylorMap{S,T,U,V}}) where {S,T,U,V}
+function copy!(F::VectorField, F1::Union{VectorField,TaylorMap})
+  checkinplace(F, F1)
+
   desc = getdesc(F)
   nv = numvars(desc)
 
@@ -17,7 +19,7 @@ function copy!(F::VectorField{T,U}, F1::Union{VectorField{T,U},TaylorMap{S,T,U,V
 end
 
 # --- complex ---
-function complex(F::VectorField{T,U}) where {T,U}
+function complex(F::VectorField)
   desc = getdesc(F)
   nn = numnn(desc)
   nv = numvars(desc)
@@ -51,7 +53,7 @@ liebra!(na::Cint, m1::Vector{Ptr{RTPSA}}, m2::Vector{Ptr{RTPSA}}, m3::Vector{Ptr
 liebra!(na::Cint, m1::Vector{Ptr{CTPSA}}, m2::Vector{Ptr{CTPSA}}, m3::Vector{Ptr{CTPSA}}) = (@inline; GTPSA.mad_ctpsa_liebra!(na, m1, m2, m3))
 
 """
-    lb(F::VectorField{T,U}, H::VectorField{T,U}) where {T,U}
+    lb(F::VectorField, H::VectorField)
 
 Computes the Lie bracket of the vector fields `F` and `H`. Explicitly, and including 
 spin (with the lower case letter for the quaternion of the vector field), this is:
@@ -60,7 +62,9 @@ spin (with the lower case letter for the quaternion of the vector field), this i
 
 where `[h,f] = h*f - f*h` is just a quaternion commutator. See Equation 44.52 in the Bmad manual
 """
-function lb(F::VectorField{T,U}, H::VectorField{T,U}) where {T,U}
+function lb(F::VectorField, H::VectorField)
+  checkop(F,H)
+
   G = zero(F)
   lb!(G,F,H)
   return G
@@ -68,7 +72,7 @@ end
 
 
 """
-    lb!(G::VectorField{T,U}, F::VectorField{T,U}, H::VectorField{T,U}; work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_vf_work_low(F), work_Q::Union{Nothing,U}=nothing) where {T,U}
+    lb!(G::VectorField, F::VectorField, H::VectorField; work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_vf_work_low(F), work_Q::Union{Quaternion,Nothing}=nothing)
 
 Computes the Lie bracket of the vector fields `F` and `H`, and stores the result in `G`. 
 See `lb` for more details.
@@ -77,7 +81,11 @@ See `lb` for more details.
 - `work_low` -- Tuple of 3 vectors of type `lowtype(T)` of length `>=nv`
 - `work_Q`   -- `Quaternion{T}` if spin is included in the vector field, else `nothing`
 """
-function lb!(G::VectorField{T,U}, F::VectorField{T,U}, H::VectorField{T,U}; work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_lb_work_low(F), work_Q::Union{U,Nothing}=prep_vf_work_Q(F)) where {T,U}
+function lb!(G::VectorField, F::VectorField, H::VectorField; work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_lb_work_low(F), work_Q::Union{Quaternion,Nothing}=prep_vf_work_Q(F))
+  checkinplace(G, F, H)
+
+  T = eltype(G.x)
+
   nv = numvars(F)
   Fx_low = work_low[1]
   Hx_low = work_low[2]
@@ -125,22 +133,23 @@ end
 # --- Lie operator (VectorField) acting on DAMap ---
 # GTPSA provides fgrad with is used, but nothing for spin
 """
-    *(F::VectorField{T,U}, m1::DAMap{S,T,U,V,W}) where {S,T,U,V,W}
+    *(F::VectorField, m1::DAMap)
 
 Calculates a Lie operator `VectorField` acting on a `DAMap`. Explicity, if spin is 
 included that is `F * m = (F.x, F.Q) * (m.x, m.Q) = (F.x ⋅ ∇ m.x , F.x ⋅ ∇ m.Q + m.Q*F.Q)`
 """
-function *(F::VectorField{T,U}, m1::Union{DAMap{S,T,U,V,W},UniformScaling}) where {S,T,U,V,W}
+function *(F::VectorField, m1::Union{DAMap,UniformScaling})
   if m1 isa UniformScaling 
-    m1 = one(DAMap{numtype(T),T,U,Nothing,Nothing},use=getdesc(F))
+    m1 = one(DAMap{numtype(eltype(F.x)),eltype(F.x),typeof(F.Q),Nothing,Nothing},use=getdesc(F))
   end
+  checkop(F, m1)
   m = zero(m1)
   mul!(m, F, m1)
   return m
 end
 
 """
-    mul!(m::DAMap{S,T,U,V,W}, F::VectorField{T,U}, m1::DAMap{S,T,U,V,W}; work_low::Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}=Vector{lowtype(first(F.x))}(undef, numvars(F)), work_Q::Union{U,Nothing}=prep_vf_work_Q(F)) where {S,T,U,V,W}
+    mul!(m::DAMap, F::VectorField, m1::DAMap; work_low::Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}=Vector{lowtype(first(F.x))}(undef, numvars(F)), work_Q::Union{Quaternion,Nothing}=prep_vf_work_Q(F))
 
 Computes the Lie operator `F` acting on a `DAMap` `m1`, and stores the result in `m`.
 Explicity, that is `F * m = (F.x, F.Q) * (m.x, m.Q) = (F.x ⋅ ∇ m.x , F.x ⋅ ∇ m.Q + m.Q*F.Q)`
@@ -149,9 +158,10 @@ Explicity, that is `F * m = (F.x, F.Q) * (m.x, m.Q) = (F.x ⋅ ∇ m.x , F.x ⋅
 - `work_low` -- Vector with eltype `lowtype(T)` and length `>=nv`
 - `work_Q`   -- `Quaternion{T}` if spin is included in the vector field, else `nothing`
 """
-function mul!(m::DAMap{S,T,U,V,W}, F::VectorField{T,U}, m1::DAMap{S,T,U,V,W}; work_low::Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}=Vector{lowtype(first(F.x))}(undef, numvars(F)), work_Q::Union{U,Nothing}=prep_vf_work_Q(F)) where {S,T,U,V,W}
-  checkidpt(m,m1)
-  
+function mul!(m::DAMap, F::VectorField, m1::DAMap; work_low::Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}=Vector{lowtype(first(F.x))}(undef, numvars(F)), work_Q::Union{Quaternion,Nothing}=prep_vf_work_Q(F))
+  checkinplace(m, F, m1)
+
+  T = eltype(m.x)
   nv = numvars(F)
 
   @assert length(work_low) >= nv "Incorrect length for work_low; received $(length(work_low)), should be >=$nv"
@@ -188,10 +198,12 @@ end
 # --- exp(F)*m ---
 # While GTPSA provides this for only the orbital part, it separately converges 
 # each variable and does not include spin. Here I include spin and do the entire map at once.
-function exp(F::VectorField{T,U}, m1::Union{UniformScaling,DAMap{S,T,U,V,W}}=I) where {S,T,U,V,W}
+function exp(F::VectorField, m1::Union{UniformScaling,DAMap}=I)
   if m1 isa UniformScaling 
-    m1 = one(DAMap{numtype(T),T,U,Nothing,Nothing},use=getdesc(F))
+    m1 = one(DAMap{numtype(eltype(F.x)),eltype(F.x),typeof(F.Q),Nothing,Nothing},use=getdesc(F))
   end
+  checkop(F,m1)
+
   m = zero(m1)
   exp!(m, F, m1)
   return m
@@ -199,7 +211,7 @@ end
 
 
 """
-    exp!(m::DAMap{S,T,U,V,W}, F::VectorField{T,U}, m1::DAMap{S,T,U,V,W}; work_maps::Tuple{Vararg{DAMap{S,T,U,V,W}}}=(zero(m1),zero(m1)), work_low::Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}=Vector{lowtype(first(F.x))}(undef, numvars(F)), work_Q::Union{U,Nothing}=prep_vf_work_Q(F)) where {S,T,U,V,W}
+    exp!(m::DAMap, F::VectorField, m1::DAMap; work_maps::Tuple{Vararg{DAMap}}=(zero(m1),zero(m1)), work_low::Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}=Vector{lowtype(first(F.x))}(undef, numvars(F)), work_Q::Union{Quaternion,Nothing}=prep_vf_work_Q(F))
 
 Computes `exp(F)*m1`, and stores the result in `m`. Explicity, this is
 `exp(F)*m1 = m1 + F*m1 + 1/2*F*(F*m1) + 1/6*F*(F*(F*m1)) + ...`, where `*` is
@@ -212,9 +224,10 @@ number of iterations is equal to the number of higher orders left.
 - `work_low` -- Vector with eltype `lowtype(T)` and length `>=nv`
 - `work_Q`   -- `Quaternion{T}` if spin is included in the vector field, else `nothing`
 """
-function exp!(m::DAMap{S,T,U,V,W}, F::VectorField{T,U}, m1::DAMap{S,T,U,V,W}; work_maps::Tuple{Vararg{DAMap{S,T,U,V,W}}}=(zero(m1),zero(m1)), work_low::Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}=Vector{lowtype(first(F.x))}(undef, numvars(F)), work_Q::Union{U,Nothing}=prep_vf_work_Q(F)) where {S,T,U,V,W}
-  checkidpt(m, m1, work_maps...)
-  
+function exp!(m::DAMap, F::VectorField, m1::DAMap; work_maps::Tuple{Vararg{DAMap}}=(zero(m1),zero(m1)), work_low::Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}=Vector{lowtype(first(F.x))}(undef, numvars(F)), work_Q::Union{Quaternion,Nothing}=prep_vf_work_Q(F))
+  checkinplace(m, F, m1, work_maps...)
+
+  T = eltype(m.x)
   nv = numvars(F)
   #GTPSA.mad_ctpsa_exppb!(nv, map(t->t.tpsa, F.x), map(t->t.tpsa, view(m1.x, 1:nv)), map(t->t.tpsa, view(m.x,1:nv)))
   #return
@@ -272,7 +285,7 @@ end
 # 2 work_vfs
 
 """
-    log!(F::VectorField{T,U}, m1::DAMap{S,T,U,V,W}; work::Tuple{DAMap{S,T,U,V,W},DAMap{S,T,U,V,W},DAMap{S,T,U,V,W},VectorField{T,U},VectorField{T,U}}=prep_log_work(m1), work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_lb_work_low(F), work_Q::Union{U,Nothing}=prep_vf_work_Q(F)) where {S,T,U,V,W}
+    log!(F::VectorField, m1::DAMap; work::Tuple{DAMap,DAMap,DAMap,VectorField,VectorField}=prep_log_work(m1), work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_lb_work_low(F), work_Q::Union{Quaternion,Nothing}=prep_vf_work_Q(F)) 
 
 Computes the log of the map `m1` - that is, calculates the `VectorField` `F` that 
 would represent the map `m1` as a Lie exponent `exp(F)` - and stores the result in `F`.
@@ -283,8 +296,8 @@ The map `m1` should be close to the identity for this to converge quickly.
 - `work_low` -- Vector with eltype `lowtype(T)` and length `>=nv`
 - `work_Q`   -- `Quaternion{T}` if spin is included in the vector field, else `nothing`
 """
-function log!(F::VectorField{T,U}, m1::DAMap{S,T,U,V,W}; work::Tuple{DAMap{S,T,U,V,W},DAMap{S,T,U,V,W},DAMap{S,T,U,V,W},VectorField{T,U},VectorField{T,U}}=prep_log_work(m1), work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_lb_work_low(F), work_Q::Union{U,Nothing}=prep_vf_work_Q(F)) where {S,T,U,V,W}
-  checkidpt(m1, work[1:3]...)
+function log!(F::VectorField, m1::DAMap; work::Tuple{DAMap,DAMap,DAMap,VectorField,VectorField}=prep_log_work(m1), work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_lb_work_low(F), work_Q::Union{Quaternion,Nothing}=prep_vf_work_Q(F))
+  checkinplace(F, m1, work...)
   
   nv = numvars(m1)
   nmax = 100
@@ -368,14 +381,14 @@ end
 
 
 """
-    log(m1::DAMap{S,T,U,V}) where {S,T,U,V}
+    log(m1::DAMap)
 
 Computes the log of the map `m1` - that is, calculates the `VectorField` `F` that 
 would represent the map `m1` as a Lie exponent `exp(F)`. The map `m1` should be close 
 to the identity for this to converge quickly.
 """
-function log(m1::DAMap{S,T,U,V}) where {S,T,U,V}
-  F = zero(VectorField{T,U},use=m1)
+function log(m1::DAMap)
+  F = zero(VectorField{eltype(m1.x),typeof(m1.Q)},use=m1)
   log!(F,m1)
   return F
 end

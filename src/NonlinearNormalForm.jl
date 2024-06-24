@@ -19,7 +19,9 @@ import Base: ∘,
              copy!,
              convert,
              show,
-             rand
+             rand,
+             promote_rule,
+             eltype
 
 import LinearAlgebra: norm,
                       dot,

@@ -24,42 +24,55 @@ vpords(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap,Ve
 vords(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap,VectorField}) = unsafe_wrap(Vector{UInt8}, unsafe_load(getdesc(m).desc).no, numvars(m))
 pords(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap,VectorField}) = unsafe_wrap(Vector{UInt8}, unsafe_load(getdesc(m).desc).no, numparams(m))
 
-@inline checkidpt(m::TaylorMap...) = all(x->x.idpt==first(m).idpt, m) || error("Maps have disagreeing idpt")
-@inline checkspin(m...) = all(x->isnothing(x.Q), m) || all(x->!isnothing(x.Q), m) || error("Atleast one map/vector field includes spin while others do not")
+@inline checkidpt(maps::TaylorMap...) = all(x->x.idpt==first(maps).idpt, maps) || error("Maps have disagreeing idpt")
+@inline checkspin(stuff...) = all(x->isnothing(x.Q), stuff) || all(x->!isnothing(x.Q), stuff) || error("Atleast one map/vector field includes spin while others do not")
+@inline checkFD(maps::TaylorMap...) = all(x->isnothing(x.E), maps) || all(x->!isnothing(x.E), maps) || error("Atleast one map includes fluctuations/dissipation while others do not")
 
-@inline checkop(m::TaylorMap...) = checkidpt(m...) && checkspin(m...)
+@inline checkop(stuff...) = checkidpt(filter(x->(x isa TaylorMap), stuff)...) && checkspin(filter(x->(x isa Union{TaylorMap,VectorField}), stuff)...) && checkFD(filter(x->(x isa TaylorMap), stuff)...)
 
-@inline function checkdestination(m::TaylorMap, maps::TaylorMap...)
+# checkinplace is preferred to using the "where {S,..}.." syntax as this also ensure idpt is consistent
+# and checks promotion as well. It also gives descriptive errors rather than just "function not found"
+@inline function checkinplace(m::Union{TaylorMap,VectorField}, stuff...)
+  checkop(m, stuff...)
+
   # Checks that the output map has all types properly promoted
-  mapx0types = map(x->eltype(x.x0), maps)
-  outx0type = promote_type(mapx0types...)
-  eltype(m.x0) == outx0type || error("Output map reference orbit type $(eltype(m.x0)) must be $outx0type")
+  # or NOT promoted if unneccessary
+  maps = filter(x->(x isa TaylorMap), stuff)
+  mapsvfs = filter(x->(x isa Union{TaylorMap,VectorField}), stuff)
+  nums = filter(x->(x isa Number), stuff)
+  numtypes = map(x->typeof(x), nums) # scalars only affect x and Q, not x0 or E in FPP
 
-  mapxtypes = map(x->numtype(eltype(x.x)),maps)
-  outxtype = promote_type(mapxtypes...)
-  eltype(m.x) == outxtype || error("Output map orbital ray type $(eltype(m.x)) must be $outxtype")
+  xtypes = map(x->eltype(x.x), mapsvfs)
+  xnumtypes = map(x->numtype(x),xtypes)
+
+  if m isa TaylorMap
+    x0types = map(x->eltype(x.x0), maps)
+    outx0type = promote_type(x0types..., xnumtypes...) # reference orbit in composition is affected by orbital part
+    eltype(m.x0) == outx0type || error("Output $(typeof(m)) reference orbit type $(eltype(m.x0)) must be $outx0type")
+  end
+
+  outxtype = promote_type(xtypes..., numtypes...)
+  eltype(m.x) == outxtype || error("Output $(typeof(m)) orbital ray type $(eltype(m.x)) must be $xtype")
 
   if !isnothing(m.Q)
-    mapQtypes = map(x->numtype(eltype(x.Q.q)), maps)
-    outQtype = promote_type(mapQtypes...)
-    eltype(m.Q) == outQtype || error("Output map quaternion type $(eltype(m.Q.q)) must be $outQtype")
+    qtypes = map(x->numtype(eltype(x.Q.q)), mapsvfs)
+    outqtype = promote_type(qtypes..., numtypes)
+    eltype(m.Q) == outqtype || error("Output $(typeof(m)) quaternion type $(eltype(m.Q.q)) must be $outqtype")
   end
 
   # Part of the promotion is stochasticity:
   # the output map must include stochasticity if any input includes stochasticity:
-  !isnothing(m.E) || all(x->isnothing(x.E), maps) || error("Output map must include stochastic matrix (at least 1 input map includes stochastic matrix)")
-
-  if isnothing(m.E)
-    maptypes = map(x->numtype(eltype(x.x)),maps)
-    stochtypes = map(x->isnothing(x.E) ? Float64 : eltype(x.E), maps)
-    outtype = promote_type(maptypes..., stochtypes...)
-    eltype(m.E) == outtype || error("Output map stochastic matrix type $(eltype(m.E)) must be $outtype")
+  if m isa TaylorMap && !isnothing(m.E)
+    Etypes = map(x->eltype(x.E), maps)
+    outtype = promote_type(xnumtypes..., Etypes...)
+    eltype(m.E) == outtype || error("Output $(typeof(m)) FD matrix type $(eltype(m.E)) must be $outtype")
   end
+
   return true
 end
 
 # --- random symplectic map ---
-function rand(t::Union{Type{DAMap},Type{TPSAMap}}; spin::Union{Bool,Nothing}=nothing, stochastic::Union{Bool,Nothing}=nothing, use::Union{Descriptor,TPS,ComplexTPS}=GTPSA.desc_current, ndpt::Union{Nothing,Integer}=nothing)
+function rand(t::Union{Type{DAMap},Type{TPSAMap}}; spin::Union{Bool,Nothing}=nothing, FD::Union{Bool,Nothing}=nothing, use::Union{Descriptor,TPS,ComplexTPS}=GTPSA.desc_current, ndpt::Union{Nothing,Integer}=nothing)
   if isnothing(spin)
     U = Nothing
   else
@@ -70,10 +83,10 @@ function rand(t::Union{Type{DAMap},Type{TPSAMap}}; spin::Union{Bool,Nothing}=not
     end
   end
 
-  if isnothing(stochastic)
+  if isnothing(FD)
     V = Nothing
   else
-    if stochastic
+    if FD
       V = Matrix{Float64}
     else
       V = Nothing
@@ -161,15 +174,15 @@ function read_fpp_map(file; idpt::Union{Nothing,Bool}=nothing)
 
   # Check if map has stochasticity
   stoch_idx = findfirst(t->t=="Stochastic", data)
-  if !isnothing(stoch_idx) && stoch_idx[2]== 1 # stochastic in first column meaning no "No"
-    stochastic = true
+  if !isnothing(stoch_idx) && stoch_idx[2]== 1 # FD in first column meaning no "No"
+    FD = true
   else
-    stochastic=nothing
+    FD=nothing
   end
 
   # Make the TPSA
   d = Descriptor(nv, no, np, no)
-  m = complex(DAMap(use=d,idpt=idpt,stochastic=stochastic)) #repeat([ComplexTPS(use=d)], nv), Q=Quaternion([ComplexTPS(1,use=d), repeat([ComplexTPS(use=d)], 3)...]))
+  m = complex(DAMap(use=d,idpt=idpt,FD=FD)) #repeat([ComplexTPS(use=d)], nv), Q=Quaternion([ComplexTPS(1,use=d), repeat([ComplexTPS(use=d)], 3)...]))
 
   idx=3
   data=data[3:end,:]
@@ -198,8 +211,8 @@ function read_fpp_map(file; idpt::Union{Nothing,Bool}=nothing)
   # dont forget params
   m.x[nv+1:nn] .= complexparams(d)
 
-  # stochastic
-  if !isnothing(stochastic)
+  # FD
+  if !isnothing(FD)
     idx = findfirst(t->t=="Stochastic", data)[1]
     data = data[idx+1:end,:]
     for i=1:size(data, 1)

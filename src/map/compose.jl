@@ -28,8 +28,7 @@ See the documentation for `compose_it!` for information on `work_low` and `work_
 - `work_prom` -- Temporary vector of allocated `ComplexTPS`s when there is implicit promotion. See the `compose_it!` documentation for more details. Default is output from `prep_comp_work_prom(m, m2, m1)`
 """
 function compose!(m::DAMap, m2::DAMap, m1::DAMap; keep_scalar::Bool=true, work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing, dospin::Bool=true, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_comp_work_low(m), work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS}}}}=prep_comp_work_prom(m,m2,m1))
-  checkop(m, m2, m1)
-  checkpromotion(m, m2, m1)
+  checkinplace(m, m2, m1)
   
   # DAMap setup:
   desc = getdesc(m1)
@@ -92,8 +91,7 @@ See the documentation for `compose_it!` for information on `work_low` and `work_
 - `work_prom` -- Temporary vector of allocated `ComplexTPS`s when there is implicit promotion. See the `compose_it!` documentation for more details. Default is output from `prep_comp_work_prom(m, m2, m1)`
 """
 function compose!(m::TPSAMap, m2::TPSAMap, m1::TPSAMap; dospin::Bool=true, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_comp_work_low(m), work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS}}}}=prep_comp_work_prom(m,m2,m1))
-  checkop(m, m2, m1)
-  checkpromotion(m, m2, m1)
+  checkinplace(m, m2, m1)
   
   # TPSAMap setup:
   # For TPSA Map concatenation, we need to subtract w_0 (m2 x0) (Eq. 33)
@@ -134,41 +132,7 @@ $($t) composition, which calculates `m2 ∘ m1` $( $t == DAMap ? "ignoring the s
 """
 function compose(m2::$t,m1::$t)
   checkop(m2, m1)
-
-  desc = getdesc(m1)
-  nn = numnn(desc)
-  nv = numvars(desc)
-
-  outT = promote_type(eltype(m2.x),eltype(m1.x))
-  
-  # set up outx0
-  outx0 = Vector{numtype(outT)}(undef, nv)
-
-  # Set up outx:
-  outx = Vector{outT}(undef, nn)
-  for i=1:nv  # no need to allocate immutable parameters taken care of inside compose_it!
-      @inbounds outx[i] = outT(use=desc)
-  end
-
-  # set up quaternion out:
-  if !isnothing(m1.Q)
-    outq = Vector{outT}(undef, 4)
-    for i=1:4
-      @inbounds outq[i] = outT(use=desc)
-    end
-    outQ = Quaternion(outq)
-  else
-    outQ = nothing
-  end
-
-  # set up stochastic out
-  if isnothing(m1.E) && isnothing(m2.E)
-    outE = nothing
-  else
-    outE = Matrix{numtype(outT)}(undef, nv, nv)
-  end
-
-  m = $t(outx0, outx, outQ, outE, m1.idpt)
+  m = zero_op(m1,m2)
   compose!(m, m2, m1)
   
   return m
