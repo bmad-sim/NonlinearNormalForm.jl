@@ -1,6 +1,9 @@
 function normal(m::DAMap)
   nn = numnn(m)
-
+  
+  # 1: Go to parameter-dependent fixed point to first order ONLY!
+  # Higher orders will be taken care of in nonlinear part
+ # zero(m) is zero in variables but identity in parameters
   if !isnothing(m.idpt) # if coasting, set number of variables executing pseudo-harmonic oscillations
     nhv = numvars(m)-2
     eye = DAMap(I(nhv),use=m,idpt=m.idpt)
@@ -18,8 +21,6 @@ function normal(m::DAMap)
     a0 = (cutord(m,2)-I)^-1 ∘ zero(m) + I 
   end
 
-  # 1: Go to parameter-dependent fixed point to first order
- # zero(m) is zero in variables but identity in parameters
   m0 = a0^-1 ∘ m ∘ a0
 
   # 2: Do the linear normal form exactly
