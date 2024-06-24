@@ -37,8 +37,8 @@ struct DAMap{S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union
   E::V             # Envelope for stochasticity
   idpt::W          # Specifies index of constant (energy-like) variable
 
-  function DAMap{S,T,U,V,W}(x0, x, Q, E, idpt) where {S,T,U,V,W}
-    m = new{S,T,U,V,W}(x0, x, Q, E, idpt)
+  function DAMap(x0, x, Q, E, idpt)
+    m = new{eltype(x0),eltype(x),typeof(Q),typeof(E),typeof(idpt)}(x0, x, Q, E, idpt)
     checkmapsanity(m)
     return m
   end
@@ -57,8 +57,8 @@ struct TPSAMap{S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Uni
   E::V             # Envelope for stochasticity
   idpt::W          # Specifies index of constant (energy-like) variable
 
-  function TPSAMap{S,T,U,V,W}(x0, x, Q, E, idpt) where {S,T,U,V,W}
-    m = new{S,T,U,V,W}(x0, x, Q, E, idpt)
+  function TPSAMap(x0, x, Q, E, idpt)
+    m = new{eltype(x0),eltype(x),typeof(Q),typeof(E),typeof(idpt)}(x0, x, Q, E, idpt)
     checkmapsanity(m)
     return m
   end
@@ -95,9 +95,7 @@ struct VectorField{T<:Union{TPS,ComplexTPS}, U<:Union{Quaternion{T},Nothing}}
   Q::U           
 end
 
-
-
-#UseType = Union{Descriptor, TPS, ComplexTPS, DAMap, TPSAMap, Probe{<:Any,Union{TPS,ComplexTPS},<:Any,<:Any}, VectorField, Nothing}
+const UseType = Union{Descriptor, TPS, ComplexTPS, DAMap, TPSAMap, Probe{<:Any,Union{TPS,ComplexTPS},<:Any,<:Any}, VectorField, Nothing}
 
 for t = (:DAMap, :TPSAMap)
 @eval begin    

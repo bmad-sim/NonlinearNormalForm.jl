@@ -2,7 +2,7 @@ for t = (:DAMap, :TPSAMap)
 @eval begin
 
 """
-    $($t)(m::Union{TaylorMap{S,T,U,V,W},Probe{S,T,U,V,W}}; use=nothing, idpt::Union{Nothing,Bool}=m.idpt) where {S,T,U,V,W}
+    $($t)(m::Union{TaylorMap{S,T,U,V,W},Probe{S,T,U,V,W}}; use::UseType=m, idpt::Union{Nothing,Bool}=m.idpt) where {S,T<:Union{TPS,ComplexTPS},U,V,W}
 
 Creates a new copy of the passed `TaylorMap` as a `$($t)`. 
 
@@ -13,7 +13,7 @@ parameters must agree, however the orders may be different.
 
 If `idpt` is not specified, then the same `idpt` as `m` will be used, else that specified will be used.
 """
-function $t(m::Union{TaylorMap{S,T,U,V,W},Probe{S,T,U,V,W}}; use=m, idpt::Union{Nothing,Bool}=m.idpt) where {S,T<:Union{TPS,ComplexTPS},U,V,W}
+function $t(m::Union{TaylorMap{S,T,U,V,W},Probe{S,T,U,V,W}}; use::UseType=m, idpt::Union{Nothing,Bool}=m.idpt) where {S,T<:Union{TPS,ComplexTPS},U,V,W}
   numnn(use) == numnn(m) || error("Number of variables + parameters in GTPSAs for `m` and `use` disagree!")
   
   outm = $t{S,T,U,V,typeof(idpt)}(undef, use = use, idpt = idpt) # undefined map but parameters allocated
@@ -54,13 +54,13 @@ function $t(m::Union{TaylorMap{S,T,U,V,W},Probe{S,T,U,V,W}}; use=m, idpt::Union{
 end
 
 """
-    $($t){S,T,U,V,W}(u::UndefInitializer; use=GTPSA.desc_current, idpt::W=nothing) where {S,T,U,V,W}
+    $($t){S,T,U,V,W}(u::UndefInitializer; use::UseType=GTPSA.desc_current, idpt::W=nothing) where {S,T,U,V,W}
 
 Creates an undefined `$($t){S,T,U,V,W}` with same `Descriptor` as `use`. The immutable 
 parameters will be allocated if `use` is not a `TaylorMap`, else the immutable parameters 
 from `use` will be used.
 """
-function $t{S,T,U,V,W}(u::UndefInitializer; use=GTPSA.desc_current, idpt::W=nothing) where {S,T,U,V,W}
+function $t{S,T,U,V,W}(u::UndefInitializer; use::UseType=GTPSA.desc_current, idpt::W=nothing) where {S,T,U,V,W}
   desc = getdesc(use)
   nv = numvars(desc)
   np = numparams(desc)
@@ -94,11 +94,11 @@ function $t{S,T,U,V,W}(u::UndefInitializer; use=GTPSA.desc_current, idpt::W=noth
     E = nothing
   end
 
-  return $t{S,T,U,V,W}(x0, x, Q, E, idpt)
+  return $t(x0, x, Q, E, idpt)
 end
 
 """
-    $($t)(;use=GTPSA.desc_current, x::Vector=vars(getdesc(use)), x0::Vector=zeros(numtype(eltype(x)), numvars(use)), Q::Union{Quaternion,Nothing}=nothing, E::Union{Matrix,Nothing}=nothing, idpt::Union{Bool,Nothing}=nothing, spin::Union{Bool,Nothing}=nothing, FD::Union{Bool,Nothing}=nothing) 
+    $($t)(;use::UseType=GTPSA.desc_current, x::Vector=vars(getdesc(use)), x0::Vector=zeros(numtype(eltype(x)), numvars(use)), Q::Union{Quaternion,Nothing}=nothing, E::Union{Matrix,Nothing}=nothing, idpt::Union{Bool,Nothing}=nothing, spin::Union{Bool,Nothing}=nothing, FD::Union{Bool,Nothing}=nothing) 
 
 Constructs a $($t) with the passed vector of `TPS`/`ComplexTPS` as the orbital ray, and optionally the entrance 
 coordinates `x0`, `Quaternion` for spin `Q`, and FD matrix `E` as keyword arguments. The helper keyword 
@@ -108,7 +108,7 @@ specified is type-unstable. This constructor also checks for consistency in the 
 `Descriptor`. The `use` kwarg may also be used to change the `Descriptor` of the TPSs, provided the number of variables 
 + parameters agree (orders may be different).
 """
-function $t(;use=GTPSA.desc_current, x::Vector=vars(getdesc(use)), x0::Vector=zeros(numtype(eltype(x)), numvars(use)), Q::Union{Quaternion,Nothing}=nothing, E::Union{Matrix,Nothing}=nothing, idpt::Union{Bool,Nothing}=nothing, spin::Union{Bool,Nothing}=nothing, FD::Union{Bool,Nothing}=nothing) 
+function $t(;use::UseType=GTPSA.desc_current, x::Vector=vars(getdesc(use)), x0::Vector=zeros(numtype(eltype(x)), numvars(use)), Q::Union{Quaternion,Nothing}=nothing, E::Union{Matrix,Nothing}=nothing, idpt::Union{Bool,Nothing}=nothing, spin::Union{Bool,Nothing}=nothing, FD::Union{Bool,Nothing}=nothing) 
   if !isnothing(Q)
     if !isnothing(E)
       T = promote_type(TPS,eltype(x0),eltype(x),eltype(Q),eltype(E))
@@ -191,7 +191,7 @@ function $t(;use=GTPSA.desc_current, x::Vector=vars(getdesc(use)), x0::Vector=ze
 end
 
 """
-    $($t)(M::AbstractMatrix; use=GTPSA.desc_current, x0::Vector{S}=zeros(numtype(T), numvars(use)), Q::U=nothing, E::V=nothing, idpt::W=nothing, spin::Union{Bool,Nothing}=nothing, FD::Union{Bool,Nothing}=nothing) where {S,U<:Union{Quaternion{<:Union{TPS,ComplexTPS}},Nothing},V<:Union{Matrix,Nothing},W<:Union{Nothing,Bool}}
+    $($t)(M::AbstractMatrix; use::UseType=GTPSA.desc_current, x0::Vector{S}=zeros(numtype(T), numvars(use)), Q::U=nothing, E::V=nothing, idpt::W=nothing, spin::Union{Bool,Nothing}=nothing, FD::Union{Bool,Nothing}=nothing) where {S,U<:Union{Quaternion{<:Union{TPS,ComplexTPS}},Nothing},V<:Union{Matrix,Nothing},W<:Union{Nothing,Bool}}
 
 `M` must represent a matrix with linear indexing.
 
@@ -202,7 +202,7 @@ matrix, or `false` for no spin/FD. Note that setting `spin`/`FD` to any `Bool` v
 specified is type-unstable. This constructor also checks for consistency in the length of the orbital ray and GTPSA 
 `Descriptor`.
 """
-function $t(M::AbstractMatrix; use=GTPSA.desc_current, x0::Vector=zeros(numtype(eltype(x)), numvars(use)), Q::Union{Quaternion,Nothing}=nothing, E::Union{Matrix,Nothing}=nothing, idpt::Union{Bool,Nothing}=nothing, spin::Union{Bool,Nothing}=nothing, FD::Union{Bool,Nothing}=nothing) 
+function $t(M::AbstractMatrix; use::UseType=GTPSA.desc_current, x0::Vector=zeros(numtype(eltype(x)), numvars(use)), Q::Union{Quaternion,Nothing}=nothing, E::Union{Matrix,Nothing}=nothing, idpt::Union{Bool,Nothing}=nothing, spin::Union{Bool,Nothing}=nothing, FD::Union{Bool,Nothing}=nothing) 
   Base.require_one_based_indexing(M)
   nv = numvars(use)
   nn = numnn(use)
@@ -238,7 +238,7 @@ function zero(m::$t)
   return zero(typeof(m), use=m, idpt=m.idpt)
 end
 
-function zero(::Type{$t{S,T,U,V,W}}; use=GTPSA.desc_current, idpt::W=nothing) where {S,T,U,V,W}
+function zero(::Type{$t{S,T,U,V,W}}; use::UseType=GTPSA.desc_current, idpt::W=nothing) where {S,T,U,V,W}
   desc = getdesc(use)
   nn = numnn(desc)
   nv = numvars(desc)
@@ -274,12 +274,12 @@ function zero(::Type{$t{S,T,U,V,W}}; use=GTPSA.desc_current, idpt::W=nothing) wh
   end
 
   if V != Nothing
-    E = Matrix{eltype(V)}(undef, nv, nv) #zeros(eltype(V), nv, nv)
+    E = zeros(eltype(V), nv, nv)
   else
     E = nothing
   end
 
-  return $t{S,T,U,V,W}(x0, x, Q, E, idpt)
+  return $t(x0, x, Q, E, idpt)
 end
 
 function zero_op(m2::Union{$t,Number}, m1::Union{$t,Number})
@@ -313,7 +313,7 @@ function one(m::$t)
   return one(typeof(m), use=m, idpt=m.idpt)
 end
 
-function one(t::Type{$t{S,T,U,V,W}}; use=GTPSA.desc_current, idpt::W=nothing) where {S,T,U,V,W}
+function one(t::Type{$t{S,T,U,V,W}}; use::UseType=GTPSA.desc_current, idpt::W=nothing) where {S,T,U,V,W}
   m = zero(t, use=use, idpt=idpt)
   nv = numvars(m)
   

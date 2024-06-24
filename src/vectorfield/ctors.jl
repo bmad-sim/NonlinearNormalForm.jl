@@ -66,11 +66,11 @@ function VectorField{T,U}(h::T; Q::Union{U,Nothing}=nothing, work_low::Vector{<:
 end
 
 """
-    VectorField{T,U}(u::UndefInitializer; use=GTPSA.desc_current) where {T,U}
+    VectorField{T,U}(u::UndefInitializer; use::UseType=GTPSA.desc_current) where {T,U}
 
 Creates an undefined `VectorField{T,U}` with same number of variables as `use`.
 """
-function VectorField{T,U}(u::UndefInitializer; use=GTPSA.desc_current) where {T,U}
+function VectorField{T,U}(u::UndefInitializer; use::UseType=GTPSA.desc_current) where {T,U}
   desc = getdesc(use)
   nv = numvars(desc)
   x = Vector{T}(undef, nv)
@@ -137,7 +137,7 @@ function zero(F::VectorField{T,U}) where {T,U}
   return VectorField(x,Q)
 end
 
-function zero(::Type{VectorField{T,U}}; use=GTPSA.desc_current) where {T,U}
+function zero(::Type{VectorField{T,U}}; use::UseType=GTPSA.desc_current) where {T,U}
   desc = getdesc(use)
   nn = numnn(desc)
   nv = numvars(desc)
