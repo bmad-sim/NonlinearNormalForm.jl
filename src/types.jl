@@ -36,6 +36,12 @@ struct DAMap{S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union
   Q::U             # Quaternion for spin
   E::V             # Envelope for stochasticity
   idpt::W          # Specifies index of constant (energy-like) variable
+
+  function DAMap{S,T,U,V,W}(x0, x, Q, E, idpt) where {S,T,U,V,W}
+    m = new{S,T,U,V,W}(x0, x, Q, E, idpt)
+    checkmapsanity(m)
+    return m
+  end
 end
 
 """
@@ -50,6 +56,12 @@ struct TPSAMap{S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Uni
   Q::U             # Quaternion for spin
   E::V             # Envelope for stochasticity
   idpt::W          # Specifies index of constant (energy-like) variable
+
+  function TPSAMap{S,T,U,V,W}(x0, x, Q, E, idpt) where {S,T,U,V,W}
+    m = new{S,T,U,V,W}(x0, x, Q, E, idpt)
+    checkmapsanity(m)
+    return m
+  end
 end
 
 """
@@ -93,13 +105,19 @@ for t = (:DAMap, :TPSAMap)
 function promote_rule(::Type{$t{S,T,U,V,W}}, ::Type{G}) where {S,T,U,V,W,G<:Union{Number,Complex}}
   outS = promote_type(S,numtype(T),G)
   outT = promote_type(T,G)
+  println("hi")
   U != Nothing ? outU = Quaternion{promote_type(eltype(U), G)} : outU = Nothing
   V != Nothing ? outV = promote_type(Matrix{G},V) : outV = Nothing
   return $t{outS,outT,outU,outV,W}
 end
 
+# Currently promote_type in promotion.jl gives
+# promote_type(::Type{T}, ::Type{T}) where {T} = T
+# and does not even call promote_rule, therefore this is never reached
+# Therefore I will required the reference orbit to have the same numtype as the 
+# TPS at construction.
 function promote_rule(::Type{$t{S1,T1,U1,V1,W}}, ::Type{$t{S2,T2,U2,V2,W}}) where {S1,S2,T1,T2,U1,U2,V1,V2,W} 
-  outS = promote_type(S1, S2, numtype(T1), numtype(T2))
+  outS = promote_type(numtype(T1), numtype(T2))
   outT = promote_type(T1, T2)
   U1 != Nothing ? outU = Quaternion{promote_type(eltype(U2),eltype(U2))} : outU = Nothing
   V1 != Nothing ? outV = promote_type(V1,V2) : outV = Nothing

@@ -98,7 +98,7 @@ function $t{S,T,U,V,W}(u::UndefInitializer; use=GTPSA.desc_current, idpt::W=noth
 end
 
 """
-    $($t)(; x::Union{Vector{<:Union{TPS,ComplexTPS}},Nothing}=nothing, x0::Union{Vector,Nothing}=nothing, Q::Union{Quaternion{<:Union{TPS,ComplexTPS}},Nothing}=nothing, E::Union{Matrix,Nothing}=nothing,  spin::Union{Bool,Nothing}=nothing, FD::Union{Bool,Nothing}=nothing, idpt::Union{Nothing,Bool}=nothing, use=nothing)
+    $($t)(;use=GTPSA.desc_current, x::Vector=vars(getdesc(use)), x0::Vector=zeros(numtype(eltype(x)), numvars(use)), Q::Union{Quaternion,Nothing}=nothing, E::Union{Matrix,Nothing}=nothing, idpt::Union{Bool,Nothing}=nothing, spin::Union{Bool,Nothing}=nothing, FD::Union{Bool,Nothing}=nothing) 
 
 Constructs a $($t) with the passed vector of `TPS`/`ComplexTPS` as the orbital ray, and optionally the entrance 
 coordinates `x0`, `Quaternion` for spin `Q`, and FD matrix `E` as keyword arguments. The helper keyword 
@@ -108,43 +108,47 @@ specified is type-unstable. This constructor also checks for consistency in the 
 `Descriptor`. The `use` kwarg may also be used to change the `Descriptor` of the TPSs, provided the number of variables 
 + parameters agree (orders may be different).
 """
-function $t(;use=GTPSA.desc_current, x::Vector{T}=vars(getdesc(use)), x0::Vector{S}=zeros(numtype(eltype(x)), numvars(use)), Q::U=nothing, E::V=nothing, idpt::W=nothing, spin::Union{Bool,Nothing}=nothing, FD::Union{Bool,Nothing}=nothing) where {S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{<:Union{TPS,ComplexTPS}},Nothing},V<:Union{Matrix,Nothing},W<:Union{Nothing,Bool}}
+function $t(;use=GTPSA.desc_current, x::Vector=vars(getdesc(use)), x0::Vector=zeros(numtype(eltype(x)), numvars(use)), Q::Union{Quaternion,Nothing}=nothing, E::Union{Matrix,Nothing}=nothing, idpt::Union{Bool,Nothing}=nothing, spin::Union{Bool,Nothing}=nothing, FD::Union{Bool,Nothing}=nothing) 
+  if !isnothing(Q)
+    if !isnothing(E)
+      T = promote_type(TPS,eltype(x0),eltype(x),eltype(Q),eltype(E))
+    else
+      T = promote_type(TPS,eltype(x0),eltype(x),eltype(Q))
+    end
+  else
+    T = promote_type(TPS,eltype(x0),eltype(x))
+  end
+
+  S = numtype(T)
+  
   # set up
   if isnothing(spin)
     if isnothing(Q)
-      outU = Nothing
+      U = Nothing
     else
-      outU = typeof(Q)
+      U = Quaternion{T}
     end
   elseif spin
-    if isnothing(Q)
-      outU = Quaternion{T}
-    else
-      outU = typeof(Q)
-    end
+    U = Quaternion{T}
   else
     error("For no spin tracking, please omit the spin kwarg or set spin=nothing") # For type stability
-    #outU = Nothing # For type instability
-  end
-  
-  if isnothing(FD)
-    if isnothing(E)
-      outV = Nothing
-    else
-      outV = typeof(E)
-    end
-  elseif FD
-    if isnothing(E)
-      outV = Matrix{numtype(T)}
-    else
-      outV = typeof(E)
-    end
-  else
-    error("For no fluctuation-dissipation, please omit the FD kwarg or set FD=nothing") # For type stability
-    #outV = Nothing # For type instability
+    #U = Nothing # For type instability
   end
 
-  outm = $t{S,T,outU,outV,typeof(idpt)}(undef, use = use, idpt = idpt)   
+  if isnothing(FD)
+    if isnothing(E)
+      V = Nothing
+    else
+      V = Matrix{S}
+    end
+  elseif FD
+    V = Matrix{S}
+  else
+    error("For no fluctuation-dissipation, please omit the FD kwarg or set FD=nothing") # For type stability
+    #V = Nothing # For type instability
+  end
+
+  outm = $t{S,T,U,V,typeof(idpt)}(undef, use = use, idpt = idpt)   
 
   nv = numvars(use)
   np = numparams(use)
@@ -164,11 +168,11 @@ function $t(;use=GTPSA.desc_current, x::Vector{T}=vars(getdesc(use)), x0::Vector
   if !isnothing(outm.Q)
     if !isnothing(Q)
       for i=1:4
-        @inbounds outm.Q.q[i] = eltype(outU)(Q.q[i], use=getdesc(use))
+        @inbounds outm.Q.q[i] = T(Q.q[i], use=getdesc(use))
       end
     else
       for i=1:4
-        @inbounds outm.Q.q[i] = (eltype(outU))(use=getdesc(use))
+        @inbounds outm.Q.q[i] = T(use=getdesc(use))
       end
       outm.Q.q[1][0] = 1
     end
@@ -198,7 +202,7 @@ matrix, or `false` for no spin/FD. Note that setting `spin`/`FD` to any `Bool` v
 specified is type-unstable. This constructor also checks for consistency in the length of the orbital ray and GTPSA 
 `Descriptor`.
 """
-function $t(M::AbstractMatrix; use=GTPSA.desc_current, x::Vector{T}=vars(getdesc(use)), x0::Vector{S}=zeros(numtype(eltype(x)), numvars(use)), Q::U=nothing, E::V=nothing, idpt::W=nothing, spin::Union{Bool,Nothing}=nothing, FD::Union{Bool,Nothing}=nothing) where {S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{<:Union{TPS,ComplexTPS}},Nothing},V<:Union{Matrix,Nothing},W<:Union{Nothing,Bool}}
+function $t(M::AbstractMatrix; use=GTPSA.desc_current, x0::Vector=zeros(numtype(eltype(x)), numvars(use)), Q::Union{Quaternion,Nothing}=nothing, E::Union{Matrix,Nothing}=nothing, idpt::Union{Bool,Nothing}=nothing, spin::Union{Bool,Nothing}=nothing, FD::Union{Bool,Nothing}=nothing) 
   Base.require_one_based_indexing(M)
   nv = numvars(use)
   nn = numnn(use)
@@ -206,20 +210,20 @@ function $t(M::AbstractMatrix; use=GTPSA.desc_current, x::Vector{T}=vars(getdesc
   nv >= size(M,1) || error("Number of rows in matrix > number of variables in GTPSA!")
 
   if eltype(M) <: Complex
-    outT = ComplexTPS
+    T = ComplexTPS
   else
-    outT = TPS
+    T = TPS
   end
 
-  x = Vector{outT}(undef, nv)
+  x = Vector{T}(undef, nv)
   for i=1:size(M,1)
-    @inbounds x[i] = (outT)(use=getdesc(use))
+    @inbounds x[i] = T(use=getdesc(use))
     for j=1:size(M,2)
       @inbounds x[i][j] = M[i,j]
     end
   end
 
-  return DAMap(use=use, x=x, x0=x0,Q=Q,E=E,idpt=idpt,spin=spin,FD=FD)
+  return DAMap(use=use,x=x,x0=x0,Q=Q,E=E,idpt=idpt,spin=spin,FD=FD)
 end
 
 
