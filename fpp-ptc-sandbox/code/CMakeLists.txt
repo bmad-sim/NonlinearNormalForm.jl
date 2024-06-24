@@ -30,6 +30,7 @@ set (EXE_SPECS
   cmake_files/cmake.z_vf_Lie_sub
   cmake_files/cmake.z_coast_matt_fake_maps
   cmake_files/cmake.z_radiation_matt_fake_maps
+  cmake_files/cmake.z_canonize_matt_fake_maps
 )
 
 
