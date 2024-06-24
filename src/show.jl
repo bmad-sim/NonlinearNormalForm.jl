@@ -12,15 +12,15 @@ function show(io::IO, m::Union{Probe,TaylorMap})
     end
     if eltype(m.Q) <: Union{TPS,ComplexTPS}
       diffdescsq = false
-      for i in eachindex(m.Q.q)
-        if !diffdescsq && getdesc(first(m.Q.q)) != getdesc(m.Q.q[i])
+      for qi in m.Q
+        if !diffdescsq && getdesc(first(m.Q)) != getdesc(qi)
           println(io, "WARNING: Atleast one $(eltype(m.Q.q)) in the quaternion has a different Descriptor!")
           diffdescsq = true
           lines_used[] += 1
         end
       end
       diffdescsxq = false
-      if getdesc(first(m.x)) != getdesc(first(m.Q.q))
+      if getdesc(first(m.x)) != getdesc(first(m.Q))
         println(io, "WARNING: First element in orbital ray has different Descriptor than first element in quaternion!")
         diffdescsxq = true
         lines_used[] += 1
@@ -89,7 +89,7 @@ function show(io::IO, m::Union{Probe,TaylorMap})
     !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 ||  (println(io, "\t⋮"); return)
   end
 
-  if typeof(m.Q) != Nothing
+  if !isnothing(m.Q)
     println(io)
     lines_used[]+= 1
     !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || (println(io, "\t⋮"); return)
@@ -97,29 +97,16 @@ function show(io::IO, m::Union{Probe,TaylorMap})
     lines_used[] += 1
 
     
-    if eltype(m.Q.q) <: Union{TPS,ComplexTPS}
+    if eltype(m.Q) <: Union{TPS,ComplexTPS}
       !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || (println(io, "\t⋮"); return)
-      def = true
-      for i in eachindex(m.Q.q)
-        if !isassigned(m.Q.q, i)
-          def = false
-        end
-      end
-      if def
-        GTPSA.show_map!(io, collect(m.Q.q), lines_used, false, [" q0:"," q1:"," q2:"," q3:"])
-      else
-        !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || (println(io, "\t⋮"); return)
-        println(io)
-        lines_used[] += 1
-        !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || (println(io, "\t⋮"); return)
-        println(io, "\tAtleast one $(eltype(m.Q.q)) is undefined!")
-        lines_used[]+=1
-      end
+      GTPSA.show_map!(io, collect(m.Q), lines_used, false, [" q0:"," q1:"," q2:"," q3:"])
     else
-      for i=1:4
+      i=1
+      for qi in m.Q
         !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || (println(io, "\t⋮"); return)
-        @printf(io, "%-3s  ", "$(i):"); println(io, m.Q.q[i])
+        @printf(io, "%-3s  ", "q$(i):"); println(io, qi)
         lines_used[] += 1
+        i+=1
       end
     end
   end
