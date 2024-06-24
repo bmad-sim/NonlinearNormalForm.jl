@@ -22,40 +22,40 @@ is constant (energy-like): `idpt=false` if the variable with index `NV-1` is con
 - `E`    -- Matrix of the envelope for FD kicks if included, else `nothing`
 - `idpt` -- If the last plane is coasting, then `idpt=false` if the first variable in last plane is constant (energy-like) or `true` if the second. If no coasting, then `idpt=nothing`
 """
-abstract type TaylorMap{S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing},W<:Union{Nothing,Bool}} end 
+abstract type TaylorMap{S<:AbstractVector,T<:AbstractVector,U<:Union{Quaternion,Nothing},V<:Union{AbstractMatrix,Nothing},W<:Union{Bool,Nothing}} end 
 
 """
-    DAMap{S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing},W<:Union{Nothing,Bool}} <: TaylorMap{S,T,U,V,W}
+    DAMap{S,T,U,V,W} <: TaylorMap{S,T,U,V,W}
 
 `TaylorMap` that composes and inverses as a `DAMap` (with the scalar part ignored).
 See `TaylorMap` for more information.
 """
-struct DAMap{S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing},W<:Union{Nothing,Bool}} <: TaylorMap{S,T,U,V,W}
-  x0::Vector{S}    # Entrance value of map
-  x::Vector{T}     # Expansion around x0, with scalar part equal to EXIT value of map wrt initial coordinates x0
-  Q::U             # Quaternion for spin
-  E::V             # Envelope for stochasticity
-  idpt::W          # Specifies index of constant (energy-like) variable
+struct DAMap{S,T,U,V,W} <: TaylorMap{S,T,U,V,W}
+  x0::S     # Entrance value of map
+  x::T      # Expansion around x0, with scalar part equal to EXIT value of map wrt initial coordinates x0
+  Q::U      # Quaternion for spin
+  E::V      # Envelope for stochasticity
+  idpt::W   # Specifies index of constant (energy-like) variable
 
   function DAMap(x0, x, Q, E, idpt)
-    m = new{eltype(x0),eltype(x),typeof(Q),typeof(E),typeof(idpt)}(x0, x, Q, E, idpt)
+    m = new{typeof(x0),typeof(x),typeof(Q),typeof(E),typeof(idpt)}(x0, x, Q, E, idpt)
     checkmapsanity(m)
     return m
   end
 end
 
 """
-    TPSAMap{S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing},W<:Union{Nothing,Bool}} <: TaylorMap{S,T,U,V,W}
+    TPSAMap{S,T,U,V,W} <: TaylorMap{S,T,U,V,W}
 
 `TaylorMap` that composes and inverses as a `TPSAMap` (with the scalar part included).
 See `TaylorMap` for more information.
 """
-struct TPSAMap{S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing},W<:Union{Nothing,Bool}} <: TaylorMap{S,T,U,V,W}
-  x0::Vector{S}    # Entrance value of map
-  x::Vector{T}     # Expansion around x0, with scalar part equal to EXIT value of map wrt initial coordinates x0
-  Q::U             # Quaternion for spin
-  E::V             # Envelope for stochasticity
-  idpt::W          # Specifies index of constant (energy-like) variable
+struct TPSAMap{S,T,U,V,W} <: TaylorMap{S,T,U,V,W}
+  x0::S     # Entrance value of map
+  x::T      # Expansion around x0, with scalar part equal to EXIT value of map wrt initial coordinates x0
+  Q::U      # Quaternion for spin
+  E::V      # Envelope for stochasticity
+  idpt::W   # Specifies index of constant (energy-like) variable
 
   function TPSAMap(x0, x, Q, E, idpt)
     m = new{eltype(x0),eltype(x),typeof(Q),typeof(E),typeof(idpt)}(x0, x, Q, E, idpt)
@@ -77,7 +77,7 @@ If the last plane is coasting, then `idpt` specifies which variable in the last 
 is constant (energy-like): `idpt=false` if the variable with index `NV-1` is constant, or 
 `idpt=true` is the variable with index `NV` is constant.
 """
-struct Probe{S,T,U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing},W<:Union{Nothing,Bool}}
+struct Probe{S,T,U<:Union{Quaternion,Nothing},V<:Union{Matrix,Nothing},W<:Union{Nothing,Bool}}
   x0::Vector{S}   # Entrance coordinates
   x::Vector{T}    # Out coordinates
   Q::U            # Quaternion
@@ -103,7 +103,6 @@ for t = (:DAMap, :TPSAMap)
 function promote_rule(::Type{$t{S,T,U,V,W}}, ::Type{G}) where {S,T,U,V,W,G<:Union{Number,Complex}}
   outS = promote_type(S,numtype(T),G)
   outT = promote_type(T,G)
-  println("hi")
   U != Nothing ? outU = Quaternion{promote_type(eltype(U), G)} : outU = Nothing
   V != Nothing ? outV = promote_type(Matrix{G},V) : outV = Nothing
   return $t{outS,outT,outU,outV,W}

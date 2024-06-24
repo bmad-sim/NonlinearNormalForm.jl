@@ -32,6 +32,8 @@ using LinearAlgebra,
       Printf,
       Reexport,
       DelimitedFiles
+      
+using ReferenceFrameRotations: Quaternion
 
 @reexport using GTPSA
 
@@ -119,7 +121,7 @@ export        TaylorMap,
 
 
 
-include("utils/quaternion.jl")
+#include("utils/quaternion.jl")
 include("types.jl")
 include("utils/matrix.jl")
 include("utils/symplectic_s.jl")

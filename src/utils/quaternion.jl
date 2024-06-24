@@ -1,3 +1,6 @@
+# THIS IS DEPRECATED! WE NOW USE 
+# ReferenceFrameRotations.jl Quaternion implementation
+
 """
     Quaternion{T <: Number}
 

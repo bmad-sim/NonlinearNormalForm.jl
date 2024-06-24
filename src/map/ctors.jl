@@ -65,16 +65,16 @@ function $t{S,T,U,V,W}(u::UndefInitializer; use::UseType=GTPSA.desc_current, idp
   nv = numvars(desc)
   np = numparams(desc)
   nn = numnn(desc)
-  x0 = Vector{S}(undef, nv)
-  x = Vector{T}(undef, nn)
-
-  
+  x0 = similar(S, nv) #S(undef, nv)
+  x = similar(T, nn) #(undef, nn)
+  Base.require_one_based_indexing(x0, x)
+  return S
 
   # use same parameters if use isa TaylorMap and T == eltype(use.x)
-  if use isa TaylorMap && T == eltype(use.x)
+  if use isa TaylorMap && eltype(x) == eltype(use.x)
     @inbounds x[nv+1:nn] .= view(use.x, nv+1:nn)
   else # allocate
-    if T == TPS
+    if eltype(T) == TPS
       @inbounds x[nv+1:nn] .= params(desc)
     else
       @inbounds x[nv+1:nn] .= complexparams(desc)
@@ -82,14 +82,14 @@ function $t{S,T,U,V,W}(u::UndefInitializer; use::UseType=GTPSA.desc_current, idp
   end
 
   if U != Nothing
-    q = Vector{eltype(U)}(undef, 4)
+    q = similar(S, 4) #Vector{eltype(U)}(undef, 4)
     Q = Quaternion(q)
   else
     Q = nothing
   end
 
   if V != Nothing
-    E = Matrix{eltype(V)}(undef, nv, nv)
+    E = similar(V, nv, nv) #Matrix{eltype(V)}(undef, nv, nv)
   else
     E = nothing
   end
@@ -246,9 +246,9 @@ function zero(::Type{$t{S,T,U,V,W}}; use::UseType=GTPSA.desc_current, idpt::W=no
 
   x0 = zeros(S, nv)
 
-  x = Vector{T}(undef, nn)
+  x = T(undef, nn)
   for i=1:nv
-    @inbounds x[i] = T(use=desc)
+    @inbounds x[i] = eltype(T)(use=desc)
   end
 
   if use isa Union{TaylorMap,Probe} && eltype(use.x) == T
