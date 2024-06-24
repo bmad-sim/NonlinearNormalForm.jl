@@ -101,8 +101,8 @@ for t = (:DAMap, :TPSAMap)
 @eval begin    
 
 function promote_rule(::Type{$t{S,T,U,V,W}}, ::Type{G}) where {S,T,U,V,W,G<:Union{Number,Complex}}
-  outS = promote_type(S,numtype(T),G)
-  outT = promote_type(T,G)
+  outS = promote_type(eltype(S),numtype(eltype(T)),G)
+  outT = promote_type(eltype(T),G)
   U != Nothing ? outU = Quaternion{promote_type(eltype(U), G)} : outU = Nothing
   V != Nothing ? outV = promote_type(Matrix{G},V) : outV = Nothing
   return $t{outS,outT,outU,outV,W}
@@ -114,8 +114,8 @@ end
 # Therefore I will required the reference orbit to have the same numtype as the 
 # TPS at construction.
 function promote_rule(::Type{$t{S1,T1,U1,V1,W}}, ::Type{$t{S2,T2,U2,V2,W}}) where {S1,S2,T1,T2,U1,U2,V1,V2,W} 
-  outS = promote_type(numtype(T1), numtype(T2))
-  outT = promote_type(T1, T2)
+  outS = promote_type(numtype(eltype(T1)), numtype(eltype(T2)))
+  outT = promote_type(eltype(T1), eltype(T2))
   U1 != Nothing ? outU = Quaternion{promote_type(eltype(U2),eltype(U2))} : outU = Nothing
   V1 != Nothing ? outV = promote_type(V1,V2) : outV = Nothing
   return $t{outS,outT,outU,outV,W}

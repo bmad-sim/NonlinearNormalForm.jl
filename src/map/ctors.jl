@@ -66,9 +66,12 @@ specified is type-unstable. This constructor also checks for consistency in the 
 + parameters agree (orders may be different).
 """
 function $t(;use::UseType=GTPSA.desc_current, x::Vector=vars(getdesc(use)), x0::Vector=zeros(numtype(eltype(x)), numvars(use)), Q::Union{Quaternion,Nothing}=nothing, E::Union{Matrix,Nothing}=nothing, idpt::Union{Bool,Nothing}=nothing, spin::Union{Bool,Nothing}=nothing, FD::Union{Bool,Nothing}=nothing) 
+  Base.require_one_based_indexing(x,x0)
+
   if !isnothing(Q)
     if !isnothing(E)
       T = Vector{promote_type(TPS,eltype(x0),eltype(x),eltype(Q),eltype(E))}
+      Base.require_one_based_indexing(E)
     else
       T = Vector{promote_type(TPS,eltype(x0),eltype(x),eltype(Q))}
     end
@@ -120,7 +123,7 @@ function $t(;use::UseType=GTPSA.desc_current, x::Vector=vars(getdesc(use)), x0::
 
   # set variables
   for i=1:nv
-    @inbounds GTPSA.change!(outm.x[i], x[i])
+    GTPSA.change!(outm.x[i], x[i])
   end
 
   # set quaternion
@@ -149,6 +152,8 @@ end
 
 """
     $($t)(M::AbstractMatrix; use::UseType=GTPSA.desc_current, x0::Vector{S}=zeros(numtype(T), numvars(use)), Q::U=nothing, E::V=nothing, idpt::W=nothing, spin::Union{Bool,Nothing}=nothing, FD::Union{Bool,Nothing}=nothing) where {S,U<:Union{Quaternion{<:Union{TPS,ComplexTPS}},Nothing},V<:Union{Matrix,Nothing},W<:Union{Nothing,Bool}}
+
+This function could be optimized.
 
 `M` must represent a matrix with linear indexing.
 

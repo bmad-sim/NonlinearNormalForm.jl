@@ -6,13 +6,13 @@ for t = (:DAMap, :TPSAMap)
 
 Low level composition function, `m = m2 ∘ m1`. Aliasing `m` with `m2` is allowed, but not `m` with `m1`.
 Assumes the destination map is properly set up (with correct types promoted if necessary), and 
-that `m.x[1:nv]` (and `m.Q.q` if spin) contain allocated TPSs. The parameters part of `m.x` (`m.x[nv+1:nn]`) 
+that `m.x[1:nv]` (and `m.Q` if spin) contain allocated TPSs. The parameters part of `m.x` (`m.x[nv+1:nn]`) 
 does not need to contain allocated TPSs.
 
 For all compositions, 5 temporary vectors must be generated that contain Ptr{RTPSA} or Ptr{CTPSA}
 for each TPS in the map (depending on output type), to pass to the low-level C composition function in GTPSA. 
 Three vectors are for the orbital part (`m.x`, `m2.x`, `m1.x` correspondingly referred in the code as 
-`outx_low`, `m2x_low`, and `m1x_low`) and two are for the spin part (`m.Q.q` and `m2.Q.q` correspondingly 
+`outx_low`, `m2x_low`, and `m1x_low`) and two are for the spin part (`m.Q` and `m2.Q` correspondingly 
 referred in the code as `outQ_low` and `m2Q_low`).  These 5 temporaries can be optionally passed as a tuple 
 in `work_low`, and must satisfy the following requirements:
 ```
@@ -131,21 +131,39 @@ function compose_it!(m::$t, m2::$t, m1::$t; dospin::Bool=true, dostochastic::Boo
   if !isnothing(m.Q) && dospin
     if outT != eltype(m2.x)
       # Promote to ComplexTPS:
-      @inbounds complex!(m2Q_prom[1], m2.Q.q[1])
-      @inbounds complex!(m2Q_prom[2], m2.Q.q[2])
-      @inbounds complex!(m2Q_prom[3], m2.Q.q[3])
-      @inbounds complex!(m2Q_prom[4], m2.Q.q[4])
+      @inbounds complex!(m2Q_prom[1], m2.Q.q0)
+      @inbounds complex!(m2Q_prom[2], m2.Q.q1)
+      @inbounds complex!(m2Q_prom[3], m2.Q.q2)
+      @inbounds complex!(m2Q_prom[4], m2.Q.q3)
       map!(t->t.tpsa, m2Q_low, m2Q_prom)
     else
-      map!(t->t.tpsa, m2Q_low, m2.Q.q)
+      map!(t->t.tpsa, m2Q_low, m2.Q)
     end
     # Go low
-    map!(t->t.tpsa, outQ_low, m.Q.q)
+    map!(t->t.tpsa, outQ_low, m.Q)
     # Spin (spectator) q(z0)=q2(M(z0))q1(z0)
     # First obtain q2(M(z0))
     GC.@preserve m1x_prom m2Q_prom compose!(Cint(4), m2Q_low, nv+np, m1x_low, outQ_low)
     # Now concatenate
-    mul!(m.Q, m1.Q, m.Q) # ALLOCATIONS HERE!
+    # MAKE THIS FASTER!
+    A = @FastGTPSA  (m1.Q.q0+m1.Q.q1)*(m.Q.q0+m.Q.q1)
+    B = @FastGTPSA  (m1.Q.q3-m1.Q.q2)*(m.Q.q2-m.Q.q3)
+    C = @FastGTPSA  (m1.Q.q0-m1.Q.q1)*(m.Q.q2+m.Q.q3) 
+    D = @FastGTPSA  (m1.Q.q2+m1.Q.q3)*(m.Q.q0-m.Q.q1)
+    E = @FastGTPSA  (m1.Q.q1+m1.Q.q3)*(m.Q.q1+m.Q.q2)
+    F = @FastGTPSA  (m1.Q.q1-m1.Q.q3)*(m.Q.q1-m.Q.q2)
+    G = @FastGTPSA  (m1.Q.q0+m1.Q.q2)*(m.Q.q0-m.Q.q3)
+    H = @FastGTPSA  (m1.Q.q0-m1.Q.q2)*(m.Q.q0+m.Q.q3)
+    
+    q0 = @FastGTPSA  B+(-E-F+G+H)/2
+    q1 = @FastGTPSA  A-(E+F+G+H)/2
+    q2 = @FastGTPSA  C+(E-F+G-H)/2
+    q3 = @FastGTPSA  D+(E-F-G+H)/2
+
+    copy!(m.Q.q0, q0)
+    copy!(m.Q.q1, q1)
+    copy!(m.Q.q2, q2)
+    copy!(m.Q.q3, q3)
   end
 
   # Stochastic
