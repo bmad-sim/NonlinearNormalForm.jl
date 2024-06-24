@@ -204,8 +204,8 @@ end
 
 function $(ops[2])(m1::TaylorMap, m2::TaylorMap)
   checkop(m1, m2)
-  outtype = promote_type(typeof(m1),typeof(m2))
-  m = zero(outtype,use=m1,idpt=m1.idpt)
+  m = zero_op(m1, m2)
+
   $(Meta.parse(ops[1]))(m, m1, m2)
   return m
 end
@@ -276,15 +276,15 @@ function $(Meta.parse(ops[1]))(m::TaylorMap, m1::TaylorMap, a::Number; dospin::B
 end
 
 function $(ops[2])(a::Number, m1::TaylorMap)
-  outtype = promote_type(typeof(m1),typeof(a))
-  m = zero(outtype,use=m1,idpt=m1.idpt)
+  m = zero_op(m1, a)
+
   $(Meta.parse(ops[1]))(m, a, m1)
   return m
 end
 
 function $(ops[2])(m1::TaylorMap, a::Number)
-  outtype = promote_type(typeof(m1),typeof(a))
-  m = zero(outtype,use=m1,idpt=m1.idpt)
+  m = zero_op(m1, a)
+  
   $(Meta.parse(ops[1]))(m, m1, a)
   return m
 end

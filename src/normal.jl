@@ -36,7 +36,9 @@ function normal(m::DAMap)
     a1_inv_matrix[nhv+1,nhv+1] = 1; a1_inv_matrix[nhv+2,nhv+2] = 1;
   end
 
-  a1 = DAMap(complex(inv(a1_inv_matrix)),use=m0,idpt=m.idpt,E=zeros(ComplexF64, numvars(m),numvars(m)))
+  a1 = zero(promote_type(eltype(a1_inv_matrix),typeof(m0)),use=m0,idpt=m.idpt)
+  setmatrix!(a1, inv(a1_inv_matrix))
+
   m1 = a1^-1 ∘ m0 ∘ a1
 
   # 3: Go into phasor's basis
@@ -120,7 +122,7 @@ end
 
 function equilibrium_moments(m::DAMap, a::DAMap)
   !isnothing(m.E) || error("Map does not have stochasticity")
-  !all(m.E .== 0) || error("No stochastic fluctuations in map (m.E .== 0)")
+  !all(m.E .== 0) || error("No FD fluctuations in map (m.E .== 0)")
 
   # Moments Σ transform with map like MΣMᵀ + B 
   # This is only linear because this is very complex to higher order not necessary
@@ -128,9 +130,9 @@ function equilibrium_moments(m::DAMap, a::DAMap)
   # To include parameters later, we would:
   # First must go to parameter-dependent fixed point to all orders (obtained from factorization after 
   # normal form) and then can get the a1 matrix around there
-  # tracking code would have to give stochastic matrix as a function of the parameters
+  # tracking code would have to give FD matrix as a function of the parameters
 
-  # Let B = m.E (stochastic part)
+  # Let B = m.E (FD part)
   # We want to find Σ such that Σ = MΣMᵀ + B  (fixed point)
   # very easy to do in phasors basis
   # fixed point transformation does nothing (note a0.E = Bₐ₀ = 0 of course and a0.x is identity in variable but not in parameters)

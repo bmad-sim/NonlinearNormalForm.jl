@@ -132,41 +132,7 @@ $($t) composition, which calculates `m2 ∘ m1` $( $t == DAMap ? "ignoring the s
 """
 function compose(m2::$t,m1::$t)
   checkop(m2, m1)
-
-  desc = getdesc(m1)
-  nn = numnn(desc)
-  nv = numvars(desc)
-
-  outT = promote_type(eltype(m2.x),eltype(m1.x))
-  
-  # set up outx0
-  outx0 = Vector{numtype(outT)}(undef, nv)
-
-  # Set up outx:
-  outx = Vector{outT}(undef, nn)
-  for i=1:nv  # no need to allocate immutable parameters taken care of inside compose_it!
-      @inbounds outx[i] = outT(use=desc)
-  end
-
-  # set up quaternion out:
-  if !isnothing(m1.Q)
-    outq = Vector{outT}(undef, 4)
-    for i=1:4
-      @inbounds outq[i] = outT(use=desc)
-    end
-    outQ = Quaternion(outq)
-  else
-    outQ = nothing
-  end
-
-  # set up stochastic out
-  if isnothing(m1.E) && isnothing(m2.E)
-    outE = nothing
-  else
-    outE = Matrix{numtype(outT)}(undef, nv, nv)
-  end
-
-  m = $t(outx0, outx, outQ, outE, m1.idpt)
+  m = zero_op(m1,m2)
   compose!(m, m2, m1)
   
   return m

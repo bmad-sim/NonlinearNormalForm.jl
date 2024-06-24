@@ -183,3 +183,19 @@ function getord!(m::TaylorMap, m1::TaylorMap, order::Integer, spin_order::Intege
   end
   return
 end
+
+# --- setmatrix! ---
+
+function setmatrix!(m::DAMap, M::AbstractMatrix)
+  Base.require_one_based_indexing(M)
+  nv = numvars(m)
+  nn = numnn(m)
+
+  nv >= size(M,1) || error("Number of rows in matrix > number of variables in GTPSA!")
+
+  for i=1:size(M,1)
+    for j=1:size(M,2)
+      @inbounds m.x[i][j] = M[i,j]
+    end
+  end
+end
