@@ -389,6 +389,19 @@ z_radiation_matt_fake_maps-exe/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_radiation_matt_fake_maps-exe.dir/build.make CMakeFiles/z_radiation_matt_fake_maps-exe.dir/build
 .PHONY : z_radiation_matt_fake_maps-exe/fast
 
+#=============================================================================
+# Target rules for targets named z_canonize_matt_fake_maps-exe
+
+# Build rule for target.
+z_canonize_matt_fake_maps-exe: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 z_canonize_matt_fake_maps-exe
+.PHONY : z_canonize_matt_fake_maps-exe
+
+# fast build rule for target.
+z_canonize_matt_fake_maps-exe/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_canonize_matt_fake_maps-exe.dir/build.make CMakeFiles/z_canonize_matt_fake_maps-exe.dir/build
+.PHONY : z_canonize_matt_fake_maps-exe/fast
+
 normal_simple.o: normal_simple.f90.o
 .PHONY : normal_simple.o
 
@@ -412,6 +425,30 @@ normal_simple.s: normal_simple.f90.s
 normal_simple.f90.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/normal_simple-exe.dir/build.make CMakeFiles/normal_simple-exe.dir/normal_simple.f90.s
 .PHONY : normal_simple.f90.s
+
+z_canonize_matt_fake_maps.o: z_canonize_matt_fake_maps.f90.o
+.PHONY : z_canonize_matt_fake_maps.o
+
+# target to build an object file
+z_canonize_matt_fake_maps.f90.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_canonize_matt_fake_maps-exe.dir/build.make CMakeFiles/z_canonize_matt_fake_maps-exe.dir/z_canonize_matt_fake_maps.f90.o
+.PHONY : z_canonize_matt_fake_maps.f90.o
+
+z_canonize_matt_fake_maps.i: z_canonize_matt_fake_maps.f90.i
+.PHONY : z_canonize_matt_fake_maps.i
+
+# target to preprocess a source file
+z_canonize_matt_fake_maps.f90.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_canonize_matt_fake_maps-exe.dir/build.make CMakeFiles/z_canonize_matt_fake_maps-exe.dir/z_canonize_matt_fake_maps.f90.i
+.PHONY : z_canonize_matt_fake_maps.f90.i
+
+z_canonize_matt_fake_maps.s: z_canonize_matt_fake_maps.f90.s
+.PHONY : z_canonize_matt_fake_maps.s
+
+# target to generate assembly for a file
+z_canonize_matt_fake_maps.f90.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_canonize_matt_fake_maps-exe.dir/build.make CMakeFiles/z_canonize_matt_fake_maps-exe.dir/z_canonize_matt_fake_maps.f90.s
+.PHONY : z_canonize_matt_fake_maps.f90.s
 
 z_coast_matt_fake_maps.o: z_coast_matt_fake_maps.f90.o
 .PHONY : z_coast_matt_fake_maps.o
@@ -902,6 +939,7 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... normal_simple-exe"
+	@echo "... z_canonize_matt_fake_maps-exe"
 	@echo "... z_coast_matt_fake_maps-exe"
 	@echo "... z_cut-exe"
 	@echo "... z_cut_sub-exe"
@@ -925,6 +963,9 @@ help:
 	@echo "... normal_simple.o"
 	@echo "... normal_simple.i"
 	@echo "... normal_simple.s"
+	@echo "... z_canonize_matt_fake_maps.o"
+	@echo "... z_canonize_matt_fake_maps.i"
+	@echo "... z_canonize_matt_fake_maps.s"
 	@echo "... z_coast_matt_fake_maps.o"
 	@echo "... z_coast_matt_fake_maps.i"
 	@echo "... z_coast_matt_fake_maps.s"

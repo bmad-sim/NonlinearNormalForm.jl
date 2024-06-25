@@ -159,7 +159,8 @@ program example
   do i=1,c_%nd2
   m%v(i)=m%v(i) !*decrement(i)
   enddo
-  ! call print(m)
+  call print(m)
+  stop
   
   lielib_print(4)=0
   call c_normal(m,normal,dospin=putspin,phase=phase,nu_spin=nu_spin)
@@ -168,7 +169,7 @@ program example
   call c_fast_canonise_clean_julia(normal%atot,a1,dospin=putspin)
   
   call print(a1)
-  
+  stop
   
   normal%atot=a1
    write(6,*) normal%damping(1:3)
@@ -1259,6 +1260,8 @@ program example
   type(c_damap) uct
   integer ndt,ndptb,ndpt,ndct
   
+  ! nd = number dimensions
+  ! ndt = number harmonic oscillators = 4 if coastings
   
   ndt=c_%nd2t/2
   ndptb=c_%ndptb
@@ -1284,8 +1287,8 @@ program example
   b0=0
   id=0
   do i=1,nd
-  b0(2*i-1,2*i-1)=1
-  b0(2*i,2*i)=1
+  b0(2*i-1,2*i-1)=1 ! I
+  b0(2*i,2*i)=1     ! 
   s(2*i-1,2*i)=1 
   s(2*i,2*i-1)=-1 
   enddo

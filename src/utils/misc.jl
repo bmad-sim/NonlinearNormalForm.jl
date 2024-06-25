@@ -77,7 +77,7 @@ end
   isnothing(m.Q) || eltype(m.Q) == eltype(m.x) || error("Quaternion type $(eltype(m.Q)) must be $(eltype(m.x)) (equal to orbital)")
   isnothing(m.E)|| eltype(m.E) == numtype(eltype(m.x)) || error("Stochastic matrix type $(eltype(m.E)) must be $(numtype(eltype(m.x))) (equal to scalar of orbital)")
 end
-
+#=
 # --- random symplectic map ---
 function rand(t::Union{Type{DAMap},Type{TPSAMap}}; spin::Union{Bool,Nothing}=nothing, FD::Union{Bool,Nothing}=nothing, use::Union{Descriptor,TPS,ComplexTPS}=GTPSA.desc_current, ndpt::Union{Nothing,Integer}=nothing)
   if isnothing(spin)
@@ -107,12 +107,7 @@ end
 """
 Generate map symplectic up to order in Descriptor
 """
-function rand(t::Union{Type{DAMap{S,T,U,V}},Type{TPSAMap{S,T,U,V}}}; require_stable::Bool=false, use::Union{Descriptor,TPS,ComplexTPS}=GTPSA.desc_current) where {S,T,U,V}
-  if require_stable # make hamiltonian in phasors basis then reverse
-    
-    
-  end
-  
+function rand(t::Union{Type{DAMap},Type{TPSAMap}}; require_stable::Bool=true, use::Union{Descriptor,TPS,ComplexTPS}=GTPSA.desc_current, spin::Bool=false, FD::Bool=false) where {S,T,U,V}
   desc = getdesc(use)
   desc.desc != C_NULL || error("No Descriptor defined!")
 
@@ -130,19 +125,27 @@ function rand(t::Union{Type{DAMap{S,T,U,V}},Type{TPSAMap{S,T,U,V}}}; require_sta
     @views dtmp = Descriptor(no[1:nv].+1, mo+1)
   end
   
-  # If require_stable, we need to go into phasors basis
-
-
-
-  h = T(use=dtmp)
-  len = length(h)
-
-  #  random coefficients for hamiltonian except 0th and 1st order terms
-  for i=nv+1:len-1
-    h[i] = rand(numtype(T))
+  if require_stable # make hamiltonian in phasors basis then reverse
+    h = ComplexTPS(use=dtmp)
+    len = length(h)
+    #  random coefficients for hamiltonian except 0th and 1st order terms
+    for i=nv+1:len-1
+      h[i] = rand(numtype(T))
+    end
+    c = from_phasor(DAMap(spin=spin,FD=FD))
+    hc = h * c
+  else
+    h = TPS(use=dtmp)
+    len = length(h)
+  
+    #  random coefficients for hamiltonian except 0th and 1st order terms
+    for i=nv+1:len-1
+      h[i] = rand(numtype(T))
+    end
+    hc = h
   end
-
-  F = VectorField{T,U}(h)
+  
+  F = VectorField(h)
   mtmp = exp(F)
 
   # Make a copy and change the descriptor
@@ -167,7 +170,7 @@ function rand(t::Union{Type{DAMap{S,T,U,V}},Type{TPSAMap{S,T,U,V}}}; require_sta
   return m
 end
 
-
+=#
 
 
 

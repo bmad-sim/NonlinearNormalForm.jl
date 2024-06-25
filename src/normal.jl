@@ -9,11 +9,12 @@ function normal(m::DAMap)
     eye = zero(m)
     setmatrix!(eye, I(nhv))
     #eye = DAMap(I(nhv),use=m,idpt=m.idpt)
-    ndpt = numvars(m)-1+m.idpt
+    ndpt = numvars(m)-1+m.idpt # energy like variable index
     sgn = 1-2*m.idpt
-    nt = ndpt+sgn
+    nt = ndpt+sgn # timelike variable index
     zer = zero(m); zer.x[nt][nt]=1; zer.x[ndpt][ndpt] = 1
     a0 = (cutord(m,2)-eye)^-1 * zer + eye
+    # ensure poisson bracket does not change
     for i=1:Int(nhv/2)
       a0.x[nt] += sgn*a0.x[2*i][ndpt]*mono(2*i-1,use=getdesc(m)) - sgn*a0.x[2*i-1][ndpt]*mono(2*i,use=getdesc(m))
     end
@@ -174,8 +175,79 @@ function equilibrium_moments(m::DAMap, a::DAMap)
 
 end
 
+# making the 12, 34, 56 elements 0 in the normalizing map
+# and returns the phase added to do so
+function fast_canonize(a::DAMap, damping::Bool=!isnothing(a.idpt))
+  # Basically rotates a so that we are in Courant-Snyder form of a
 
+  a_matrix = real.(GTPSA.jacobian(a))
+  ri = zero(a_matrix)
+  #ri .= 0
 
+  if !isnothing(a.idpt) # if coasting, set number of variables executing pseudo-harmonic oscillations
+    nhv = numvars(a)-2
+  else
+    nhv = numvars(a)
+  end
+
+  phase = zeros(numvars(a))
+
+  for i=1:Int(nhv/2) # for each harmonic oscillator
+    t = sqrt(a_matrix[2*i-1,2*i-1]^2 + a_matrix[2*i-1,2*i]^2)
+    cphi = a_matrix[2*i-1,2*i-1]/t
+    sphi = a_matrix[2*i-1,2*i]/t
+    if sphi*a_matrix[2*i-1,2*i] + cphi*a_matrix[2*i-1,2*i-1] < 0
+      cphi = -cphi
+      sphi = -sphi
+    end
+
+    ri[2*i-1,2*i-1] =  cphi 
+    ri[2*i,2*i]     =  cphi 
+    ri[2*i-1,2*i]   = -sphi  
+    ri[2*i,2*i-1]   =  sphi  
+
+    phase[i] += atan(sphi,cphi)/(2*pi)
+  end
+
+  if !isnothing(a.idpt)
+    ndpt = numvars(a)-1+a.idpt
+    sgn = 1-2*a.idpt
+    nt = ndpt+sgn
+    ri[nt,nt] = 1
+    ri[ndpt,ndpt] = 1
+    ri[nt,ndpt] = -a_matrix[nt,ndpt]
+    phase[end] += a_matrix[nt,ndpt]
+  end
+  #return ri
+  a_rot = a_matrix*ri
+  return a_rot
+
+  # Now we have rotated a so that a_12, a_34, a_56, etc are 0 (Courant Snyder)
+  # But if we have damping, we also have
+  # A*S*transpose(A) != S
+  # We can multiply the normalizing map A by some dilation to make it so that, 
+  # even though we don't have exactly A*S*transpose(A) == S, that 
+  # we atleast have (A*S*transpose(A))[1,2] == 1, (A*S*transpose(A))[2,1] == -1, etc 
+
+  # note that with damping we have M as
+  # A*Λ*R*A^-1  where R is the amplitude dependent rotation (diagonal matrix with 
+  # complex values on unit circle) and Λ is a diagonal matrix with real values 
+  # which correspond to the damping (same in each plane, Diagonal(lambda1, lambda1, lambda2, lambda2, etc)
+
+  if damping
+    damp = zeros(numvars(a))
+    a = zeros(Int(numvars(a)/2), Int(numvars(a)/2))
+    for i=1:Int(numvars(a)/2)
+      a[i,i] = a_rot[2*i-1,2*i-1]*a_rot[2*i,2*i]-a_rot[2*i-1,2*i]*a_rot[2*i,2*i-1]
+      for j=1:Int(numvars(a)/2)
+        if i != j
+
+        end
+      end
+    end
+  end
+
+end
 
 
 
