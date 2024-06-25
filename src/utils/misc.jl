@@ -72,10 +72,10 @@ pords(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap,Vec
   return true
 end
 
-@inline function checkmapsanity(m::TaylorMap{S,T,U,V,W}) where {S,T,U,V,W}
-  S == numtype(T) || error("Reference orbit type $S must be $(numtype(T)) (equal to scalar of orbital)")
-  # already checked in type: U == Nothing || eltype(U) == T || error("Quaternion type $(eltype(U)) must be $T (equal to orbital)")
-  V == Nothing || eltype(V) == numtype(T) || error("Stochastic matrix type $(eltype(V)) must be $(numtype(T)) (equal to scalar of orbital)")
+@inline function checkmapsanity(m::TaylorMap)
+  eltype(m.x0) == numtype(eltype(m.x)) || error("Reference orbit type $(eltype(m.x0)) must be $(numtype(eltype(m.x))) (equal to scalar of orbital)")
+  isnothing(m.Q) || eltype(m.Q) == eltype(m.x) || error("Quaternion type $(eltype(m.Q)) must be $(eltype(m.x)) (equal to orbital)")
+  isnothing(m.E)|| eltype(m.E) == numtype(eltype(m.x)) || error("Stochastic matrix type $(eltype(m.E)) must be $(numtype(eltype(m.x))) (equal to scalar of orbital)")
 end
 
 # --- random symplectic map ---

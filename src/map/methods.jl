@@ -1,6 +1,6 @@
 # --- norm ---
 function norm(m::Union{TaylorMap,VectorField})
-  nrm = zero(numtype(m))
+  nrm = zero(numtype(eltype(m.x)))
 
   nv = numvars(m)
   for i=1:nv
@@ -8,9 +8,10 @@ function norm(m::Union{TaylorMap,VectorField})
   end
   
   if !isnothing(m.Q)
-    for i=1:4
-      @inbounds nrm += norm(m.Q.q[i])
-    end
+    nrm += norm(m.Q.q0)
+    nrm += norm(m.Q.q1)
+    nrm += norm(m.Q.q2)
+    nrm += norm(m.Q.q3)
   end
 
   return nrm
@@ -20,47 +21,14 @@ end
 for t = (:DAMap, :TPSAMap)
 @eval begin    
 function complex(m::$t)
-  desc = getdesc(m)
-  nn = numnn(desc)
-  nv = numvars(desc)
-  np = numparams(desc)
-
-  x0 = map(t->complex(t), m.x0)
-  
-  x = Vector{ComplexTPS}(undef, nn)
-  for i=1:nv
-    @inbounds x[i] = ComplexTPS(m.x[i],use=desc)
-  end
-
-  # use same parameters if complex already
-  T = eltype(m.x)
-  if T == ComplexTPS
-    @inbounds x[nv+1:nn] .= view(m.x, nv+1:nn)
-  else
-    @inbounds x[nv+1:nn] .= complexparams(getdesc(first(x)))
-  end
-
-  if !isnothing(m.Q)
-    q = Vector{ComplexTPS}(undef, 4)
-    for i=1:4
-      @inbounds q[i] = ComplexTPS(m.Q.q[i],use=desc)
-    end
-    Q = Quaternion(q)
-  else
-    Q = nothing
-  end
-
-  if !isnothing(m.E)
-    E = map(t->complex(t), m.E)
-  else
-    E = nothing
-  end
-  return $t(x0, x, Q, E, m.idpt)
+  outm = zero_op(m,im)
+  copy!(outm, m)
+  return outm
 end
 
 # --- complex type ---
 function complex(::Type{$t{S,T,U,V,W}}) where {S,T,U,V,W}
-  return $t{ComplexF64,ComplexTPS,U == Nothing ? Nothing : Quaternion{ComplexTPS}, V == Nothing ? Nothing : Matrix{ComplexF64}, W}
+  return $t{Vector{ComplexF64},Vector{ComplexTPS},U == Nothing ? Nothing : Quaternion{ComplexTPS}, V == Nothing ? Nothing : Matrix{ComplexF64}, W}
 end
 
 end
@@ -68,8 +36,6 @@ end
 
 # --- copy! ---
 function copy!(m::TaylorMap, m1::TaylorMap)
-  checkinplace(m, m1)
-
   m.x0 .= m1.x0
   desc = getdesc(m)
   nn = numnn(desc)
@@ -80,12 +46,13 @@ function copy!(m::TaylorMap, m1::TaylorMap)
     copy!(m.x[i], m1.x[i])
   end
 
-  @inbounds m.x[nv+1:nn] .= view(m1.x, nv+1:nn)
+  #@inbounds m.x[nv+1:nn] .= view(m1.x, nv+1:nn)
 
   if !isnothing(m1.Q)
-    for i=1:4
-      @inbounds copy!(m.Q.q[i], m1.Q.q[i])
-    end
+    copy!(m.Q.q0, m1.Q.q0)
+    copy!(m.Q.q1, m1.Q.q1)
+    copy!(m.Q.q2, m1.Q.q2)
+    copy!(m.Q.q3, m1.Q.q3)
   end
 
   if !isnothing(m1.E)
@@ -103,9 +70,10 @@ function clear!(m::TaylorMap)
     @inbounds clear!(m.x[i])
   end
   if !isnothing(m.Q)
-    for i=1:4
-      @inbounds clear!(m.Q.q[i])
-    end
+    clear!(m.Q.q0)
+    clear!(m.Q.q1)
+    clear!(m.Q.q2)
+    clear!(m.Q.q3)
   end
   if !isnothing(m.E)
     m.E .= 0
@@ -139,12 +107,13 @@ function cutord!(m::TaylorMap, m1::TaylorMap, order::Integer, spin_order::Intege
     @inbounds cutord!(m.x[i], m1.x[i], order)
   end
   # add immutable parameters to outx
-  @inbounds m.x[nv+1:nn] .= view(m1.x, nv+1:nn)
+  #@inbounds m.x[nv+1:nn] .= view(m1.x, nv+1:nn)
 
   if !isnothing(m1.Q) && dospin
-    for i=1:4
-      @inbounds cutord!(m.Q.q[i], m1.Q.q[i], spin_order)
-    end
+    cutord!(m.Q.q0, m1.Q.q0, spin_order)
+    cutord!(m.Q.q1, m1.Q.q1, spin_order)
+    cutord!(m.Q.q2, m1.Q.q2, spin_order)
+    cutord!(m.Q.q3, m1.Q.q3, spin_order)
   end
   if !isnothing(m1.E)
     m.E .= m.E
@@ -171,12 +140,13 @@ function getord!(m::TaylorMap, m1::TaylorMap, order::Integer, spin_order::Intege
     @inbounds getord!(m.x[i], m1.x[i], order)
   end
   # add immutable parameters to outx
-  @inbounds m.x[nv+1:nn] .= view(m1.x, nv+1:nn)
+  #@inbounds m.x[nv+1:nn] .= view(m1.x, nv+1:nn)
 
   if !isnothing(m1.Q) && dospin
-    for i=1:4
-      @inbounds getord!(m.Q.q[i], m1.Q.q[i], spin_order)
-    end
+    getord!(m.Q.q0, m1.Q.q0, spin_order)
+    getord!(m.Q.q1, m1.Q.q1, spin_order)
+    getord!(m.Q.q2, m1.Q.q2, spin_order)
+    getord!(m.Q.q3, m1.Q.q3, spin_order)
   end
   if !isnothing(m1.E)
     m.E .= m.E

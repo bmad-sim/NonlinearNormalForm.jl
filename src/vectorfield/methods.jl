@@ -10,15 +10,17 @@ function copy!(F::VectorField, F1::Union{VectorField,TaylorMap})
   end
 
   if !isnothing(F.Q)
-    for i=1:4
-      @inbounds copy!(F.Q.q[i], F1.Q.q[i])
-    end
+    copy!(F.Q.q0, F1.Q.q0)
+    copy!(F.Q.q1, F1.Q.q1)
+    copy!(F.Q.q2, F1.Q.q2)
+    copy!(F.Q.q3, F1.Q.q3)
   end
 
   return F
 end
 
 # --- complex ---
+#=
 function complex(F::VectorField)
   desc = getdesc(F)
   nn = numnn(desc)
@@ -41,7 +43,7 @@ function complex(F::VectorField)
 
   return VectorField(x,Q)
 end
-
+=#
 # --- complex type ---
 function complex(::Type{VectorField{T,U}}) where {T,U}
   return VectorField{ComplexTPS, U == Nothing ? Nothing : Quaternion{ComplexTPS}}
@@ -109,22 +111,38 @@ function lb!(G::VectorField, F::VectorField, H::VectorField; work_low::Tuple{Var
     # first [h,f] (this part involves quaternion multiplication so will be slow)
     mul!(G.Q, H.Q, F.Q)
     mul!(work_Q, F.Q, H.Q)
-    for i=1:4
-      @inbounds sub!(G.Q.q[i], G.Q.q[i], work_Q.q[i])
-    end
+
+    sub!(G.Q.q0, G.Q.q0, work_Q.q0)
+    sub!(G.Q.q1, G.Q.q1, work_Q.q1)
+    sub!(G.Q.q2, G.Q.q2, work_Q.q2)
+    sub!(G.Q.q3, G.Q.q3, work_Q.q3)
 
     # then +F⋅∇h 
-    tmp = work_Q.q[1]
-    for i=1:4
-      @inbounds fgrad!(tmp, F.x, H.Q.q[i], work_low=Fx_low)
-      @inbounds add!(G.Q.q[i], G.Q.q[i], tmp)
-    end
+    tmp = work_Q.q0
+    fgrad!(tmp, F.x, H.Q.q0, work_low=Fx_low)
+    add!(G.Q.q0, G.Q.q0, tmp)
+
+    fgrad!(tmp, F.x, H.Q.q1, work_low=Fx_low)
+    add!(G.Q.q1, G.Q.q1, tmp)
+
+    fgrad!(tmp, F.x, H.Q.q2, work_low=Fx_low)
+    add!(G.Q.q2, G.Q.q2, tmp)
+
+    fgrad!(tmp, F.x, H.Q.q3, work_low=Fx_low)
+    add!(G.Q.q3, G.Q.q3, tmp)
     
     # finally -G⋅∇f
-    for i=1:4
-      @inbounds fgrad!(tmp, G.x, F.Q.q[i], work_low=Fx_low)
-      @inbounds sub!(G.Q.q[i], G.Q.q[i], tmp)
-    end
+    fgrad!(tmp, G.x, F.Q.q0, work_low=Fx_low)
+    sub!(G.Q.q0, G.Q.q0, tmp)
+
+    fgrad!(tmp, G.x, F.Q.q1, work_low=Fx_low)
+    sub!(G.Q.q1, G.Q.q1, tmp)
+
+    fgrad!(tmp, G.x, F.Q.q2, work_low=Fx_low)
+    sub!(G.Q.q2, G.Q.q2, tmp)
+
+    fgrad!(tmp, G.x, F.Q.q3, work_low=Fx_low)
+    sub!(G.Q.q3, G.Q.q3, tmp)
   end
   return
 end
@@ -140,7 +158,7 @@ included that is `F * m = (F.x, F.Q) * (m.x, m.Q) = (F.x ⋅ ∇ m.x , F.x ⋅ �
 """
 function *(F::VectorField, m1::Union{DAMap,UniformScaling})
   if m1 isa UniformScaling 
-    m1 = one(DAMap{numtype(eltype(F.x)),eltype(F.x),typeof(F.Q),Nothing,Nothing},use=getdesc(F))
+    m1 = one(DAMap{Vector{numtype(eltype(F.x))},typeof(F.x),typeof(F.Q),Nothing,Nothing},use=getdesc(F))
   end
   checkop(F, m1)
   m = zero(m1)
@@ -177,14 +195,15 @@ function mul!(m::DAMap, F::VectorField, m1::DAMap; work_low::Vector{<:Union{Ptr{
   # Spin F⋅∇q + qf (quaternion part acts in reverse order):
   if !isnothing(F.Q)
     mul!(work_Q, m1.Q, F.Q)
+    fgrad!(m.Q.q0, F.x, m1.Q.q0, work_low=work_low)
+    fgrad!(m.Q.q1, F.x, m1.Q.q1, work_low=work_low)
+    fgrad!(m.Q.q2, F.x, m1.Q.q2, work_low=work_low)
+    fgrad!(m.Q.q3, F.x, m1.Q.q3, work_low=work_low)
 
-    for i=1:4
-      @inbounds fgrad!(m.Q.q[i], F.x, m1.Q.q[i], work_low=work_low)
-    end
-    
-    for i=1:4
-      @inbounds add!(m.Q.q[i], m.Q.q[i], work_Q.q[i])
-    end
+    add!(m.Q.q0, m.Q.q0, work_Q.q0)
+    add!(m.Q.q1, m.Q.q1, work_Q.q1)
+    add!(m.Q.q2, m.Q.q2, work_Q.q2)
+    add!(m.Q.q3, m.Q.q3, work_Q.q3)
   end
 
   if !isnothing(m.E)
@@ -200,7 +219,7 @@ end
 # each variable and does not include spin. Here I include spin and do the entire map at once.
 function exp(F::VectorField, m1::Union{UniformScaling,DAMap}=I)
   if m1 isa UniformScaling 
-    m1 = one(DAMap{numtype(eltype(F.x)),eltype(F.x),typeof(F.Q),Nothing,Nothing},use=getdesc(F))
+    m1 = one(DAMap{Vector{numtype(eltype(F.x))},typeof(F.x),typeof(F.Q),Nothing,Nothing},use=getdesc(F))
   end
   checkop(F,m1)
 
@@ -388,7 +407,7 @@ would represent the map `m1` as a Lie exponent `exp(F)`. The map `m1` should be 
 to the identity for this to converge quickly.
 """
 function log(m1::DAMap)
-  F = zero(VectorField{eltype(m1.x),typeof(m1.Q)},use=m1)
+  F = zero(VectorField{typeof(m1.x),typeof(m1.Q)},use=m1)
   log!(F,m1)
   return F
 end

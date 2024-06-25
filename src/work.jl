@@ -105,7 +105,9 @@ end
 
 function prep_vf_work_Q(F::VectorField)
   if !isnothing(F.Q)
-    return Quaternion(first(F.Q.q))
+    T = eltype(F.Q)
+    use = getdesc(F)
+    return Quaternion(T(use=use), T(use=use), T(use=use), T(use=use))
   else
     return nothing
   end

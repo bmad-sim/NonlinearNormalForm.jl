@@ -2,7 +2,7 @@ for t = (:DAMap, :TPSAMap)
 @eval begin
 
 """
-    $($t)(m::Union{TaylorMap{S,T,U,V,W},Probe{S,T,U,V,W}}; use::UseType=m, idpt::Union{Nothing,Bool}=m.idpt) where {S,T<:Union{TPS,ComplexTPS},U,V,W}
+    $($t)(m::Union{TaylorMap{S,T,U,V,W},Probe{S,T,U,V,W}}; use::UseType=m, idpt::Union{Nothing,Bool}=m.idpt) where {S,T,U,V,W}
 
 Creates a new copy of the passed `TaylorMap` as a `$($t)`. 
 
@@ -13,22 +13,23 @@ parameters must agree, however the orders may be different.
 
 If `idpt` is not specified, then the same `idpt` as `m` will be used, else that specified will be used.
 """
-function $t(m::Union{TaylorMap{S,T,U,V,W},Probe{S,T,U,V,W}}; use::UseType=m, idpt::Union{Nothing,Bool}=m.idpt) where {S,T<:Union{TPS,ComplexTPS},U,V,W}
+function $t(m::Union{TaylorMap{S,T,U,V,W},Probe{S,T,U,V,W}}; use::UseType=m, idpt::Union{Nothing,Bool}=m.idpt) where {S,T,U,V,W}
   numnn(use) == numnn(m) || error("Number of variables + parameters in GTPSAs for `m` and `use` disagree!")
   
-  outm = $t{S,T,U,V,typeof(idpt)}(undef, use = use, idpt = idpt) # undefined map but parameters allocated
+  outm = zero($t{S,T,U,V,typeof(idpt)}, use=use, idpt=idpt)
   nv = numvars(use)
 
-  # allocate variables
+  # set variables
   for i=1:nv
-    @inbounds outm.x[i] = T(m.x[i], use=getdesc(use))
+    @inbounds GTPSA.change!(outm.x[i], m.x[i])
   end
 
-  # allocate quaternion if present
+  # set quaternion
   if !isnothing(outm.Q)
-    for i=1:4
-      @inbounds outm.Q.q[i] = T(m.Q.q[i],use=getdesc(use))
-    end
+    GTPSA.change!(outm.Q.q0, m.Q.q0)
+    GTPSA.change!(outm.Q.q1, m.Q.q1)
+    GTPSA.change!(outm.Q.q2, m.Q.q2)
+    GTPSA.change!(outm.Q.q3, m.Q.q3)
   end
 
   # set the reference orbit properly
@@ -54,50 +55,6 @@ function $t(m::Union{TaylorMap{S,T,U,V,W},Probe{S,T,U,V,W}}; use::UseType=m, idp
 end
 
 """
-    $($t){S,T,U,V,W}(u::UndefInitializer; use::UseType=GTPSA.desc_current, idpt::W=nothing) where {S,T,U,V,W}
-
-Creates an undefined `$($t){S,T,U,V,W}` with same `Descriptor` as `use`. The immutable 
-parameters will be allocated if `use` is not a `TaylorMap`, else the immutable parameters 
-from `use` will be used.
-"""
-function $t{S,T,U,V,W}(u::UndefInitializer; use::UseType=GTPSA.desc_current, idpt::W=nothing) where {S,T,U,V,W}
-  desc = getdesc(use)
-  nv = numvars(desc)
-  np = numparams(desc)
-  nn = numnn(desc)
-  x0 = Vector{S}(undef, nv)
-  x = Vector{T}(undef, nn)
-
-  
-
-  # use same parameters if use isa TaylorMap and T == eltype(use.x)
-  if use isa TaylorMap && T == eltype(use.x)
-    @inbounds x[nv+1:nn] .= view(use.x, nv+1:nn)
-  else # allocate
-    if T == TPS
-      @inbounds x[nv+1:nn] .= params(desc)
-    else
-      @inbounds x[nv+1:nn] .= complexparams(desc)
-    end
-  end
-
-  if U != Nothing
-    q = Vector{eltype(U)}(undef, 4)
-    Q = Quaternion(q)
-  else
-    Q = nothing
-  end
-
-  if V != Nothing
-    E = Matrix{eltype(V)}(undef, nv, nv)
-  else
-    E = nothing
-  end
-
-  return $t(x0, x, Q, E, idpt)
-end
-
-"""
     $($t)(;use::UseType=GTPSA.desc_current, x::Vector=vars(getdesc(use)), x0::Vector=zeros(numtype(eltype(x)), numvars(use)), Q::Union{Quaternion,Nothing}=nothing, E::Union{Matrix,Nothing}=nothing, idpt::Union{Bool,Nothing}=nothing, spin::Union{Bool,Nothing}=nothing, FD::Union{Bool,Nothing}=nothing) 
 
 Constructs a $($t) with the passed vector of `TPS`/`ComplexTPS` as the orbital ray, and optionally the entrance 
@@ -109,27 +66,30 @@ specified is type-unstable. This constructor also checks for consistency in the 
 + parameters agree (orders may be different).
 """
 function $t(;use::UseType=GTPSA.desc_current, x::Vector=vars(getdesc(use)), x0::Vector=zeros(numtype(eltype(x)), numvars(use)), Q::Union{Quaternion,Nothing}=nothing, E::Union{Matrix,Nothing}=nothing, idpt::Union{Bool,Nothing}=nothing, spin::Union{Bool,Nothing}=nothing, FD::Union{Bool,Nothing}=nothing) 
+  Base.require_one_based_indexing(x,x0)
+
   if !isnothing(Q)
     if !isnothing(E)
-      T = promote_type(TPS,eltype(x0),eltype(x),eltype(Q),eltype(E))
+      T = Vector{promote_type(TPS,eltype(x0),eltype(x),eltype(Q),eltype(E))}
+      Base.require_one_based_indexing(E)
     else
-      T = promote_type(TPS,eltype(x0),eltype(x),eltype(Q))
+      T = Vector{promote_type(TPS,eltype(x0),eltype(x),eltype(Q))}
     end
   else
-    T = promote_type(TPS,eltype(x0),eltype(x))
+    T = Vector{promote_type(TPS,eltype(x0),eltype(x))}
   end
 
-  S = numtype(T)
+  S = Vector{numtype(eltype(T))}
   
   # set up
   if isnothing(spin)
     if isnothing(Q)
       U = Nothing
     else
-      U = Quaternion{T}
+      U = Quaternion{eltype(T)}
     end
   elseif spin
-    U = Quaternion{T}
+    U = Quaternion{eltype(T)}
   else
     error("For no spin tracking, please omit the spin kwarg or set spin=nothing") # For type stability
     #U = Nothing # For type instability
@@ -139,42 +99,42 @@ function $t(;use::UseType=GTPSA.desc_current, x::Vector=vars(getdesc(use)), x0::
     if isnothing(E)
       V = Nothing
     else
-      V = Matrix{S}
+      V = Matrix{numtype(eltype(T))}
     end
   elseif FD
-    V = Matrix{S}
+    V = Matrix{numtype(eltype(T))}
   else
     error("For no fluctuation-dissipation, please omit the FD kwarg or set FD=nothing") # For type stability
     #V = Nothing # For type instability
   end
 
-  outm = $t{S,T,U,V,typeof(idpt)}(undef, use = use, idpt = idpt)   
+  outm = zero($t{S,T,U,V,typeof(idpt)}, use = use, idpt = idpt)   
 
   nv = numvars(use)
   np = numparams(use)
   nn = numnn(use)
 
   # sanity checks
-  length(x0) == nv || error("Number of variables != length of reference orbit vector!")
-  length(x) == nv || error("Number of variables in GTPSAs for `x` and `use` disagree!")
+  length(x0) <= nv || error("Number of variables $nv != length of reference orbit vector $(length(x0))!")
+  length(x) <= nv || error("Number of variables in GTPSAs for `x` and `use` disagree!")
 
 
-  outm.x0 .= x0
+  @views outm.x0 .= x0[1:length(outm.x0)]
 
+  # set variables
   for i=1:nv
-    @inbounds outm.x[i] = T(x[i], use=getdesc(use))
+    GTPSA.change!(outm.x[i], x[i])
   end
 
+  # set quaternion
   if !isnothing(outm.Q)
     if !isnothing(Q)
-      for i=1:4
-        @inbounds outm.Q.q[i] = T(Q.q[i], use=getdesc(use))
-      end
+      GTPSA.change!(outm.Q.q0, m.Q.q0)
+      GTPSA.change!(outm.Q.q1, m.Q.q1)
+      GTPSA.change!(outm.Q.q2, m.Q.q2)
+      GTPSA.change!(outm.Q.q3, m.Q.q3)
     else
-      for i=1:4
-        @inbounds outm.Q.q[i] = T(use=getdesc(use))
-      end
-      outm.Q.q[1][0] = 1
+      outm.Q.q0[0] = 1
     end
   end
 
@@ -193,6 +153,8 @@ end
 """
     $($t)(M::AbstractMatrix; use::UseType=GTPSA.desc_current, x0::Vector{S}=zeros(numtype(T), numvars(use)), Q::U=nothing, E::V=nothing, idpt::W=nothing, spin::Union{Bool,Nothing}=nothing, FD::Union{Bool,Nothing}=nothing) where {S,U<:Union{Quaternion{<:Union{TPS,ComplexTPS}},Nothing},V<:Union{Matrix,Nothing},W<:Union{Nothing,Bool}}
 
+This function could be optimized.
+
 `M` must represent a matrix with linear indexing.
 
 Constructs a $($t) with the passed matrix of scalars `M` as the linear part of the `TaylorMap`, and optionally the entrance 
@@ -202,7 +164,7 @@ matrix, or `false` for no spin/FD. Note that setting `spin`/`FD` to any `Bool` v
 specified is type-unstable. This constructor also checks for consistency in the length of the orbital ray and GTPSA 
 `Descriptor`.
 """
-function $t(M::AbstractMatrix; use::UseType=GTPSA.desc_current, x0::Vector=zeros(numtype(eltype(x)), numvars(use)), Q::Union{Quaternion,Nothing}=nothing, E::Union{Matrix,Nothing}=nothing, idpt::Union{Bool,Nothing}=nothing, spin::Union{Bool,Nothing}=nothing, FD::Union{Bool,Nothing}=nothing) 
+function $t(M::AbstractMatrix; use::UseType=GTPSA.desc_current, x0::Vector=zeros(eltype(M), size(M,1)), Q::Union{Quaternion,Nothing}=nothing, E::Union{Matrix,Nothing}=nothing, idpt::Union{Bool,Nothing}=nothing, spin::Union{Bool,Nothing}=nothing, FD::Union{Bool,Nothing}=nothing) 
   Base.require_one_based_indexing(M)
   nv = numvars(use)
   nn = numnn(use)
@@ -240,23 +202,25 @@ end
 
 function zero(::Type{$t{S,T,U,V,W}}; use::UseType=GTPSA.desc_current, idpt::W=nothing) where {S,T,U,V,W}
   desc = getdesc(use)
-  nn = numnn(desc)
   nv = numvars(desc)
   np = numparams(desc)
+  nn = numnn(desc)
 
-  x0 = zeros(S, nv)
+  x0 = similar(S, nv) 
+  x = similar(T, nn) 
+  Base.require_one_based_indexing(x0, x)
 
-  x = Vector{T}(undef, nn)
+  x0 .= 0
+
   for i=1:nv
-    @inbounds x[i] = T(use=desc)
+    @inbounds x[i] = eltype(x)(use=desc)
   end
 
-  if use isa Union{TaylorMap,Probe} && eltype(use.x) == T
-    # use same parameters 
+  # use same parameters if use isa TaylorMap and eltype(x) == eltype(use.x)
+  if use isa TaylorMap && eltype(x) == eltype(use.x)
     @inbounds x[nv+1:nn] .= view(use.x, nv+1:nn)
-  else
-    # allocate
-    if T == TPS
+  else # allocate
+    if eltype(x) == TPS
       @inbounds x[nv+1:nn] .= params(desc)
     else
       @inbounds x[nv+1:nn] .= complexparams(desc)
@@ -264,21 +228,20 @@ function zero(::Type{$t{S,T,U,V,W}}; use::UseType=GTPSA.desc_current, idpt::W=no
   end
 
   if U != Nothing
-    q = Vector{eltype(U)}(undef, 4)
-    for i=1:4
-      @inbounds q[i] = eltype(U)(use=desc)
-    end
-    Q = Quaternion(q)
+    q0 = eltype(x)(use=desc)
+    q1 = eltype(x)(use=desc)
+    q2 = eltype(x)(use=desc)
+    q3 = eltype(x)(use=desc)
+    Q = Quaternion(q0,q1,q2,q3)
   else
     Q = nothing
   end
 
   if V != Nothing
-    E = zeros(eltype(V), nv, nv)
+    E = similar(V, nv, nv)
   else
     E = nothing
   end
-
   return $t(x0, x, Q, E, idpt)
 end
 
@@ -322,7 +285,7 @@ function one(t::Type{$t{S,T,U,V,W}}; use::UseType=GTPSA.desc_current, idpt::W=no
   end
 
   if !isnothing(m.Q)
-    @inbounds m.Q.q[1][0] = 1
+    @inbounds m.Q.q0[0] = 1
   end
 
   return m
@@ -330,39 +293,3 @@ end
 
 end
 end
-#=
-function test1(m2,m1)
-  desc = getdesc(m1)
-  nn = numnn(desc)
-  nv = numvars(desc)
-
-  outT = promote_type(eltype(m2.x),eltype(m1.x))
-
-  # set up outx0
-  outx0 = Vector{numtype(outT)}(undef, nv)
-
-  # Set up outx:
-  outx = Vector{outT}(undef, nn)
-  for i=1:nv  # no need to allocate immutable parameters taken care of inside compose_it!
-      @inbounds outx[i] = outT(use=desc)
-  end
-
-  # set up quaternion out:
-  if !isnothing(m1.Q)
-    outq = Vector{outT}(undef, 4)
-    for i=1:4
-      @inbounds outq[i] = outT(use=desc)
-    end
-    outQ = Quaternion(outq)
-  else
-    outQ = nothing
-  end
-
-  # set up FD out
-  if isnothing(m1.E) && isnothing(m2.E)
-    outE = nothing
-  else
-    outE = Matrix{numtype(outT)}(undef, nv, nv)
-  end
-  return DAMap(outx0, outx, outQ, outE, m1.idpt)
-end=#

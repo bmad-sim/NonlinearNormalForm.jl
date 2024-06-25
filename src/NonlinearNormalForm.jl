@@ -32,6 +32,8 @@ using LinearAlgebra,
       Printf,
       Reexport,
       DelimitedFiles
+      
+using ReferenceFrameRotations: Quaternion
 
 @reexport using GTPSA
 

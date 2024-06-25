@@ -1,3 +1,27 @@
+function mul!(Q::Quaternion{<:Union{TPS,ComplexTPS}}, Q1::Quaternion{<:Union{TPS,ComplexTPS}}, Q2::Quaternion{<:Union{TPS,ComplexTPS}})
+  q0 = @FastGTPSA Q1.q0 * Q2.q0 - Q1.q1 * Q2.q1 - Q1.q2 * Q2.q2 - Q1.q3 * Q2.q3
+  q1 = @FastGTPSA Q1.q0 * Q2.q1 + Q1.q1 * Q2.q0 + Q1.q2 * Q2.q3 - Q1.q3 * Q2.q2
+  q2 = @FastGTPSA Q1.q0 * Q2.q2 - Q1.q1 * Q2.q3 + Q1.q2 * Q2.q0 + Q1.q3 * Q2.q1
+  q3 = @FastGTPSA Q1.q0 * Q2.q3 + Q1.q1 * Q2.q2 - Q1.q2 * Q2.q1 + Q1.q3 * Q2.q0
+
+  copy!(Q.q0, q0)
+  copy!(Q.q1, q1)
+  copy!(Q.q2, q2)
+  copy!(Q.q3, q3)
+  return Q
+end
+function *(Q1::Quaternion{<:Union{TPS,ComplexTPS}}, Q2::Quaternion{<:Union{TPS,ComplexTPS}})
+  q0 = @FastGTPSA Q1.q0 * Q2.q0 - Q1.q1 * Q2.q1 - Q1.q2 * Q2.q2 - Q1.q3 * Q2.q3
+  q1 = @FastGTPSA Q1.q0 * Q2.q1 + Q1.q1 * Q2.q0 + Q1.q2 * Q2.q3 - Q1.q3 * Q2.q2
+  q2 = @FastGTPSA Q1.q0 * Q2.q2 - Q1.q1 * Q2.q3 + Q1.q2 * Q2.q0 + Q1.q3 * Q2.q1
+  q3 = @FastGTPSA Q1.q0 * Q2.q3 + Q1.q1 * Q2.q2 - Q1.q2 * Q2.q1 + Q1.q3 * Q2.q0
+  return Quaternion(q0,q1,q2,q3)
+end
+
+#=
+## THIS IS DEPRECATED! WE NOW USE 
+# ReferenceFrameRotations.jl Quaternion implementation
+
 """
     Quaternion{T <: Number}
 
@@ -111,3 +135,4 @@ function to_SO3(Q1::Quaternion)
   rmat[2,3] = 2 * (tmp1 - tmp2) * invs
   return rmat
 end
+=#
