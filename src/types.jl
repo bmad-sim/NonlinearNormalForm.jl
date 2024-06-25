@@ -58,7 +58,7 @@ struct TPSAMap{S,T,U,V,W} <: TaylorMap{S,T,U,V,W}
   idpt::W   # Specifies index of constant (energy-like) variable
 
   function TPSAMap(x0, x, Q, E, idpt)
-    m = new{eltype(x0),eltype(x),typeof(Q),typeof(E),typeof(idpt)}(x0, x, Q, E, idpt)
+    m = new{typeof(x0),typeof(x),typeof(Q),typeof(E),typeof(idpt)}(x0, x, Q, E, idpt)
     checkmapsanity(m)
     return m
   end

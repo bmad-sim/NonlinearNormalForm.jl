@@ -242,7 +242,6 @@ function zero(::Type{$t{S,T,U,V,W}}; use::UseType=GTPSA.desc_current, idpt::W=no
   else
     E = nothing
   end
-
   return $t(x0, x, Q, E, idpt)
 end
 
