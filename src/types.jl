@@ -22,7 +22,7 @@ is constant (energy-like): `idpt=false` if the variable with index `NV-1` is con
 - `E`    -- Matrix of the envelope for FD kicks if included, else `nothing`
 - `idpt` -- If the last plane is coasting, then `idpt=false` if the first variable in last plane is constant (energy-like) or `true` if the second. If no coasting, then `idpt=nothing`
 """
-abstract type TaylorMap{S<:AbstractVector,T<:AbstractVector,U<:Union{Quaternion,Nothing},V<:Union{AbstractMatrix,Nothing},W<:Union{Bool,Nothing}} end 
+abstract type TaylorMap{S<:Vector,T<:Vector,U<:Union{Quaternion,Nothing},V<:Union{Matrix,Nothing},W<:Union{Bool,Nothing}} end 
 
 """
     DAMap{S,T,U,V,W} <: TaylorMap{S,T,U,V,W}
@@ -90,8 +90,8 @@ end
 
 Lie operator to act on maps. Can be turned into a map with exp(:F:)
 """
-struct VectorField{T<:Union{TPS,ComplexTPS}, U<:Union{Quaternion{T},Nothing}}
-  x::Vector{T}  
+struct VectorField{T<:Vector, U<:Union{Quaternion,Nothing}}
+  x::T
   Q::U           
 end
 
@@ -101,10 +101,10 @@ for t = (:DAMap, :TPSAMap)
 @eval begin    
 
 function promote_rule(::Type{$t{S,T,U,V,W}}, ::Type{G}) where {S,T,U,V,W,G<:Union{Number,Complex}}
-  outS = promote_type(eltype(S),numtype(eltype(T)),G)
-  outT = promote_type(eltype(T),G)
+  outS = Vector{promote_type(eltype(S),numtype(eltype(T)),G)}
+  outT = Vector{promote_type(eltype(T),G)}
   U != Nothing ? outU = Quaternion{promote_type(eltype(U), G)} : outU = Nothing
-  V != Nothing ? outV = promote_type(Matrix{G},V) : outV = Nothing
+  V != Nothing ? outV = Matrix{promote_type(G,eltype(V))} : outV = Nothing
   return $t{outS,outT,outU,outV,W}
 end
 
@@ -114,8 +114,8 @@ end
 # Therefore I will required the reference orbit to have the same numtype as the 
 # TPS at construction.
 function promote_rule(::Type{$t{S1,T1,U1,V1,W}}, ::Type{$t{S2,T2,U2,V2,W}}) where {S1,S2,T1,T2,U1,U2,V1,V2,W} 
-  outS = promote_type(numtype(eltype(T1)), numtype(eltype(T2)))
-  outT = promote_type(eltype(T1), eltype(T2))
+  outS = Vector{promote_type(numtype(eltype(T1)), numtype(eltype(T2)))}
+  outT = Vector{promote_type(eltype(T1), eltype(T2))}
   U1 != Nothing ? outU = Quaternion{promote_type(eltype(U2),eltype(U2))} : outU = Nothing
   V1 != Nothing ? outV = promote_type(V1,V2) : outV = Nothing
   return $t{outS,outT,outU,outV,W}

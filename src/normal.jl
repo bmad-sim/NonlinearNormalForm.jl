@@ -6,13 +6,14 @@ function normal(m::DAMap)
  # zero(m) is zero in variables but identity in parameters
   if !isnothing(m.idpt) # if coasting, set number of variables executing pseudo-harmonic oscillations
     nhv = numvars(m)-2
-    eye = DAMap(I(nhv),use=m,idpt=m.idpt)
+    eye = zero(m)
+    setmatrix!(eye, I(nhv))
+    #eye = DAMap(I(nhv),use=m,idpt=m.idpt)
     ndpt = numvars(m)-1+m.idpt
     sgn = 1-2*m.idpt
     nt = ndpt+sgn
     zer = zero(m); zer.x[nt][nt]=1; zer.x[ndpt][ndpt] = 1
     a0 = (cutord(m,2)-eye)^-1 * zer + eye
-    println(a0.x[5])
     for i=1:Int(nhv/2)
       a0.x[nt] += sgn*a0.x[2*i][ndpt]*mono(2*i-1,use=getdesc(m)) - sgn*a0.x[2*i-1][ndpt]*mono(2*i,use=getdesc(m))
     end
@@ -76,8 +77,8 @@ function normal(m::DAMap)
     nonl = getord(nonl, i)  # Get only the leading order to stay in symplectic group
     # now nonl = ϵ²𝒞₂
 
-    F =  zero(VectorField{eltype(m1.x),typeof(m1.Q)}, use=m1)  # temporary to later exponentiate
-    Fker =  zero(VectorField{eltype(m1.x),typeof(m1.Q)}, use=m1)  # temporary to later exponentiate
+    F =  zero(VectorField{typeof(m1.x),typeof(m1.Q)}, use=m1)  # temporary to later exponentiate
+    Fker =  zero(VectorField{typeof(m1.x),typeof(m1.Q)}, use=m1)  # temporary to later exponentiate
 
     # For each variable in the nonlinear map
     for j=1:numvars(m)

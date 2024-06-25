@@ -1,6 +1,6 @@
 # --- norm ---
 function norm(m::Union{TaylorMap,VectorField})
-  nrm = zero(numtype(m))
+  nrm = zero(numtype(eltype(m.x)))
 
   nv = numvars(m)
   for i=1:nv
@@ -8,9 +8,10 @@ function norm(m::Union{TaylorMap,VectorField})
   end
   
   if !isnothing(m.Q)
-    for i=1:4
-      @inbounds nrm += norm(m.Q.q[i])
-    end
+    nrm += norm(m.Q.q0)
+    nrm += norm(m.Q.q1)
+    nrm += norm(m.Q.q2)
+    nrm += norm(m.Q.q3)
   end
 
   return nrm
@@ -27,7 +28,7 @@ end
 
 # --- complex type ---
 function complex(::Type{$t{S,T,U,V,W}}) where {S,T,U,V,W}
-  return $t{ComplexF64,ComplexTPS,U == Nothing ? Nothing : Quaternion{ComplexTPS}, V == Nothing ? Nothing : Matrix{ComplexF64}, W}
+  return $t{Vector{ComplexF64},Vector{ComplexTPS},U == Nothing ? Nothing : Quaternion{ComplexTPS}, V == Nothing ? Nothing : Matrix{ComplexF64}, W}
 end
 
 end
@@ -106,12 +107,13 @@ function cutord!(m::TaylorMap, m1::TaylorMap, order::Integer, spin_order::Intege
     @inbounds cutord!(m.x[i], m1.x[i], order)
   end
   # add immutable parameters to outx
-  @inbounds m.x[nv+1:nn] .= view(m1.x, nv+1:nn)
+  #@inbounds m.x[nv+1:nn] .= view(m1.x, nv+1:nn)
 
   if !isnothing(m1.Q) && dospin
-    for i=1:4
-      @inbounds cutord!(m.Q.q[i], m1.Q.q[i], spin_order)
-    end
+    cutord!(m.Q.q0, m1.Q.q0, spin_order)
+    cutord!(m.Q.q1, m1.Q.q1, spin_order)
+    cutord!(m.Q.q2, m1.Q.q2, spin_order)
+    cutord!(m.Q.q3, m1.Q.q3, spin_order)
   end
   if !isnothing(m1.E)
     m.E .= m.E
@@ -138,12 +140,13 @@ function getord!(m::TaylorMap, m1::TaylorMap, order::Integer, spin_order::Intege
     @inbounds getord!(m.x[i], m1.x[i], order)
   end
   # add immutable parameters to outx
-  @inbounds m.x[nv+1:nn] .= view(m1.x, nv+1:nn)
+  #@inbounds m.x[nv+1:nn] .= view(m1.x, nv+1:nn)
 
   if !isnothing(m1.Q) && dospin
-    for i=1:4
-      @inbounds getord!(m.Q.q[i], m1.Q.q[i], spin_order)
-    end
+    getord!(m.Q.q0, m1.Q.q0, spin_order)
+    getord!(m.Q.q1, m1.Q.q1, spin_order)
+    getord!(m.Q.q2, m1.Q.q2, spin_order)
+    getord!(m.Q.q3, m1.Q.q3, spin_order)
   end
   if !isnothing(m1.E)
     m.E .= m.E

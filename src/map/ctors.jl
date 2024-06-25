@@ -115,11 +115,11 @@ function $t(;use::UseType=GTPSA.desc_current, x::Vector=vars(getdesc(use)), x0::
   nn = numnn(use)
 
   # sanity checks
-  length(x0) == nv || error("Number of variables != length of reference orbit vector!")
-  length(x) == nv || error("Number of variables in GTPSAs for `x` and `use` disagree!")
+  length(x0) <= nv || error("Number of variables $nv != length of reference orbit vector $(length(x0))!")
+  length(x) <= nv || error("Number of variables in GTPSAs for `x` and `use` disagree!")
 
 
-  outm.x0 .= x0
+  @views outm.x0 .= x0[1:length(outm.x0)]
 
   # set variables
   for i=1:nv
@@ -164,7 +164,7 @@ matrix, or `false` for no spin/FD. Note that setting `spin`/`FD` to any `Bool` v
 specified is type-unstable. This constructor also checks for consistency in the length of the orbital ray and GTPSA 
 `Descriptor`.
 """
-function $t(M::AbstractMatrix; use::UseType=GTPSA.desc_current, x0::Vector=zeros(numtype(eltype(x)), numvars(use)), Q::Union{Quaternion,Nothing}=nothing, E::Union{Matrix,Nothing}=nothing, idpt::Union{Bool,Nothing}=nothing, spin::Union{Bool,Nothing}=nothing, FD::Union{Bool,Nothing}=nothing) 
+function $t(M::AbstractMatrix; use::UseType=GTPSA.desc_current, x0::Vector=zeros(eltype(M), size(M,1)), Q::Union{Quaternion,Nothing}=nothing, E::Union{Matrix,Nothing}=nothing, idpt::Union{Bool,Nothing}=nothing, spin::Union{Bool,Nothing}=nothing, FD::Union{Bool,Nothing}=nothing) 
   Base.require_one_based_indexing(M)
   nv = numvars(use)
   nn = numnn(use)

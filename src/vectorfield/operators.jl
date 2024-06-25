@@ -25,9 +25,10 @@ function $(Meta.parse(ops[1]))(F::VectorField, F1::Union{VectorField,TaylorMap},
   end
 
   if !isnothing(F.Q) && dospin
-    for i=1:4
-      @inbounds $(Meta.parse(ops[1]))(F.Q.q[i], F1.Q.q[i], F2.Q.q[i])
-    end
+    $(Meta.parse(ops[1]))(F.Q.q0, F1.Q.q0, F2.Q.q0)
+    $(Meta.parse(ops[1]))(F.Q.q1, F1.Q.q1, F2.Q.q1)
+    $(Meta.parse(ops[1]))(F.Q.q2, F1.Q.q2, F2.Q.q2)
+    $(Meta.parse(ops[1]))(F.Q.q3, F1.Q.q3, F2.Q.q3)
   end
 
   return
@@ -44,10 +45,11 @@ function $(Meta.parse(ops[1]))(F::VectorField, J::UniformScaling, F1::Union{Vect
   end
 
   if !isnothing(F.Q) && dospin
-    for i=1:4
-      @inbounds copy!(F.Q.q[i], F1.Q.q[i])
-    end
-    F.Q.q[1][0] = $(ops[2])(1, F.Q.q[1][0])
+    copy!(F.Q.q0, F1.Q.q0)
+    copy!(F.Q.q1, F1.Q.q1)
+    copy!(F.Q.q2, F1.Q.q2)
+    copy!(F.Q.q3, F1.Q.q3)
+    F.Q.q0[0] = $(ops[2])(1, F.Q.q0[0])
   end
 
   return
@@ -64,10 +66,11 @@ function $(Meta.parse(ops[1]))(F::VectorField, F1::Union{VectorField,TaylorMap},
   end
 
   if !isnothing(F.Q) && dospin
-    for i=1:4
-      @inbounds copy!(F.Q.q[i], F1.Q.q[i])
-    end
-    F.Q.q[1][0] = $(ops[2])(F.Q.q[1][0], 1)
+    copy!(F.Q.q0, F1.Q.q0)
+    copy!(F.Q.q1, F1.Q.q1)
+    copy!(F.Q.q2, F1.Q.q2)
+    copy!(F.Q.q3, F1.Q.q3)
+    F.Q.q0[0] = $(ops[2])(F.Q.q0[0], 1)
   end
 
   return
@@ -117,9 +120,10 @@ function $(Meta.parse(ops[1]))(F::VectorField, a::Number, F1::VectorField; dospi
   end
 
   if !isnothing(F.Q) && dospin
-    for i=1:4
-      @inbounds $(Meta.parse(ops[1]))(F.Q.q[i], a, F1.Q.q[i])
-    end
+    $(Meta.parse(ops[1]))(F.Q.q0, a, F1.Q.q0)
+    $(Meta.parse(ops[1]))(F.Q.q1, a, F1.Q.q1)
+    $(Meta.parse(ops[1]))(F.Q.q2, a, F1.Q.q2)
+    $(Meta.parse(ops[1]))(F.Q.q3, a, F1.Q.q3)
   end
   return
 end
@@ -134,9 +138,10 @@ function $(Meta.parse(ops[1]))(F::VectorField, F1::VectorField, a::Number; dospi
   end
 
   if !isnothing(F.Q) && dospin
-    for i=1:4
-      @inbounds $(Meta.parse(ops[1]))(F.Q.q[i], F1.Q.q[i], a)
-    end
+    $(Meta.parse(ops[1]))(F.Q.q0, F1.Q.q0, a)
+    $(Meta.parse(ops[1]))(F.Q.q1, F1.Q.q1, a)
+    $(Meta.parse(ops[1]))(F.Q.q2, F1.Q.q2, a)
+    $(Meta.parse(ops[1]))(F.Q.q3, F1.Q.q3, a)
   end
 
   return

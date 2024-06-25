@@ -144,26 +144,7 @@ function compose_it!(m::$t, m2::$t, m1::$t; dospin::Bool=true, dostochastic::Boo
     # Spin (spectator) q(z0)=q2(M(z0))q1(z0)
     # First obtain q2(M(z0))
     GC.@preserve m1x_prom m2Q_prom compose!(Cint(4), m2Q_low, nv+np, m1x_low, outQ_low)
-    # Now concatenate
-    # MAKE THIS FASTER!
-    A = @FastGTPSA  (m1.Q.q0+m1.Q.q1)*(m.Q.q0+m.Q.q1)
-    B = @FastGTPSA  (m1.Q.q3-m1.Q.q2)*(m.Q.q2-m.Q.q3)
-    C = @FastGTPSA  (m1.Q.q0-m1.Q.q1)*(m.Q.q2+m.Q.q3) 
-    D = @FastGTPSA  (m1.Q.q2+m1.Q.q3)*(m.Q.q0-m.Q.q1)
-    E = @FastGTPSA  (m1.Q.q1+m1.Q.q3)*(m.Q.q1+m.Q.q2)
-    F = @FastGTPSA  (m1.Q.q1-m1.Q.q3)*(m.Q.q1-m.Q.q2)
-    G = @FastGTPSA  (m1.Q.q0+m1.Q.q2)*(m.Q.q0-m.Q.q3)
-    H = @FastGTPSA  (m1.Q.q0-m1.Q.q2)*(m.Q.q0+m.Q.q3)
-    
-    q0 = @FastGTPSA  B+(-E-F+G+H)/2
-    q1 = @FastGTPSA  A-(E+F+G+H)/2
-    q2 = @FastGTPSA  C+(E-F+G-H)/2
-    q3 = @FastGTPSA  D+(E-F-G+H)/2
-
-    copy!(m.Q.q0, q0)
-    copy!(m.Q.q1, q1)
-    copy!(m.Q.q2, q2)
-    copy!(m.Q.q3, q3)
+    mul!(m.Q, m1.Q, m.Q)
   end
 
   # Stochastic
