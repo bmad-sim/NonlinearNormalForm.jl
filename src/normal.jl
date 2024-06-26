@@ -1,4 +1,4 @@
-function normal(m::DAMap)
+function normal(m::DAMap, resonances=nothing)
   nn = numnn(m)
   
   # 1: Go to parameter-dependent fixed point to first order ONLY!
@@ -74,7 +74,7 @@ function normal(m::DAMap)
     # m1 = ℛexp(K)(ℐ+ϵ²𝒞₂) 
     # get rid of ℛ:
     nonl = m1 ∘ R_inv
-    nonl = nonl ∘ inv(ker) # get rid of kernal
+    nonl = nonl ∘ inv(ker) # get rid of kernel
     nonl = getord(nonl, i)  # Get only the leading order to stay in symplectic group
     # now nonl = ϵ²𝒞₂
 
@@ -89,21 +89,15 @@ function normal(m::DAMap)
       while idx > 0
         # Tune shifts should be left in the map (kernel) because we cannot remove them
         # if there is damping, we technically could remove them
-        je = convert(Vector{Int}, ords)
-        je[j] -= 1
-        t = 0
-        for k = 1:2:nhv
-          t += abs(je[k]-je[k+1])
-        end
-
-        if t != 0  # then remove it
+        if !is_tune_shift(j, ords, nhv) && !is_resonance(j, ords, nhv, resonances) # then remove it
+          je = convert(Vector{Int}, ords)
+          je[j] -= 1
           lam = 1
           for k = 1:nhv # ignore coasting plane
             lam *= eg[k]^je[k]
           end
           F.x[j] += mono(ords,use=getdesc(m1))*v[]/(1-lam)
-        else # cannot remove it - add to kernel
-          je[j] += 1
+        else # cannot remove it - add to kernel (if close to resonance and resonance is specified it will nearly blow up)
           Fker.x[j] += mono(ords,use=getdesc(m1))*v[]
         end
 
@@ -120,7 +114,81 @@ function normal(m::DAMap)
 
   an = c∘an∘c^-1
   
-  return a0 ∘ a1 ∘ an
+  return a0 ∘ a1 ∘ an, eg
+end
+
+
+
+
+"""
+    is_tune_shift(varidx, ords, nhv)
+
+Checks if the monomial corresponds to a tune shift.
+
+### Input
+- `varidx` -- Current variable index (e.g. 1 is x, 2 is px, etc)
+- `ords`   -- Array of monomial index as orders
+- `nhv`    -- Number harmonic variables
+"""
+function is_tune_shift(varidx, ords, nhv)
+  je = convert(Vector{Int}, ords)
+  je[varidx] -= 1
+  t = 0
+  
+  for k = 1:2:nhv # ignore coasting plane
+    t += abs(je[k]-je[k+1]) 
+  end
+
+  if t != 0
+    return false # remove it
+  else
+    return true # keep it in
+  end
+end
+
+"""
+    is_resonance(varidx, ords, nhv, resonances)
+
+Checks if the monomial corresponds to a particular resonance 
+(and resonances in the same family)
+
+Note that for 3*Q_x = integer, we also have 6*Q_x though where 
+
+lambda*(3*Q_x) = integer where lambda*3 <= MAXORD + 1 according to notes
+are in the same family and so these must be left in too. These are the same family
+
+each column of resonances corresponds to one resonance in the family
+
+Each row is a multiple of previous
+
+So For example for the 1*Q_1 + 2*Q_2 + 3*Q_3 = integer resonance:
+m = 
+[ 1  2  3  ...;
+  2  4  6  ...;
+  3  6  9  ...];
+
+"""
+function is_resonance(varidx, ords, nhv, resonances)
+  if isnothing(resonances)
+    return false
+  end
+  je = convert(Vector{Int}, ords)
+  je[varidx] -= 1
+
+  for curresidx=1:size(resonances, 2) # for each resonance in the family
+    t1 = 0
+    t2 = 0
+    
+    for k = 1:2:nhv # ignore coasting plane
+      t1 += abs(je[k]-je[k+1]+resonances[Int((k+1)/2),curresidx]) 
+      t2 += abs(je[k]-je[k+1]-resonances[Int((k+1)/2),curresidx]) 
+    end
+    if t1 == 0 || t2 == 0
+      return true # keep it in!
+    end
+  end
+
+  return false
 end
 
 function equilibrium_moments(m::DAMap, a::DAMap)
@@ -177,7 +245,7 @@ end
 
 # making the 12, 34, 56 elements 0 in the normalizing map
 # and returns the phase added to do so
-function fast_canonize(a::DAMap, damping::Bool=!isnothing(a.idpt))
+function fast_canonize(a::DAMap, damping::Bool=!isnothing(a.E))
   # Basically rotates a so that we are in Courant-Snyder form of a
 
   a_matrix = real.(GTPSA.jacobian(a))
@@ -220,7 +288,7 @@ function fast_canonize(a::DAMap, damping::Bool=!isnothing(a.idpt))
   end
   #return ri
   a_rot = a_matrix*ri
-  return a_rot
+  #return a_rot
 
   # Now we have rotated a so that a_12, a_34, a_56, etc are 0 (Courant Snyder)
   # But if we have damping, we also have
@@ -235,18 +303,24 @@ function fast_canonize(a::DAMap, damping::Bool=!isnothing(a.idpt))
   # which correspond to the damping (same in each plane, Diagonal(lambda1, lambda1, lambda2, lambda2, etc)
 
   if damping
-    damp = zeros(numvars(a))
-    a = zeros(Int(numvars(a)/2), Int(numvars(a)/2))
+    damp = zeros(Int(numvars(a)/2))
+    tmp = zeros(Int(numvars(a)/2), Int(numvars(a)/2))
     for i=1:Int(numvars(a)/2)
-      a[i,i] = a_rot[2*i-1,2*i-1]*a_rot[2*i,2*i]-a_rot[2*i-1,2*i]*a_rot[2*i,2*i-1]
+      tmp[i,i] = a_rot[2*i-1,2*i-1]*a_rot[2*i,2*i]-a_rot[2*i-1,2*i]*a_rot[2*i,2*i-1]
       for j=1:Int(numvars(a)/2)
         if i != j
-
+          tmp[i,j] = a_rot[2*i-1,2*j-1]*a_rot[2*i,2*j]-a_rot[2*i-1,2*j]*a_rot[2*i,2*j-1]
         end
       end
     end
+    tmp = inv(tmp)
+    damp .= sqrt.(sum(tmp, dims=2))
+    a_rot = a_rot*Diagonal(repeat(damp,inner=2))
+    damp .= log.(damp)
   end
 
+
+  return a_rot
 end
 
 
