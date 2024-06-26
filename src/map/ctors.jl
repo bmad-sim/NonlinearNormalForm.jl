@@ -239,6 +239,7 @@ function zero(::Type{$t{S,T,U,V,W}}; use::UseType=GTPSA.desc_current, idpt::W=no
 
   if V != Nothing
     E = similar(V, nv, nv)
+    E .= 0
   else
     E = nothing
   end

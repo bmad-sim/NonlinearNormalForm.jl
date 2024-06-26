@@ -114,7 +114,7 @@ function normal(m::DAMap, resonances=nothing)
 
   an = c∘an∘c^-1
   
-  return a0 ∘ a1 ∘ an, eg
+  return a0 ∘ a1 ∘ an#, eg
 end
 
 

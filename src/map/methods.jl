@@ -1,6 +1,6 @@
 # --- norm ---
 function norm(m::Union{TaylorMap,VectorField})
-  nrm = zero(numtype(eltype(m.x)))
+  nrm = 0.
 
   nv = numvars(m)
   for i=1:nv
