@@ -175,7 +175,7 @@ end
 
 
 
-function read_fpp_map(file; idpt::Union{Nothing,Bool}=nothing)
+function read_fpp_map(file; FD::Union{Nothing,Bool}=nothing,spin::Union{Nothing,Bool}=nothing,idpt::Union{Nothing,Bool}=nothing) 
   data = readdlm(file, skipblanks=true)
   nv = data[findfirst(t->t=="Dimensional", data)- CartesianIndex(0,1)]
   no = data[findfirst(t->t=="NO", data) + CartesianIndex(0,2)]
@@ -184,15 +184,44 @@ function read_fpp_map(file; idpt::Union{Nothing,Bool}=nothing)
 
   # Check if map has stochasticity
   stoch_idx = findfirst(t->t=="Stochastic", data)
-  if !isnothing(stoch_idx) && stoch_idx[2]== 1 # FD in first column meaning no "No"
-    FD = true
+  if isnothing(FD) # Default
+    if !isnothing(stoch_idx) && stoch_idx[2]== 1 # FD in first column meaning no "No"
+      FD = true
+    else
+      FD = false
+    end
+  elseif FD == true
+    if !isnothing(stoch_idx) && stoch_idx[2]== 1 # FD in first column meaning no "No"
+      FD = true
+    else
+      error("Cannot include FD: no stochastic matrix detected")
+    end
   else
-    FD=nothing
+    FD = false
   end
+
+  # Check if map has spin
+  spin_idx = findfirst(t->t=="c_quaternion", data)
+  if isnothing(spin) # Default
+    if !isnothing(spin_idx) && spin_idx[2]== 1 # c_quaternion in first column meaning no "No"
+      spin = true
+    else
+      spin = false
+    end
+  elseif spin == true
+    if !isnothing(spin_idx) && spin_idx[2]== 1 # c_quaternion in first column meaning no "No"
+      spin = true
+    else
+      error("Cannot include spin: no quaternion detected")
+    end
+  else
+    spin = false
+  end
+
 
   # Make the TPSA
   d = Descriptor(nv, no, np, no)
-  m = complex(DAMap(use=d,idpt=idpt,FD=FD)) #repeat([ComplexTPS(use=d)], nv), Q=Quaternion([ComplexTPS(1,use=d), repeat([ComplexTPS(use=d)], 3)...]))
+  m = complex(DAMap(use=d,idpt=idpt,FD=FD,spin=spin)) #repeat([ComplexTPS(use=d)], nv), Q=Quaternion([ComplexTPS(1,use=d), repeat([ComplexTPS(use=d)], 3)...]))
 
   idx=3
   data=data[3:end,:]
@@ -222,7 +251,7 @@ function read_fpp_map(file; idpt::Union{Nothing,Bool}=nothing)
   m.x[nv+1:nn] .= complexparams(d)
 
   # FD
-  if !isnothing(FD)
+  if FD
     idx = findfirst(t->t=="Stochastic", data)[1]
     data = data[idx+1:end,:]
     for i=1:size(data, 1)
@@ -234,14 +263,17 @@ function read_fpp_map(file; idpt::Union{Nothing,Bool}=nothing)
       m.E[row,col] = num
     end
   end
-  return m
+  #return m
 
+  if spin
+
+  end
 
   # spin?
   idx = findfirst(t->t=="c_quaternion", data[:,1])
   if idx > 0
     if data[idx,3] == "identity"
-      m.Q.q .= [1.0, 0., 0., 0.]
+      m.Q.q0
     else
       for i=1:4
         idx = findfirst(x->(x isa Integer), data[:,1])

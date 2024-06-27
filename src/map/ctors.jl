@@ -21,17 +21,17 @@ function $t(m::Union{TaylorMap{S,T,U,V,W},Probe{S,T,U,V,W}}; use::UseType=m, idp
 
   # set variables
   for i=1:nv
-    @inbounds GTPSA.change!(outm.x[i], m.x[i])
+    @inbounds setTPS!(outm.x[i], m.x[i], change=true)
   end
 
   # set quaternion
   if !isnothing(outm.Q)
-    GTPSA.change!(outm.Q.q0, m.Q.q0)
-    GTPSA.change!(outm.Q.q1, m.Q.q1)
-    GTPSA.change!(outm.Q.q2, m.Q.q2)
-    GTPSA.change!(outm.Q.q3, m.Q.q3)
+    setTPS!(outm.Q.q0, m.Q.q0, change=true)
+    setTPS!(outm.Q.q1, m.Q.q1, change=true)
+    setTPS!(outm.Q.q2, m.Q.q2, change=true)
+    setTPS!(outm.Q.q3, m.Q.q3, change=true)
   end
-
+  
   # set the reference orbit properly
   if nv > numvars(m)  # Increasing dimensionality
     outm.x0[1:numvars(m)] .= m.x0
@@ -123,28 +123,24 @@ function $t(;use::UseType=GTPSA.desc_current, x::Vector=vars(getdesc(use)), x0::
 
   # set variables
   for i=1:nv
-    GTPSA.change!(outm.x[i], x[i])
+    @inbounds setTPS!(outm.x[i], x[i], change=true)
   end
 
   # set quaternion
   if !isnothing(outm.Q)
     if !isnothing(Q)
-      GTPSA.change!(outm.Q.q0, m.Q.q0)
-      GTPSA.change!(outm.Q.q1, m.Q.q1)
-      GTPSA.change!(outm.Q.q2, m.Q.q2)
-      GTPSA.change!(outm.Q.q3, m.Q.q3)
+      setTPS!(outm.Q.q0, m.Q.q0, change=true)
+      setTPS!(outm.Q.q1, m.Q.q1, change=true)
+      setTPS!(outm.Q.q2, m.Q.q2, change=true)
+      setTPS!(outm.Q.q3, m.Q.q3, change=true)
     else
       outm.Q.q0[0] = 1
     end
   end
 
-  if !isnothing(outm.E)
-    if !isnothing(E)
-      (nv,nv) == size(E) || error("Size of FD matrix inconsistent with number of variables!")
-      outm.E .= E
-    else
-      outm.E .= 0
-    end
+  if !isnothing(outm.E) && !isnothing(E)
+    (nv,nv) == size(E) || error("Size of FD matrix inconsistent with number of variables!")
+    outm.E .= E
   end
 
   return outm
