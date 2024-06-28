@@ -173,10 +173,15 @@ program Resonance
    call print(t,mfr)
   close(mfr)
   
-   
+   !call print(T)
+   !stop
   
   
   call c_normal(T,normal_form,phase=phat)
+  !T = ci_phasor()*normal_form%atot**(-1)*T*normal_form%atot*c_phasor()
+  !call print(T)
+  !stop
+
   alpha0=phat(1).sub.'11'
   
   !call clean(phat,phat,prec=1.d-8)
@@ -265,6 +270,11 @@ program Resonance
     ft%v(2*i-1)=ft%v(2*i-1)- normal_form%h_l%v(2*i-1)
     ft%v(2*i)= ft%v(2*i)-normal_form%h_l%v(2*i)
   enddo
+
+
+  !call print(ft)
+  !stop
+
    N_c=normal_form%atot**(-1)*T*normal_form%atot
   n_c=ci_phasor()*n_c*c_phasor()
    

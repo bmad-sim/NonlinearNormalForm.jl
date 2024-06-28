@@ -8,7 +8,7 @@ vec2fld!(na::Cint, ctpsa::Ptr{CTPSA}, m::Vector{Ptr{CTPSA}}) = (@inline; GTPSA.m
 Constructs a `VectorField` from the passed Hamiltonian `h`. Explicity, 
 for `h`, constructs a vector field `F` such that
   
-`F.x = [∂h/∂p₁, -∂h/∂q₁, ...]`
+`F.x = [-∂h/∂p₁, ∂h/∂q₁, ...]`
 """
 function VectorField(h::Union{TPS,ComplexTPS}; Q::Union{Quaternion,Nothing}=nothing, spin::Union{Bool,Nothing}=nothing, work_low::Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}=Vector{lowtype(h)}(undef,numvars(h)))
   if !isnothing(Q)
@@ -73,3 +73,29 @@ function zero(::Type{VectorField{T,U}}; use::UseType=GTPSA.desc_current) where {
 
   return VectorField(x, Q)
 end
+
+#= --- one ---
+"""
+    one(F::VectorField)
+  
+Construct a 
+"""
+function one(F::VectorField)
+  return one(typeof(F), use=F, idpt=F.idpt)
+end
+
+function one(t::Type{$t{S,T,U,V,W}}; use::UseType=GTPSA.desc_current, idpt::W=nothing) where {S,T,U,V,W}
+  m = zero(t, use=use, idpt=idpt)
+  nv = numvars(m)
+  
+  for i=1:nv
+    @inbounds m.x[i][i] = 1
+  end
+
+  if !isnothing(m.Q)
+    @inbounds m.Q.q0[0] = 1
+  end
+
+  return m
+end
+=#

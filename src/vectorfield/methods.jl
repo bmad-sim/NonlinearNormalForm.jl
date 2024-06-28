@@ -19,6 +19,22 @@ function copy!(F::VectorField, F1::Union{VectorField,TaylorMap})
   return F
 end
 
+# --- clear! ---
+
+function clear!(F::VectorField)
+  nv = numvars(F)
+  for i=1:nv
+    @inbounds clear!(F.x[i])
+  end
+  if !isnothing(F.Q)
+    clear!(F.Q.q0)
+    clear!(F.Q.q1)
+    clear!(F.Q.q2)
+    clear!(F.Q.q3)
+  end
+  return
+end
+
 # --- complex ---
 #=
 function complex(F::VectorField)

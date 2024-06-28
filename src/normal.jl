@@ -46,9 +46,15 @@ function normal(m::DAMap, resonance=nothing)
 
   a1 = zero(promote_type(eltype(a1_inv_matrix),typeof(m0)),use=m0,idpt=m.idpt)
   setmatrix!(a1, inv(a1_inv_matrix))
+
+  a1_mat = fast_canonize(a1)
+  clear!(a1)
+  setmatrix!(a1, a1_mat)
   if !isnothing(m.Q)
     a1.Q.q0[0] = 1
   end
+
+
 
   m1 = a1^-1 ∘ m0 ∘ a1
 
@@ -337,7 +343,7 @@ function calc_Hr(m, n, resonance)
   c = to_phasor(m)
   R = inv(c)*inv(a)*m*a*c
   
-  # This could be old -----------------
+  # This could be old ----------------- 
   # Now we want to refactorize the map as
   # R = exp(-:p*2*pi/|mr|^2 * mr dot J :)*Rc
   # Eq 5.16 in EYB
@@ -347,18 +353,20 @@ function calc_Hr(m, n, resonance)
   # First we have to rotate back 
   # We can use any resonance in the resonance family, so just use first
   # need to get tunes around -0.5, 0.5
-  tunes = imag.(log.(n.evals[1:2:end]))
+  mu = imag.(log.(n.evals[1:2:end]))
+
   s = 0
   mr = resonance[:,1]
-  for i in eachindex(tunes)
-    if abs(tune) > pi
-      tunes[i] = 1-tunes[i]
+  for i in eachindex(mu)
+    if abs(mu[i]) > pi
+      sgn = sign(mu[i])
+      mu[i] = sgn*-2*pi+mu[i]
     end
-    s += mr*tunes[i]*2*pi
+    s += mr[i]*mu[i]/(2*pi)
   end
   p = round(s)
 
-  # This is more accurate -----
+  # This is more accurate description -----
   # We first have
   # R = exp(-mu dot J)*Nonlinear
   # We want to split this into components parallel and perpendicular 
@@ -369,9 +377,42 @@ function calc_Hr(m, n, resonance)
   # perpendicular to resonance (a's are vectors perpendicular to mr)
 
   # First need to compute -mu dot J as a VectorField
-  # hh
+  # Note 3.51 and 3.51 in EBB are incorrect
+  # going from vectorfield to hamiltonian etc are NEGATIVE hamilton's equations
+  # but some extra stuff because phasors
+  # Usually we have dx/dt = -[H,x] = -dH/dp   and dp/dt = -[H,p] = dH/dx 
+  # Now with phasors we have dh/dt = -*H,h* = -i*dH/dhbar  and dhbar/dt = -*H,hbar* = i*dH/dh
+  # ( eq 44.65 in special Bmad manual)
+  # So per eq 44.67 in special Bmad manual we see the vector field needs a factor of i
+  # as opposed to regular
 
+  coef = dot(mr, mu)/norm(mr)^2
 
+  F =  zero(VectorField{typeof(m.x),typeof(m.Q)}, use=m) 
+  for i in eachindex(mu)
+    F.x[2*i-1][2*i-1] =  im*mu[i] - (im*coef*mr[i]) 
+    F.x[2*i][2*i] =  -im*mu[i] - (-im*coef*mr[i]) 
+  end
+
+  # exp(:F:) is now NEGATIVE the perpendicular part
+  # this is negative the first term in Eq 5.18 in EYB
+  #eturn F
+  N_c = exp(F,R)
+  #return N_c
+
+  # now remove co-moving map - this is the epsilon thing
+  # negative the second term in Eq. 5.18 in EYB
+  clear!(F)
+  for i in eachindex(mr)
+    F.x[2*i-1][2*i-1] = im*p*mr[i]*2*pi/norm(mr)^2
+    F.x[2*i][2*i] = -im*p*mr[i]*2*pi/norm(mr)^2
+  end
+  #return exp(F,N_c)
+
+  # The left over stuff will now give exp(:Hr:)
+  #return exp(F,N_c)
+  Hr_vec = log(exp(F,N_c))
+  return Hr_vec
 
 end
 
