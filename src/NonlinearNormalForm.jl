@@ -34,6 +34,7 @@ using LinearAlgebra,
       DelimitedFiles
       
 using ReferenceFrameRotations: Quaternion
+import ReferenceFrameRotations: show
 
 @reexport using GTPSA
 

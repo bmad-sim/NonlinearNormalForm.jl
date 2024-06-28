@@ -1,4 +1,9 @@
-function normal(m::DAMap, resonances=nothing)
+struct NormalForm
+  a
+  evals
+end
+
+function normal(m::DAMap, resonance=nothing)
   nn = numnn(m)
   
   # 1: Go to parameter-dependent fixed point to first order ONLY!
@@ -20,7 +25,7 @@ function normal(m::DAMap, resonances=nothing)
     end
   else
     nhv = numvars(m)
-    a0 = (cutord(m,2)-I)^-1 ∘ zero(m) + I 
+    a0 = inv(cutord(m,2)-I, dospin=false) ∘ zero(m) + I 
   end
 
   m0 = a0^-1 ∘ m ∘ a0
@@ -41,6 +46,9 @@ function normal(m::DAMap, resonances=nothing)
 
   a1 = zero(promote_type(eltype(a1_inv_matrix),typeof(m0)),use=m0,idpt=m.idpt)
   setmatrix!(a1, inv(a1_inv_matrix))
+  if !isnothing(m.Q)
+    a1.Q.q0[0] = 1
+  end
 
   m1 = a1^-1 ∘ m0 ∘ a1
 
@@ -55,7 +63,7 @@ function normal(m::DAMap, resonances=nothing)
   # check if tune shift and kill
   R_inv = inv(getord(m1, 1, 0, dospin=false), dospin=false) # R is diagonal matrix
   if !isnothing(R_inv.Q)
-    R_inv.Q.q[1][0] = 1
+    R_inv.Q.q0[0] = 1
   end
 
   # Store the tunes
@@ -89,7 +97,7 @@ function normal(m::DAMap, resonances=nothing)
       while idx > 0
         # Tune shifts should be left in the map (kernel) because we cannot remove them
         # if there is damping, we technically could remove them
-        if !is_tune_shift(j, ords, nhv) && !is_resonance(j, ords, nhv, resonances) # then remove it
+        if !is_tune_shift(j, ords, nhv) && !is_resonance(j, ords, nhv, resonance) # then remove it
           je = convert(Vector{Int}, ords)
           je[j] -= 1
           lam = 1
@@ -114,7 +122,7 @@ function normal(m::DAMap, resonances=nothing)
 
   an = c∘an∘c^-1
   
-  return a0 ∘ a1 ∘ an#, eg
+  return NormalForm(a0 ∘ a1 ∘ an, eg)
 end
 
 
@@ -147,17 +155,17 @@ function is_tune_shift(varidx, ords, nhv)
 end
 
 """
-    is_resonance(varidx, ords, nhv, resonances)
+    is_resonance(varidx, ords, nhv, resonance)
 
 Checks if the monomial corresponds to a particular resonance 
-(and resonances in the same family)
+(and resonance in the same family)
 
 Note that for 3*Q_x = integer, we also have 6*Q_x though where 
 
 lambda*(3*Q_x) = integer where lambda*3 <= MAXORD + 1 according to notes
 are in the same family and so these must be left in too. These are the same family
 
-each column of resonances corresponds to one resonance in the family
+each column of resonance corresponds to one resonance in the family
 
 Each row is a multiple of previous
 
@@ -168,20 +176,20 @@ m =
   3  6  9  ...];
 
 """
-function is_resonance(varidx, ords, nhv, resonances)
-  if isnothing(resonances)
+function is_resonance(varidx, ords, nhv, resonance)
+  if isnothing(resonance)
     return false
   end
   je = convert(Vector{Int}, ords)
   je[varidx] -= 1
 
-  for curresidx=1:size(resonances, 2) # for each resonance in the family
+  for curresidx=1:size(resonance, 2) # for each resonance in the family
     t1 = 0
     t2 = 0
     
     for k = 1:2:nhv # ignore coasting plane
-      t1 += abs(je[k]-je[k+1]+resonances[Int((k+1)/2),curresidx]) 
-      t2 += abs(je[k]-je[k+1]-resonances[Int((k+1)/2),curresidx]) 
+      t1 += abs(je[k]-je[k+1]+resonance[Int((k+1)/2),curresidx]) 
+      t2 += abs(je[k]-je[k+1]-resonance[Int((k+1)/2),curresidx]) 
     end
     if t1 == 0 || t2 == 0
       return true # keep it in!
@@ -323,7 +331,49 @@ function fast_canonize(a::DAMap, damping::Bool=!isnothing(a.E))
   return a_rot
 end
 
+# This can help give you the fixed point
+function calc_Hr(m, n, resonance)
+  a = n.a
+  c = to_phasor(m)
+  R = inv(c)*inv(a)*m*a*c
+  
+  # This could be old -----------------
+  # Now we want to refactorize the map as
+  # R = exp(-:p*2*pi/|mr|^2 * mr dot J :)*Rc
+  # Eq 5.16 in EYB
+  # Then log(Rc) is :Hr: which you can use to calculate the fixed point
+  # --------------------------------
+  
+  # First we have to rotate back 
+  # We can use any resonance in the resonance family, so just use first
+  # need to get tunes around -0.5, 0.5
+  tunes = imag.(log.(n.evals[1:2:end]))
+  s = 0
+  mr = resonance[:,1]
+  for i in eachindex(tunes)
+    if abs(tune) > pi
+      tunes[i] = 1-tunes[i]
+    end
+    s += mr*tunes[i]*2*pi
+  end
+  p = round(s)
 
+  # This is more accurate -----
+  # We first have
+  # R = exp(-mu dot J)*Nonlinear
+  # We want to split this into components parallel and perpendicular 
+  # to plane of resonance, e.g.
+
+  # -mu dot J = -(mu dot mr)/(mr^2)*mr dot J - (mu dot a)/(a^2)*a dot J  
+  # where the first term is the parallel to resonance and second is
+  # perpendicular to resonance (a's are vectors perpendicular to mr)
+
+  # First need to compute -mu dot J as a VectorField
+  # hh
+
+
+
+end
 
 
 
@@ -567,7 +617,7 @@ function from_phasor!(cinv::DAMap, m::DAMap)
   end
 
   if !isnothing(cinv.Q)
-    cinv.Q.q[1][0] = 1
+    cinv.Q.q0[0] = 1
   end
 
   return
@@ -601,7 +651,7 @@ function to_phasor!(c::DAMap, m::DAMap)
   end
 
   if !isnothing(c.Q)
-    c.Q.q[1][0] = 1
+    c.Q.q0[0] = 1
   end
 
   return

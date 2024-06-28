@@ -32,31 +32,31 @@ end
 
     # Normal form -------------------------------------
     # 2D all pseudo-harmonic oscillators order 3
-    m = read_fpp_map("order2/test.map")
-    R_fpp = read_fpp_map("order2/R.map")
+    m = read_fpp_map("order2/test.map",spin=false)
+    R_fpp = read_fpp_map("order2/R.map",spin=false)
     c = to_phasor(m)
-    a = normal(m)
+    a = normal(m).a
     @test norm(inv(c)∘inv(a)∘m∘a∘c - R_fpp) < tol
 
     # 2D all pseudo-harmonic oscillators order 10
-    m = read_fpp_map("order10/test.map")
-    R_fpp = read_fpp_map("order10/R.map")
+    m = read_fpp_map("order10/test.map",spin=false)
+    R_fpp = read_fpp_map("order10/R.map",spin=false)
     c = to_phasor(m)
-    a = normal(m)
+    a = normal(m).a
     @test norm(inv(c)∘inv(a)∘m∘a∘c - R_fpp) < tol
 
     # 4D all pseudo-harmonic oscillators order 6
-    m = read_fpp_map("order6var4/test.map")
-    R_fpp = read_fpp_map("order6var4/R.map")
+    m = read_fpp_map("order6var4/test.map",spin=false)
+    R_fpp = read_fpp_map("order6var4/R.map",spin=false)
     c = to_phasor(m)
-    a = normal(m)
+    a = normal(m).a
     @test norm(inv(c)∘inv(a)∘m∘a∘c - R_fpp) < 1e-8
 
     # 6D coasting last plane order 3
-    m = read_fpp_map("coast/test.map",idpt=true)
-    R_fpp = read_fpp_map("coast/R.map",idpt=true)
+    m = read_fpp_map("coast/test.map",idpt=true,spin=false)
+    R_fpp = read_fpp_map("coast/R.map",idpt=true,spin=false)
     c = to_phasor(m)
-    a = normal(m)
+    a = normal(m).a
     @test norm(inv(c)∘inv(a)∘m∘a∘c - R_fpp) < tol
 
     # Equilibrium moments -----------------------------
@@ -66,10 +66,10 @@ end
          0.5356022290151429E-04   0.2584036833779585E-04   0.6887819755086762E-04   0.2881897937276110E-03   0.8460461412432578E-04  -0.8485345202908079E-05;
          0.7855831912608744E-04   0.4495800939032603E-04   0.1212047267833649E-03   0.8460461412432579E-04   0.1116532341434929E-03   0.9345624000572918E-04;
          0.2787256761813363E-04  -0.5279019399759087E-05   0.1627981838787403E-03  -0.8485345202908038E-05   0.9345624000572919E-04   0.2503415143184575E-03]
-    m = read_fpp_map("radiation/test.map")
-    R_fpp = read_fpp_map("radiation/R.map")
+    m = read_fpp_map("radiation/test.map",spin=false)
+    R_fpp = read_fpp_map("radiation/R.map",spin=false)
     c = to_phasor(m)
-    a = normal(m)
+    a = normal(m).a
     @test norm(inv(c)*inv(a)*m*a*c - R_fpp) < tol
     Σ = equilibrium_moments(m,a)
     @test norm(Σ - Σ_fpp) < tol

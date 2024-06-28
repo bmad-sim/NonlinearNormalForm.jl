@@ -18,6 +18,35 @@ function *(Q1::Quaternion{<:Union{TPS,ComplexTPS}}, Q2::Quaternion{<:Union{TPS,C
   return Quaternion(q0,q1,q2,q3)
 end
 
+function inv(Q1::Quaternion{<:Union{TPS,ComplexTPS}})
+  nrm = @FastGTPSA Q1.q0 * Q1.q0 + Q1.q1 * Q1.q1 + Q1.q2 * Q1.q2 + Q1.q3 * Q1.q3
+  q0 = Q1.q0/nrm
+  q1 = @FastGTPSA -Q1.q1/nrm
+  q2 = @FastGTPSA -Q1.q2/nrm
+  q3 = @FastGTPSA -Q1.q3/nrm
+  return Quaternion(q0,q1,q2,q3)
+end
+
+function inv!(Q::Quaternion{<:Union{TPS,ComplexTPS}}, Q1::Quaternion{<:Union{TPS,ComplexTPS}})
+  nrm = @FastGTPSA Q1.q0 * Q1.q0 + Q1.q1 * Q1.q1 + Q1.q2 * Q1.q2 + Q1.q3 * Q1.q3
+
+  div!(Q.q0, Q1.q0, nrm)
+  div!(Q.q1, Q1.q1, nrm)
+  div!(Q.q2, Q1.q2, nrm)
+  div!(Q.q3, Q1.q3, nrm)
+
+  mul!(Q.q1, Q.q1, -1)
+  mul!(Q.q2, Q.q2, -1)
+  mul!(Q.q2, Q.q2, -1)
+  return
+end
+
+function show(io::IO, Q::Quaternion{<:Union{TPS,ComplexTPS}})
+  GTPSA.show_map!(io, collect(Q), Ref{Int}(0), false, [" q0:"," q1:"," q2:"," q3:"])
+end
+
+show(io::IO, ::MIME"text/plain", Q::Quaternion{<:Union{TPS,ComplexTPS}}) = GTPSA.show_map!(io, collect(Q), Ref{Int}(0), false, [" q0:"," q1:"," q2:"," q3:"])
+
 #=
 ## THIS IS DEPRECATED! WE NOW USE 
 # ReferenceFrameRotations.jl Quaternion implementation

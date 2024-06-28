@@ -137,13 +137,19 @@ function compose_it!(m::$t, m2::$t, m1::$t; dospin::Bool=true, dostochastic::Boo
       @inbounds complex!(m2Q_prom[4], m2.Q.q3)
       map!(t->t.tpsa, m2Q_low, m2Q_prom)
     else
-      map!(t->t.tpsa, m2Q_low, m2.Q)
+      m2Q_low[1] = m2.Q.q0.tpsa
+      m2Q_low[2] = m2.Q.q1.tpsa
+      m2Q_low[3] = m2.Q.q2.tpsa
+      m2Q_low[4] = m2.Q.q3.tpsa
     end
     # Go low
-    map!(t->t.tpsa, outQ_low, m.Q)
+    outQ_low[1] = m.Q.q0.tpsa
+    outQ_low[2] = m.Q.q1.tpsa
+    outQ_low[3] = m.Q.q2.tpsa
+    outQ_low[4] = m.Q.q3.tpsa
     # Spin (spectator) q(z0)=q2(M(z0))q1(z0)
     # First obtain q2(M(z0))
-    GC.@preserve m1x_prom m2Q_prom compose!(Cint(4), m2Q_low, nv+np, m1x_low, outQ_low)
+    GC.@preserve m1x_prom m2Q_prom compose!(Cint(-4), m2Q_low, nv+np, m1x_low, outQ_low)
     mul!(m.Q, m1.Q, m.Q)
   end
 

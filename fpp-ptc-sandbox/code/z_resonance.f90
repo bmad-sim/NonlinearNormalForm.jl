@@ -10,7 +10,7 @@ program Resonance
   type (fibre), pointer :: ptc_fibre ,ptc_oct
   type(layout), pointer :: ptc_lattice
   type(internal_state), target :: state
-  type(c_damap):: T,id,A,N_c,rot,u,uc
+  type(c_damap):: T,id,A,N_c,rot,u,uc,fr1,fr2
   type(c_normal_form) :: normal_form
   type(probe_8) :: ray_8,xs
   type(probe)  :: ray_closed,ray,xs0,xst 
@@ -26,7 +26,7 @@ program Resonance
   complex(dp) f40_2,f40,f40_1,g3h,g3,f31_1,f31_2,f40_oct,f31_oct,f31,sylee,bengtsson
   logical use_vector_field,res
   type(c_universal_taylor), target ::   a_tot_inverse(6),a_tot(6)
-  integer jinv(2),npos,mis
+  integer jinv(2),npos,np
   real(dp),allocatable ::  bet(:),bet2(:),pha(:),spos(:)
   complex(dp) ,allocatable ::f3_1(:),f3_1t(:),f3_3(:)
   type(c_ray) fix1,fix2,fix1k,fix2k
@@ -35,9 +35,14 @@ program Resonance
   integer nlmin,nlmax,jl,je(6)
   real(dp) s,circ,mu_tot, alpha0,mr2 
   type(c_taylor) hh,phat(3)
+  logical :: skew=.false.,mis=.false.,cesr=.false.
   !!!  input parameters
-  preffile= "C:\document\etienne_programs_new\programs_for_learning\park\pref3nux.txt"
   
+  if(cesr) then
+   preffile= "C:\document\etienne_programs_new\programs_for_learning\park\pref3nux.txt"
+  else
+   preffile= "C:\document\etienne_programs_new\programs_for_learning\park\pref3nux_als.txt"
+  endif
   
   nlmin=-100
   nlmax=100
@@ -51,15 +56,24 @@ program Resonance
   
   !call read_lattice_append(M_U,'C:\document\etienne_programs_new\programs_for_learning\park\park_cell_01.txt')
   !call read_ptc_command('C:\document\etienne_programs_new\programs_for_learning\park\fittune_resonance_3nu.txt')
+  if(cesr) then
   call read_lattice_append(M_U,"C:\document\my_tex_papers\fpp_handbook\talk\cesr_3nux_ptc.lat")
-  !call read_lattice_append(M_U,"C:\document\my_tex_papers\fpp_handbook\talk\cesr_3nux_ptc_exactmodeloff.lat")
+  !call read_lattice_append(M_U,"C:\document\my_tex_papers\fpp_handbook\talk\cesr_3nux_ptc_newqx_exactoff3.lat")
+  ptc_lattice=>m_u%start
   
-  
+  else
+   call append_empty_layout(m_u)
+   ptc_lattice=>m_u%start
+   call build_lattice(ptc_lattice,mis,exact=.false.,thin=.true.,onecell=.true.) 
+  endif
+  !goto 1000
   !state=radiation0 !+time0
   !state=time0
   state=only_4d0 
   my_estate=>state
-    
+  
+  
+   
   ! goto 1000
   
   !!! next, use PTC normal form to compute intrinsic resonance strength
@@ -80,7 +94,7 @@ program Resonance
   
   ptc_fibre=>ptc_lattice%start
   npos=0
-  
+  np=0
   
   
   !call in_bmad_units
@@ -93,10 +107,42 @@ program Resonance
   
    ptc_fibre=>ptc_lattice%start
    
-   
-  call init(state, no, 0)
+  if(np==0) then
+  do i=1, ptc_lattice%n,-1
   
-  call alloc(T,id,A,N_c,rot,u,uc)
+  if(ptc_fibre%mag%p%nmul>=3) then
+  
+   if(ptc_fibre%mag%bn(3)>0) then
+     call add(ptc_fibre,4,1,0.0_dp)
+     call make_it_knob(ptc_fibre%magp%bn(4),1)
+   
+    else
+     call add(ptc_fibre,4,1,0.0_dp)
+     call make_it_knob(ptc_fibre%magp%bn(4),2)
+   
+   endif
+  endif
+   ptc_fibre=>ptc_fibre%next
+  enddo
+   endif
+   
+  
+  do i=1, ptc_lattice%n,-1
+  
+  if(ptc_fibre%mag%p%nmul>=3) then
+  
+   if(ptc_fibre%mag%bn(3)>=0) then
+     call add(ptc_fibre,4,1,0.0_dp)
+    else
+     call add(ptc_fibre,4,1,0.0_dp)
+   endif
+  endif
+   ptc_fibre=>ptc_fibre%next
+  enddo
+   
+  call init(state, no, np)
+  
+  call alloc(T,id,N_c,rot,a)
   call alloc(xs)
   call alloc(ray_8)
   call alloc(normal_form)
@@ -120,19 +166,21 @@ program Resonance
   
   id=1
   ray_8=id+ray_closed
-   call propagate(ray_8,state,fibre1=ptc_fibre)
+   call propagate(ray_8,+state,fibre1=ptc_fibre)
   T=ray_8
   
   call kanalnummer(mfr,"map_res.txt")
    call print(t,mfr)
   close(mfr)
   
+   
+  
+  
   call c_normal(T,normal_form,phase=phat)
   alpha0=phat(1).sub.'11'
   
   !call clean(phat,phat,prec=1.d-8)
-  !call print(phat(1))
-  
+  call print(phat(1))
   
    
    
@@ -202,15 +250,7 @@ program Resonance
   !!!!!!!!!!!!!!!!!!!!!!
    call clean(normal_form%h_nl,normal_form%h_nl,prec=1.e-10_dp)
   
-  use_vector_field=.false.
-  if(use_vector_field) then
-   normal_form%h_l%v(1)=(-i_*twopi/3.0_dp)*dz_c(1)+normal_form%h_l%v(1)
-   normal_form%h_l%v(2)=( i_*twopi/3.0_dp)*dz_c(2)+normal_form%h_l%v(2)
-   normal_form%h_l%v(3)=0.0_dp
-   normal_form%h_l%v(4)=0.0_dp
-   N_c=exp(normal_form%h_l)
-   N_c=exp(normal_form%h_nl,N_c)
-  else
+   
   write(6,*) " mr2  ",mr2
    
   
@@ -227,12 +267,9 @@ program Resonance
   enddo
    N_c=normal_form%atot**(-1)*T*normal_form%atot
   n_c=ci_phasor()*n_c*c_phasor()
-  call clean(n_c,n_c,prec=1.d-10)
-  call print(n_c)
+   
    N_c=exp(ft,N_c) 
-  call clean(n_c,n_c,prec=1.d-10)
-  pause 77
-   call print(n_c)
+   
   write(6,*) p_res
   pause 888
   !  removal of co-moving
@@ -243,22 +280,17 @@ program Resonance
    N_c=exp(ft3,N_c)
   call clean(n_c,n_c,prec=1.d-10)
   
-   call print(n_c)
+   !call print(n_c)
    
-  endif
+  
    
     
    
    normal_form%h=c_logf_spin(N_c)
     call clean(normal_form%h,normal_form%h,prec=1.e-7_dp)
-  write(6,*) " Vector field "
-  write(6,*) normal_form%tune(1)+1.d0/3.d0
-  write(6,*) normal_form%damping(1) 
+  
   normal_form%h_l=(-1.d0/twopi)*normal_form%h
-  call print(normal_form%h%v(1))
-  call print(normal_form%h%v(2))
-  call print(normal_form%h_l%v(1))
-  call print(normal_form%h_l%v(2))
+   
    write(6,*) " End of Vector field "
    
    call d_field_for_demin(normal_form%h,H_res)
@@ -321,26 +353,85 @@ program Resonance
   
   
   
-  write(6,*) " mess-up f2 ?"
-  !read(5,*) i
-  i=0
-  if(i==1) then
-  write(6,"(8(1x,g15.8,1x))") f2%x(1:4)  
-  
-   read(5,*) x1(3:4)
-   fix2%x(3)=x1(3)
-   fix2%x(4)=x1(4)
-  x1=0
-  endif
+   
+  ! f1%x(3)=1.d-4
+  ! f1%x(4)=1.d-4
+  ! f2%x(3)=1.d-4
+  ! f2%x(4)=1.d-4
   write(6,"(8(1x,g15.8,1x))") f1%x(1:4)  
   write(6,"(8(1x,g15.8,1x))") f2%x(1:4) 
-  !goto 1000
-  !stop
-  call Newton_search(normal_form%h,f1) 
-  write(6,"(8(1x,g15.8,1x))") f1%x(1:4) 
-  
+   call Newton_search(normal_form%h,f1) 
   call Newton_search(normal_form%h,f2) 
+  write(6,"(8(1x,g15.8,1x))") f1%x(1:4) 
   write(6,"(8(1x,g15.8,1x))") f2%x(1:4) 
+   
+  if(np==0) call alloc(u,uc)
+  
+  if(np/=0) then
+  u%n=c_%nv
+  uc%n=c_%nv
+  fr1%n=c_%nv
+  fr2%n=c_%nv
+  call alloc(u,uc,fr1,fr2)
+   
+  
+  u=1
+  
+  u=normal_form%h
+  
+  uc=1
+  do i=1,c_%nd2
+  uc%v(i)=f1%x(i)+uc%v(i)
+  enddo
+  
+  fr1=u.o.uc
+  fr1=fr1.oo.(-1)
+  uc=1
+  do i=1,c_%nd2
+  uc%v(i)=0
+  enddo
+  fr1=fr1.o.uc
+  
+  
+  do i=1,c_%nd2
+  fr1%v(i)=f1%x(i)+fr1%v(i)
+  enddo
+  
+  call print(fr1%v(1:2))
+  
+  !uc=u.o.fr1
+  
+  !call print(uc)
+  
+  u=1
+  
+  u=normal_form%h
+  
+  uc=1
+  do i=1,c_%nd2
+  uc%v(i)=f2%x(i)+uc%v(i)
+  enddo
+  
+  fr2=u.o.uc
+  fr2=fr2.oo.(-1)
+  uc=1
+  do i=1,c_%nd2
+  uc%v(i)=0
+  enddo
+  fr2=fr2.o.uc
+  
+  
+  do i=1,c_%nd2
+  fr2%v(i)=f2%x(i)+fr2%v(i)
+  enddo
+  call print(fr2%v(1:2))
+  
+  !uc=u.o.fr2
+  
+  !call print(uc)
+  endif
+  
+  
   
   fix1=f1
   fix2=f2
@@ -452,8 +543,7 @@ program Resonance
   write(6,*) om/twopi,-17.d0+phase(1)
   del=0.2050981907203069E-01
   !write(6,*) del
-  pause 12
-  !stop
+   !stop
   mu_tot=phase(1)*twopi
   mu_tot=normal_form%tune(1)*twopi
     
@@ -770,6 +860,137 @@ program Resonance
    contains
   
   
+  subroutine  build_lattice(ALS,mis,error,exact,sl,thin,onecell)
+  use madx_ptc_module
+  use pointer_lattice
+  implicit none
+  
+  type(layout), target :: ALS
+  real(dp),optional :: error(6)
+  logical, optional :: exact,sl,thin,onecell
+  real(dp) :: alpha,lbend, cut, ksd, ksf,sig(6)
+  type(fibre)  L1,L2,L3,L4,L5,L6,L7,L8,L9,L10 
+  type(fibre)  L11,L12,L13,L14,L15,L16,L17,L18,L19,L20,CAVM
+  type(fibre)  L21,L22,L23,L24,L25,L26,L27,L27A,L27B,L27C,L27D,DS
+  type(fibre)  QF1,QF2,QD1,QD2,QFA1,QFA2,sf,sd,cav,bend,vc5,bend1 
+  type(fibre) L27h,sfb
+  type(layout) :: sfline,sdline,sup1,supb
+  logical  :: mis,thi=.false.,oneperiod
+  !-----------------------------------
+  if(present(thin)) thi=thin
+  
+  call make_states(.true.)
+  exact_model = .false.;oneperiod = .false.
+  if(present(exact)) exact_model=exact
+  if(present(onecell)) oneperiod=onecell
+  call update_states
+  madlength = .false.
+  
+  !old_integrator=-100
+  call set_mad(energy = 1.5d0, method = 2, step = 1)
+  
+  madkind2 = matrix_kick_matrix
+  !madkind2 = drift_kick_drift
+  
+  
+  L1  = drift("L1 ",  2.832695d0);L2  = drift("L2 ",  0.45698d0);
+  L3  = drift("L3 ",  0.08902d0);L4  = drift("L4 ",  0.2155d0);
+  L5  = drift("L5 ",  0.219d0);L6  = drift("L6 ",  0.107078d0);
+  L7  = drift("L7 ",  0.105716d0);L8  = drift("L8 ",  0.135904d0);
+  L9  = drift("L9 ",  0.2156993d0);L10 = drift("L10",  0.089084d0);
+  L11= drift("L11",  0.235416d0);L12= drift("L12",  0.1245d0);
+  L13= drift("L13",  0.511844d0);L14= drift("L14",  0.1788541d0);
+  L15= drift("L15",  0.1788483d0);L16= drift("L16",  0.511849d0);
+  L17= drift("L17",  0.1245d0);L18= drift("L18",  0.235405d0);
+  L19= drift("L19",  0.089095d0);L20= drift("L20",  0.2157007d0);
+  L21= drift("L21",  0.177716d0);L22= drift("L22",  0.170981d0);
+  L23= drift("L23",  0.218997d0);L24 = drift ("L24",  0.215503d0);
+  L25 = drift ("L25",  0.0890187d0);L26 = drift ("L26",  0.45698d0);
+  L27 = drift ("L27",  2.832696d0);L27a  = drift (" L27a",  0.8596d0);
+  L27b  = drift (" L27b",  0.1524d0);L27c  = drift (" L27c",  0.04445d0);
+  L27d  = drift (" L27d",  1.776246d0);ds  = drift (" DS  ", 0.1015d0);
+  L27h = drift ("L27",  2.832696d0-0.1d0);
+  ksd=6.447435260914397D-03
+  !if(.not.skew)ksd=6.447435260914397D-02-2.5d-2
+  !if(skew) 
+  ksd=6.447435260914397D-02+4.1d-2
+  QF1 = QUADRUPOLE(" QF1 ",0.344D0, K1= 2.2474D0+ksd)
+  QF2 = QUADRUPOLE(" QF2 ",0.344D0, K1= 2.2474D0)
+  QD1 = QUADRUPOLE(" QD1 ",0.187D0, K1= -2.3368D0-2.593018157427161D-02); 
+  QD2 = QUADRUPOLE(" QD2 ",0.187D0, K1= -2.3368D0);  
+  QFA1= QUADRUPOLE(" QFA1",0.448D0, K1= 2.8856D0);  
+  QFA2= QUADRUPOLE(" QFA2",0.448D0, K1= 2.8856D0);  
+  
+  !!! 1/2 mad-x value
+  ksf=-41.3355516397069748d0;
+  ksd=56.2564709584745489d0;
+  
+  sf=sextupole ("sf",2.d0*0.1015d0, K2= ksf);
+  sd= sextupole("sd", 2.d0*0.1015d0, K2= ksd);
+  !if(skew) call add(sf,-3,1,300.d0)
+   VC5=marker("vc5");
+  ALPHA=0.17453292519943295769236907684886d0;
+   
+  LBEND=0.86621d0;
+   
+  BEND = RBEND("BEND", LBEND, ANGLE=ALPHA).q.(-0.778741d0)
+  BEND1 = RBEND("BEND1", LBEND, ANGLE=ALPHA).q.(-0.778741d0)
+   
+  CAVM=MARK("CAVM");
+  CAV=RFCAVITY("CAV",L=0.1000d0,VOLT=-10000.0d0,REV_FREQ=500.0d6)
+   sfb=sextupole ("sfb",0.d0, K2= ksf*3.1d0);
+  call add(sfb,4,0,10000000.d0)
+  if(thi) then
+   sf=sextupole ("sf",0.d0, K2= ksf*0.203d0);
+   sd= sextupole("sd", 0.d0, K2= ksd*0.203d0);
+    sfline=(ds+sf+ds);
+    sdline=(ds+sd+ds);
+  else
+   sfline=1*sf;
+   sdline=1*sd;
+  endif
+  
+  SUP1=L1+L2+L3+QF1+VC5+L4+L5+QD1+L6+L7+L8+VC5+BEND+VC5+L9+sfline+L10+&
+             L11+QFA1+L12+sdline+L13+ &
+             L14+BEND+L15+L16+sdline+L17+ &
+             QFA2+L18+L19+sfline+L20+BEND+L21+&
+             L22+QD2+L23+L24+QF2+L25+ &
+             L26+VC5+L27h+cav;
+  !           L26+VC5+L27+cavm;
+  
+  SUPb=L1+L2+L3+QF1+VC5+L4+L5+QD1+L6+L7+L8+VC5+BEND+VC5+L9+sfline+L10+&
+             L11+QFA1+L12+sdline+L13+ &
+             L14+BEND+L15+L16+sdline+L17+ &
+             QFA2+L18+L19+sfline+L20+BEND1+L21+&
+             L22+QD2+L23+L24+QF2+L25+ &
+             L26+VC5+L27+cav;
+  
+  if(oneperiod) then
+   ALS = 3*sup1+sfb;  !11*sup1+supb;
+  else
+   ALS = 11*sup1+supb;
+  endif
+  if(present(sl)) then
+  L1  = drift("L1 ",  2.832695d0);
+   if( sl ) then
+    Qf1 = QUADRUPOLE(" QF1 ",L=0.d0, K1= 0.01d0 ); L1  = drift("L1 ",L=0.1d0);
+    ALS=L1+QF1;
+   endif 
+  endif
+  
+  ALS = .ring.ALS
+  
+  call survey(ALS)
+  
+  
+  if(mis) then
+   sig=1.d-5; cut=4.d0; 
+   if(present(error)) sig=error
+   call MESS_UP_ALIGNMENT(ALS,SIG,cut);
+  endif
+  end subroutine build_lattice
+  
+  
   subroutine Newton_search(h_co,f)
   implicit none
   type(c_vector_field)  f_rot,h_co
@@ -810,8 +1031,6 @@ program Resonance
         id%v(i)=f_rot%v(i)   
        enddo
    
-  !call print(id)
-  !pause 1231
    
   !    F(x)=0, the x is the fixed point
   !  .oo. does a TPSA inversion of the map, 
@@ -851,6 +1070,7 @@ program Resonance
    
           f1h%x(i)=f1h%x(i)+dx   ! (6j) updating the fixed point
        enddo
+       f1h%x(3:4)=f%x(3:4)
    !if(.false.) then
          if(potential_exit) then  
           if(abs(dx)==0.0_dp.or.epsn>=epsnb) exit

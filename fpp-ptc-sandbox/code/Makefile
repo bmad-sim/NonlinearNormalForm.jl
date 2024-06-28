@@ -402,6 +402,19 @@ z_canonize_matt_fake_maps-exe/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_canonize_matt_fake_maps-exe.dir/build.make CMakeFiles/z_canonize_matt_fake_maps-exe.dir/build
 .PHONY : z_canonize_matt_fake_maps-exe/fast
 
+#=============================================================================
+# Target rules for targets named z_resonance-exe
+
+# Build rule for target.
+z_resonance-exe: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 z_resonance-exe
+.PHONY : z_resonance-exe
+
+# fast build rule for target.
+z_resonance-exe/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_resonance-exe.dir/build.make CMakeFiles/z_resonance-exe.dir/build
+.PHONY : z_resonance-exe/fast
+
 normal_simple.o: normal_simple.f90.o
 .PHONY : normal_simple.o
 
@@ -738,6 +751,30 @@ z_radiation_matt_fake_maps.f90.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_radiation_matt_fake_maps-exe.dir/build.make CMakeFiles/z_radiation_matt_fake_maps-exe.dir/z_radiation_matt_fake_maps.f90.s
 .PHONY : z_radiation_matt_fake_maps.f90.s
 
+z_resonance.o: z_resonance.f90.o
+.PHONY : z_resonance.o
+
+# target to build an object file
+z_resonance.f90.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_resonance-exe.dir/build.make CMakeFiles/z_resonance-exe.dir/z_resonance.f90.o
+.PHONY : z_resonance.f90.o
+
+z_resonance.i: z_resonance.f90.i
+.PHONY : z_resonance.i
+
+# target to preprocess a source file
+z_resonance.f90.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_resonance-exe.dir/build.make CMakeFiles/z_resonance-exe.dir/z_resonance.f90.i
+.PHONY : z_resonance.f90.i
+
+z_resonance.s: z_resonance.f90.s
+.PHONY : z_resonance.s
+
+# target to generate assembly for a file
+z_resonance.f90.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_resonance-exe.dir/build.make CMakeFiles/z_resonance-exe.dir/z_resonance.f90.s
+.PHONY : z_resonance.f90.s
+
 z_shift.o: z_shift.f90.o
 .PHONY : z_shift.o
 
@@ -952,6 +989,7 @@ help:
 	@echo "... z_poisson-exe"
 	@echo "... z_pseudo_deriv-exe"
 	@echo "... z_radiation_matt_fake_maps-exe"
+	@echo "... z_resonance-exe"
 	@echo "... z_shift-exe"
 	@echo "... z_simple_operations-exe"
 	@echo "... z_sub_i-exe"
@@ -1002,6 +1040,9 @@ help:
 	@echo "... z_radiation_matt_fake_maps.o"
 	@echo "... z_radiation_matt_fake_maps.i"
 	@echo "... z_radiation_matt_fake_maps.s"
+	@echo "... z_resonance.o"
+	@echo "... z_resonance.i"
+	@echo "... z_resonance.s"
 	@echo "... z_shift.o"
 	@echo "... z_shift.i"
 	@echo "... z_shift.s"

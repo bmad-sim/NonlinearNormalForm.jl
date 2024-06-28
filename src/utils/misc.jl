@@ -56,9 +56,9 @@ pords(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap,Vec
   eltype(m.x) == outxtype || error("Output $(typeof(m)) orbital ray type $(eltype(m.x)) must be $xtype")
 
   if !isnothing(m.Q)
-    qtypes = map(x->numtype(eltype(x.Q.q)), mapsvfs)
-    outqtype = promote_type(qtypes..., numtypes)
-    eltype(m.Q) == outqtype || error("Output $(typeof(m)) quaternion type $(eltype(m.Q.q)) must be $outqtype")
+    qtypes = map(x->eltype(x.Q), mapsvfs)
+    outqtype = promote_type(qtypes..., numtypes...)
+    eltype(m.Q) == outqtype || error("Output $(typeof(m)) quaternion type $(eltype(m.Q)) must be $outqtype")
   end
 
   # Part of the promotion is stochasticity:
@@ -188,7 +188,7 @@ function read_fpp_map(file; FD::Union{Nothing,Bool}=nothing,spin::Union{Nothing,
     if !isnothing(stoch_idx) && stoch_idx[2]== 1 # FD in first column meaning no "No"
       FD = true
     else
-      FD = false
+      FD = nothing
     end
   elseif FD == true
     if !isnothing(stoch_idx) && stoch_idx[2]== 1 # FD in first column meaning no "No"
@@ -197,7 +197,7 @@ function read_fpp_map(file; FD::Union{Nothing,Bool}=nothing,spin::Union{Nothing,
       error("Cannot include FD: no stochastic matrix detected")
     end
   else
-    FD = false
+    FD = nothing
   end
 
   # Check if map has spin
@@ -206,7 +206,7 @@ function read_fpp_map(file; FD::Union{Nothing,Bool}=nothing,spin::Union{Nothing,
     if !isnothing(spin_idx) && spin_idx[2]== 1 # c_quaternion in first column meaning no "No"
       spin = true
     else
-      spin = false
+      spin = nothing
     end
   elseif spin == true
     if !isnothing(spin_idx) && spin_idx[2]== 1 # c_quaternion in first column meaning no "No"
@@ -215,7 +215,7 @@ function read_fpp_map(file; FD::Union{Nothing,Bool}=nothing,spin::Union{Nothing,
       error("Cannot include spin: no quaternion detected")
     end
   else
-    spin = false
+    spin = nothing
   end
 
 
@@ -250,8 +250,40 @@ function read_fpp_map(file; FD::Union{Nothing,Bool}=nothing,spin::Union{Nothing,
   # dont forget params
   m.x[nv+1:nn] .= complexparams(d)
 
+
+  if !isnothing(spin)
+    idx = findfirst(t->t=="c_quaternion", data[:,1])
+    if data[idx,3] == "identity"
+      setTPS!(m.Q.q0, 1)
+      setTPS!(m.Q.q1, 0)
+      setTPS!(m.Q.q2, 0)
+      setTPS!(m.Q.q3, 0)
+    else
+      for qi in m.Q
+        idx = findfirst(x->(x isa Integer), data[:,1])
+        count = 0
+        while data[idx,1] >= 0
+          a = data[idx,2]
+          b = data[idx,3]
+          ords = data[idx,4:end]
+          qi[collect(Int,ords)] = a + im*b
+          idx += 1
+          count += 1
+        end
+        if count!=0 && -data[idx,1] != count
+          println(m)
+          println(data[idx,1])
+          println(count)
+          error("This should not have been reached! Incorrect number of monomials read for variable $(qi)")
+        end
+        idx += 1
+        data=data[idx:end,:]
+      end
+    end 
+  end
+
   # FD
-  if FD
+  if !isnothing(FD)
     idx = findfirst(t->t=="Stochastic", data)[1]
     data = data[idx+1:end,:]
     for i=1:size(data, 1)
@@ -265,38 +297,7 @@ function read_fpp_map(file; FD::Union{Nothing,Bool}=nothing,spin::Union{Nothing,
   end
   #return m
 
-  if spin
 
-  end
-
-  # spin?
-  idx = findfirst(t->t=="c_quaternion", data[:,1])
-  if idx > 0
-    if data[idx,3] == "identity"
-      m.Q.q0
-    else
-      for i=1:4
-        idx = findfirst(x->(x isa Integer), data[:,1])
-        count = 0
-        while data[idx,1] >= 0
-          a = data[idx,2]
-          b = data[idx,3]
-          ords = data[idx,4:end]
-          m.Q.q[i][collect(Int,ords)] = a + im*b
-          idx += 1
-          count += 1
-        end
-        if count!=0 && -data[idx,1] != count
-          println(m)
-          println(data[idx,1])
-          println(count)
-          error("This should not have been reached! Incorrect number of monomials read for variable $(i)")
-        end
-        idx += 1
-        data=data[idx:end,:]
-      end
-    end 
-  end
   return m
 end
 
