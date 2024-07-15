@@ -8,9 +8,9 @@
 
 _This package is still in an early development stage_
 
-This package provides routines for calculating parameter-dependent normal forms of nonlinear Hamiltonian (and nearly Hamiltonian) maps expressed as truncated power series in the variables, using Lie algebraic methods. Basically, given some map, it computes the canonical transformation of the variables to coordinates where the nonlinear motion lies on circles in phase space. This allows calculation of invariants of the motion, and when leaving one resonance in the map, a single-resonance normal form. This package may be of particular interest to those in accelerator physics, electron microscopy, and astronomy.
+This package provides routines for calculating parameter-dependent normal forms of nonlinear Hamiltonian (and nearly Hamiltonian) maps expressed as truncated power series in the variables, using Lie algebraic methods. Basically, given some map, it computes a symplectic transformation of the variables to coordinates where the nonlinear motion lies on circles in phase space. This allows calculation of invariants of the motion, and when leaving one resonance in the map, a single-resonance normal form, from which resonance driving terms can be calculated. This package may be of particular interest to those in accelerator physics, electron microscopy, and astronomy.
 
-For simplicity, we define an operator using the Poisson bracket as 
+<!--- For simplicity, we define an operator using the Poisson bracket as 
 $$:f:g \triangleq \lbrace f, q \rbrace \ , $$
 
 where $:f:$ can act on scalar functions, or element-wise on vector functions. With this definition, Hamilton's equations can then be expressed as
@@ -30,7 +30,7 @@ $\mathcal{M}_{\vec{\zeta}}$ is a [Koopman operator](https://en.wikipedia.org/wik
 
 Because the problem is now linear, the transformation of the monomial coefficients could be expressed using a (truncated) matrix, however this is notoriously slow and inconvenient to work with. This package implements the full Lie algebraic formulation using Lie operators.
 
-While using the time-integral of the Hamiltonian as a generator of the time evolution (canonical transformation) in this way is useful, it is not always practical. In a particle tracking code for example, the motion may not always be exactly symplectic, e.g. when there is some small dissipation due to synchrotron radiation emission. In this case, a Hamiltonian cannot be obtained from an integrator, however the force field $\vec{F}$ on the particle is of course known from the integrator. Using the operator isomorphism $\vec{F}\cdot\vec{\nabla} \triangleq \ :h: $.
+While using the time-integral of the Hamiltonian as a generator of the time evolution (canonical transformation) in this way is useful, it is not always practical. In a particle tracking code for example, the motion may not always be exactly symplectic, e.g. when there is some small dissipation due to synchrotron radiation emission. In this case, a Hamiltonian cannot be obtained from an integrator, however the force field $\vec{F}$ on the particle is of course known from the integrator. Using the operator isomorphism $\vec{F}\cdot\vec{\nabla} \triangleq \ :h: $. --->
 
 <!--- $$\mathcal{M}\_{t_0\rightarrow t_0+dt} = \exp{(\vec{F}\cdot\vec{\nabla}\ dt)} \ , \ \ \ \ \ \ \vec{\zeta}\_{t_0\rightarrow t_0+\Delta t}= \exp{(:-H\ dt:)}\vec{x}$$
 
