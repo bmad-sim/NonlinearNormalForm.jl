@@ -3,7 +3,7 @@
 # --- compose! ---
 
 """
-    compose!(m::DAMap, m2::DAMap, m1::DAMap; dospin::Bool=true, keep_scalar::Bool=true, work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_comp_work_low(m), work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS}}}}=prep_comp_work_prom(m,m2,m1))
+compose!(m::DAMap, m2::DAMap, m1::DAMap; keep_scalar::Bool=true, work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing, dospin::Bool=true, work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS}}}}=prep_comp_work_prom(m,m2,m1))
 
 In-place `DAMap` composition which calculates `m = m2 ∘ m1`, ignoring the scalar part of `m1`.
 
@@ -18,16 +18,15 @@ internally in this case. Default is `true`.
 
 If `dospin` is `true`, then the quaternion part of the maps will be composed as well. Default is `true`.
 
-See the documentation for `compose_it!` for information on `work_low` and `work_prom`.
+See the documentation for `compose_it!` for information on `work_prom`.
 
 ### Keyword Arguments
 - `keep_scalar` -- Specify whether to keep the scalar part in `m1` or throw it away. If `true`, a temporary vector storing the scalar part must be used. Default is true
 - `work_ref` -- If `keep_scalar` is true, the temporary vector can be provided in this keyword argument. If `nothing` is provided, the temporary will be created internally. Default is `nothing`
 - `dospin` -- Specify whether or not to include the quaternions in the concatenation. Default is `true`
-- `work_low` -- Temporary vector to hold the low-level C pointers. See the `compose_it!` documentation for more details. Default is output from `prep_comp_work_low(m)`
 - `work_prom` -- Temporary vector of allocated `ComplexTPS`s when there is implicit promotion. See the `compose_it!` documentation for more details. Default is output from `prep_comp_work_prom(m, m2, m1)`
 """
-function compose!(m::DAMap, m2::DAMap, m1::DAMap; keep_scalar::Bool=true, work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing, dospin::Bool=true, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_comp_work_low(m), work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS}}}}=prep_comp_work_prom(m,m2,m1))
+function compose!(m::DAMap, m2::DAMap, m1::DAMap; keep_scalar::Bool=true, work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing, dospin::Bool=true, work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS}}}}=prep_comp_work_prom(m,m2,m1))
   checkinplace(m, m2, m1)
   
   # DAMap setup:
@@ -53,7 +52,7 @@ function compose!(m::DAMap, m2::DAMap, m1::DAMap; keep_scalar::Bool=true, work_r
     end
   end
 
-  compose_it!(m, m2, m1, dospin=dospin, work_low=work_low, work_prom=work_prom)
+  compose_it!(m, m2, m1, dospin=dospin, work_prom=work_prom)
 
   # Put back the reference and if m1 === m2, also add to outx
   if keep_scalar
@@ -73,7 +72,7 @@ function compose!(m::DAMap, m2::DAMap, m1::DAMap; keep_scalar::Bool=true, work_r
 end
 
 """
-    compose!(m::TPSAMap, m2::TPSAMap, m1::TPSAMap; dospin::Bool=true, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_comp_work_low(m), work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS}}}}=prep_comp_work_prom(m,m2,m1))
+    compose!(m::TPSAMap, m2::TPSAMap, m1::TPSAMap; dospin::Bool=true, work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS}}}}=prep_comp_work_prom(m,m2,m1))
 
 In-place `TPSAMap` composition which calculates `m = m2 ∘ m1`, including the scalar part of `m1`.
 
@@ -83,14 +82,13 @@ containing allocated TPSs.
 
 If `dospin` is `true`, then the quaternion part of the maps will be composed as well. Default is `true`.
 
-See the documentation for `compose_it!` for information on `work_low` and `work_prom`.
+See the documentation for `compose_it!` for information on `work_prom`.
 
 ### Keyword Arguments
 - `dospin` -- Specify whether or not to include the quaternions in the concatenation. Default is `true`
-- `work_low` -- Temporary vector to hold the low-level C pointers. See the `compose_it!` documentation for more details. Default is output from `prep_comp_work_low(m)`
 - `work_prom` -- Temporary vector of allocated `ComplexTPS`s when there is implicit promotion. See the `compose_it!` documentation for more details. Default is output from `prep_comp_work_prom(m, m2, m1)`
 """
-function compose!(m::TPSAMap, m2::TPSAMap, m1::TPSAMap; dospin::Bool=true, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_comp_work_low(m), work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS}}}}=prep_comp_work_prom(m,m2,m1))
+function compose!(m::TPSAMap, m2::TPSAMap, m1::TPSAMap; dospin::Bool=true, work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS}}}}=prep_comp_work_prom(m,m2,m1))
   checkinplace(m, m2, m1)
   
   # TPSAMap setup:
@@ -102,7 +100,7 @@ function compose!(m::TPSAMap, m2::TPSAMap, m1::TPSAMap; dospin::Bool=true, work_
     @inbounds m1.x[i][0] -= m2.x0[i]
   end
 
-  compose_it!(m, m2, m1, dospin=dospin, work_low=work_low, work_prom=work_prom)
+  compose_it!(m, m2, m1, dospin=dospin, work_prom=work_prom)
 
   # Now fix m1 and if m2 === m1, add to output too:
   # For TPSA Map concatenation, we need to subtract w_0 (m2 x0) (Eq. 33)

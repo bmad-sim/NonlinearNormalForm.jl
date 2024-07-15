@@ -21,7 +21,8 @@ import Base: ∘,
              show,
              rand,
              promote_rule,
-             eltype
+             eltype,
+             unsafe_convert
 
 import LinearAlgebra: norm,
                       dot,
@@ -33,21 +34,19 @@ using LinearAlgebra,
       Reexport,
       DelimitedFiles
       
-using ReferenceFrameRotations: Quaternion
-import ReferenceFrameRotations: show
+#using ReferenceFrameRotations: Quaternion
+#import ReferenceFrameRotations: show
+using StaticArrays
 
 @reexport using GTPSA
 
 # We want these guys in our workspace:
 import GTPSA: Desc, 
-              RTPSA, 
-              CTPSA,
               getdesc,
               numvars,
               numparams,
               numnn, 
-              numtype,
-              lowtype,
+              mad_compose!,
 
               add!,
               sub!,

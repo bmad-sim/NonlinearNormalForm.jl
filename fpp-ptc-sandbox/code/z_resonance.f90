@@ -86,10 +86,10 @@ program Resonance
   
   
   
-  no=3
-  write(6,*) "order >= 3 "
-  read(5,*) no
-  if(no<3) no=3
+  no=6
+  !write(6,*) "order >= 3 "
+  !read(5,*) no
+  !!!!!!if(no<3) no=3
   !! Counting numbers of multipoles 
   
   ptc_fibre=>ptc_lattice%start
@@ -173,14 +173,17 @@ program Resonance
    call print(t,mfr)
   close(mfr)
   
-   !call print(T)
-   !stop
+!   call print(T)
+!jkk   sto
+  !kall c_linear_a(T,A)
+  !call print(A)
+!  stop
   
-  
-  call c_normal(T,normal_form,phase=phat)
-  !T = ci_phasor()*normal_form%atot**(-1)*T*normal_form%atot*c_phasor()
-  !call print(T)
-  !stop
+  call c_normal(T,normal_form,phase=phat,canonize=.true.)
+  write(*,*) "this should not have been reached"
+  T = ci_phasor()*normal_form%atot**(-1)*T*normal_form%atot*c_phasor()
+  call print(T)
+  stop
 
   alpha0=phat(1).sub.'11'
   

@@ -1,10 +1,11 @@
 # From GTPSA:
+#=
 # --- Poisson bracket ---
 # Low-level calls
-poisbra!(tpsa1::Ptr{RTPSA}, tpsa2::Ptr{RTPSA}, tpsa::Ptr{RTPSA}, nv::Cint) = (@inline; GTPSA.mad_tpsa_poisbra!(tpsa1, tpsa2, tpsa, nv))
-poisbra!(tpsa1::Ptr{RTPSA}, ctpsa1::Ptr{CTPSA}, ctpsa::Ptr{CTPSA}, nv::Cint) = (@inline; GTPSA.mad_ctpsa_poisbrat!(ctpsa1,tpsa1,ctpsa, nv))
-poisbra!(ctpsa1::Ptr{CTPSA}, tpsa1::Ptr{RTPSA}, ctpsa::Ptr{CTPSA}, nv::Cint) = (@inline; GTPSA.mad_ctpsa_tpoisbra!(tpsa1, ctpsa1, ctpsa, nv))
-poisbra!(ctpsa1::Ptr{CTPSA}, ctpsa2::Ptr{CTPSA}, ctpsa::Ptr{CTPSA}, nv::Cint) = (@inline; GTPSA.mad_ctpsa_poisbra!(ctpsa1,ctpsa2, ctpsa, nv))
+poisbra!(tpsa1::TPS{Float64},     tpsa2::TPS{Float64},     tpsa::TPS{Float64},     nv::Cint) = (@inline; GTPSA.mad_tpsa_poisbra!(tpsa1, tpsa2, tpsa, nv))
+poisbra!(tpsa1::TPS{Float64},     ctpsa1::TPS{ComplexF64}, ctpsa::TPS{ComplexF64}, nv::Cint) = (@inline; GTPSA.mad_ctpsa_poisbrat!(ctpsa1,tpsa1,ctpsa, nv))
+poisbra!(ctpsa1::TPS{ComplexF64}, tpsa1::TPS{Float64},     ctpsa::TPS{ComplexF64}, nv::Cint) = (@inline; GTPSA.mad_ctpsa_tpoisbra!(tpsa1, ctpsa1, ctpsa, nv))
+poisbra!(ctpsa1::TPS{ComplexF64}, ctpsa2::TPS{ComplexF64}, ctpsa::TPS{ComplexF64}, nv::Cint) = (@inline; GTPSA.mad_ctpsa_poisbra!(ctpsa1,ctpsa2, ctpsa, nv))
 
 """
     pb!(h::Union{TPS,ComplexTPS}, f::Union{TPS,ComplexTPS}, g::Union{TPS,ComplexTPS})
@@ -61,30 +62,28 @@ function pb(f::Union{TPS, ComplexTPS}, g::Union{TPS, ComplexTPS})
   pb!(h, f, g)
   return h
 end
-
+=#
 
 # --- F . grad ---
-fgrad!(na::Cint, ma::Vector{Ptr{RTPSA}}, b::Ptr{RTPSA}, c::Ptr{RTPSA}) = (@inline; GTPSA.mad_tpsa_fgrad!(na, ma, b, c))
-fgrad!(na::Cint, ma::Vector{Ptr{CTPSA}}, b::Ptr{CTPSA}, c::Ptr{CTPSA}) = (@inline; GTPSA.mad_ctpsa_fgrad!(na, ma, b, c))
-
-
-function fgrad!(g::T, F::Vector{<:T}, h::T; work_low::Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}=Vector{lowtype(h)}(undef, numvars(h))) where {T<:Union{TPS,ComplexTPS}}
+function fgrad!(g::T, F::AbstractVector{<:T}, h::T) where {T<:TPS{<:Union{Float64,ComplexF64}}}
+  Base.require_one_based_indexing(F)
   nv = numvars(h)
   @assert length(F) == nv "Incorrect length of F; received $(length(F)), should be $nv"
-  @assert length(work_low) >= nv "Incorrect length for work_low; received $(length(work_low)), should be >=$nv"
-  @assert eltype(work_low) == lowtype(T) "Incorrect eltype of work_low; received $(eltype(work_low)), should be $(lowtype(T))"
   @assert !(g === h) "Aliasing g === h not allowed for fgrad!"
-  map!(t->t.tpsa, work_low, F)
-  fgrad!(nv, work_low, h.tpsa, g.tpsa)
-  return
+  if T != ComplexTPS
+    GTPSA.mad_tpsa_fgrad!(Cint(length(F)), F, h, g)
+  else
+    GTPSA.mad_ctpsa_fgrad!(Cint(length(F)), F, h, g)
+  end
+  return g
 end
 
 """
-    fgrad(F::Vector{<:T}, h::T) where {T<:Union{TPS,ComplexTPS}}    
+    fgrad(F::AbstractVector{<:T}, h::T) where {T<:TPS{<:Union{Float64,ComplexF64}}}    
 
 Calculates `F⋅∇h`.
 """
-function fgrad(F::Vector{<:T}, h::T) where {T<:Union{TPS,ComplexTPS}}
+function fgrad(F::AbstractVector{<:T}, h::T) where {T<:TPS{<:Union{Float64,ComplexF64}}}
   g = zero(h)
   fgrad!(g, F, h)
   return g
@@ -92,15 +91,15 @@ end
 
 
 
-
+#=
 
 
 
 
 
 # --- gethamiltonian ---
-fld2vec!(na::Cint, ma::Vector{Ptr{RTPSA}}, tpsa::Ptr{RTPSA}) = (@inline; mad_tpsa_fld2vec!(na, ma, tpsa))
-fld2vec!(na::Cint, ma::Vector{Ptr{CTPSA}},  ctpsa::Ptr{CTPSA}) = (@inline; mad_ctpsa_fld2vec!(na, ma, ctpsa))
+fld2vec!(na::Cint, ma::Vector{TPS{Float64}}, tpsa::TPS{Float64}) = (@inline; mad_tpsa_fld2vec!(na, ma, tpsa))
+fld2vec!(na::Cint, ma::Vector{TPS{ComplexF64}},  ctpsa::TPS{ComplexF64}) = (@inline; mad_ctpsa_fld2vec!(na, ma, ctpsa))
 
 """
     gethamiltonian(F::Vector{<:Union{TPS,ComplexTPS}})
@@ -158,8 +157,8 @@ end
 
 
 # --- partial inversion ---
-pminv!(na::Cint, ma::Vector{Ptr{RTPSA}}, mc::Vector{Ptr{RTPSA}}, select::Vector{Cint}) = (@inline; mad_tpsa_pminv!(na, ma, mc, select))
-pminv!(na::Cint, ma::Vector{Ptr{CTPSA}}, mc::Vector{Ptr{CTPSA}}, select::Vector{Cint}) = (@inline; mad_ctpsa_pminv!(na, ma, mc, select))
+pminv!(na::Cint, ma::Vector{TPS{Float64}}, mc::Vector{TPS{Float64}}, select::Vector{Cint}) = (@inline; mad_tpsa_pminv!(na, ma, mc, select))
+pminv!(na::Cint, ma::Vector{TPS{ComplexF64}}, mc::Vector{TPS{ComplexF64}}, select::Vector{Cint}) = (@inline; mad_ctpsa_pminv!(na, ma, mc, select))
 
 """
     ptinv(ma::Vector{<:Union{TPS,ComplexTPS}}, vars::Vector{<:Integer})
@@ -181,3 +180,4 @@ function ptinv(ma::Vector{<:Union{TPS,ComplexTPS}}, vars::Vector{<:Integer})
   pminv!(na, ma1, mc1, select)
   return mc
 end
+=#

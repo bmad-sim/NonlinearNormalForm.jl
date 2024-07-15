@@ -1,16 +1,16 @@
 # --- getvectorfield ---
-vec2fld!(na::Cint, tpsa::Ptr{RTPSA}, m::Vector{Ptr{RTPSA}}) = (@inline; GTPSA.mad_tpsa_vec2fld!(na, tpsa, m))
-vec2fld!(na::Cint, ctpsa::Ptr{CTPSA}, m::Vector{Ptr{CTPSA}}) = (@inline; GTPSA.mad_ctpsa_vec2fld!(na, ctpsa, m))
+vec2fld!(na::Cint, tpsa::TPS{Float64}, m::Vector{TPS{Float64}}) = (@inline; GTPSA.mad_tpsa_vec2fld!(na, tpsa, m))
+vec2fld!(na::Cint, ctpsa::TPS{ComplexF64}, m::Vector{TPS{ComplexF64}}) = (@inline; GTPSA.mad_ctpsa_vec2fld!(na, ctpsa, m))
 
 """
-    VectorField(h::T; Q::U=nothing, spin::Union{Bool,Nothing}=nothing, work_low::Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}=Vector{lowtype(h)}(undef,numvars(h))) where {T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing}}
+VectorField(h::TPS; Q::Union{Quaternion,Nothing}=nothing, spin::Union{Bool,Nothing}=nothing)
 
 Constructs a `VectorField` from the passed Hamiltonian `h`. Explicity, 
 for `h`, constructs a vector field `F` such that
   
 `F.x = [-∂h/∂p₁, ∂h/∂q₁, ...]`
 """
-function VectorField(h::Union{TPS,ComplexTPS}; Q::Union{Quaternion,Nothing}=nothing, spin::Union{Bool,Nothing}=nothing, work_low::Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}=Vector{lowtype(h)}(undef,numvars(h)))
+function VectorField(h::TPS; Q::Union{Quaternion,Nothing}=nothing, spin::Union{Bool,Nothing}=nothing)
   if !isnothing(Q)
     T = Vector{promote_type(typeof(h),eltype(Q))}
   else
@@ -93,7 +93,7 @@ function one(t::Type{$t{S,T,U,V,W}}; use::UseType=GTPSA.desc_current, idpt::W=no
   end
 
   if !isnothing(m.Q)
-    @inbounds m.Q.q0[0] = 1
+    @inbounds m.Q.q[1][0] = 1
   end
 
   return m

@@ -4,14 +4,13 @@ function ^(m1::DAMap, n::Integer)
   # Do it
   if n>0
     #prepare work
-    work_low = prep_comp_work_low(m1)
     ref = prep_work_ref(m1)
 
     # do it:
     m = DAMap(m1)
     map!(t->t[0], ref, view(m.x,1:nv))
     for i=1:(n-1)
-      compose!(m,m,m1, keep_scalar=false,work_low=work_low)
+      compose!(m,m,m1, keep_scalar=false)
     end
     for i=1:nv
         @inbounds m1.x[i][0] = ref[i]
@@ -19,20 +18,19 @@ function ^(m1::DAMap, n::Integer)
     end
     return m
   elseif n<0
-    comp_work_low, inv_work_low = prep_comp_inv_work_low(m1)
     ref = prep_work_ref(m1)
     #println(typeof(ref))
 
     m = DAMap(m1)
     map!(t->t[0], ref, view(m.x,1:nv))
     for i=1:(-n-1)
-      compose!(m,m,m1, keep_scalar=false,work_low=comp_work_low)
+      compose!(m,m,m1, keep_scalar=false)
     end
     for i=1:nv
         @inbounds m1.x[i][0] = ref[i]
         #@inbounds m.x[i][0] += ref[i]
     end
-    inv!(m,m,work_ref=ref,work_low=inv_work_low)
+    inv!(m,m,work_ref=ref)
     return m
   else
     return DAMap(m1)
@@ -42,20 +40,18 @@ end
 function ^(m1::TPSAMap, n::Integer)
   # Do it
   if n>0
-    work_low = prep_comp_work_low(m1)
     m = TPSAMap(m1)
     for i=1:(n-1)
-      compose!(m,m,m1,work_low=work_low)
+      compose!(m,m,m1)
     end
     return m
   elseif n<0
     #prepare work
-    comp_work_low, inv_work_low = prep_comp_inv_work_low(m1)
     m = TPSAMap(m1)
     for i=1:(-n-1)
-      compose!(m,m,m1,work_low=comp_work_low)
+      compose!(m,m,m1)
     end
-    inv!(m,m,work_low=inv_work_low)
+    inv!(m,m)
     return m
   else
     return TPSAMap(m1)
@@ -126,10 +122,10 @@ function $(Meta.parse(ops[1]))(m::TaylorMap, m1::TaylorMap, m2::TaylorMap; dospi
   end
 
   if !isnothing(m.Q) && dospin
-    $(Meta.parse(ops[1]))(m.Q.q0, m1.Q.q0, m2.Q.q0)
-    $(Meta.parse(ops[1]))(m.Q.q1, m1.Q.q1, m2.Q.q1)
-    $(Meta.parse(ops[1]))(m.Q.q2, m1.Q.q2, m2.Q.q2)
-    $(Meta.parse(ops[1]))(m.Q.q3, m1.Q.q3, m2.Q.q3)
+    $(Meta.parse(ops[1]))(m.Q.q[1], m1.Q.q[1], m2.Q.q[1])
+    $(Meta.parse(ops[1]))(m.Q.q[2], m1.Q.q[2], m2.Q.q[2])
+    $(Meta.parse(ops[1]))(m.Q.q[3], m1.Q.q[3], m2.Q.q[3])
+    $(Meta.parse(ops[1]))(m.Q.q[4], m1.Q.q[4], m2.Q.q[4])
   end
 
   if !isnothing(m.E)
@@ -158,11 +154,11 @@ function $(Meta.parse(ops[1]))(m::TaylorMap, J::UniformScaling, m1::TaylorMap; d
   end
 
   if !isnothing(m.Q) && dospin
-    copy!(m.Q.q0, m1.Q.q0)
-    copy!(m.Q.q1, m1.Q.q1)
-    copy!(m.Q.q2, m1.Q.q2)
-    copy!(m.Q.q3, m1.Q.q3)
-    m.Q.q0[0] = $(ops[2])(1, m.Q.q0[0])
+    copy!(m.Q.q[1], m1.Q.q[1])
+    copy!(m.Q.q[2], m1.Q.q[2])
+    copy!(m.Q.q[3], m1.Q.q[3])
+    copy!(m.Q.q[4], m1.Q.q[4])
+    m.Q.q[1][0] = $(ops[2])(1, m.Q.q[1][0])
   end
 
 
@@ -189,11 +185,11 @@ function $(Meta.parse(ops[1]))(m::TaylorMap, m1::TaylorMap, J::UniformScaling; d
   end
 
   if !isnothing(m.Q) && dospin
-    copy!(m.Q.q0, m1.Q.q0)
-    copy!(m.Q.q1, m1.Q.q1)
-    copy!(m.Q.q2, m1.Q.q2)
-    copy!(m.Q.q3, m1.Q.q3)
-    m.Q.q0[0] = $(ops[2])(m.Q.q0[0], 1)
+    copy!(m.Q.q[1], m1.Q.q[1])
+    copy!(m.Q.q[2], m1.Q.q[2])
+    copy!(m.Q.q[3], m1.Q.q[3])
+    copy!(m.Q.q[4], m1.Q.q[4])
+    m.Q.q[1][0] = $(ops[2])(m.Q.q[1][0], 1)
   end
 
   if !isnothing(m.E)
@@ -244,10 +240,10 @@ function $(Meta.parse(ops[1]))(m::TaylorMap, a::Number, m1::TaylorMap; dospin::B
   end
 
   if !isnothing(m.Q) && dospin
-    $(Meta.parse(ops[1]))(m.Q.q0, a, m1.Q.q0)
-    $(Meta.parse(ops[1]))(m.Q.q1, a, m1.Q.q1)
-    $(Meta.parse(ops[1]))(m.Q.q2, a, m1.Q.q2)
-    $(Meta.parse(ops[1]))(m.Q.q3, a, m1.Q.q3)
+    $(Meta.parse(ops[1]))(m.Q.q[1], a, m1.Q.q[1])
+    $(Meta.parse(ops[1]))(m.Q.q[2], a, m1.Q.q[2])
+    $(Meta.parse(ops[1]))(m.Q.q[3], a, m1.Q.q[3])
+    $(Meta.parse(ops[1]))(m.Q.q[4], a, m1.Q.q[4])
   end
 
   if !isnothing(m.E)
@@ -268,10 +264,10 @@ function $(Meta.parse(ops[1]))(m::TaylorMap, m1::TaylorMap, a::Number; dospin::B
   end
 
   if !isnothing(m.Q) && dospin
-    $(Meta.parse(ops[1]))(m.Q.q0, m1.Q.q0, a)
-    $(Meta.parse(ops[1]))(m.Q.q1, m1.Q.q1, a)
-    $(Meta.parse(ops[1]))(m.Q.q2, m1.Q.q2, a)
-    $(Meta.parse(ops[1]))(m.Q.q3, m1.Q.q3, a)
+    $(Meta.parse(ops[1]))(m.Q.q[1], m1.Q.q[1], a)
+    $(Meta.parse(ops[1]))(m.Q.q[2], m1.Q.q[2], a)
+    $(Meta.parse(ops[1]))(m.Q.q[3], m1.Q.q[3], a)
+    $(Meta.parse(ops[1]))(m.Q.q[4], m1.Q.q[4], a)
   end
 
   if !isnothing(m.E)

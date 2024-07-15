@@ -1,19 +1,18 @@
 # --- inverse ---
-minv!(na::Cint, ma::Vector{Ptr{RTPSA}}, nb::Cint, mc::Vector{Ptr{RTPSA}}) = (@inline; GTPSA.mad_tpsa_minv!(na, ma, nb, mc))
-minv!(na::Cint, ma::Vector{Ptr{CTPSA}}, nb::Cint, mc::Vector{Ptr{CTPSA}}) = (@inline; GTPSA.mad_ctpsa_minv!(na, ma, nb, mc))
+minv!(na, ma::Vector{TPS{Float64}},    nb, mc::Vector{TPS{Float64}})    = GTPSA.mad_tpsa_minv!(Cint(na), ma, Cint(nb), mc)
+minv!(na, ma::Vector{TPS{ComplexF64}}, nb, mc::Vector{TPS{ComplexF64}}) = GTPSA.mad_ctpsa_minv!(Cint(na), ma, Cint(nb), mc)
 
 """
-    inv(m1::TaylorMap; dospin::Bool=true, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_inv_work_low(m1))
+    inv(m1::TaylorMap; dospin::Bool=true)
 
 Inverts the `TaylorMap`.
 
 ### Keyword Arguments
 - `dospin` -- Specify whether to invert the quaternion as well, default is `true`
-- `work_low` -- Temporary vector to hold the low-level C pointers. Default is output from `prep_inv_work_low`
 """
-function inv(m1::TaylorMap; dospin::Bool=true, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_inv_work_low(m1))
+function inv(m1::TaylorMap; dospin::Bool=true)
   m = zero(m1)
-  inv!(m,m1,dospin=dospin,work_low=work_low)
+  inv!(m,m1,dospin=dospin)
   return m
 end
 
@@ -24,7 +23,7 @@ function inv!(m::TaylorMap{S,T,U,V}, m1::TaylorMap{S,T,U,V}; dospin::Bool=true, 
   np = numparams(m1)
   nn = numnn(m1)
   nv = numvars(m1)
-  M = zeros(numtype(m1), nn, nn)
+  M = zeros(eltype(m1), nn, nn)
   M[1:nv,1:nn] = jacobian(lin,include_params=true)
   for i=1:np
     M[nv+i,nv+i] = 1
@@ -39,7 +38,7 @@ end
 =#
 
 """
-    inv!(m::TaylorMap, m1::TaylorMap; dospin::Bool=true, work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_inv_work_low(m1))
+    inv!(m::TaylorMap, m1::TaylorMap; dospin::Bool=true, work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing)
 
 In-place inversion of the `TaylorMap` setting `m = inv(m1)`. Aliasing `m === m1` is allowed, however 
 in this case a temporary vector must be used to store the scalar part of `m1` prior to inversion so 
@@ -48,24 +47,13 @@ that the entrance/exit coordinates of the map can be properly handled.
 ### Keyword Arguments
 - `dospin` -- Specify whether to invert the quaternion as well, default is `true`
 - `work_ref` -- If `m === m1`, then a temporary vector must be used to store the scalar part. If not provided and `m === m1`, this temporary will be created internally. Default is `nothing`
-- `work_low` -- Temporary vector to hold the low-level C pointers. Default is output from `prep_inv_work_low`
 """
-function inv!(m::TaylorMap, m1::TaylorMap; dospin::Bool=true, work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing, work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_inv_work_low(m1))
+function inv!(m::TaylorMap, m1::TaylorMap; dospin::Bool=true, work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing)
   checkinplace(m, m1)
 
   desc = getdesc(m1)
   nn = numnn(desc)
   nv = numvars(desc)
-
-  outx_low = work_low[1]
-  m1x_low = work_low[2]
-  @assert length(outx_low) >= nn "Cannot inv!: incorrect length for outx_low = work_low[1]. Received $(length(outx_low)), must be >= $nn"
-  @assert length(m1x_low) >= nn "Cannot inv!: incorrect length for m1x_low = work_low[2]. Received $(length(m1x_low)), must be >= $nn"
-  if !isnothing(m.Q) && dospin
-    outQ_low = work_low[3]
-    @assert length(outQ_low) >= 4 "Cannot inv!: incorrect length for outQ_low = work_low[3]. Received $(length(outQ_low)), must be >= 4"
-    @assert !(outQ_low === outx_low) "Cannot inv!: outQ_low === outx_low !! outx_low must NOT be reused!"
-  end
   
   # if aliasing, must use vector to store x0
   if m1 === m
@@ -79,24 +67,16 @@ function inv!(m::TaylorMap, m1::TaylorMap; dospin::Bool=true, work_ref::Union{No
   elseif !isnothing(work_ref)
     #@warn "work_ref provided to inv!, but !(m1 === m)"
   end
-
   # add immutable parameters to outx
   @inbounds m.x[nv+1:nn] .= view(m1.x, nv+1:nn)
 
-  map!(t->t.tpsa, m1x_low, m1.x)
-  map!(t->t.tpsa, outx_low, m.x)
-
   # This C function ignores the scalar part so no need to take it out
-  minv!(nn, m1x_low, nv, outx_low)
+  minv!(nn, m1.x, nv, m.x)
 
   # Now do quaternion: inverse of q(z0) is q^-1(M^-1(zf))
   if !isnothing(m.Q) && dospin
     inv!(m.Q, m1.Q)
-    outQ_low[1] = m.Q.q0.tpsa
-    outQ_low[2] = m.Q.q1.tpsa
-    outQ_low[3] = m.Q.q2.tpsa
-    outQ_low[4] = m.Q.q3.tpsa
-    compose!(Cint(-4), outQ_low, nn, outx_low, outQ_low)
+    compose!(m.Q.q, m.Q.q, m.x)
   end
 
   if m1 === m

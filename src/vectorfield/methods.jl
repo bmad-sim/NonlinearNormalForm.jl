@@ -10,10 +10,10 @@ function copy!(F::VectorField, F1::Union{VectorField,TaylorMap})
   end
 
   if !isnothing(F.Q)
-    copy!(F.Q.q0, F1.Q.q0)
-    copy!(F.Q.q1, F1.Q.q1)
-    copy!(F.Q.q2, F1.Q.q2)
-    copy!(F.Q.q3, F1.Q.q3)
+    copy!(F.Q.q[1], F1.Q.q[1])
+    copy!(F.Q.q[2], F1.Q.q[2])
+    copy!(F.Q.q[3], F1.Q.q[3])
+    copy!(F.Q.q[4], F1.Q.q[4])
   end
 
   return F
@@ -27,10 +27,10 @@ function clear!(F::VectorField)
     @inbounds clear!(F.x[i])
   end
   if !isnothing(F.Q)
-    clear!(F.Q.q0)
-    clear!(F.Q.q1)
-    clear!(F.Q.q2)
-    clear!(F.Q.q3)
+    clear!(F.Q.q[1])
+    clear!(F.Q.q[2])
+    clear!(F.Q.q[3])
+    clear!(F.Q.q[4])
   end
   return
 end
@@ -67,8 +67,8 @@ end
 
 # --- Lie bracket including spin ---
 # GTPSA only provides routines for orbital part:
-liebra!(na::Cint, m1::Vector{Ptr{RTPSA}}, m2::Vector{Ptr{RTPSA}}, m3::Vector{Ptr{RTPSA}}) = (@inline; GTPSA.mad_tpsa_liebra!(na, m1, m2, m3))
-liebra!(na::Cint, m1::Vector{Ptr{CTPSA}}, m2::Vector{Ptr{CTPSA}}, m3::Vector{Ptr{CTPSA}}) = (@inline; GTPSA.mad_ctpsa_liebra!(na, m1, m2, m3))
+liebra!(na, m1::Vector{TPS{Float64}},    m2::Vector{TPS{Float64}},    m3::Vector{TPS{Float64}})    = GTPSA.mad_tpsa_liebra!(Cint(na), m1, m2, m3)
+liebra!(na, m1::Vector{TPS{ComplexF64}}, m2::Vector{TPS{ComplexF64}}, m3::Vector{TPS{ComplexF64}}) = GTPSA.mad_ctpsa_liebra!(Cint(na), m1, m2, m3)
 
 """
     lb(F::VectorField, H::VectorField)
@@ -90,37 +90,24 @@ end
 
 
 """
-    lb!(G::VectorField, F::VectorField, H::VectorField; work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_vf_work_low(F), work_Q::Union{Quaternion,Nothing}=nothing)
+    lb!(G::VectorField, F::VectorField, H::VectorField; work_Q::Union{Quaternion,Nothing}=nothing)
 
 Computes the Lie bracket of the vector fields `F` and `H`, and stores the result in `G`. 
 See `lb` for more details.
 
 ### Keyword Arguments
-- `work_low` -- Tuple of 3 vectors of type `lowtype(T)` of length `>=nv`
 - `work_Q`   -- `Quaternion{T}` if spin is included in the vector field, else `nothing`
 """
-function lb!(G::VectorField, F::VectorField, H::VectorField; work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_lb_work_low(F), work_Q::Union{Quaternion,Nothing}=prep_vf_work_Q(F))
+function lb!(G::VectorField, F::VectorField, H::VectorField; work_Q::Union{Quaternion,Nothing}=prep_vf_work_Q(F))
   checkinplace(G, F, H)
 
   T = eltype(G.x)
 
   nv = numvars(F)
-  Fx_low = work_low[1]
-  Hx_low = work_low[2]
-  Gx_low = work_low[3]
-  @assert length(Fx_low) >= nv "Incorrect length for work_low[1] = Fx_low; received $(length(Fx_low)), should be >=$nv"
-  @assert length(Hx_low) >= nv "Incorrect length for work_low[2] = Hx_low; received $(length(Hx_low)), should be >=$nv"
-  @assert length(Gx_low) >= nv "Incorrect length for work_low[3] = Gx_low; received $(length(Gx_low)), should be >=$nv"
-  @assert eltype(Fx_low) == lowtype(T) "Incorrect eltype of work_low[1] = Fx_low. Received $(eltype(Fx_low)), should be $(lowtype(T))"
-  @assert eltype(Hx_low) == lowtype(T) "Incorrect eltype of work_low[2] = Hx_low. Received $(eltype(Hx_low)), should be $(lowtype(T))"
-  @assert eltype(Gx_low) == lowtype(T) "Incorrect eltype of work_low[3] = Gx_low. Received $(eltype(Gx_low)), should be $(lowtype(T))"
   @assert !(G === F) && !(G === H) "Aliasing any source arguments with the destination in lb! is not allowed"
 
   # Orbital part (Eq. 44.51 in Bmad manual, handled by GTPSA):
-  map!(t->t.tpsa, Fx_low, F.x)
-  map!(t->t.tpsa, Hx_low, H.x)
-  map!(t->t.tpsa, Gx_low, G.x)
-  liebra!(nv, Fx_low, Hx_low, Gx_low)
+  liebra!(nv, F.x, H.x, G.x)
 
   # Spin (Eq. 44.51 in Bmad manual, NOT handled by GTPSA):
   if !isnothing(F.Q)
@@ -128,37 +115,37 @@ function lb!(G::VectorField, F::VectorField, H::VectorField; work_low::Tuple{Var
     mul!(G.Q, H.Q, F.Q)
     mul!(work_Q, F.Q, H.Q)
 
-    sub!(G.Q.q0, G.Q.q0, work_Q.q0)
-    sub!(G.Q.q1, G.Q.q1, work_Q.q1)
-    sub!(G.Q.q2, G.Q.q2, work_Q.q2)
-    sub!(G.Q.q3, G.Q.q3, work_Q.q3)
+    sub!(G.Q.q[1], G.Q.q[1], work_Q.q[1])
+    sub!(G.Q.q[2], G.Q.q[2], work_Q.q[2])
+    sub!(G.Q.q[3], G.Q.q[3], work_Q.q[3])
+    sub!(G.Q.q[4], G.Q.q[4], work_Q.q[4])
 
     # then +F⋅∇h 
-    tmp = work_Q.q0
-    fgrad!(tmp, F.x, H.Q.q0, work_low=Fx_low)
-    add!(G.Q.q0, G.Q.q0, tmp)
+    tmp = work_Q.q[1]
+    fgrad!(tmp, F.x, H.Q.q[1])
+    add!(G.Q.q[1], G.Q.q[1], tmp)
 
-    fgrad!(tmp, F.x, H.Q.q1, work_low=Fx_low)
-    add!(G.Q.q1, G.Q.q1, tmp)
+    fgrad!(tmp, F.x, H.Q.q[2])
+    add!(G.Q.q[2], G.Q.q[2], tmp)
 
-    fgrad!(tmp, F.x, H.Q.q2, work_low=Fx_low)
-    add!(G.Q.q2, G.Q.q2, tmp)
+    fgrad!(tmp, F.x, H.Q.q[3])
+    add!(G.Q.q[3], G.Q.q[3], tmp)
 
-    fgrad!(tmp, F.x, H.Q.q3, work_low=Fx_low)
-    add!(G.Q.q3, G.Q.q3, tmp)
+    fgrad!(tmp, F.x, H.Q.q[4])
+    add!(G.Q.q[4], G.Q.q[4], tmp)
     
     # finally -G⋅∇f
-    fgrad!(tmp, G.x, F.Q.q0, work_low=Fx_low)
-    sub!(G.Q.q0, G.Q.q0, tmp)
+    fgrad!(tmp, G.x, F.Q.q[1])
+    sub!(G.Q.q[1], G.Q.q[1], tmp)
 
-    fgrad!(tmp, G.x, F.Q.q1, work_low=Fx_low)
-    sub!(G.Q.q1, G.Q.q1, tmp)
+    fgrad!(tmp, G.x, F.Q.q[2])
+    sub!(G.Q.q[2], G.Q.q[2], tmp)
 
-    fgrad!(tmp, G.x, F.Q.q2, work_low=Fx_low)
-    sub!(G.Q.q2, G.Q.q2, tmp)
+    fgrad!(tmp, G.x, F.Q.q[3])
+    sub!(G.Q.q[3], G.Q.q[3], tmp)
 
-    fgrad!(tmp, G.x, F.Q.q3, work_low=Fx_low)
-    sub!(G.Q.q3, G.Q.q3, tmp)
+    fgrad!(tmp, G.x, F.Q.q[4])
+    sub!(G.Q.q[4], G.Q.q[4], tmp)
   end
   return
 end
@@ -174,7 +161,7 @@ included that is `F * m = (F.x, F.Q) * (m.x, m.Q) = (F.x ⋅ ∇ m.x , F.x ⋅ �
 """
 function *(F::VectorField, m1::Union{DAMap,UniformScaling})
   if m1 isa UniformScaling 
-    m1 = one(DAMap{Vector{numtype(eltype(F.x))},typeof(F.x),typeof(F.Q),Nothing,Nothing},use=getdesc(F))
+    m1 = one(DAMap{Vector{eltype(eltype(F.x))},typeof(F.x),typeof(F.Q),Nothing,Nothing},use=getdesc(F))
   end
   checkop(F, m1)
   m = zero(m1)
@@ -183,43 +170,40 @@ function *(F::VectorField, m1::Union{DAMap,UniformScaling})
 end
 
 """
-    mul!(m::DAMap, F::VectorField, m1::DAMap; work_low::Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}=Vector{lowtype(first(F.x))}(undef, numvars(F)), work_Q::Union{Quaternion,Nothing}=prep_vf_work_Q(F))
+    mul!(m::DAMap, F::VectorField, m1::DAMap; work_Q::Union{Quaternion,Nothing}=prep_vf_work_Q(F))
 
 Computes the Lie operator `F` acting on a `DAMap` `m1`, and stores the result in `m`.
 Explicity, that is `F * m = (F.x, F.Q) * (m.x, m.Q) = (F.x ⋅ ∇ m.x , F.x ⋅ ∇ m.Q + m.Q*F.Q)`
 
-### Keyword Arguments
-- `work_low` -- Vector with eltype `lowtype(T)` and length `>=nv`
+### Keyword Arguments\
 - `work_Q`   -- `Quaternion{T}` if spin is included in the vector field, else `nothing`
 """
-function mul!(m::DAMap, F::VectorField, m1::DAMap; work_low::Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}=Vector{lowtype(first(F.x))}(undef, numvars(F)), work_Q::Union{Quaternion,Nothing}=prep_vf_work_Q(F))
+function mul!(m::DAMap, F::VectorField, m1::DAMap; work_Q::Union{Quaternion,Nothing}=prep_vf_work_Q(F))
   checkinplace(m, F, m1)
 
   T = eltype(m.x)
   nv = numvars(F)
 
-  @assert length(work_low) >= nv "Incorrect length for work_low; received $(length(work_low)), should be >=$nv"
-  @assert eltype(work_low) == lowtype(T) "Incorrect eltype of work_low. Received $(eltype(work_low)), should be $(lowtype(T))"
   @assert !(m === m1) "Aliasing m === m1 is not allowed for mul!"
 
   m.x0 .= m1.x0
   # Orbital part F⋅∇m1 :
   for i=1:nv
-    @inbounds fgrad!(m.x[i], F.x, m1.x[i], work_low=work_low)
+    @inbounds fgrad!(m.x[i], F.x, m1.x[i])
   end
 
   # Spin F⋅∇q + qf (quaternion part acts in reverse order):
   if !isnothing(F.Q)
     mul!(work_Q, m1.Q, F.Q)
-    fgrad!(m.Q.q0, F.x, m1.Q.q0, work_low=work_low)
-    fgrad!(m.Q.q1, F.x, m1.Q.q1, work_low=work_low)
-    fgrad!(m.Q.q2, F.x, m1.Q.q2, work_low=work_low)
-    fgrad!(m.Q.q3, F.x, m1.Q.q3, work_low=work_low)
+    fgrad!(m.Q.q[1], F.x, m1.Q.q[1])
+    fgrad!(m.Q.q[2], F.x, m1.Q.q[2])
+    fgrad!(m.Q.q[3], F.x, m1.Q.q[3])
+    fgrad!(m.Q.q[4], F.x, m1.Q.q[4])
 
-    add!(m.Q.q0, m.Q.q0, work_Q.q0)
-    add!(m.Q.q1, m.Q.q1, work_Q.q1)
-    add!(m.Q.q2, m.Q.q2, work_Q.q2)
-    add!(m.Q.q3, m.Q.q3, work_Q.q3)
+    add!(m.Q.q[1], m.Q.q[1], work_Q.q[1])
+    add!(m.Q.q[2], m.Q.q[2], work_Q.q[2])
+    add!(m.Q.q[3], m.Q.q[3], work_Q.q[3])
+    add!(m.Q.q[4], m.Q.q[4], work_Q.q[4])
   end
 
   if !isnothing(m.E)
@@ -235,7 +219,7 @@ end
 # each variable and does not include spin. Here I include spin and do the entire map at once.
 function exp(F::VectorField, m1::Union{UniformScaling,DAMap}=I)
   if m1 isa UniformScaling 
-    m1 = one(DAMap{Vector{numtype(eltype(F.x))},typeof(F.x),typeof(F.Q),Nothing,Nothing},use=getdesc(F))
+    m1 = one(DAMap{Vector{eltype(eltype(F.x))},typeof(F.x),typeof(F.Q),Nothing,Nothing},use=getdesc(F))
   end
   checkop(F,m1)
 
@@ -246,7 +230,7 @@ end
 
 
 """
-    exp!(m::DAMap, F::VectorField, m1::DAMap; work_maps::Tuple{Vararg{DAMap}}=(zero(m1),zero(m1)), work_low::Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}=Vector{lowtype(first(F.x))}(undef, numvars(F)), work_Q::Union{Quaternion,Nothing}=prep_vf_work_Q(F))
+    exp!(m::DAMap, F::VectorField, m1::DAMap; work_maps::Tuple{Vararg{DAMap}}=(zero(m1),zero(m1)), work_Q::Union{Quaternion,Nothing}=prep_vf_work_Q(F))
 
 Computes `exp(F)*m1`, and stores the result in `m`. Explicity, this is
 `exp(F)*m1 = m1 + F*m1 + 1/2*F*(F*m1) + 1/6*F*(F*(F*m1)) + ...`, where `*` is
@@ -256,18 +240,15 @@ number of iterations is equal to the number of higher orders left.
 
 ### Keyword Arguments
 - `work_maps` -- Tuple of 2 `DAMap`s of the same type as `m1`
-- `work_low` -- Vector with eltype `lowtype(T)` and length `>=nv`
 - `work_Q`   -- `Quaternion{T}` if spin is included in the vector field, else `nothing`
 """
-function exp!(m::DAMap, F::VectorField, m1::DAMap; work_maps::Tuple{Vararg{DAMap}}=(zero(m1),zero(m1)), work_low::Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}=Vector{lowtype(first(F.x))}(undef, numvars(F)), work_Q::Union{Quaternion,Nothing}=prep_vf_work_Q(F))
+function exp!(m::DAMap, F::VectorField, m1::DAMap; work_maps::Tuple{Vararg{DAMap}}=(zero(m1),zero(m1)), work_Q::Union{Quaternion,Nothing}=prep_vf_work_Q(F))
   checkinplace(m, F, m1, work_maps...)
 
   T = eltype(m.x)
   nv = numvars(F)
   #GTPSA.mad_ctpsa_exppb!(nv, map(t->t.tpsa, F.x), map(t->t.tpsa, view(m1.x, 1:nv)), map(t->t.tpsa, view(m.x,1:nv)))
   #return
-  @assert length(work_low) >= nv "Incorrect length for work_low; received $(length(work_low)), should be >=$nv"
-  @assert eltype(work_low) == lowtype(T) "Incorrect eltype of work_low. Received $(eltype(work_low)), should be $(lowtype(T))"
   tmp = work_maps[1]
   tmp2 = work_maps[2]
 
@@ -288,7 +269,7 @@ function exp!(m::DAMap, F::VectorField, m1::DAMap; work_maps::Tuple{Vararg{DAMap
     end
 
     div!(tmp, tmp, j)
-    mul!(tmp2, F, tmp, work_low=work_low, work_Q=work_Q)
+    mul!(tmp2, F, tmp, work_Q=work_Q)
     add!(m, m, tmp2)
     copy!(tmp, tmp2)
     nrm = norm(norm(tmp2))
@@ -316,11 +297,10 @@ end
 # See Bmad manual Ch. 47 for calculation of log using Lie operators
 # 3 work_maps
 # 1 work_Q
-# 1 work_low length >= nv
 # 2 work_vfs
 
 """
-    log!(F::VectorField, m1::DAMap; work::Tuple{DAMap,DAMap,DAMap,VectorField,VectorField}=prep_log_work(m1), work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_lb_work_low(F), work_Q::Union{Quaternion,Nothing}=prep_vf_work_Q(F)) 
+    log!(F::VectorField, m1::DAMap; work::Tuple{DAMap,DAMap,DAMap,VectorField,VectorField}=prep_log_work(m1), work_Q::Union{Quaternion,Nothing}=prep_vf_work_Q(F)) 
 
 Computes the log of the map `m1` - that is, calculates the `VectorField` `F` that 
 would represent the map `m1` as a Lie exponent `exp(F)` - and stores the result in `F`.
@@ -328,10 +308,9 @@ The map `m1` should be close to the identity for this to converge quickly.
 
 ### Keyword Arguments
 - `work` -- Tuple of 3 `DAMap`s of the same type as `m1` followed by 2 `VectorField`S
-- `work_low` -- Vector with eltype `lowtype(T)` and length `>=nv`
 - `work_Q`   -- `Quaternion{T}` if spin is included in the vector field, else `nothing`
 """
-function log!(F::VectorField, m1::DAMap; work::Tuple{DAMap,DAMap,DAMap,VectorField,VectorField}=prep_log_work(m1), work_low::Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}=prep_lb_work_low(F), work_Q::Union{Quaternion,Nothing}=prep_vf_work_Q(F))
+function log!(F::VectorField, m1::DAMap; work::Tuple{DAMap,DAMap,DAMap,VectorField,VectorField}=prep_log_work(m1), work_Q::Union{Quaternion,Nothing}=prep_vf_work_Q(F))
   checkinplace(F, m1, work...)
   
   nv = numvars(m1)
@@ -362,7 +341,7 @@ function log!(F::VectorField, m1::DAMap; work::Tuple{DAMap,DAMap,DAMap,VectorFie
     end
     # First, rotate back our guess:
     mul!(F, -1, F)
-    exp!(work_maps[3], F, m1, work_maps=work_maps, work_low=work_low[1], work_Q=work_Q)
+    exp!(work_maps[3], F, m1, work_maps=work_maps, work_Q=work_Q)
     mul!(F, -1, F)
 
     # Now we have (I,1) + (t,u) where (t,u) is the leftover garbage we want to be 0
@@ -376,7 +355,7 @@ function log!(F::VectorField, m1::DAMap; work::Tuple{DAMap,DAMap,DAMap,VectorFie
     copy!(work_vfs[1], work_maps[3])
 
     # Let the vector field act on the garbage map
-    mul!(work_maps[2], work_vfs[1], work_maps[3], work_low=work_low[1], work_Q=work_Q)
+    mul!(work_maps[2], work_vfs[1], work_maps[3], work_Q=work_Q)
 
     # Finally get our approximation 
     add!(work_vfs[1], work_vfs[1], work_maps[2])
@@ -387,7 +366,7 @@ function log!(F::VectorField, m1::DAMap; work::Tuple{DAMap,DAMap,DAMap,VectorFie
     # with linear term (adding F+G trivially)
 
     if norm(norm(work_vfs[1])) < epsone # small! use CBH!
-      lb!(work_vfs[2], F, work_vfs[1], work_low=work_low, work_Q=work_Q)
+      lb!(work_vfs[2], F, work_vfs[1], work_Q=work_Q)
       mul!(work_vfs[2], 0.5, work_vfs[2])
       add!(work_vfs[1], work_vfs[1], work_vfs[2])
       add!(F,F,work_vfs[1])

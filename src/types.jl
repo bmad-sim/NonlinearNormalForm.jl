@@ -1,6 +1,6 @@
 
 """
-    TaylorMap{S,T<:Union{TPS,ComplexTPS},U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing},W<:Union{Nothing,Bool}}
+    TaylorMap{S,T<:TPS,U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing},W<:Union{Nothing,Bool}}
 
 Abstract type for `TPSAMap` and `DAMap` used for normal form analysis. 
 
@@ -95,13 +95,13 @@ struct VectorField{T<:Vector, U<:Union{Quaternion,Nothing}}
   Q::U           
 end
 
-const UseType = Union{Descriptor, TPS, ComplexTPS, DAMap, TPSAMap, Probe{<:Any,Union{TPS,ComplexTPS},<:Any,<:Any}, VectorField, Nothing}
+const UseType = Union{Descriptor, TPS, DAMap, TPSAMap, Probe{<:Any,TPS,<:Any,<:Any}, VectorField, Nothing}
 
 for t = (:DAMap, :TPSAMap)
 @eval begin    
 
 function promote_rule(::Type{$t{S,T,U,V,W}}, ::Type{G}) where {S,T,U,V,W,G<:Union{Number,Complex}}
-  outS = Vector{promote_type(eltype(S),numtype(eltype(T)),G)}
+  outS = Vector{promote_type(eltype(S),eltype(eltype(T)),G)}
   outT = Vector{promote_type(eltype(T),G)}
   U != Nothing ? outU = Quaternion{promote_type(eltype(U), G)} : outU = Nothing
   V != Nothing ? outV = Matrix{promote_type(G,eltype(V))} : outV = Nothing
@@ -111,10 +111,10 @@ end
 # Currently promote_type in promotion.jl gives
 # promote_type(::Type{T}, ::Type{T}) where {T} = T
 # and does not even call promote_rule, therefore this is never reached
-# Therefore I will required the reference orbit to have the same numtype as the 
+# Therefore I will required the reference orbit to have the same eltype as the 
 # TPS at construction.
 function promote_rule(::Type{$t{S1,T1,U1,V1,W}}, ::Type{$t{S2,T2,U2,V2,W}}) where {S1,S2,T1,T2,U1,U2,V1,V2,W} 
-  outS = Vector{promote_type(numtype(eltype(T1)), numtype(eltype(T2)))}
+  outS = Vector{promote_type(eltype(eltype(T1)), eltype(eltype(T2)))}
   outT = Vector{promote_type(eltype(T1), eltype(T2))}
   U1 != Nothing ? outU = Quaternion{promote_type(eltype(U2),eltype(U2))} : outU = Nothing
   V1 != Nothing ? outV = promote_type(V1,V2) : outV = Nothing

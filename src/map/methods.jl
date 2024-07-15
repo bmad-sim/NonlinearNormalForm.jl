@@ -8,10 +8,10 @@ function norm(m::Union{TaylorMap,VectorField})
   end
   
   if !isnothing(m.Q)
-    nrm += norm(m.Q.q0)
-    nrm += norm(m.Q.q1)
-    nrm += norm(m.Q.q2)
-    nrm += norm(m.Q.q3)
+    nrm += norm(m.Q.q[1])
+    nrm += norm(m.Q.q[2])
+    nrm += norm(m.Q.q[3])
+    nrm += norm(m.Q.q[4])
   end
 
   return nrm
@@ -49,10 +49,10 @@ function copy!(m::TaylorMap, m1::TaylorMap)
   #@inbounds m.x[nv+1:nn] .= view(m1.x, nv+1:nn)
 
   if !isnothing(m1.Q)
-    copy!(m.Q.q0, m1.Q.q0)
-    copy!(m.Q.q1, m1.Q.q1)
-    copy!(m.Q.q2, m1.Q.q2)
-    copy!(m.Q.q3, m1.Q.q3)
+    copy!(m.Q.q[1], m1.Q.q[1])
+    copy!(m.Q.q[2], m1.Q.q[2])
+    copy!(m.Q.q[3], m1.Q.q[3])
+    copy!(m.Q.q[4], m1.Q.q[4])
   end
 
   if !isnothing(m1.E)
@@ -70,10 +70,10 @@ function clear!(m::TaylorMap)
     @inbounds clear!(m.x[i])
   end
   if !isnothing(m.Q)
-    clear!(m.Q.q0)
-    clear!(m.Q.q1)
-    clear!(m.Q.q2)
-    clear!(m.Q.q3)
+    clear!(m.Q.q[1])
+    clear!(m.Q.q[2])
+    clear!(m.Q.q[3])
+    clear!(m.Q.q[4])
   end
   if !isnothing(m.E)
     m.E .= 0
@@ -110,10 +110,10 @@ function cutord!(m::TaylorMap, m1::TaylorMap, order::Integer, spin_order::Intege
   #@inbounds m.x[nv+1:nn] .= view(m1.x, nv+1:nn)
 
   if !isnothing(m1.Q) && dospin
-    cutord!(m.Q.q0, m1.Q.q0, spin_order)
-    cutord!(m.Q.q1, m1.Q.q1, spin_order)
-    cutord!(m.Q.q2, m1.Q.q2, spin_order)
-    cutord!(m.Q.q3, m1.Q.q3, spin_order)
+    cutord!(m.Q.q[1], m1.Q.q[1], spin_order)
+    cutord!(m.Q.q[2], m1.Q.q[2], spin_order)
+    cutord!(m.Q.q[3], m1.Q.q[3], spin_order)
+    cutord!(m.Q.q[4], m1.Q.q[4], spin_order)
   end
   if !isnothing(m1.E)
     m.E .= m.E
@@ -143,10 +143,10 @@ function getord!(m::TaylorMap, m1::TaylorMap, order::Integer, spin_order::Intege
   #@inbounds m.x[nv+1:nn] .= view(m1.x, nv+1:nn)
 
   if !isnothing(m1.Q) && dospin
-    getord!(m.Q.q0, m1.Q.q0, spin_order)
-    getord!(m.Q.q1, m1.Q.q1, spin_order)
-    getord!(m.Q.q2, m1.Q.q2, spin_order)
-    getord!(m.Q.q3, m1.Q.q3, spin_order)
+    getord!(m.Q.q[1], m1.Q.q[1], spin_order)
+    getord!(m.Q.q[2], m1.Q.q[2], spin_order)
+    getord!(m.Q.q[3], m1.Q.q[3], spin_order)
+    getord!(m.Q.q[4], m1.Q.q[4], spin_order)
   end
   if !isnothing(m1.E)
     m.E .= m.E

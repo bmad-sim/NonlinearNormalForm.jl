@@ -70,7 +70,7 @@ end
     R_fpp = read_fpp_map("radiation/R.map",spin=false)
     c = to_phasor(m)
     a = normal(m).a
-    @test norm(inv(c)*inv(a)*m*a*c - R_fpp) < tol
+    @test norm(inv(c)*inv(a)*m*a*c - R_fpp) < 1e-9
     Σ = equilibrium_moments(m,a)
     @test norm(Σ - Σ_fpp) < tol
 

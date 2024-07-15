@@ -51,7 +51,7 @@ function normal(m::DAMap, resonance=nothing)
   clear!(a1)
   setmatrix!(a1, a1_mat)
   if !isnothing(m.Q)
-    a1.Q.q0[0] = 1
+    a1.Q.q[1][0] = 1
   end
 
 
@@ -61,19 +61,18 @@ function normal(m::DAMap, resonance=nothing)
   # 3: Go into phasor's basis
   c = to_phasor(m1)
   m1 = c^-1 ∘ m1 ∘ c
-
-
+  
   # ---- Nonlinear -----
   # 4: Nonlinear algorithm
   # order by order
   # check if tune shift and kill
   R_inv = inv(getord(m1, 1, 0, dospin=false), dospin=false) # R is diagonal matrix
   if !isnothing(R_inv.Q)
-    R_inv.Q.q0[0] = 1
+    R_inv.Q.q[1][0] = 1
   end
 
   # Store the tunes
-  eg = Vector{numtype(eltype(R_inv.x))}(undef, numvars(m))
+  eg = Vector{eltype(eltype(R_inv.x))}(undef, numvars(m))
   for i=1:nhv
     eg[i] = R_inv.x[i][i]
   end
@@ -99,7 +98,7 @@ function normal(m::DAMap, resonance=nothing)
     for j=1:numvars(m)
       v = Ref{ComplexF64}()
       ords = Vector{UInt8}(undef, nn)
-      idx = GTPSA.cycle!(nonl.x[j].tpsa, Cint(j), nn, ords, v)
+      idx = GTPSA.cycle!(nonl.x[j], j, nn, ords, v)
       while idx > 0
         # Tune shifts should be left in the map (kernel) because we cannot remove them
         # if there is damping, we technically could remove them
@@ -115,14 +114,15 @@ function normal(m::DAMap, resonance=nothing)
           Fker.x[j] += mono(ords,use=getdesc(m1))*v[]
         end
 
-        idx = GTPSA.cycle!(nonl.x[j].tpsa, Cint(idx), nn, ords, v)
+        idx = GTPSA.cycle!(nonl.x[j], idx, nn, ords, v)
       end
     end
+
     kert = exp(Fker,one(m)) #I + Fker
     ant = exp(F,one(m)) #I + F
-
     ker = kert ∘ ker
     an = an ∘ ant
+
     m1 = inv(ant) ∘ m1 ∘ ant
   end
 
@@ -201,7 +201,6 @@ function is_resonance(varidx, ords, nhv, resonance)
       return true # keep it in!
     end
   end
-
   return false
 end
 
@@ -419,6 +418,74 @@ end
 
 
 
+# computes c^-1
+function from_phasor!(cinv::DAMap, m::DAMap)
+  checkidpt(cinv,m)
+  clear!(cinv)
+
+  nhv = numvars(m)
+  if !isnothing(m.idpt)
+    nhv -= 2
+    cinv.x[nhv+1][nhv+1] = 1
+    cinv.x[nhv+2][nhv+2] = 1
+  end
+
+  for i=1:Int(nhv/2)
+    # x_new = 1/sqrt(2)*(x+im*p)
+    cinv.x[2*i-1][2*i-1] = 1/sqrt(2)
+    cinv.x[2*i-1][2*i]   = complex(0,1/sqrt(2))
+
+    # p_new = 1/sqrt(2)*(x-im*p)
+    cinv.x[2*i][2*i-1] = 1/sqrt(2)
+    cinv.x[2*i][2*i]   = complex(0,-1/sqrt(2))
+  end
+
+  if !isnothing(cinv.Q)
+    cinv.Q.q[1][0] = 1
+  end
+
+  return
+end
+
+function from_phasor(m::DAMap)
+  cinv=zero(complex(typeof(m)),use=m,idpt=m.idpt);
+  from_phasor!(cinv,m);
+  return cinv
+end
+
+# computes c
+function to_phasor!(c::DAMap, m::DAMap)
+  checkidpt(c,m)
+  clear!(c)
+
+  nhv = numvars(m)
+  if !isnothing(m.idpt)
+    nhv -= 2
+    c.x[nhv+1][nhv+1] = 1
+    c.x[nhv+2][nhv+2] = 1
+  end
+
+
+  for i=1:Int(nhv/2)
+    c.x[2*i-1][2*i-1] = 1/sqrt(2)
+    c.x[2*i-1][2*i]   = 1/sqrt(2)
+
+    c.x[2*i][2*i-1] = complex(0,-1/sqrt(2))
+    c.x[2*i][2*i]   = complex(0,1/sqrt(2))
+  end
+
+  if !isnothing(c.Q)
+    c.Q.q[1][0] = 1
+  end
+
+  return
+end
+
+function to_phasor(m::DAMap)
+  c=zero(complex(typeof(m)),use=m,idpt=m.idpt);
+  to_phasor!(c,m);
+  return c
+end
 
 
 
@@ -429,8 +496,7 @@ end
 
 
 
-
-
+#=
 # 2x faster but not as pretty
 function normal_fast(m::DAMap{S,T,U,V}) where {S,T,U,V}
   tmp1 = zero(m)
@@ -520,7 +586,7 @@ function normal_fast(m::DAMap{S,T,U,V}) where {S,T,U,V}
   return ctmp2
 end
 
-function gofix!(a0::DAMap, m::DAMap, order=1; work_map::DAMap=zero(m), comp_work_low::Union{Nothing,Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}}=nothing, inv_work_low::Union{Nothing,Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}}=nothing)
+function gofix!(a0::DAMap, m::DAMap, order=1; work_map::DAMap=zero(m), comp_work_low::Union{Nothing,Tuple{Vararg{Vector{<:Union{TPS{Float64},TPS{ComplexF64}}}}}}=nothing, inv_work_low::Union{Nothing,Tuple{Vararg{Vector{<:Union{TPS{Float64},TPS{ComplexF64}}}}}}=nothing)
   checkidpt(a0,m,work_map)
   @assert !(a0 === m) "Aliasing `a0 === m` is not allowed."
   
@@ -578,7 +644,7 @@ function testallocs!(m, tmp1, tmp2, comp_work_low, inv_work_low, work_ref)
   return
 end
 
-function gofix(m::DAMap, order=1; work_map::DAMap=zero(m), comp_work_low::Union{Nothing,Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}}=nothing, inv_work_low::Union{Nothing,Tuple{Vararg{Vector{<:Union{Ptr{RTPSA},Ptr{CTPSA}}}}}}=nothing)
+function gofix(m::DAMap, order=1; work_map::DAMap=zero(m), comp_work_low::Union{Nothing,Tuple{Vararg{Vector{<:Union{TPS{Float64},TPS{ComplexF64}}}}}}=nothing, inv_work_low::Union{Nothing,Tuple{Vararg{Vector{<:Union{TPS{Float64},TPS{ComplexF64}}}}}}=nothing)
   a0 = zero(m)
   gofix!(a0, m, 1, work_map=work_map, comp_work_low=comp_work_low, inv_work_low=inv_work_low)
   return a0
@@ -598,7 +664,7 @@ function linear_a!(a1::DAMap, m0::DAMap; inverse=false)
   nhv = numvars(m0) # Number harmonic variables
   nhpl = Int(nhv/2) # Number harmonic variables / 2 = number harmonic planes
 
-  work_matrix=zeros(numtype(m0), numvars(m0), numvars(m0))
+  work_matrix=zeros(eltype(m0), numvars(m0), numvars(m0))
 
   @views GTPSA.jacobiant!(work_matrix, m0.x[1:nhv])  # parameters never included
   F = mat_eigen!(work_matrix, phase_modes=false) # no need to phase modes. just a rotation
@@ -635,74 +701,7 @@ function linear_a(m0::DAMap; inverse=false)
   return a1
 end
 
-# computes c^-1
-function from_phasor!(cinv::DAMap, m::DAMap)
-  checkidpt(cinv,m)
-  clear!(cinv)
 
-  nhv = numvars(m)
-  if !isnothing(m.idpt)
-    nhv -= 2
-    cinv.x[nhv+1][nhv+1] = 1
-    cinv.x[nhv+2][nhv+2] = 1
-  end
-
-  for i=1:Int(nhv/2)
-    # x_new = 1/sqrt(2)*(x+im*p)
-    cinv.x[2*i-1][2*i-1] = 1/sqrt(2)
-    cinv.x[2*i-1][2*i]   = complex(0,1/sqrt(2))
-
-    # p_new = 1/sqrt(2)*(x-im*p)
-    cinv.x[2*i][2*i-1] = 1/sqrt(2)
-    cinv.x[2*i][2*i]   = complex(0,-1/sqrt(2))
-  end
-
-  if !isnothing(cinv.Q)
-    cinv.Q.q0[0] = 1
-  end
-
-  return
-end
-
-function from_phasor(m::DAMap)
-  cinv=zero(complex(typeof(m)),use=m,idpt=m.idpt);
-  from_phasor!(cinv,m);
-  return cinv
-end
-
-# computes c
-function to_phasor!(c::DAMap, m::DAMap)
-  checkidpt(c,m)
-  clear!(c)
-
-  nhv = numvars(m)
-  if !isnothing(m.idpt)
-    nhv -= 2
-    c.x[nhv+1][nhv+1] = 1
-    c.x[nhv+2][nhv+2] = 1
-  end
-
-
-  for i=1:Int(nhv/2)
-    c.x[2*i-1][2*i-1] = 1/sqrt(2)
-    c.x[2*i-1][2*i]   = 1/sqrt(2)
-
-    c.x[2*i][2*i-1] = complex(0,-1/sqrt(2))
-    c.x[2*i][2*i]   = complex(0,1/sqrt(2))
-  end
-
-  if !isnothing(c.Q)
-    c.Q.q0[0] = 1
-  end
-
-  return
-end
-
-function to_phasor(m::DAMap)
-  c=zero(complex(typeof(m)),use=m,idpt=m.idpt);
-  to_phasor!(c,m);
-  return c
-end
 
 
 #=
@@ -721,4 +720,5 @@ function simil!(out::DAMap, p::DAMap, m::DAMap; reverse::Bool=false, work_map::D
 
   end
 end
+=#
 =#

@@ -1,7 +1,7 @@
 function show(io::IO, m::Union{Probe,TaylorMap})
   println(io, typeof(m),":")
   lines_used=Ref{Int}(2)
-  if eltype(m.x) <: Union{TPS,ComplexTPS}
+  if eltype(m.x) <: TPS
     diffdescsx = false
     for i in eachindex(m.x)
       if !diffdescsx && getdesc(first(m.x)) != getdesc(m.x[i])
@@ -10,17 +10,17 @@ function show(io::IO, m::Union{Probe,TaylorMap})
         lines_used[] += 1
       end
     end
-    if eltype(m.Q) <: Union{TPS,ComplexTPS}
+    if eltype(m.Q) <: TPS
       diffdescsq = false
-      for qi in m.Q
-        if !diffdescsq && getdesc(first(m.Q)) != getdesc(qi)
-          println(io, "WARNING: Atleast one $(eltype(m.Q.q)) in the quaternion has a different Descriptor!")
+      for qi in m.Q.q
+        if !diffdescsq && getdesc(first(m.Q.q)) != getdesc(qi)
+          println(io, "WARNING: Atleast one $(eltype(m.Q.q.q)) in the quaternion has a different Descriptor!")
           diffdescsq = true
           lines_used[] += 1
         end
       end
       diffdescsxq = false
-      if getdesc(first(m.x)) != getdesc(first(m.Q))
+      if getdesc(first(m.x)) != getdesc(first(m.Q.q))
         println(io, "WARNING: First element in orbital ray has different Descriptor than first element in quaternion!")
         diffdescsxq = true
         lines_used[] += 1
@@ -35,7 +35,7 @@ function show(io::IO, m::Union{Probe,TaylorMap})
         lines_used[] += 1
       else
         println(io, "-----------------------")
-        desc = unsafe_load(Base.unsafe_convert(Ptr{Desc}, unsafe_load(first(m.x).tpsa).d))
+        desc = getdesc(first(m.x))
         lines_used[] += 2 + GTPSA.show_GTPSA_info(io, desc)
         println(io, "-----------------------")
       end
@@ -61,7 +61,7 @@ function show(io::IO, m::Union{Probe,TaylorMap})
   println(io, "Orbital Ray ", typeof(m.x),":")
   lines_used[] += 1
 
-  if eltype(m.x) <: Union{TPS,ComplexTPS}
+  if eltype(m.x) <: TPS
     !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || (println(io, "\t⋮"); return)
     def = true
     for i in eachindex(m.x)
@@ -97,12 +97,12 @@ function show(io::IO, m::Union{Probe,TaylorMap})
     lines_used[] += 1
 
     
-    if eltype(m.Q) <: Union{TPS,ComplexTPS}
+    if eltype(m.Q) <: TPS
       !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || (println(io, "\t⋮"); return)
-      GTPSA.show_map!(io, collect(m.Q), lines_used, false, [" q0:"," q1:"," q2:"," q3:"])
+      GTPSA.show_map!(io, collect(m.Q.q), lines_used, false, [" q0:"," q1:"," q2:"," q3:"])
     else
       i=1
-      for qi in m.Q
+      for qi in m.Q.q
         !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || (println(io, "\t⋮"); return)
         @printf(io, "%-3s  ", "q$(i):"); println(io, qi)
         lines_used[] += 1

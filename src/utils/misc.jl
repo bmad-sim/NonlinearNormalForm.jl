@@ -1,29 +1,23 @@
 # --- helper functions to get the numvars/numparams/descriptor in any context ---
 
 # GTPSA provides these functions for only pure TPS/ComplexTPSs
-getdesc(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap,VectorField}) = Descriptor(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.x).tpsa).d))
-numvars(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap,VectorField}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.x).tpsa).d)).nv
-numparams(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap,VectorField}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.x).tpsa).d)).np
-numnn(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap,VectorField}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.x).tpsa).d)).nn
-
-# unneccessary and type piracy
-#getdesc(t::Vector{<:Union{TPS,ComplexTPS}}) = Descriptor(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(t).tpsa).d))
-#numvars(t::Vector{<:Union{TPS,ComplexTPS}}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(t).tpsa).d)).nv
-#numparams(t::Vector{<:Union{TPS,ComplexTPS}}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(t).tpsa).d)).np
-#numnn(t::Vector{<:Union{TPS,ComplexTPS}}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(t).tpsa).d)).nn
-
+getdesc(m::Union{Probe{<:Real,<:TPS,<:Any,<:Any},<:TaylorMap,VectorField}) = getdesc(first(m.x))
+numvars(m::Union{Probe{<:Real,TPS,<:Any,<:Any},<:TaylorMap,VectorField}) = numvars(first(m.x))
+numparams(m::Union{Probe{<:Real,TPS,<:Any,<:Any},<:TaylorMap,VectorField}) = numparams(first(m.x))
+numnn(m::Union{Probe{<:Real,TPS,<:Any,<:Any},<:TaylorMap,VectorField}) = numnn(first(m.x))
+#=
 getdesc(m::Quaternion{<:Union{ComplexTPS,TPS}}) = Descriptor(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.q).tpsa).d))
 numvars(m::Quaternion{<:Union{ComplexTPS,TPS}}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.q).tpsa).d)).nv
 numparams(m::Quaternion{<:Union{ComplexTPS,TPS}}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.q).tpsa).d)).np
 numnn(m::Quaternion{<:Union{ComplexTPS,TPS}}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.q).tpsa).d)).nn
+=#
+eltype(m::Union{Probe{<:Real,T,<:Any,<:Any},<:TaylorMap{<:Number,T,<:Any,<:Any},VectorField{T,<:Any}}) where {T<:TPS} = eltype(T)
 
-numtype(m::Union{Probe{<:Real,T,<:Any,<:Any},<:TaylorMap{<:Number,T,<:Any,<:Any},VectorField{T,<:Any}}) where {T<:Union{TPS,ComplexTPS}} = numtype(T)
-
-maxord(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap,VectorField}) = unsafe_load(getdesc(m).desc).mo
-prmord(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap,VectorField}) = unsafe_load(getdesc(m).desc).po
-vpords(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap,VectorField}) = unsafe_wrap(Vector{UInt8}, unsafe_load(getdesc(m).desc).no, numnn(m))
-vords(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap,VectorField}) = unsafe_wrap(Vector{UInt8}, unsafe_load(getdesc(m).desc).no, numvars(m))
-pords(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap,VectorField}) = unsafe_wrap(Vector{UInt8}, unsafe_load(getdesc(m).desc).no, numparams(m))
+maxord(m::Union{Probe{<:Real,TPS,<:Any,<:Any},<:TaylorMap,VectorField}) = unsafe_load(getdesc(m).desc).mo
+prmord(m::Union{Probe{<:Real,TPS,<:Any,<:Any},<:TaylorMap,VectorField}) = unsafe_load(getdesc(m).desc).po
+vpords(m::Union{Probe{<:Real,TPS,<:Any,<:Any},<:TaylorMap,VectorField}) = unsafe_wrap(Vector{UInt8}, unsafe_load(getdesc(m).desc).no, numnn(m))
+vords(m::Union{Probe{<:Real,TPS,<:Any,<:Any},<:TaylorMap,VectorField}) = unsafe_wrap(Vector{UInt8}, unsafe_load(getdesc(m).desc).no, numvars(m))
+pords(m::Union{Probe{<:Real,TPS,<:Any,<:Any},<:TaylorMap,VectorField}) = unsafe_wrap(Vector{UInt8}, unsafe_load(getdesc(m).desc).no, numparams(m))
 
 @inline checkidpt(maps::TaylorMap...) = all(x->x.idpt==first(maps).idpt, maps) || error("Maps have disagreeing idpt")
 @inline checkspin(stuff...) = all(x->isnothing(x.Q), stuff) || all(x->!isnothing(x.Q), stuff) || error("Atleast one map/vector field includes spin while others do not")
@@ -41,23 +35,23 @@ pords(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap,Vec
   maps = filter(x->(x isa TaylorMap), stuff)
   mapsvfs = filter(x->(x isa Union{TaylorMap,VectorField}), stuff)
   nums = filter(x->(x isa Number), stuff)
-  numtypes = map(x->typeof(x), nums) # scalars only affect x and Q, not x0 or E in FPP
+  eltypes = map(x->typeof(x), nums) # scalars only affect x and Q, not x0 or E in FPP
 
   xtypes = map(x->eltype(x.x), mapsvfs)
-  xnumtypes = map(x->numtype(x),xtypes)
+  xeltypes = map(x->eltype(x),xtypes)
 
   if m isa TaylorMap
     x0types = map(x->eltype(x.x0), maps)
-    outx0type = promote_type(x0types..., xnumtypes...) # reference orbit in composition is affected by orbital part
+    outx0type = promote_type(x0types..., xeltypes...) # reference orbit in composition is affected by orbital part
     eltype(m.x0) == outx0type || error("Output $(typeof(m)) reference orbit type $(eltype(m.x0)) must be $outx0type")
   end
 
-  outxtype = promote_type(xtypes..., numtypes...)
+  outxtype = promote_type(xtypes..., eltypes...)
   eltype(m.x) == outxtype || error("Output $(typeof(m)) orbital ray type $(eltype(m.x)) must be $xtype")
 
   if !isnothing(m.Q)
     qtypes = map(x->eltype(x.Q), mapsvfs)
-    outqtype = promote_type(qtypes..., numtypes...)
+    outqtype = promote_type(qtypes..., eltypes...)
     eltype(m.Q) == outqtype || error("Output $(typeof(m)) quaternion type $(eltype(m.Q)) must be $outqtype")
   end
 
@@ -65,7 +59,7 @@ pords(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap,Vec
   # the output map must include stochasticity if any input includes stochasticity:
   if m isa TaylorMap && !isnothing(m.E)
     Etypes = map(x->eltype(x.E), maps)
-    outtype = promote_type(xnumtypes..., Etypes...)
+    outtype = promote_type(xeltypes..., Etypes...)
     eltype(m.E) == outtype || error("Output $(typeof(m)) FD matrix type $(eltype(m.E)) must be $outtype")
   end
 
@@ -73,9 +67,9 @@ pords(m::Union{Probe{<:Real,<:Union{TPS,ComplexTPS},<:Any,<:Any},<:TaylorMap,Vec
 end
 
 @inline function checkmapsanity(m::TaylorMap)
-  eltype(m.x0) == numtype(eltype(m.x)) || error("Reference orbit type $(eltype(m.x0)) must be $(numtype(eltype(m.x))) (equal to scalar of orbital)")
+  eltype(m.x0) == eltype(eltype(m.x)) || error("Reference orbit type $(eltype(m.x0)) must be $(eltype(eltype(m.x))) (equal to scalar of orbital)")
   isnothing(m.Q) || eltype(m.Q) == eltype(m.x) || error("Quaternion type $(eltype(m.Q)) must be $(eltype(m.x)) (equal to orbital)")
-  isnothing(m.E)|| eltype(m.E) == numtype(eltype(m.x)) || error("Stochastic matrix type $(eltype(m.E)) must be $(numtype(eltype(m.x))) (equal to scalar of orbital)")
+  isnothing(m.E)|| eltype(m.E) == eltype(eltype(m.x)) || error("Stochastic matrix type $(eltype(m.E)) must be $(eltype(eltype(m.x))) (equal to scalar of orbital)")
 end
 #=
 # --- random symplectic map ---
@@ -130,7 +124,7 @@ function rand(t::Union{Type{DAMap},Type{TPSAMap}}; require_stable::Bool=true, us
     len = length(h)
     #  random coefficients for hamiltonian except 0th and 1st order terms
     for i=nv+1:len-1
-      h[i] = rand(numtype(T))
+      h[i] = rand(eltype(T))
     end
     c = from_phasor(DAMap(spin=spin,FD=FD))
     hc = h * c
@@ -140,7 +134,7 @@ function rand(t::Union{Type{DAMap},Type{TPSAMap}}; require_stable::Bool=true, us
   
     #  random coefficients for hamiltonian except 0th and 1st order terms
     for i=nv+1:len-1
-      h[i] = rand(numtype(T))
+      h[i] = rand(eltype(T))
     end
     hc = h
   end
@@ -254,10 +248,10 @@ function read_fpp_map(file; FD::Union{Nothing,Bool}=nothing,spin::Union{Nothing,
   if !isnothing(spin)
     idx = findfirst(t->t=="c_quaternion", data[:,1])
     if data[idx,3] == "identity"
-      setTPS!(m.Q.q0, 1)
-      setTPS!(m.Q.q1, 0)
-      setTPS!(m.Q.q2, 0)
-      setTPS!(m.Q.q3, 0)
+      setTPS!(m.Q.q[1], 1)
+      setTPS!(m.Q.q[2], 0)
+      setTPS!(m.Q.q[3], 0)
+      setTPS!(m.Q.q[4], 0)
     else
       for qi in m.Q
         idx = findfirst(x->(x isa Integer), data[:,1])

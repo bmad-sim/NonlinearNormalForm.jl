@@ -1,74 +1,89 @@
-function mul!(Q::Quaternion{<:Union{TPS,ComplexTPS}}, Q1::Quaternion{<:Union{TPS,ComplexTPS}}, Q2::Quaternion{<:Union{TPS,ComplexTPS}})
-  q0 = @FastGTPSA Q1.q0 * Q2.q0 - Q1.q1 * Q2.q1 - Q1.q2 * Q2.q2 - Q1.q3 * Q2.q3
-  q1 = @FastGTPSA Q1.q0 * Q2.q1 + Q1.q1 * Q2.q0 + Q1.q2 * Q2.q3 - Q1.q3 * Q2.q2
-  q2 = @FastGTPSA Q1.q0 * Q2.q2 - Q1.q1 * Q2.q3 + Q1.q2 * Q2.q0 + Q1.q3 * Q2.q1
-  q3 = @FastGTPSA Q1.q0 * Q2.q3 + Q1.q1 * Q2.q2 - Q1.q2 * Q2.q1 + Q1.q3 * Q2.q0
-
-  copy!(Q.q0, q0)
-  copy!(Q.q1, q1)
-  copy!(Q.q2, q2)
-  copy!(Q.q3, q3)
-  return Q
-end
-function *(Q1::Quaternion{<:Union{TPS,ComplexTPS}}, Q2::Quaternion{<:Union{TPS,ComplexTPS}})
-  q0 = @FastGTPSA Q1.q0 * Q2.q0 - Q1.q1 * Q2.q1 - Q1.q2 * Q2.q2 - Q1.q3 * Q2.q3
-  q1 = @FastGTPSA Q1.q0 * Q2.q1 + Q1.q1 * Q2.q0 + Q1.q2 * Q2.q3 - Q1.q3 * Q2.q2
-  q2 = @FastGTPSA Q1.q0 * Q2.q2 - Q1.q1 * Q2.q3 + Q1.q2 * Q2.q0 + Q1.q3 * Q2.q1
-  q3 = @FastGTPSA Q1.q0 * Q2.q3 + Q1.q1 * Q2.q2 - Q1.q2 * Q2.q1 + Q1.q3 * Q2.q0
-  return Quaternion(q0,q1,q2,q3)
-end
-
-function inv(Q1::Quaternion{<:Union{TPS,ComplexTPS}})
-  nrm = @FastGTPSA Q1.q0 * Q1.q0 + Q1.q1 * Q1.q1 + Q1.q2 * Q1.q2 + Q1.q3 * Q1.q3
-  q0 = Q1.q0/nrm
-  q1 = @FastGTPSA -Q1.q1/nrm
-  q2 = @FastGTPSA -Q1.q2/nrm
-  q3 = @FastGTPSA -Q1.q3/nrm
-  return Quaternion(q0,q1,q2,q3)
-end
-
-function inv!(Q::Quaternion{<:Union{TPS,ComplexTPS}}, Q1::Quaternion{<:Union{TPS,ComplexTPS}})
-  nrm = @FastGTPSA Q1.q0 * Q1.q0 + Q1.q1 * Q1.q1 + Q1.q2 * Q1.q2 + Q1.q3 * Q1.q3
-
-  div!(Q.q0, Q1.q0, nrm)
-  div!(Q.q1, Q1.q1, nrm)
-  div!(Q.q2, Q1.q2, nrm)
-  div!(Q.q3, Q1.q3, nrm)
-
-  mul!(Q.q1, Q.q1, -1)
-  mul!(Q.q2, Q.q2, -1)
-  mul!(Q.q2, Q.q2, -1)
-  return
-end
-
-function show(io::IO, Q::Quaternion{<:Union{TPS,ComplexTPS}})
-  GTPSA.show_map!(io, collect(Q), Ref{Int}(0), false, [" q0:"," q1:"," q2:"," q3:"])
-end
-
-show(io::IO, ::MIME"text/plain", Q::Quaternion{<:Union{TPS,ComplexTPS}}) = GTPSA.show_map!(io, collect(Q), Ref{Int}(0), false, [" q0:"," q1:"," q2:"," q3:"])
-
-#=
-## THIS IS DEPRECATED! WE NOW USE 
-# ReferenceFrameRotations.jl Quaternion implementation
-
 """
     Quaternion{T <: Number}
 
 Lightweight quaternion implementation for simulations.
 """
 struct Quaternion{T <: Number}
-  q::Vector{T}
+  q::MVector{4,T}
 end
 
-convert(::Type{Quaternion{S}}, Q::Quaternion{T}) where {S,T} = Quaternion(map(x->(S)(x), Q.q))
+#convert(::Type{Quaternion{S}}, Q::Quaternion{T}) where {S,T} = Quaternion(map(x->(S)(x), Q.q))
 Quaternion(Q::Quaternion{T}) where T <: Number = Quaternion(map(x->T(x), Q.q))
+Quaternion(q0, q1, q2, q3) = Quaternion(MVector{4}(promote(q0, q1, q2, q3)))
+Quaternion(q::AbstractVector{<:Number}) = Quaternion(MVector{4}(q))
 
-Quaternion(t::T) where T <: Number = Quaternion([one(t), zero(t), zero(t), zero(t)])
-Quaternion(::Nothing) = Quaternion{Nothing}(Nothing[])
+#Quaternion(t::T) where T <: Number = Quaternion([one(t), zero(t), zero(t), zero(t)])
+#Quaternion(::Nothing) = Quaternion{Nothing}(Nothing[])
 
 eltype(::Type{Quaternion{T}}) where T = T
+eltype(q::Quaternion{T}) where T = T
 
 ==(Q1::Quaternion, Q2::Quaternion) = Q1.q == Q2.q
++(Q1::Quaternion, Q2::Quaternion) = Quaternion(Q1.q .+ Q2.q)
+-(Q1::Quaternion, Q2::Quaternion) = Quaternion(Q1.q .- Q2.q)
+
+function norm(Q1::Quaternion)
+  return @FastGTPSA sqrt(Q1.q[1]^2 + Q1.q[2]^2 + Q1.q[3]^2 + Q1.q[4]^2)
+end
+
+function mul!(Q::Quaternion{<:TPS}, Q1::Quaternion{<:TPS}, Q2::Quaternion{<:TPS})
+  q0 = @FastGTPSA Q1.q[1] * Q2.q[1] - Q1.q[2] * Q2.q[2] - Q1.q[3] * Q2.q[3] - Q1.q[4] * Q2.q[4]
+  q1 = @FastGTPSA Q1.q[1] * Q2.q[2] + Q1.q[2] * Q2.q[1] + Q1.q[3] * Q2.q[4] - Q1.q[4] * Q2.q[3]
+  q2 = @FastGTPSA Q1.q[1] * Q2.q[3] - Q1.q[2] * Q2.q[4] + Q1.q[3] * Q2.q[1] + Q1.q[4] * Q2.q[2]
+  q3 = @FastGTPSA Q1.q[1] * Q2.q[4] + Q1.q[2] * Q2.q[3] - Q1.q[3] * Q2.q[2] + Q1.q[4] * Q2.q[1]
+
+  copy!(Q.q[1], q0)
+  copy!(Q.q[2], q1)
+  copy!(Q.q[3], q2)
+  copy!(Q.q[4], q3)
+  return Q
+end
+function *(Q1::Quaternion{<:TPS}, Q2::Quaternion{<:TPS})
+  q0 = @FastGTPSA Q1.q[1] * Q2.q[1] - Q1.q[2] * Q2.q[2] - Q1.q[3] * Q2.q[3] - Q1.q[4] * Q2.q[4]
+  q1 = @FastGTPSA Q1.q[1] * Q2.q[2] + Q1.q[2] * Q2.q[1] + Q1.q[3] * Q2.q[4] - Q1.q[4] * Q2.q[3]
+  q2 = @FastGTPSA Q1.q[1] * Q2.q[3] - Q1.q[2] * Q2.q[4] + Q1.q[3] * Q2.q[1] + Q1.q[4] * Q2.q[2]
+  q3 = @FastGTPSA Q1.q[1] * Q2.q[4] + Q1.q[2] * Q2.q[3] - Q1.q[3] * Q2.q[2] + Q1.q[4] * Q2.q[1]
+  return Quaternion(q0,q1,q2,q3)
+end
+
+function inv(Q1::Quaternion{<:TPS})
+  nrm = @FastGTPSA Q1.q[1] * Q1.q[1] + Q1.q[2] * Q1.q[2] + Q1.q[3] * Q1.q[3] + Q1.q[4] * Q1.q[4]
+  q0 = Q1.q[1]/nrm
+  q1 = @FastGTPSA -Q1.q[2]/nrm
+  q2 = @FastGTPSA -Q1.q[3]/nrm
+  q3 = @FastGTPSA -Q1.q[4]/nrm
+  return Quaternion(q0,q1,q2,q3)
+end
+
+function inv!(Q::Quaternion{<:TPS}, Q1::Quaternion{<:TPS})
+  nrm = @FastGTPSA Q1.q[1] * Q1.q[1] + Q1.q[2] * Q1.q[2] + Q1.q[3] * Q1.q[3] + Q1.q[4] * Q1.q[4]
+
+  div!(Q.q[1], Q1.q[1], nrm)
+  div!(Q.q[2], Q1.q[2], nrm)
+  div!(Q.q[3], Q1.q[3], nrm)
+  div!(Q.q[4], Q1.q[4], nrm)
+
+  mul!(Q.q[2], Q.q[2], -1)
+  mul!(Q.q[3], Q.q[3], -1)
+  mul!(Q.q[4], Q.q[4], -1)
+  return
+end
+
+mad_compose!(na, ma::Quaternion{TPS{Float64}},    nb, mb::AbstractVector{TPS{Float64}},    mc::Quaternion{TPS{Float64}}) = GTPSA.mad_tpsa_compose!(Cint(na), ma, Cint(nb), mb, mc)
+mad_compose!(na, ma::Quaternion{TPS{ComplexF64}}, nb, mb::AbstractVector{TPS{ComplexF64}}, mc::Quaternion{TPS{ComplexF64}}) = GTPSA.mad_ctpsa_compose!(Cint(na), ma, Cint(nb), mb, mc)
+Base.unsafe_convert(::Type{Ptr{TPS{T}}}, Q::Quaternion{<:TPS{<:T}}) where {T} = unsafe_convert(Ptr{TPS{T}}, Ref(Q))
+
+function show(io::IO, Q::Quaternion{<:TPS})
+  GTPSA.show_map!(io, Vector(Q.q), Ref{Int}(0), false, [" q0:"," q1:"," q2:"," q3:"])
+end
+
+show(io::IO, ::MIME"text/plain", Q::Quaternion{<:TPS}) = GTPSA.show_map!(io, Vector(Q.q), Ref{Int}(0), false, [" q0:"," q1:"," q2:"," q3:"])
+
+#=
+## THIS IS DEPRECATED! WE NOW USE 
+# ReferenceFrameRotations.jl Quaternion implementation
+
+
 
 """
     mul!(Q3::Quaternion, Q1::Quaternion{S}, Q2::Quaternion{T}) where {S,T}
@@ -97,9 +112,7 @@ end
 +(Q1::Quaternion, Q2::Quaternion) = Quaternion(Q1.q .+ Q2.q)
 -(Q1::Quaternion, Q2::Quaternion) = Quaternion(Q1.q .- Q2.q)
 
-function norm(Q1::Quaternion)
-  return sqrt(dot(Q1,Q1))
-end
+
 
 function *(Q1::Quaternion, Q2::Quaternion)
   q1 = Q1.q
@@ -117,23 +130,6 @@ function *(Q1::Quaternion, Q2::Quaternion)
   return Quaternion([out1,out2,out3,out4])
 end
 
-function dot(Q1::Quaternion, Q2::Quaternion)
-  q1 = Q1.q
-  q2 = Q2.q
-  return  conj(q1[1])*q2[1]+conj(q1[2])*q2[2]+conj(q1[3])*q2[3]+conj(q1[4])*q2[4]
-end
-
-function inv(Q1::Quaternion)
-  q1 = Q1.q
-  out1 = q1./dot(Q1,Q1)
-  return Quaternion([out1[1], -out1[2], -out1[3], -out1[4]])
-end
-
-function inv!(Q::Quaternion, Q1::Quaternion)
-  Q.q .= Q1.q./dot(Q1,Q1)
-  @inbounds Q.q[2:4] .*= -1
-  return
-end
 
 function to_SO3(Q1::Quaternion)
   sq1 = Q1.q[1] * Q1.q[1]
