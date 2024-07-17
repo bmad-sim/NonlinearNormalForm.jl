@@ -8,17 +8,17 @@ poisbra!(ctpsa1::TPS{ComplexF64}, tpsa1::TPS{Float64},     ctpsa::TPS{ComplexF64
 poisbra!(ctpsa1::TPS{ComplexF64}, ctpsa2::TPS{ComplexF64}, ctpsa::TPS{ComplexF64}, nv::Cint) = (@inline; GTPSA.mad_ctpsa_poisbra!(ctpsa1,ctpsa2, ctpsa, nv))
 
 """
-    pb!(h::Union{TPS,ComplexTPS}, f::Union{TPS,ComplexTPS}, g::Union{TPS,ComplexTPS})
+    pb!(h::Union{TPS,ComplexTPS64}, f::Union{TPS,ComplexTPS64}, g::Union{TPS,ComplexTPS64})
 
 In-place Poisson bracket, see the documentation for `pb` for more details.
 """
-function pb!(h::Union{TPS,ComplexTPS}, f::Union{TPS,ComplexTPS}, g::Union{TPS,ComplexTPS})
+function pb!(h::Union{TPS,ComplexTPS64}, f::Union{TPS,ComplexTPS64}, g::Union{TPS,ComplexTPS64})
   poisbra!(f.tpsa,g.tpsa,h.tpsa, numvars(f))
   return
 end
 
 """
-    pb(f::Union{TPS, ComplexTPS}, g::Union{TPS, ComplexTPS})
+    pb(f::Union{TPS, ComplexTPS64}, g::Union{TPS, ComplexTPS64})
 
 Assuming the variables in the TPSA are canonically-conjugate, and ordered so that the canonically-
 conjugate variables are consecutive (q₁, p₁, q₂, p₂, ...), computes the Poisson bracket 
@@ -57,7 +57,7 @@ TPS:
    1.0000000000000000e+00    1        0    0    1    0
 ```
 """
-function pb(f::Union{TPS, ComplexTPS}, g::Union{TPS, ComplexTPS})
+function pb(f::Union{TPS, ComplexTPS64}, g::Union{TPS, ComplexTPS64})
   h = promote_type(typeof(f),typeof(g))(use=f)
   pb!(h, f, g)
   return h
@@ -70,7 +70,7 @@ function fgrad!(g::T, F::AbstractVector{<:T}, h::T) where {T<:TPS{<:Union{Float6
   nv = numvars(h)
   @assert length(F) == nv "Incorrect length of F; received $(length(F)), should be $nv"
   @assert !(g === h) "Aliasing g === h not allowed for fgrad!"
-  if T != ComplexTPS
+  if T != ComplexTPS64
     GTPSA.mad_tpsa_fgrad!(Cint(length(F)), F, h, g)
   else
     GTPSA.mad_ctpsa_fgrad!(Cint(length(F)), F, h, g)
@@ -102,7 +102,7 @@ fld2vec!(na::Cint, ma::Vector{TPS{Float64}}, tpsa::TPS{Float64}) = (@inline; mad
 fld2vec!(na::Cint, ma::Vector{TPS{ComplexF64}},  ctpsa::TPS{ComplexF64}) = (@inline; mad_ctpsa_fld2vec!(na, ma, ctpsa))
 
 """
-    gethamiltonian(F::Vector{<:Union{TPS,ComplexTPS}})
+    gethamiltonian(F::Vector{<:Union{TPS,ComplexTPS64}})
 
 Assuming the variables in the TPSA are canonically-conjugate, and ordered so that the canonically-
 conjugate variables are consecutive (q₁, p₁, q₂, p₂, ...), this function calculates the Hamiltonian 
@@ -136,7 +136,7 @@ TPS:
   5.0000000000000000e-01      2      0   2
 ```
 """
-function gethamiltonian(F::Vector{<:Union{TPS,ComplexTPS}})
+function gethamiltonian(F::Vector{<:Union{TPS,ComplexTPS64}})
   descF = unsafe_load(Base.unsafe_convert(Ptr{Desc}, unsafe_load(F[1].tpsa).d))
   if length(F) != descF.nv
     error("Vector length != number of variables in the GTPSA")
@@ -161,12 +161,12 @@ pminv!(na::Cint, ma::Vector{TPS{Float64}}, mc::Vector{TPS{Float64}}, select::Vec
 pminv!(na::Cint, ma::Vector{TPS{ComplexF64}}, mc::Vector{TPS{ComplexF64}}, select::Vector{Cint}) = (@inline; mad_ctpsa_pminv!(na, ma, mc, select))
 
 """
-    ptinv(ma::Vector{<:Union{TPS,ComplexTPS}}, vars::Vector{<:Integer})
+    ptinv(ma::Vector{<:Union{TPS,ComplexTPS64}}, vars::Vector{<:Integer})
 
 Partially-inverts the map `ma`, inverting only the variables specified by index
 in `vars`.
 """
-function ptinv(ma::Vector{<:Union{TPS,ComplexTPS}}, vars::Vector{<:Integer})
+function ptinv(ma::Vector{<:Union{TPS,ComplexTPS64}}, vars::Vector{<:Integer})
   desc = unsafe_load(Base.unsafe_convert(Ptr{Desc}, unsafe_load(ma[1].tpsa).d))
   if length(ma) != desc.nv
     error("Map length != number of variables in the GTPSA")

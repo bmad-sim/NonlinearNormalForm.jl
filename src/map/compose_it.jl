@@ -9,23 +9,23 @@ Assumes the destination map is properly set up (with correct types promoted if n
 that `m.x[1:nv]` (and `m.Q` if spin) contain allocated TPSs. The parameters part of `m.x` (`m.x[nv+1:nn]`) 
 does not need to contain allocated TPSs.
 
-If promotion is occuring, then one of the maps is `ComplexTPS` and the other `TPS`, with output map `ComplexTPS`. 
+If promotion is occuring, then one of the maps is `ComplexTPS64` and the other `TPS`, with output map `ComplexTPS64`. 
 Note that the spin part is required to agree with the orbital part in terms of type by definition of the `TaylorMap` 
-struct. `work_prom` can optionally be passed as a tuple containing the temporary `ComplexTPS`s if promotion is occuring:
+struct. `work_prom` can optionally be passed as a tuple containing the temporary `ComplexTPS64`s if promotion is occuring:
 
 If `eltype(m.x) != eltype(m1.x)` (then `m1` must be promoted):
-`work_prom[1] = m1x_prom  # Length >= nv+np, Vector{ComplexTPS}`
+`work_prom[1] = m1x_prom  # Length >= nv+np, Vector{ComplexTPS64}`
 
 else if `eltype(m.x) != eltype(m2.x)` (then `m2` must be promoted):
 ```
-work_prom[1] = m2x_prom  # Length >= nv, Vector{ComplexTPS}
-work_prom[2] = m2Q_prom  # Length >= 4, Vector{ComplexTPS}
+work_prom[1] = m2x_prom  # Length >= nv, Vector{ComplexTPS64}
+work_prom[2] = m2Q_prom  # Length >= 4, Vector{ComplexTPS64}
 ```
-Note that the `ComplexTPS`s in the vector(s) must be allocated and have the same `Descriptor`.
+Note that the `ComplexTPS64`s in the vector(s) must be allocated and have the same `Descriptor`.
 
 If spin is included, not that the final quaternion concatenation step mul! will create allocations
 """ 
-function compose_it!(m::$t, m2::$t, m1::$t; dospin::Bool=true, dostochastic::Bool=true, work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS}}}}=prep_comp_work_prom(m,m2,m1))
+function compose_it!(m::$t, m2::$t, m1::$t; dospin::Bool=true, dostochastic::Bool=true, work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS64}}}}=prep_comp_work_prom(m,m2,m1))
   checkinplace(m, m2, m1)
   @assert !(m === m1) "Cannot compose_it!(m, m2, m1) with m === m1"
 
@@ -69,9 +69,9 @@ function compose_it!(m::$t, m2::$t, m1::$t; dospin::Bool=true, dostochastic::Boo
 
   # Spin:
   if !isnothing(m.Q) && dospin
-    compose!(m.Q.q, m2.Q.q, m1.x, work=Q_prom)
-    mul!(m.Q, m1.Q, m.Q)
-  end
+    compose!(m.Q, m2.Q, m1.x, work=Q_prom)
+    mul!(m.Q, m.Q, m1.Q) # This will be made faster eventually
+  end 
 
   # Stochastic
   # MAKE THIS FASTER!

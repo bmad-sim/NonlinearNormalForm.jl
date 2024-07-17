@@ -122,10 +122,10 @@ function $(Meta.parse(ops[1]))(m::TaylorMap, m1::TaylorMap, m2::TaylorMap; dospi
   end
 
   if !isnothing(m.Q) && dospin
-    $(Meta.parse(ops[1]))(m.Q.q[1], m1.Q.q[1], m2.Q.q[1])
-    $(Meta.parse(ops[1]))(m.Q.q[2], m1.Q.q[2], m2.Q.q[2])
-    $(Meta.parse(ops[1]))(m.Q.q[3], m1.Q.q[3], m2.Q.q[3])
-    $(Meta.parse(ops[1]))(m.Q.q[4], m1.Q.q[4], m2.Q.q[4])
+    $(Meta.parse(ops[1]))(m.Q.q0, m1.Q.q0, m2.Q.q0)
+    $(Meta.parse(ops[1]))(m.Q.q1, m1.Q.q1, m2.Q.q1)
+    $(Meta.parse(ops[1]))(m.Q.q2, m1.Q.q2, m2.Q.q2)
+    $(Meta.parse(ops[1]))(m.Q.q3, m1.Q.q3, m2.Q.q3)
   end
 
   if !isnothing(m.E)
@@ -154,11 +154,11 @@ function $(Meta.parse(ops[1]))(m::TaylorMap, J::UniformScaling, m1::TaylorMap; d
   end
 
   if !isnothing(m.Q) && dospin
-    copy!(m.Q.q[1], m1.Q.q[1])
-    copy!(m.Q.q[2], m1.Q.q[2])
-    copy!(m.Q.q[3], m1.Q.q[3])
-    copy!(m.Q.q[4], m1.Q.q[4])
-    m.Q.q[1][0] = $(ops[2])(1, m.Q.q[1][0])
+    copy!(m.Q.q0, m1.Q.q0)
+    copy!(m.Q.q1, m1.Q.q1)
+    copy!(m.Q.q2, m1.Q.q2)
+    copy!(m.Q.q3, m1.Q.q3)
+    m.Q.q0[0] = $(ops[2])(1, m.Q.q0[0])
   end
 
 
@@ -185,11 +185,11 @@ function $(Meta.parse(ops[1]))(m::TaylorMap, m1::TaylorMap, J::UniformScaling; d
   end
 
   if !isnothing(m.Q) && dospin
-    copy!(m.Q.q[1], m1.Q.q[1])
-    copy!(m.Q.q[2], m1.Q.q[2])
-    copy!(m.Q.q[3], m1.Q.q[3])
-    copy!(m.Q.q[4], m1.Q.q[4])
-    m.Q.q[1][0] = $(ops[2])(m.Q.q[1][0], 1)
+    copy!(m.Q.q0, m1.Q.q0)
+    copy!(m.Q.q1, m1.Q.q1)
+    copy!(m.Q.q2, m1.Q.q2)
+    copy!(m.Q.q3, m1.Q.q3)
+    m.Q.q0[0] = $(ops[2])(m.Q.q0[0], 1)
   end
 
   if !isnothing(m.E)
@@ -240,10 +240,10 @@ function $(Meta.parse(ops[1]))(m::TaylorMap, a::Number, m1::TaylorMap; dospin::B
   end
 
   if !isnothing(m.Q) && dospin
-    $(Meta.parse(ops[1]))(m.Q.q[1], a, m1.Q.q[1])
-    $(Meta.parse(ops[1]))(m.Q.q[2], a, m1.Q.q[2])
-    $(Meta.parse(ops[1]))(m.Q.q[3], a, m1.Q.q[3])
-    $(Meta.parse(ops[1]))(m.Q.q[4], a, m1.Q.q[4])
+    $(Meta.parse(ops[1]))(m.Q.q0, a, m1.Q.q0)
+    $(Meta.parse(ops[1]))(m.Q.q1, a, m1.Q.q1)
+    $(Meta.parse(ops[1]))(m.Q.q2, a, m1.Q.q2)
+    $(Meta.parse(ops[1]))(m.Q.q3, a, m1.Q.q3)
   end
 
   if !isnothing(m.E)
@@ -264,10 +264,10 @@ function $(Meta.parse(ops[1]))(m::TaylorMap, m1::TaylorMap, a::Number; dospin::B
   end
 
   if !isnothing(m.Q) && dospin
-    $(Meta.parse(ops[1]))(m.Q.q[1], m1.Q.q[1], a)
-    $(Meta.parse(ops[1]))(m.Q.q[2], m1.Q.q[2], a)
-    $(Meta.parse(ops[1]))(m.Q.q[3], m1.Q.q[3], a)
-    $(Meta.parse(ops[1]))(m.Q.q[4], m1.Q.q[4], a)
+    $(Meta.parse(ops[1]))(m.Q.q0, m1.Q.q0, a)
+    $(Meta.parse(ops[1]))(m.Q.q1, m1.Q.q1, a)
+    $(Meta.parse(ops[1]))(m.Q.q2, m1.Q.q2, a)
+    $(Meta.parse(ops[1]))(m.Q.q3, m1.Q.q3, a)
   end
 
   if !isnothing(m.E)

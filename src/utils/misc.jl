@@ -248,10 +248,10 @@ function read_fpp_map(file; FD::Union{Nothing,Bool}=nothing,spin::Union{Nothing,
   if !isnothing(spin)
     idx = findfirst(t->t=="c_quaternion", data[:,1])
     if data[idx,3] == "identity"
-      setTPS!(m.Q.q[1], 1)
-      setTPS!(m.Q.q[2], 0)
-      setTPS!(m.Q.q[3], 0)
-      setTPS!(m.Q.q[4], 0)
+      setTPS!(m.Q.q0, 1)
+      setTPS!(m.Q.q1, 0)
+      setTPS!(m.Q.q2, 0)
+      setTPS!(m.Q.q3, 0)
     else
       for qi in m.Q
         idx = findfirst(x->(x isa Integer), data[:,1])
@@ -259,7 +259,8 @@ function read_fpp_map(file; FD::Union{Nothing,Bool}=nothing,spin::Union{Nothing,
         while data[idx,1] >= 0
           a = data[idx,2]
           b = data[idx,3]
-          ords = data[idx,4:end]
+          ords = data[idx,4:4+nn-1]
+          #println(ords)
           qi[collect(Int,ords)] = a + im*b
           idx += 1
           count += 1

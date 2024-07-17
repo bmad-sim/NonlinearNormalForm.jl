@@ -93,7 +93,7 @@ function one(t::Type{$t{S,T,U,V,W}}; use::UseType=GTPSA.desc_current, idpt::W=no
   end
 
   if !isnothing(m.Q)
-    @inbounds m.Q.q[1][0] = 1
+    @inbounds m.Q.q0[0] = 1
   end
 
   return m

@@ -26,10 +26,10 @@ function $t(m::Union{TaylorMap{S,T,U,V,W},Probe{S,T,U,V,W}}; use::UseType=m, idp
 
   # set quaternion
   if !isnothing(outm.Q)
-    setTPS!(outm.Q.q[1], m.Q.q[1], change=true)
-    setTPS!(outm.Q.q[2], m.Q.q[2], change=true)
-    setTPS!(outm.Q.q[3], m.Q.q[3], change=true)
-    setTPS!(outm.Q.q[4], m.Q.q[4], change=true)
+    setTPS!(outm.Q.q0, m.Q.q0, change=true)
+    setTPS!(outm.Q.q1, m.Q.q1, change=true)
+    setTPS!(outm.Q.q2, m.Q.q2, change=true)
+    setTPS!(outm.Q.q3, m.Q.q3, change=true)
   end
   
   # set the reference orbit properly
@@ -57,7 +57,7 @@ end
 """
     $($t)(;use::UseType=GTPSA.desc_current, x::Vector=vars(getdesc(use)), x0::Vector=zeros(eltype(eltype(x)), numvars(use)), Q::Union{Quaternion,Nothing}=nothing, E::Union{Matrix,Nothing}=nothing, idpt::Union{Bool,Nothing}=nothing, spin::Union{Bool,Nothing}=nothing, FD::Union{Bool,Nothing}=nothing) 
 
-Constructs a $($t) with the passed vector of `TPS`/`ComplexTPS` as the orbital ray, and optionally the entrance 
+Constructs a $($t) with the passed vector of `TPS`/`ComplexTPS64` as the orbital ray, and optionally the entrance 
 coordinates `x0`, `Quaternion` for spin `Q`, and FD matrix `E` as keyword arguments. The helper keyword 
 arguments `spin` and `FD` may be set to `true` to construct a $($t) with an identity quaternion/FD 
 matrix, or `false` for no spin/FD. Note that setting `spin`/`FD` to any `Bool` value without `Q` or `E` 
@@ -129,12 +129,12 @@ function $t(;use::UseType=GTPSA.desc_current, x::Vector=vars(getdesc(use)), x0::
   # set quaternion
   if !isnothing(outm.Q)
     if !isnothing(Q)
-      setTPS!(outm.Q.q[1], Q.q[1], change=true)
-      setTPS!(outm.Q.q[2], Q.q[2], change=true)
-      setTPS!(outm.Q.q[3], Q.q[3], change=true)
-      setTPS!(outm.Q.q[4], Q.q[4], change=true)
+      setTPS!(outm.Q.q0, Q.q0, change=true)
+      setTPS!(outm.Q.q1, Q.q1, change=true)
+      setTPS!(outm.Q.q2, Q.q2, change=true)
+      setTPS!(outm.Q.q3, Q.q3, change=true)
     else
-      outm.Q.q[1][0] = 1
+      outm.Q.q0[0] = 1
     end
   end
 
@@ -168,7 +168,7 @@ function $t(M::AbstractMatrix; use::UseType=GTPSA.desc_current, x0::Vector=zeros
   nv >= size(M,1) || error("Number of rows in matrix > number of variables in GTPSA!")
 
   if eltype(M) <: Complex
-    T = ComplexTPS
+    T = ComplexTPS64
   else
     T = TPS{Float64}
   end
@@ -245,10 +245,10 @@ end
 function zero_op(m2::Union{$t,Number}, m1::Union{$t,Number})
   outtype = promote_type(typeof(m1),typeof(m2))
 
-  # If either inputs are ComplexTPS, use those parameters
+  # If either inputs are ComplexTPS64, use those parameters
   if m2 isa $t
     if m1 isa $t
-      if eltype(m2.x) == ComplexTPS
+      if eltype(m2.x) == ComplexTPS64
         return zero(outtype,use=m2,idpt=m2.idpt)
       else
         return zero(outtype,use=m1,idpt=m1.idpt)
@@ -282,7 +282,7 @@ function one(t::Type{$t{S,T,U,V,W}}; use::UseType=GTPSA.desc_current, idpt::W=no
   end
 
   if !isnothing(m.Q)
-    @inbounds m.Q.q[1][0] = 1
+    @inbounds m.Q.q0[0] = 1
   end
 
   return m

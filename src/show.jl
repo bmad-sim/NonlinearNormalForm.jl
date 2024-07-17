@@ -12,15 +12,15 @@ function show(io::IO, m::Union{Probe,TaylorMap})
     end
     if eltype(m.Q) <: TPS
       diffdescsq = false
-      for qi in m.Q.q
-        if !diffdescsq && getdesc(first(m.Q.q)) != getdesc(qi)
-          println(io, "WARNING: Atleast one $(eltype(m.Q.q.q)) in the quaternion has a different Descriptor!")
+      for qi in m.Q
+        if !diffdescsq && getdesc(first(m.Q)) != getdesc(qi)
+          println(io, "WARNING: Atleast one $(eltype(m.Q)) in the quaternion has a different Descriptor!")
           diffdescsq = true
           lines_used[] += 1
         end
       end
       diffdescsxq = false
-      if getdesc(first(m.x)) != getdesc(first(m.Q.q))
+      if getdesc(first(m.x)) != getdesc(first(m.Q))
         println(io, "WARNING: First element in orbital ray has different Descriptor than first element in quaternion!")
         diffdescsxq = true
         lines_used[] += 1
@@ -99,10 +99,10 @@ function show(io::IO, m::Union{Probe,TaylorMap})
     
     if eltype(m.Q) <: TPS
       !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || (println(io, "\t⋮"); return)
-      GTPSA.show_map!(io, collect(m.Q.q), lines_used, false, [" q0:"," q1:"," q2:"," q3:"])
+      GTPSA.show_map!(io, collect(m.Q), lines_used, false, [" q0:"," q1:"," q2:"," q3:"])
     else
       i=1
-      for qi in m.Q.q
+      for qi in m.Q
         !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || (println(io, "\t⋮"); return)
         @printf(io, "%-3s  ", "q$(i):"); println(io, qi)
         lines_used[] += 1

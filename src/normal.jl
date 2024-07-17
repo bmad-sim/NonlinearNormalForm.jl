@@ -51,7 +51,7 @@ function normal(m::DAMap, resonance=nothing)
   clear!(a1)
   setmatrix!(a1, a1_mat)
   if !isnothing(m.Q)
-    a1.Q.q[1][0] = 1
+    a1.Q.q0[0] = 1
   end
 
 
@@ -68,7 +68,7 @@ function normal(m::DAMap, resonance=nothing)
   # check if tune shift and kill
   R_inv = inv(getord(m1, 1, 0, dospin=false), dospin=false) # R is diagonal matrix
   if !isnothing(R_inv.Q)
-    R_inv.Q.q[1][0] = 1
+    R_inv.Q.q0[0] = 1
   end
 
   # Store the tunes
@@ -126,8 +126,98 @@ function normal(m::DAMap, resonance=nothing)
     m1 = inv(ant) ∘ m1 ∘ ant
   end
 
-  an = c∘an∘c^-1
+  a = a0 ∘ a1 ∘ c*an*c^-1
+
+  #return m1
+
+
+  # Fully nonlinear map in regular basis
+
+  if !isnothing(m.Q)
+    
+    # First get the 0th order quaternion to make 
+    # orbital quaternion be solely a rotation around 
+    # vertical to 0th order:
+
+    # The choice here is 
+    # We do a cross product of n0 and yhat:
+    Q0 = Quaternion(scalar.(m1.Q))
+    n0 = [Q0.q1, Q0.q2, Q0.q3]/sqrt(Q0.q1^2 + Q0.q2^2 + Q0.q3^2)
+    alpha = acos(n0[2]) #atan(real(sqrt(n0[1]^2 + n0[3]^2)), real(n0[2]))
+
+    nrm = sqrt(n0[1]^2+n0[3]^2)
+    Qr = Quaternion(cos(alpha/2), sin(alpha/2)*n0[3]/nrm, 0, -sin(alpha/2)*n0[1]/nrm)
+    
+    # now concatenate m1:
+    as = DAMap(Q=Qr)
+    m1 = inv(as)*m1*as # == Quaternion(scalar.(Qr*m.Q*inv(Qr)))
+    nu0 = 2*acos(scalar(m1.Q.q0))  # closed orbit spin tune ( i guess we could have gotten this earlier?)
+    # it is equal to  2*acos(Quaternion(scalar.(m.Q)).q0) (i.e. before transforming)
+
+    # Now we start killing the spin. The first step is to start with a map 
+    # (identity in orbital because we are done with orbital) that does this zero order rotation
+    QR_inv = DAMap(Q=inv(Quaternion(scalar.(m1.Q))))
+    # Now store analogous to eg -> egspin
+    egspin = SVector(cos(nu0)-im*sin(nu0), 1, cos(nu0)+im*sin(nu0))
+    
+    for i =1:mo
+      # get rid of ℛ:
+      linandnonl = m1 ∘ QR_inv
+      # leaves 1st, 2nd, 3rd, etc terms
+      
+      # linandnonl contains identity quaternion + delta
+      # the quaternion can be written as exp(delta) = 1+delta+delta^2 etc
+      # We see at the first iteration, linandnonl.Q.q0 contains only second order stuff
+      # (not first order). i.e. to leading order the scalar part is cleaned up but the vector
+      # part is not (first order stuff here). At the next iteration the q0 part will be only third 
+      # order and vector part second order, etc. q0 cleans up itself
+      
+      # vector part:
+      # _s = _something bc I'm only partially understanding this 
+      n_s = linandnonl.Q[2:4]
+
+      # Now we go into eigen-operators of spin 
+      # so we can identify the terms to kill much more easily
+      nr_s = [n_s[1]-im*n_s[3], n_s[2], n_s[1]+im*n_s[3]]
+      na = ComplexTPS64[0,0,0]
+
+      # now kill the terms
+      for j=1:3
+        v = Ref{ComplexF64}()
+        ords = Vector{UInt8}(undef, nn)
+        idx = GTPSA.cycle!(nr_s[j], j, nn, ords, v)
+        while idx > 0
+          # We remove every term in x and z, tune shifts will only be left in y component
+          # because of how we defined everything
+          if j != 2 || (!is_tune_shift(j, ords, nhv, true)) # then remove it, note spin components are like hamiltonian
+            lam = egspin[j]
+            for k = 1:nhv # ignore coasting plane
+              lam *= eg[k]^ords[k]
+            end
+            na[j] += mono(ords,use=getdesc(m1))*v[]/(1-lam)
+          end
   
+          idx = GTPSA.cycle!(nr_s[j], idx, nn, ords, v)
+        end
+      end
+
+      # Now exit the basis
+      na = [(na[1]+na[3])/2, na[2], im*(na[1]-na[3])/2]
+
+      # Exponentiate this part now
+      Qnr = DAMap(Q=exp(Quaternion(0,na...)))
+      as = as*Qnr # put in normalizing map
+      m1 = inv(Qnr)*m1*Qnr # kill the terms in m1
+    end
+  end
+ return a, as
+  as = a*c*as*inv(c)*inv(a)
+
+  return as*a
+   
+
+
+  return an
   return NormalForm(a0 ∘ a1 ∘ an, eg)
 end
 
@@ -140,15 +230,20 @@ end
 Checks if the monomial corresponds to a tune shift.
 
 ### Input
-- `varidx` -- Current variable index (e.g. 1 is x, 2 is px, etc)
-- `ords`   -- Array of monomial index as orders
-- `nhv`    -- Number harmonic variables
+- `varidx`      -- Current variable index (e.g. 1 is x, 2 is px, etc)
+- `ords`        -- Array of monomial index as orders
+- `nhv`         -- Number harmonic variables
+- `hamiltonian` -- Default is false, if the monomial is in a vector field and not a hamitlonian then this should be false.
 """
-function is_tune_shift(varidx, ords, nhv)
+function is_tune_shift(varidx, ords, nhv, hamiltonian=false)
   je = convert(Vector{Int}, ords)
-  je[varidx] -= 1
+  if !hamiltonian
+    je[varidx] -= 1 # have to subtract because using vectorfield and not hamiltonian
+  end
   t = 0
-  
+ 
+  # remove it if there are equal powers of hhbar = J
+
   for k = 1:2:nhv # ignore coasting plane
     t += abs(je[k]-je[k+1]) 
   end
@@ -441,7 +536,7 @@ function from_phasor!(cinv::DAMap, m::DAMap)
   end
 
   if !isnothing(cinv.Q)
-    cinv.Q.q[1][0] = 1
+    cinv.Q.q0[0] = 1
   end
 
   return
@@ -475,7 +570,7 @@ function to_phasor!(c::DAMap, m::DAMap)
   end
 
   if !isnothing(c.Q)
-    c.Q.q[1][0] = 1
+    c.Q.q0[0] = 1
   end
 
   return
@@ -605,7 +700,7 @@ function gofix!(a0::DAMap, m::DAMap, order=1; work_map::DAMap=zero(m), comp_work
   # 1: v = map-identity in harmonic planes, identity in spin
   sub!(a0, m, I, dospin=false)
   if !isnothing(a0.Q)
-    a0.Q.q[1][0] = 0
+    a0.Q.q0[0] = 0
   end
 
   # 2: map is cut to order 2 or above
@@ -625,7 +720,7 @@ function gofix!(a0::DAMap, m::DAMap, order=1; work_map::DAMap=zero(m), comp_work
   a0.x0 .= m.x0
 
   if !isnothing(m.Q)
-    a0.Q.q[1][0] = 1
+    a0.Q.q0[0] = 1
   end
 
   return a0
@@ -689,7 +784,7 @@ function linear_a!(a1::DAMap, m0::DAMap; inverse=false)
 
   # Make spin identity
   if !isnothing(m0.Q)
-    a1.Q.q[1][0] = 1
+    a1.Q.q0[0] = 1
   end
 
   return a1

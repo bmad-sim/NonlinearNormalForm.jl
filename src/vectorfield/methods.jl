@@ -10,10 +10,10 @@ function copy!(F::VectorField, F1::Union{VectorField,TaylorMap})
   end
 
   if !isnothing(F.Q)
-    copy!(F.Q.q[1], F1.Q.q[1])
-    copy!(F.Q.q[2], F1.Q.q[2])
-    copy!(F.Q.q[3], F1.Q.q[3])
-    copy!(F.Q.q[4], F1.Q.q[4])
+    copy!(F.Q.q0, F1.Q.q0)
+    copy!(F.Q.q1, F1.Q.q1)
+    copy!(F.Q.q2, F1.Q.q2)
+    copy!(F.Q.q3, F1.Q.q3)
   end
 
   return F
@@ -27,10 +27,10 @@ function clear!(F::VectorField)
     @inbounds clear!(F.x[i])
   end
   if !isnothing(F.Q)
-    clear!(F.Q.q[1])
-    clear!(F.Q.q[2])
-    clear!(F.Q.q[3])
-    clear!(F.Q.q[4])
+    clear!(F.Q.q0)
+    clear!(F.Q.q1)
+    clear!(F.Q.q2)
+    clear!(F.Q.q3)
   end
   return
 end
@@ -42,15 +42,15 @@ function complex(F::VectorField)
   nn = numnn(desc)
   nv = numvars(desc)
   
-  x = Vector{ComplexTPS}(undef, nv)
+  x = Vector{ComplexTPS64}(undef, nv)
   for i=1:nv
-    @inbounds x[i] = ComplexTPS(F.x[i],use=desc)
+    @inbounds x[i] = ComplexTPS64(F.x[i],use=desc)
   end
 
   if !isnothing(m.Q)
-    q = Vector{ComplexTPS}(undef, 4)
+    q = Vector{ComplexTPS64}(undef, 4)
     for i=1:4
-      @inbounds q[i] = ComplexTPS(F.Q.q[i],use=desc)
+      @inbounds q[i] = ComplexTPS64(F.Q.q[i],use=desc)
     end
     Q = Quaternion(q)
   else
@@ -62,7 +62,7 @@ end
 =#
 # --- complex type ---
 function complex(::Type{VectorField{T,U}}) where {T,U}
-  return VectorField{ComplexTPS, U == Nothing ? Nothing : Quaternion{ComplexTPS}}
+  return VectorField{ComplexTPS64, U == Nothing ? Nothing : Quaternion{ComplexTPS64}}
 end
 
 # --- Lie bracket including spin ---
@@ -115,37 +115,37 @@ function lb!(G::VectorField, F::VectorField, H::VectorField; work_Q::Union{Quate
     mul!(G.Q, H.Q, F.Q)
     mul!(work_Q, F.Q, H.Q)
 
-    sub!(G.Q.q[1], G.Q.q[1], work_Q.q[1])
-    sub!(G.Q.q[2], G.Q.q[2], work_Q.q[2])
-    sub!(G.Q.q[3], G.Q.q[3], work_Q.q[3])
-    sub!(G.Q.q[4], G.Q.q[4], work_Q.q[4])
+    sub!(G.Q.q0, G.Q.q0, work_Q.q0)
+    sub!(G.Q.q1, G.Q.q1, work_Q.q1)
+    sub!(G.Q.q2, G.Q.q2, work_Q.q2)
+    sub!(G.Q.q3, G.Q.q3, work_Q.q3)
 
     # then +F⋅∇h 
-    tmp = work_Q.q[1]
-    fgrad!(tmp, F.x, H.Q.q[1])
-    add!(G.Q.q[1], G.Q.q[1], tmp)
+    tmp = work_Q.q0
+    fgrad!(tmp, F.x, H.Q.q0)
+    add!(G.Q.q0, G.Q.q0, tmp)
 
-    fgrad!(tmp, F.x, H.Q.q[2])
-    add!(G.Q.q[2], G.Q.q[2], tmp)
+    fgrad!(tmp, F.x, H.Q.q1)
+    add!(G.Q.q1, G.Q.q1, tmp)
 
-    fgrad!(tmp, F.x, H.Q.q[3])
-    add!(G.Q.q[3], G.Q.q[3], tmp)
+    fgrad!(tmp, F.x, H.Q.q2)
+    add!(G.Q.q2, G.Q.q2, tmp)
 
-    fgrad!(tmp, F.x, H.Q.q[4])
-    add!(G.Q.q[4], G.Q.q[4], tmp)
+    fgrad!(tmp, F.x, H.Q.q3)
+    add!(G.Q.q3, G.Q.q3, tmp)
     
     # finally -G⋅∇f
-    fgrad!(tmp, G.x, F.Q.q[1])
-    sub!(G.Q.q[1], G.Q.q[1], tmp)
+    fgrad!(tmp, G.x, F.Q.q0)
+    sub!(G.Q.q0, G.Q.q0, tmp)
 
-    fgrad!(tmp, G.x, F.Q.q[2])
-    sub!(G.Q.q[2], G.Q.q[2], tmp)
+    fgrad!(tmp, G.x, F.Q.q1)
+    sub!(G.Q.q1, G.Q.q1, tmp)
 
-    fgrad!(tmp, G.x, F.Q.q[3])
-    sub!(G.Q.q[3], G.Q.q[3], tmp)
+    fgrad!(tmp, G.x, F.Q.q2)
+    sub!(G.Q.q2, G.Q.q2, tmp)
 
-    fgrad!(tmp, G.x, F.Q.q[4])
-    sub!(G.Q.q[4], G.Q.q[4], tmp)
+    fgrad!(tmp, G.x, F.Q.q3)
+    sub!(G.Q.q3, G.Q.q3, tmp)
   end
   return
 end
@@ -195,15 +195,15 @@ function mul!(m::DAMap, F::VectorField, m1::DAMap; work_Q::Union{Quaternion,Noth
   # Spin F⋅∇q + qf (quaternion part acts in reverse order):
   if !isnothing(F.Q)
     mul!(work_Q, m1.Q, F.Q)
-    fgrad!(m.Q.q[1], F.x, m1.Q.q[1])
-    fgrad!(m.Q.q[2], F.x, m1.Q.q[2])
-    fgrad!(m.Q.q[3], F.x, m1.Q.q[3])
-    fgrad!(m.Q.q[4], F.x, m1.Q.q[4])
+    fgrad!(m.Q.q0, F.x, m1.Q.q0)
+    fgrad!(m.Q.q1, F.x, m1.Q.q1)
+    fgrad!(m.Q.q2, F.x, m1.Q.q2)
+    fgrad!(m.Q.q3, F.x, m1.Q.q3)
 
-    add!(m.Q.q[1], m.Q.q[1], work_Q.q[1])
-    add!(m.Q.q[2], m.Q.q[2], work_Q.q[2])
-    add!(m.Q.q[3], m.Q.q[3], work_Q.q[3])
-    add!(m.Q.q[4], m.Q.q[4], work_Q.q[4])
+    add!(m.Q.q0, m.Q.q0, work_Q.q0)
+    add!(m.Q.q1, m.Q.q1, work_Q.q1)
+    add!(m.Q.q2, m.Q.q2, work_Q.q2)
+    add!(m.Q.q3, m.Q.q3, work_Q.q3)
   end
 
   if !isnothing(m.E)

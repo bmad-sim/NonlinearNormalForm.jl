@@ -76,7 +76,7 @@ function inv!(m::TaylorMap, m1::TaylorMap; dospin::Bool=true, work_ref::Union{No
   # Now do quaternion: inverse of q(z0) is q^-1(M^-1(zf))
   if !isnothing(m.Q) && dospin
     inv!(m.Q, m1.Q)
-    compose!(m.Q.q, m.Q.q, m.x)
+    compose!(m.Q, m.Q, m.x)
   end
 
   if m1 === m

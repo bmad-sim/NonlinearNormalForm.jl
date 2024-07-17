@@ -32,6 +32,7 @@ set (EXE_SPECS
   cmake_files/cmake.z_radiation_matt_fake_maps
   cmake_files/cmake.z_canonize_matt_fake_maps
   cmake_files/cmake.z_resonance
+  cmake_files/cmake.z_spin1
 )
 
 
