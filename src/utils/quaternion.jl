@@ -80,7 +80,7 @@ function exp(Q1::Quaternion{T}) where {T<:TPS}
   slow = false
 
   Qout = Quaternion{T}(1,0,0,0)
-  Q = Q1
+  Q = Quaternion{T}(1,0,0,0)
   for j=1:nmax
     Q = Q*Q1/j
     Qout .+= Q

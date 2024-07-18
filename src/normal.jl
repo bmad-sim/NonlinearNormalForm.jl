@@ -54,8 +54,6 @@ function normal(m::DAMap, resonance=nothing)
     a1.Q.q0[0] = 1
   end
 
-
-
   m1 = a1^-1 ∘ m0 ∘ a1
 
   # 3: Go into phasor's basis
@@ -98,7 +96,7 @@ function normal(m::DAMap, resonance=nothing)
     for j=1:numvars(m)
       v = Ref{ComplexF64}()
       ords = Vector{UInt8}(undef, nn)
-      idx = GTPSA.cycle!(nonl.x[j], j, nn, ords, v)
+      idx = GTPSA.cycle!(nonl.x[j], 0, nn, ords, v)
       while idx > 0
         # Tune shifts should be left in the map (kernel) because we cannot remove them
         # if there is damping, we technically could remove them
@@ -147,22 +145,21 @@ function normal(m::DAMap, resonance=nothing)
 
     nrm = sqrt(n0[1]^2+n0[3]^2)
     Qr = Quaternion(cos(alpha/2), sin(alpha/2)*n0[3]/nrm, 0, -sin(alpha/2)*n0[1]/nrm)
-    
     # now concatenate m1:
     as = DAMap(Q=Qr)
     m1 = inv(as)*m1*as # == Quaternion(scalar.(Qr*m.Q*inv(Qr)))
     nu0 = 2*acos(scalar(m1.Q.q0))  # closed orbit spin tune ( i guess we could have gotten this earlier?)
     # it is equal to  2*acos(Quaternion(scalar.(m.Q)).q0) (i.e. before transforming)
-
     # Now we start killing the spin. The first step is to start with a map 
     # (identity in orbital because we are done with orbital) that does this zero order rotation
-    QR_inv = DAMap(Q=inv(Quaternion(scalar.(m1.Q))))
+    Qr_inv = DAMap(Q=inv(Quaternion(scalar.(m1.Q))))
     # Now store analogous to eg -> egspin
-    egspin = SVector(cos(nu0)-im*sin(nu0), 1, cos(nu0)+im*sin(nu0))
+    egspin = SVector(cos(nu0)+im*sin(nu0), 1, cos(nu0)-im*sin(nu0))
     
     for i =1:mo
       # get rid of ℛ:
-      linandnonl = m1 ∘ QR_inv
+      linandnonl = m1 ∘ Qr_inv
+      
       # leaves 1st, 2nd, 3rd, etc terms
       
       # linandnonl contains identity quaternion + delta
@@ -179,13 +176,14 @@ function normal(m::DAMap, resonance=nothing)
       # Now we go into eigen-operators of spin 
       # so we can identify the terms to kill much more easily
       nr_s = [n_s[1]-im*n_s[3], n_s[2], n_s[1]+im*n_s[3]]
+      nr_s = GTPSA.compose(nr_s,R_inv.x)
       na = ComplexTPS64[0,0,0]
 
       # now kill the terms
       for j=1:3
         v = Ref{ComplexF64}()
         ords = Vector{UInt8}(undef, nn)
-        idx = GTPSA.cycle!(nr_s[j], j, nn, ords, v)
+        idx = GTPSA.cycle!(nr_s[j], 0, nn, ords, v)
         while idx > 0
           # We remove every term in x and z, tune shifts will only be left in y component
           # because of how we defined everything
@@ -210,10 +208,8 @@ function normal(m::DAMap, resonance=nothing)
       m1 = inv(Qnr)*m1*Qnr # kill the terms in m1
     end
   end
- return a, as
-  as = a*c*as*inv(c)*inv(a)
-
-  return as*a
+  #return a
+  return  a*c*as*c^-1
    
 
 

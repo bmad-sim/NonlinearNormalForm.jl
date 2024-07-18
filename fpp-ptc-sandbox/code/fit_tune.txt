@@ -1,0 +1,11 @@
+ select layout
+   1  
+ L MAX  
+   1.0000000000000000E-002                                                                                              
+ CUTTING ALGORITHM 
+ 2 
+ LIMIT FOR CUTTING 
+ 10000 10000 
+ MISALIGN EVERYTHING
+ 0.001 0.001 0.001 0.001 0.001   0.001  5 
+ return
