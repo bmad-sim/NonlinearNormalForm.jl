@@ -3,7 +3,7 @@ struct NormalForm
   evals
 end
 
-function normal(m::DAMap, resonance=nothing)
+function normal(m::DAMap; res=nothing, spin_res=nothing)
   nn = numnn(m)
   
   # 1: Go to parameter-dependent fixed point to first order ONLY!
@@ -100,7 +100,7 @@ function normal(m::DAMap, resonance=nothing)
       while idx > 0
         # Tune shifts should be left in the map (kernel) because we cannot remove them
         # if there is damping, we technically could remove them
-        if !is_tune_shift(j, ords, nhv) && !is_resonance(j, ords, nhv, resonance) # then remove it
+        if !is_tune_shift(j, ords, nhv) && !is_resonance(j, ords, nhv, res) # then remove it
           je = convert(Vector{Int}, ords)
           je[j] -= 1
           lam = 1
@@ -108,7 +108,7 @@ function normal(m::DAMap, resonance=nothing)
             lam *= eg[k]^je[k]
           end
           F.x[j] += mono(ords,use=getdesc(m1))*v[]/(1-lam)
-        else # cannot remove it - add to kernel (if close to resonance and resonance is specified it will nearly blow up)
+        else # cannot remove it - add to kernel (if close to res and res is specified it will nearly blow up)
           Fker.x[j] += mono(ords,use=getdesc(m1))*v[]
         end
 
@@ -187,7 +187,7 @@ function normal(m::DAMap, resonance=nothing)
         while idx > 0
           # We remove every term in x and z, tune shifts will only be left in y component
           # because of how we defined everything
-          if j != 2 || (!is_tune_shift(j, ords, nhv, true)) # then remove it, note spin components are like hamiltonian
+          if j != 2 || (!is_tune_shift(j, ords, nhv, true) && !is_spin_resonance(j, ords, nhv, res, spin_res)) # then remove it, note spin components are like hamiltonian
             lam = egspin[j]
             for k = 1:nhv # ignore coasting plane
               lam *= eg[k]^ords[k]
@@ -252,7 +252,7 @@ function is_tune_shift(varidx, ords, nhv, hamiltonian=false)
 end
 
 """
-    is_resonance(varidx, ords, nhv, resonance)
+    is_resonance(varidx, ords, nhv, res)
 
 Checks if the monomial corresponds to a particular resonance 
 (and resonance in the same family)
@@ -262,7 +262,7 @@ Note that for 3*Q_x = integer, we also have 6*Q_x though where
 lambda*(3*Q_x) = integer where lambda*3 <= MAXORD + 1 according to notes
 are in the same family and so these must be left in too. These are the same family
 
-each column of resonance corresponds to one resonance in the family
+each column of resonance corresponds to one res in the family
 
 Each row is a multiple of previous
 
@@ -273,20 +273,20 @@ m =
   3  6  9  ...];
 
 """
-function is_resonance(varidx, ords, nhv, resonance)
-  if isnothing(resonance)
+function is_resonance(varidx, ords, nhv, res)
+  if isnothing(res)
     return false
   end
   je = convert(Vector{Int}, ords)
   je[varidx] -= 1
 
-  for curresidx=1:size(resonance, 2) # for each resonance in the family
+  for curresidx=1:size(res, 2) # for each res in the family
     t1 = 0
     t2 = 0
     
     for k = 1:2:nhv # ignore coasting plane
-      t1 += abs(je[k]-je[k+1]+resonance[Int((k+1)/2),curresidx]) 
-      t2 += abs(je[k]-je[k+1]-resonance[Int((k+1)/2),curresidx]) 
+      t1 += abs(je[k]-je[k+1]+res[Int((k+1)/2),curresidx]) 
+      t2 += abs(je[k]-je[k+1]-res[Int((k+1)/2),curresidx]) 
     end
     if t1 == 0 || t2 == 0
       return true # keep it in!
@@ -294,6 +294,56 @@ function is_resonance(varidx, ords, nhv, resonance)
   end
   return false
 end
+
+"""
+
+
+0*Qx + 1*Qy + 1*Qs = n
+m = [0  0  0 ...;
+     1  2  3 ...]
+
+ms = [1, 2, 3, ...]
+
+In the code, check - of m + ms
+"""
+function is_spin_resonance(spinidx, ords, nhv, res, spin_res)
+  if isnothing(res) && isnothing(spin_res)
+    return false
+  end
+
+  @assert size(res, 2) == length(spin_res) "Number of resonances in spin_res != number of resonances in res"
+
+  for curresidx=1:size(res, 2) # for each res in the family
+    t1 = 0
+    t2 = 0
+    
+    for k = 1:2:nhv # ignore coasting plane
+      t1 += abs(ords[k]-ords[k+1]+res[Int((k+1)/2),curresidx]) 
+      t2 += abs(ords[k]-ords[k+1]-res[Int((k+1)/2),curresidx]) 
+    end
+
+    m = spin_res[curresidx]
+    if spinidx == 1      # i
+      if m > 0 && t1 == 0
+        return true
+      elseif m < 0 && t2 == 0
+        return true
+      end
+    elseif spinidx == 3  # k
+      if m > 0 && t2 == 0
+        return true
+      elseif m < 0 && t1 == 0
+        return true
+      end
+    else                 # j vertical 
+      if t1 + abs(m) == 0 || t2 + abs(m) == 0
+        return true
+      end
+    end
+  end
+  return false
+end
+
 
 function equilibrium_moments(m::DAMap, a::DAMap)
   !isnothing(m.E) || error("Map does not have stochasticity")
@@ -428,7 +478,7 @@ function fast_canonize(a::DAMap, damping::Bool=!isnothing(a.E))
 end
 
 # This can help give you the fixed point
-function calc_Hr(m, n, resonance)
+function calc_Hr(m, n, res)
   a = n.a
   c = to_phasor(m)
   R = inv(c)*inv(a)*m*a*c
@@ -441,12 +491,12 @@ function calc_Hr(m, n, resonance)
   # --------------------------------
   
   # First we have to rotate back 
-  # We can use any resonance in the resonance family, so just use first
+  # We can use any res in the res family, so just use first
   # need to get tunes around -0.5, 0.5
   mu = imag.(log.(n.evals[1:2:end]))
 
   s = 0
-  mr = resonance[:,1]
+  mr = res[:,1]
   for i in eachindex(mu)
     if abs(mu[i]) > pi
       sgn = sign(mu[i])
@@ -460,11 +510,11 @@ function calc_Hr(m, n, resonance)
   # We first have
   # R = exp(-mu dot J)*Nonlinear
   # We want to split this into components parallel and perpendicular 
-  # to plane of resonance, e.g.
+  # to plane of res, e.g.
 
   # -mu dot J = -(mu dot mr)/(mr^2)*mr dot J - (mu dot a)/(a^2)*a dot J  
-  # where the first term is the parallel to resonance and second is
-  # perpendicular to resonance (a's are vectors perpendicular to mr)
+  # where the first term is the parallel to res and second is
+  # perpendicular to res (a's are vectors perpendicular to mr)
 
   # First need to compute -mu dot J as a VectorField
   # Note 3.51 and 3.51 in EBB are incorrect
