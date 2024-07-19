@@ -164,7 +164,7 @@ U_0%q=1.d0
  U_0=u_0*exp(fq)
  
 Nc=Ci_phasor()*N*U_0**(-1)*c_phasor()
-fq=c_logf_spin(Nc)
+fq=ln(Nc)
 
 call c_q0_to_qr(fq%q,qf)
  

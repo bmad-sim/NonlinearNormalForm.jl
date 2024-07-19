@@ -441,6 +441,19 @@ z_spin_res-exe/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_spin_res-exe.dir/build.make CMakeFiles/z_spin_res-exe.dir/build
 .PHONY : z_spin_res-exe/fast
 
+#=============================================================================
+# Target rules for targets named z_benggston-exe
+
+# Build rule for target.
+z_benggston-exe: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 z_benggston-exe
+.PHONY : z_benggston-exe
+
+# fast build rule for target.
+z_benggston-exe/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_benggston-exe.dir/build.make CMakeFiles/z_benggston-exe.dir/build
+.PHONY : z_benggston-exe/fast
+
 normal_simple.o: normal_simple.f90.o
 .PHONY : normal_simple.o
 
@@ -464,6 +477,30 @@ normal_simple.s: normal_simple.f90.s
 normal_simple.f90.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/normal_simple-exe.dir/build.make CMakeFiles/normal_simple-exe.dir/normal_simple.f90.s
 .PHONY : normal_simple.f90.s
+
+z_benggston.o: z_benggston.f90.o
+.PHONY : z_benggston.o
+
+# target to build an object file
+z_benggston.f90.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_benggston-exe.dir/build.make CMakeFiles/z_benggston-exe.dir/z_benggston.f90.o
+.PHONY : z_benggston.f90.o
+
+z_benggston.i: z_benggston.f90.i
+.PHONY : z_benggston.i
+
+# target to preprocess a source file
+z_benggston.f90.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_benggston-exe.dir/build.make CMakeFiles/z_benggston-exe.dir/z_benggston.f90.i
+.PHONY : z_benggston.f90.i
+
+z_benggston.s: z_benggston.f90.s
+.PHONY : z_benggston.s
+
+# target to generate assembly for a file
+z_benggston.f90.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_benggston-exe.dir/build.make CMakeFiles/z_benggston-exe.dir/z_benggston.f90.s
+.PHONY : z_benggston.f90.s
 
 z_canonize_matt_fake_maps.o: z_canonize_matt_fake_maps.f90.o
 .PHONY : z_canonize_matt_fake_maps.o
@@ -1050,6 +1087,7 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... normal_simple-exe"
+	@echo "... z_benggston-exe"
 	@echo "... z_canonize_matt_fake_maps-exe"
 	@echo "... z_coast_matt_fake_maps-exe"
 	@echo "... z_cut-exe"
@@ -1077,6 +1115,9 @@ help:
 	@echo "... normal_simple.o"
 	@echo "... normal_simple.i"
 	@echo "... normal_simple.s"
+	@echo "... z_benggston.o"
+	@echo "... z_benggston.i"
+	@echo "... z_benggston.s"
 	@echo "... z_canonize_matt_fake_maps.o"
 	@echo "... z_canonize_matt_fake_maps.i"
 	@echo "... z_canonize_matt_fake_maps.s"

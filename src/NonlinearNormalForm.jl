@@ -109,7 +109,8 @@ export        TaylorMap,
 
 
               inv_with_log,
-              equilibrium_moments
+              equilibrium_moments,
+              factorize
 
 
 

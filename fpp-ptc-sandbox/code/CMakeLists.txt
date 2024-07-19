@@ -34,6 +34,7 @@ set (EXE_SPECS
   cmake_files/cmake.z_resonance
   cmake_files/cmake.z_spin1
   cmake_files/cmake.z_spin_res
+  cmake_files/cmake.z_benggston
 )
 
 

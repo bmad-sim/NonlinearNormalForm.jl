@@ -148,13 +148,13 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
     nrm = sqrt(n0[1]^2+n0[3]^2)
     Qr = Quaternion(cos(alpha/2), sin(alpha/2)*n0[3]/nrm, 0, -sin(alpha/2)*n0[1]/nrm)
     # now concatenate m1:
-    as = DAMap(Q=Qr)
+    as = DAMap(Q=Qr,idpt=m.idpt)
     m1 = inv(as)*m1*as # == Quaternion(scalar.(Qr*m.Q*inv(Qr)))
     nu0 = 2*acos(scalar(m1.Q.q0))  # closed orbit spin tune ( i guess we could have gotten this earlier?)
     # it is equal to  2*acos(Quaternion(scalar.(m.Q)).q0) (i.e. before transforming)
     # Now we start killing the spin. The first step is to start with a map 
     # (identity in orbital because we are done with orbital) that does this zero order rotation
-    Qr_inv = DAMap(Q=inv(Quaternion(scalar.(m1.Q))))
+    Qr_inv = DAMap(Q=inv(Quaternion(scalar.(m1.Q))),idpt=m.idpt)
     # Now store analogous to eg -> egspin
     egspin = SVector(cos(nu0)+im*sin(nu0), 1, cos(nu0)-im*sin(nu0))
 
@@ -209,7 +209,7 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
 
       
       # Exponentiate this part now
-      Qnr = DAMap(Q=exp(Quaternion(0,na...)))
+      Qnr = DAMap(Q=exp(Quaternion(0,na...)),idpt=m.idpt)
       as = as*Qnr # put in normalizing map
       m1 = inv(Qnr)*m1*Qnr # kill the terms in m1
     end
@@ -224,6 +224,80 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
 
   return an
   return NormalForm(a0 ∘ a1 ∘ an, eg)
+end
+
+
+# to get dbeta/ddelta, first go to fully nonlinear parameter dependent fixed point
+# then calculate lattice functions. Lattice functions will be TPSA and then you 
+# can extract dbeta/ddelta
+function factorize(a)
+  # We get a0*a1*an
+  if !isnothing(a.idpt) # if coasting, set number of variables executing pseudo-harmonic oscillations
+    nhv = numvars(a)-2
+    ndpt = numvars(a)-1+a.idpt # energy like variable index
+    sgn = 1-2*a.idpt
+    nt = ndpt+sgn # timelike variable index
+    zer = zero(a); zer.x[nt][nt]=1; zer.x[ndpt][ndpt] = 1
+
+    a0 = a∘zer
+
+
+    nhv = numvars(a)-2
+
+    # ensure poisson bracket does not change
+    for i=1:Int(nhv/2)
+      a0.x[nt] += sgn*deriv(a0.x[2*i], ndpt)*mono(2*i-1,use=getdesc(a)) - sgn*deriv(a0.x[2*i-1], ndpt)*mono(2*i,use=getdesc(a)) # first order
+      #return a0.x[2*i-1]
+      # dies at second order poisson bracket
+      #print(sgn*0.5*(deriv(a0.x[2*i], ndpt)*a0.x[2*i-1] - deriv(a0.x[2*i-1], ndpt)*a0.x[2*i]))
+      #return
+      a0.x[nt] += sgn*0.5*(deriv(a0.x[2*i], ndpt)*a0.x[2*i-1] - deriv(a0.x[2*i-1], ndpt)*a0.x[2*i])
+    end
+
+    eye = zero(a)
+    setmatrix!(eye, I(nhv))
+    if !isnothing(eye.Q)
+      eye.Q.q0[0] = 1
+    end
+    a0 += eye
+  else
+    nhv = numvars(a)
+    a0 = a∘zero(a)+I
+  end
+
+  a1 = inv(a0)*a 
+  for i=1:nhv
+    tmp = zero(a1.x[i])
+    ords = zeros(Int, nhv)
+    for j=1:nhv
+      ords[j] += 1
+      tmp += a1.x[i][(ords..., :)]
+      ords[j] -= 1
+    end
+    a1.x[i] = tmp
+  end
+
+  if !isnothing(a.Q)
+    a1.Q.q0 = 1
+    a1.Q.q1 = 0
+    a1.Q.q2 = 0
+    a1.Q.q3 = 0
+  end
+
+  a2 = inv(a1)*inv(a0)*a
+
+  if !isnothing(a.Q)
+    a2.Q.q0 = 1
+    a2.Q.q1 = 0
+    a2.Q.q2 = 0
+    a2.Q.q3 = 0
+
+    as = inv(a2)*inv(a1)*inv(a0)*a
+    return a0, a1, a2, as
+  end
+
+  return a0, a1, a2
+
 end
 
 
