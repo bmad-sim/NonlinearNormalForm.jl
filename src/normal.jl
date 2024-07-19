@@ -100,7 +100,7 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
       while idx > 0
         # Tune shifts should be left in the map (kernel) because we cannot remove them
         # if there is damping, we technically could remove them
-        if !is_tune_shift(j, ords, nhv) && !is_resonance(j, ords, nhv, res) # then remove it
+        if !is_tune_shift(j, ords, nhv) && !is_orbital_resonance(j, ords, nhv, res, spin_res) # then remove it
           je = convert(Vector{Int}, ords)
           je[j] -= 1
           lam = 1
@@ -109,11 +109,13 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
           end
           F.x[j] += mono(ords,use=getdesc(m1))*v[]/(1-lam)
         else # cannot remove it - add to kernel (if close to res and res is specified it will nearly blow up)
+          println("keeping monomial ", Vector{Int}(ords), ", v = ", v[])
           Fker.x[j] += mono(ords,use=getdesc(m1))*v[]
         end
 
         idx = GTPSA.cycle!(nonl.x[j], idx, nn, ords, v)
       end
+      println("================================")
     end
 
     kert = exp(Fker,one(m)) #I + Fker
@@ -155,7 +157,7 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
     Qr_inv = DAMap(Q=inv(Quaternion(scalar.(m1.Q))))
     # Now store analogous to eg -> egspin
     egspin = SVector(cos(nu0)+im*sin(nu0), 1, cos(nu0)-im*sin(nu0))
-    
+
     for i =1:mo
       # get rid of ℛ:
       linandnonl = m1 ∘ Qr_inv
@@ -183,33 +185,40 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
       for j=1:3
         v = Ref{ComplexF64}()
         ords = Vector{UInt8}(undef, nn)
-        idx = GTPSA.cycle!(nr_s[j], 0, nn, ords, v)
+        idx = GTPSA.cycle!(nr_s[j], 0, nn, ords, v) 
         while idx > 0
           # We remove every term in x and z, tune shifts will only be left in y component
           # because of how we defined everything
-          if j != 2 || (!is_tune_shift(j, ords, nhv, true) && !is_spin_resonance(j, ords, nhv, res, spin_res)) # then remove it, note spin components are like hamiltonian
+          # NOTE SPIN RESONANCES WILL HAPPEN WHEN j != 2 SO WE CHECK THAT FIRST!!
+          if !is_spin_resonance(j, ords, nhv, res, spin_res) && (j != 2 || !is_tune_shift(j, ords, nhv, true)) # then remove it, note spin components are like hamiltonian
             lam = egspin[j]
             for k = 1:nhv # ignore coasting plane
               lam *= eg[k]^ords[k]
             end
             na[j] += mono(ords,use=getdesc(m1))*v[]/(1-lam)
+          else
+            println("keeping monomial ", Vector{Int}(ords), ", v = ", v[])
           end
   
           idx = GTPSA.cycle!(nr_s[j], idx, nn, ords, v)
         end
+        println("==================================")
       end
-
       # Now exit the basis
       na = [(na[1]+na[3])/2, na[2], im*(na[1]-na[3])/2]
 
+      
       # Exponentiate this part now
       Qnr = DAMap(Q=exp(Quaternion(0,na...)))
       as = as*Qnr # put in normalizing map
       m1 = inv(Qnr)*m1*Qnr # kill the terms in m1
     end
+    return  a*c*as*c^-1
   end
-  #return a
-  return  a*c*as*c^-1
+
+  #return as
+  return a
+  
    
 
 
@@ -252,7 +261,7 @@ function is_tune_shift(varidx, ords, nhv, hamiltonian=false)
 end
 
 """
-    is_resonance(varidx, ords, nhv, res)
+    is_orbital_resonance(varidx, ords, nhv, res)
 
 Checks if the monomial corresponds to a particular resonance 
 (and resonance in the same family)
@@ -273,14 +282,18 @@ m =
   3  6  9  ...];
 
 """
-function is_resonance(varidx, ords, nhv, res)
+function is_orbital_resonance(varidx, ords, nhv, res, spin_res)
   if isnothing(res)
     return false
   end
+
   je = convert(Vector{Int}, ords)
   je[varidx] -= 1
 
   for curresidx=1:size(res, 2) # for each res in the family
+    if !isnothing(spin_res) && spin_res[curresidx] != 0
+      return false # spin res not orbital res
+    end
     t1 = 0
     t2 = 0
     
@@ -297,12 +310,18 @@ end
 
 """
 
+nu_s + j dot Q = n
 
-0*Qx + 1*Qy + 1*Qs = n
-m = [0  0  0 ...;
-     1  2  3 ...]
+0*Qx + 1*Qy + 2*Qs = n
 
-ms = [1, 2, 3, ...]
+IMPORTANT::::
+For spin resonances, there is only one resonance
+in each resonance family:
+
+m = [0 ;
+     1  ]
+
+ms = [1];
 
 In the code, check - of m + ms
 """
@@ -310,6 +329,7 @@ function is_spin_resonance(spinidx, ords, nhv, res, spin_res)
   if isnothing(res) && isnothing(spin_res)
     return false
   end
+  je = convert(Vector{Int}, ords)
 
   @assert size(res, 2) == length(spin_res) "Number of resonances in spin_res != number of resonances in res"
 
@@ -318,8 +338,8 @@ function is_spin_resonance(spinidx, ords, nhv, res, spin_res)
     t2 = 0
     
     for k = 1:2:nhv # ignore coasting plane
-      t1 += abs(ords[k]-ords[k+1]+res[Int((k+1)/2),curresidx]) 
-      t2 += abs(ords[k]-ords[k+1]-res[Int((k+1)/2),curresidx]) 
+      t1 += abs(je[k]-je[k+1]+res[Int((k+1)/2),curresidx]) 
+      t2 += abs(je[k]-je[k+1]-res[Int((k+1)/2),curresidx]) 
     end
 
     m = spin_res[curresidx]

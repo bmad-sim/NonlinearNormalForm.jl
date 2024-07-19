@@ -178,9 +178,37 @@ program Resonance
   !kall c_linear_a(T,A)
   !call print(A)
 !  stop
-  
+  !call print(T)
+  !stopS
+  res=.true.
+   
+  normal_form%positive=.false.
+if(res) normal_form%nres=(c_%no+1)/3
+  write(6,*) " # of resonance terms ",normal_form%nres
+  do i=1, (c_%no+1)/3
+  if(res) normal_form%m(1,i)=3*i ! 1/3 order 
+  enddo
+ 
+mr2=0
+if(res) then
+ do i=1,c_%nd
+mr2=mr2+normal_form%m(i,1)**2
+enddo
+ 
+s=0 
+do i=1,c_%nd
+mu(i)=phat(i)
+s=s+normal_form%m(i,1)*mu(i)
+mu(i)=mu(i)*twopi
+enddo
+p_res=nint(s)
+ endif
+
   call c_normal(T,normal_form,phase=phat,canonize=.true.)
-  write(*,*) "this should not have been reached"
+  call print(normal_form%atot)
+  write(*,*) "+========================================="
+  stop
+  !write(*,*) "this should not have been reached"
   T = ci_phasor()*normal_form%atot**(-1)*T*normal_form%atot*c_phasor()
   call print(T)
   stop
@@ -192,29 +220,7 @@ program Resonance
   
    
    
-  res=.true.
-   
-    normal_form%positive=.false.
-  if(res) normal_form%nres=(c_%no+1)/3
-    write(6,*) " # of resonance terms ",normal_form%nres
-    do i=1, (c_%no+1)/3
-    if(res) normal_form%m(1,i)=3*i ! 1/3 order 
-    enddo
-   
-  mr2=0
-  if(res) then
-   do i=1,c_%nd
-  mr2=mr2+normal_form%m(i,1)**2
-  enddo
-   
-  s=0 
-  do i=1,c_%nd
-  mu(i)=phat(i)
-  s=s+normal_form%m(i,1)*mu(i)
-  mu(i)=mu(i)*twopi
-  enddo
-  p_res=nint(s)
-   endif
+ 
   
    
   call c_normal(T,normal_form,canonize=.true.)

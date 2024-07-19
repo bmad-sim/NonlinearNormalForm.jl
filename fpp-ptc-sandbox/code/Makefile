@@ -428,6 +428,19 @@ z_spin1-exe/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_spin1-exe.dir/build.make CMakeFiles/z_spin1-exe.dir/build
 .PHONY : z_spin1-exe/fast
 
+#=============================================================================
+# Target rules for targets named z_spin_res-exe
+
+# Build rule for target.
+z_spin_res-exe: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 z_spin_res-exe
+.PHONY : z_spin_res-exe
+
+# fast build rule for target.
+z_spin_res-exe/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_spin_res-exe.dir/build.make CMakeFiles/z_spin_res-exe.dir/build
+.PHONY : z_spin_res-exe/fast
+
 normal_simple.o: normal_simple.f90.o
 .PHONY : normal_simple.o
 
@@ -860,6 +873,30 @@ z_spin1.f90.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_spin1-exe.dir/build.make CMakeFiles/z_spin1-exe.dir/z_spin1.f90.s
 .PHONY : z_spin1.f90.s
 
+z_spin_res.o: z_spin_res.f90.o
+.PHONY : z_spin_res.o
+
+# target to build an object file
+z_spin_res.f90.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_spin_res-exe.dir/build.make CMakeFiles/z_spin_res-exe.dir/z_spin_res.f90.o
+.PHONY : z_spin_res.f90.o
+
+z_spin_res.i: z_spin_res.f90.i
+.PHONY : z_spin_res.i
+
+# target to preprocess a source file
+z_spin_res.f90.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_spin_res-exe.dir/build.make CMakeFiles/z_spin_res-exe.dir/z_spin_res.f90.i
+.PHONY : z_spin_res.f90.i
+
+z_spin_res.s: z_spin_res.f90.s
+.PHONY : z_spin_res.s
+
+# target to generate assembly for a file
+z_spin_res.f90.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/z_spin_res-exe.dir/build.make CMakeFiles/z_spin_res-exe.dir/z_spin_res.f90.s
+.PHONY : z_spin_res.f90.s
+
 z_sub_i.o: z_sub_i.f90.o
 .PHONY : z_sub_i.o
 
@@ -1030,6 +1067,7 @@ help:
 	@echo "... z_shift-exe"
 	@echo "... z_simple_operations-exe"
 	@echo "... z_spin1-exe"
+	@echo "... z_spin_res-exe"
 	@echo "... z_sub_i-exe"
 	@echo "... z_sub_j-exe"
 	@echo "... z_track_da_tpsa-exe"
@@ -1090,6 +1128,9 @@ help:
 	@echo "... z_spin1.o"
 	@echo "... z_spin1.i"
 	@echo "... z_spin1.s"
+	@echo "... z_spin_res.o"
+	@echo "... z_spin_res.i"
+	@echo "... z_spin_res.s"
 	@echo "... z_sub_i.o"
 	@echo "... z_sub_i.i"
 	@echo "... z_sub_i.s"

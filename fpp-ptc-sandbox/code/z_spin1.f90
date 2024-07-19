@@ -52,11 +52,6 @@ program Guignard_normal_form_average_x
    ALS=>m_u%start
    
    call build_lattice(ALS,mis,exact=.false.,thin=.false.,onecell=.false.) 
-   
-   
-   
-    !call read_ptc_command77("fit_tune.txt")  
-   p=>als%start
    misa=0
    call move_to(als,p,"BEND")
    if(state%nocavity) then
@@ -69,6 +64,41 @@ program Guignard_normal_form_average_x
    misa=0.1d0*misa
    call MISALIGN_FIBRE(p,misa)
    
+    call kanalnummer(mf,file="fit_tune.txt")
+     write(mf,*) "select layout"                  
+     write(mf,*) "  1  "
+     write(mf,*) "set families  "
+     write(mf,*) " 2  "
+     write(mf,*) " 1 qf1  "
+      write(mf,*) "2 1  "
+     write(mf,*) " 1 qd1  "
+      write(mf,*) "2 2  "
+     write(mf,*) "FITTUNE  "
+      write(mf,*) "0.0000000001  "
+     write(mf,*) "0.367269834767751         0.404042919  !2293877         !6057  0.336  0.218992743820551  "
+     write(mf,*) "deallocate families  "
+     write(mf,*) "return"
+    close(mf)
+   
+    
+   
+    call read_ptc_command77("fit_tune.txt")
+   
+   
+    !call read_ptc_command77("fit_tune.txt")  
+   ! p=>als%start
+   ! misa=0
+   ! call move_to(als,p,"BEND")
+   ! if(state%nocavity) then
+   ! misa(4)=0.03d0
+   ! misa(6)=0.03d0
+   ! else
+   ! misa(4)=0.003d0
+   ! misa(6)=0.003d0
+   ! endif
+   ! misa=0.1d0*misa
+   ! call MISALIGN_FIBRE(p,misa)
+!    
    courant_snyder_teng_edwards=.true.
    time_lie_choice=.true.
    
@@ -85,13 +115,14 @@ program Guignard_normal_form_average_x
    MY_DELTA=>mondelta
    my_fix=>closed_orbit
    
-   !call phase_advance_n(6)
+   !call phase_advance_n()
+   !write(*,*) "hi"
    !write(6,format3) als%end%tm%lf%k(1,2,2)
    write(6,format3) als%end%t2%lf%phase
    write(6,format3) als%end%t2%lf%damping
    write(6,format3) als%end%t2%lf%spin
    write(6,format1) als%end%t2%lf%phase(1)*5
-   
+   !stop
    !goto 1001
    call kanalnummer(mf,"C:\document\my_tex_papers\fpp_handbook\julia\lat.txt")
    
@@ -101,7 +132,6 @@ program Guignard_normal_form_average_x
      map_order=3   
      skew=.true. 
     
-   
    call init_all(state,map_order,0)
    
    call alloc(one_turn_map, id_s,U_c,A,U,a_cs,N_c ) 
@@ -131,16 +161,24 @@ program Guignard_normal_form_average_x
    call print(one_turn_map,i)
    close(I)
    !stop
+   normal_form%nres=1
+   normal_form%m(2,1)=1
+   normal_form%ms(1)=-1
+   write(*,*) "entering NF"
    call c_normal(one_turn_map,normal_form,dospin=state%spin,phase=phase)  ! (6)
-   
+write(*,*) "exiting NF"
    id_s=one_turn_map
    
    
    one_turn_map=ci_phasor()*normal_form%atot**(-1)*id_s*normal_form%atot*c_phasor()
+    one_turn_map%e_ij = 0
    call clean(one_turn_map, one_turn_map, prec=1.e-7_dp)
-   one_turn_map%e_ij = 0
-   !call c_q0_to_qr(one_turn_map%q, one_turn_map%q) ! only necessary when leaving spin resonance in so we make i, k parts 0
    call print(one_turn_map)
+   stop
+   
+  
+   !call c_q0_to_qr(one_turn_map%q, one_turn_map%q) ! only necessary when leaving spin resonance in so we make i, k parts 0
+   call print(one_turn_map%q)
 write(*,*) "hi"
    stop
    

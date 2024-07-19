@@ -75,6 +75,11 @@ end
     @test norm(Σ - Σ_fpp) < tol
 
 
+    m = read_fpp_map("spin_res/test.map")
+    R_fpp = read_fpp_map("spin_res/R.map")
+    a = normal(m,res=[0; 1], spin_res=[-1])  # Q_y - Q_s resonance
+    
+
 
 end
 
