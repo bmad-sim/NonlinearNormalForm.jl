@@ -18,14 +18,15 @@ program example
   type(c_damap), allocatable :: mt(:)
   real(dp)  ph(3),spintune(2),dampdec(3)
   type(c_lattice_function) cl
+   !type(c_damap) one_turn_map, id_s,m01,m12,m23,m3f,a0,a1,a2,as
    logical putspin
   
   radfluc=0.0001d0
   remove_tune_shift=.false.
   putspin=.true.
   n_cai=-i_
-  write(6,*) " If deltap/p0 is a canonical variable  enter 3"
-  write(6,*) " else enter 2"
+  !write(6,*) " If deltap/p0 is a canonical variable  enter 3"
+  !write(6,*) " else enter 2"
   !read(5,*) nd
   nd=3  ! coasting
   !if(nd/=2.and.nd/=3) stop 44
@@ -34,7 +35,7 @@ program example
   !if(nd==3) ndpt = 6  ! BMAD choice
   if(nd==3) ndpt = 0  ! BMAD choice
   no=3;     ! no: the order of the polynomial    nv: the number of variables   
-  np=0
+  np=4
   c_lda_used=1500
    call gaussian_seed(2463)
   use_quaternion=.true.
@@ -166,6 +167,11 @@ program example
   
   lielib_print(4)=0
   call c_normal(m,normal,dospin=putspin,phase=phase,nu_spin=nu_spin)
+write(*,*) "hi"
+  call c_full_factorise(normal%atot,as,a0,a1,a2,dir=1) 
+  call print(a0)
+  stop
+
   !m=ci_phasor()*normal%atot**(-1)*m*normal%atot*c_phasor()
   !call print(m)
   !stop

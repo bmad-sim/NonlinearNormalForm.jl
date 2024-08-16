@@ -26,7 +26,7 @@ See the documentation for `compose_it!` for information on `work_prom`.
 - `dospin` -- Specify whether or not to include the quaternions in the concatenation. Default is `true`
 - `work_prom` -- Temporary vector of allocated `ComplexTPS64`s when there is implicit promotion. See the `compose_it!` documentation for more details. Default is output from `prep_comp_work_prom(m, m2, m1)`
 """
-function compose!(m::DAMap, m2::DAMap, m1::DAMap; keep_scalar::Bool=true, work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing, dospin::Bool=true, work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS64}}}}=prep_comp_work_prom(m,m2,m1))
+function compose!(m::DAMap, m2::DAMap, m1::DAMap; keep_scalar::Bool=true, work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing, dospin::Bool=true, work_Q::Union{Nothing,Quaternion}=prep_work_Q(m), work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS64}}}}=prep_comp_work_prom(m,m2,m1))
   checkinplace(m, m2, m1)
   
   # DAMap setup:
@@ -88,7 +88,7 @@ See the documentation for `compose_it!` for information on `work_prom`.
 - `dospin` -- Specify whether or not to include the quaternions in the concatenation. Default is `true`
 - `work_prom` -- Temporary vector of allocated `ComplexTPS64`s when there is implicit promotion. See the `compose_it!` documentation for more details. Default is output from `prep_comp_work_prom(m, m2, m1)`
 """
-function compose!(m::TPSAMap, m2::TPSAMap, m1::TPSAMap; dospin::Bool=true, work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS64}}}}=prep_comp_work_prom(m,m2,m1))
+function compose!(m::TPSAMap, m2::TPSAMap, m1::TPSAMap; dospin::Bool=true, work_Q::Union{Nothing,Quaternion}=prep_work_Q(m), work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS64}}}}=prep_comp_work_prom(m,m2,m1))
   checkinplace(m, m2, m1)
   
   # TPSAMap setup:

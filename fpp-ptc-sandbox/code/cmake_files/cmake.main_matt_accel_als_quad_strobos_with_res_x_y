@@ -1,0 +1,10 @@
+set (EXENAME main_matt_accel_als_quad_strobos_with_res_x_y)
+
+FILE (GLOB SRC_FILES main_matt_accel_als_quad_strobos_with_res_x_y.f90)
+
+set (INC_DIRS
+)
+
+set (LINK_LIBS
+  forest
+)

@@ -35,6 +35,8 @@ set (EXE_SPECS
   cmake_files/cmake.z_spin1
   cmake_files/cmake.z_spin_res
   cmake_files/cmake.z_benggston
+  cmake_files/cmake.main_matt_accel_als_quad_strobos_with_res
+  cmake_files/cmake.main_matt_accel_als_quad_strobos_with_res_x_y
 )
 
 

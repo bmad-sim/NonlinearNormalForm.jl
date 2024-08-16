@@ -48,7 +48,7 @@ that the entrance/exit coordinates of the map can be properly handled.
 - `dospin` -- Specify whether to invert the quaternion as well, default is `true`
 - `work_ref` -- If `m === m1`, then a temporary vector must be used to store the scalar part. If not provided and `m === m1`, this temporary will be created internally. Default is `nothing`
 """
-function inv!(m::TaylorMap, m1::TaylorMap; dospin::Bool=true, work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing)
+function inv!(m::TaylorMap, m1::TaylorMap; dospin::Bool=true, work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing, work_Q::Union{Nothing,Quaternion}=prep_work_Q(m))
   checkinplace(m, m1)
 
   desc = getdesc(m1)
@@ -75,8 +75,8 @@ function inv!(m::TaylorMap, m1::TaylorMap; dospin::Bool=true, work_ref::Union{No
 
   # Now do quaternion: inverse of q(z0) is q^-1(M^-1(zf))
   if !isnothing(m.Q) && dospin
-    inv!(m.Q, m1.Q)
-    compose!(m.Q, m.Q, m.x)
+    inv!(work_Q, m1.Q)
+    compose!(m.Q, work_Q, m.x)
   end
 
   if m1 === m

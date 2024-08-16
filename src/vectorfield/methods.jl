@@ -98,7 +98,7 @@ See `lb` for more details.
 ### Keyword Arguments
 - `work_Q`   -- `Quaternion{T}` if spin is included in the vector field, else `nothing`
 """
-function lb!(G::VectorField, F::VectorField, H::VectorField; work_Q::Union{Quaternion,Nothing}=prep_vf_work_Q(F))
+function lb!(G::VectorField, F::VectorField, H::VectorField; work_Q::Union{Quaternion,Nothing}=prep_work_Q(F))
   checkinplace(G, F, H)
 
   T = eltype(G.x)
@@ -170,7 +170,7 @@ function *(F::VectorField, m1::Union{DAMap,UniformScaling})
 end
 
 """
-    mul!(m::DAMap, F::VectorField, m1::DAMap; work_Q::Union{Quaternion,Nothing}=prep_vf_work_Q(F))
+    mul!(m::DAMap, F::VectorField, m1::DAMap; work_Q::Union{Quaternion,Nothing}=prep_work_Q(F))
 
 Computes the Lie operator `F` acting on a `DAMap` `m1`, and stores the result in `m`.
 Explicity, that is `F * m = (F.x, F.Q) * (m.x, m.Q) = (F.x ⋅ ∇ m.x , F.x ⋅ ∇ m.Q + m.Q*F.Q)`
@@ -178,7 +178,7 @@ Explicity, that is `F * m = (F.x, F.Q) * (m.x, m.Q) = (F.x ⋅ ∇ m.x , F.x ⋅
 ### Keyword Arguments\
 - `work_Q`   -- `Quaternion{T}` if spin is included in the vector field, else `nothing`
 """
-function mul!(m::DAMap, F::VectorField, m1::DAMap; work_Q::Union{Quaternion,Nothing}=prep_vf_work_Q(F))
+function mul!(m::DAMap, F::VectorField, m1::DAMap; work_Q::Union{Quaternion,Nothing}=prep_work_Q(F))
   checkinplace(m, F, m1)
 
   T = eltype(m.x)
@@ -230,7 +230,7 @@ end
 
 
 """
-    exp!(m::DAMap, F::VectorField, m1::DAMap; work_maps::Tuple{Vararg{DAMap}}=(zero(m1),zero(m1)), work_Q::Union{Quaternion,Nothing}=prep_vf_work_Q(F))
+    exp!(m::DAMap, F::VectorField, m1::DAMap; work_maps::Tuple{Vararg{DAMap}}=(zero(m1),zero(m1)), work_Q::Union{Quaternion,Nothing}=prep_work_Q(F))
 
 Computes `exp(F)*m1`, and stores the result in `m`. Explicity, this is
 `exp(F)*m1 = m1 + F*m1 + 1/2*F*(F*m1) + 1/6*F*(F*(F*m1)) + ...`, where `*` is
@@ -242,7 +242,7 @@ number of iterations is equal to the number of higher orders left.
 - `work_maps` -- Tuple of 2 `DAMap`s of the same type as `m1`
 - `work_Q`   -- `Quaternion{T}` if spin is included in the vector field, else `nothing`
 """
-function exp!(m::DAMap, F::VectorField, m1::DAMap; work_maps::Tuple{Vararg{DAMap}}=(zero(m1),zero(m1)), work_Q::Union{Quaternion,Nothing}=prep_vf_work_Q(F))
+function exp!(m::DAMap, F::VectorField, m1::DAMap; work_maps::Tuple{Vararg{DAMap}}=(zero(m1),zero(m1)), work_Q::Union{Quaternion,Nothing}=prep_work_Q(F))
   checkinplace(m, F, m1, work_maps...)
 
   T = eltype(m.x)
@@ -300,7 +300,7 @@ end
 # 2 work_vfs
 
 """
-    log!(F::VectorField, m1::DAMap; work::Tuple{DAMap,DAMap,DAMap,VectorField,VectorField}=prep_log_work(m1), work_Q::Union{Quaternion,Nothing}=prep_vf_work_Q(F)) 
+    log!(F::VectorField, m1::DAMap; work::Tuple{DAMap,DAMap,DAMap,VectorField,VectorField}=prep_log_work(m1), work_Q::Union{Quaternion,Nothing}=prep_work_Q(F)) 
 
 Computes the log of the map `m1` - that is, calculates the `VectorField` `F` that 
 would represent the map `m1` as a Lie exponent `exp(F)` - and stores the result in `F`.
@@ -310,7 +310,7 @@ The map `m1` should be close to the identity for this to converge quickly.
 - `work` -- Tuple of 3 `DAMap`s of the same type as `m1` followed by 2 `VectorField`S
 - `work_Q`   -- `Quaternion{T}` if spin is included in the vector field, else `nothing`
 """
-function log!(F::VectorField, m1::DAMap; work::Tuple{DAMap,DAMap,DAMap,VectorField,VectorField}=prep_log_work(m1), work_Q::Union{Quaternion,Nothing}=prep_vf_work_Q(F))
+function log!(F::VectorField, m1::DAMap; work::Tuple{DAMap,DAMap,DAMap,VectorField,VectorField}=prep_log_work(m1), work_Q::Union{Quaternion,Nothing}=prep_work_Q(F))
   checkinplace(F, m1, work...)
   
   nv = numvars(m1)

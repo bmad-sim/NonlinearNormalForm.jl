@@ -2,7 +2,7 @@ for t = (:DAMap, :TPSAMap)
 @eval begin
   
 """
-    compose_it!(m, m2, m1; dospin=true, work_low=nothing, work_prom=nothing)
+    compose_it!(m, m2, m1; dospin::Bool=true, dostochastic::Bool=true, work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS64}}}}=prep_comp_work_prom(m,m2,m1))
 
 Low level composition function, `m = m2 ∘ m1`. Aliasing `m` with `m2` is allowed, but not `m` with `m1`.
 Assumes the destination map is properly set up (with correct types promoted if necessary), and 
@@ -25,7 +25,7 @@ Note that the `ComplexTPS64`s in the vector(s) must be allocated and have the sa
 
 If spin is included, not that the final quaternion concatenation step mul! will create allocations
 """ 
-function compose_it!(m::$t, m2::$t, m1::$t; dospin::Bool=true, dostochastic::Bool=true, work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS64}}}}=prep_comp_work_prom(m,m2,m1))
+function compose_it!(m::$t, m2::$t, m1::$t; dospin::Bool=true, dostochastic::Bool=true, work_Q::Union{Nothing,Quaternion}=prep_work_Q(m), work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS64}}}}=prep_comp_work_prom(m,m2,m1))
   checkinplace(m, m2, m1)
   @assert !(m === m1) "Cannot compose_it!(m, m2, m1) with m === m1"
 
@@ -69,8 +69,8 @@ function compose_it!(m::$t, m2::$t, m1::$t; dospin::Bool=true, dostochastic::Boo
 
   # Spin:
   if !isnothing(m.Q) && dospin
-    compose!(m.Q, m2.Q, m1.x, work=Q_prom)
-    mul!(m.Q, m.Q, m1.Q) # This will be made faster eventually
+    compose!(work_Q, m2.Q, m1.x, work=Q_prom)
+    mul!(m.Q, work_Q, m1.Q) # This will be made faster eventually
   end 
 
   # Stochastic

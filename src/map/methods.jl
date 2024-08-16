@@ -4,14 +4,14 @@ function norm(m::Union{TaylorMap,VectorField})
 
   nv = numvars(m)
   for i=1:nv
-    @inbounds nrm += norm(m.x[i])
+    @inbounds nrm += normTPS(m.x[i])
   end
   
   if !isnothing(m.Q)
-    nrm += norm(m.Q.q0)
-    nrm += norm(m.Q.q1)
-    nrm += norm(m.Q.q2)
-    nrm += norm(m.Q.q3)
+    nrm += normTPS(m.Q.q0)
+    nrm += normTPS(m.Q.q1)
+    nrm += normTPS(m.Q.q2)
+    nrm += normTPS(m.Q.q3)
   end
 
   return nrm

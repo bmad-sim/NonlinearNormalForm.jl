@@ -11,6 +11,100 @@ mutable struct Quaternion{T <: Number} <: FieldVector{4, T}
   q3::T
 end
 
+# This file provides special fast functions for Quaternion{<:TPS}
+
+"""
+    mul!(Q::Quaternion, Q1::Quaternion, Q2::Quaternion)
+
+Sets `Q` equal to `Q1*Q2`, with zero allocations. `Q` must not be 
+aliased with either `Q1` or `Q2`.
+"""
+function mul!(Q::Quaternion{<:TPS}, Q1::Quaternion{<:TPS}, Q2::Quaternion{<:TPS})
+  @assert !(Q === Q1) && !(Q === Q2) "Aliasing Q with Q1 or Q2 not allowed!"
+  @FastGTPSA! begin
+  Q.q0 = Q1.q0 * Q2.q0 - Q1.q1 * Q2.q1 - Q1.q2 * Q2.q2 - Q1.q3 * Q2.q3
+  Q.q1 = Q1.q0 * Q2.q1 + Q1.q1 * Q2.q0 + Q1.q2 * Q2.q3 - Q1.q3 * Q2.q2
+  Q.q2 = Q1.q0 * Q2.q2 - Q1.q1 * Q2.q3 + Q1.q2 * Q2.q0 + Q1.q3 * Q2.q1
+  Q.q3 = Q1.q0 * Q2.q3 + Q1.q1 * Q2.q2 - Q1.q2 * Q2.q1 + Q1.q3 * Q2.q0
+  end
+  return Q
+end
+
+function *(Q1::Quaternion, Q2::Quaternion)
+  @FastGTPSA begin
+  q0 = Q1.q0 * Q2.q0 - Q1.q1 * Q2.q1 - Q1.q2 * Q2.q2 - Q1.q3 * Q2.q3
+  q1 = Q1.q0 * Q2.q1 + Q1.q1 * Q2.q0 + Q1.q2 * Q2.q3 - Q1.q3 * Q2.q2
+  q2 = Q1.q0 * Q2.q2 - Q1.q1 * Q2.q3 + Q1.q2 * Q2.q0 + Q1.q3 * Q2.q1
+  q3 = Q1.q0 * Q2.q3 + Q1.q1 * Q2.q2 - Q1.q2 * Q2.q1 + Q1.q3 * Q2.q0
+  end
+  return Quaternion(q0,q1,q2,q3)
+end
+
+norm(Q1::Quaternion{<:TPS}) = @FastGTPSA sqrt(Q1.q0^2 + Q1.q1^2 + Q1.q2^2 + Q1.q3^2)
+
+function inv!(Q::Quaternion{<:TPS}, Q1::Quaternion{<:TPS})
+  @assert !(Q === Q1) "Aliasing Q with Q1 not allowed!"
+  @FastGTPSA! begin
+  Q.q0 = Q1.q0 * Q1.q0 + Q1.q1 * Q1.q1 + Q1.q2 * Q1.q2 + Q1.q3 * Q1.q3
+  Q.q1 = -Q1.q1/Q.q0
+  Q.q2 = -Q1.q2/Q.q0
+  Q.q3 = -Q1.q3/Q.q0
+  Q.q0 = Q1.q0/Q.q0
+  end
+  return
+end
+
+function inv(Q1::Quaternion)
+  @FastGTPSA begin
+  q0 = Q1.q0 * Q1.q0 + Q1.q1 * Q1.q1 + Q1.q2 * Q1.q2 + Q1.q3 * Q1.q3
+  q1 = -Q1.q1/q0
+  q2 = -Q1.q2/q0
+  q3 = -Q1.q3/q0
+  end
+  @FastGTPSA! q0 = Q1.q0/q0
+  return Quaternion(q0,q1,q2,q3)
+end
+
+# This needs to be optimized
+function exp(Q1::Quaternion{T}) where {T<:TPS}
+  nmax = 100
+  nrm_min1 = 1e-9
+  nrm_min2 = 100*eps(Float64)*4
+  nrm_ =Inf
+  conv = false
+  slow = false
+
+  Qout = Quaternion{T}(1,0,0,0)
+  Q = Quaternion{T}(1,0,0,0)
+  for j=1:nmax
+    Q = Q*Q1/j
+    Qout .+= Q
+
+    nrm = norm(normTPS(Q.q0) + normTPS(Q.q1) + normTPS(Q.q2) + normTPS(Q.q2))
+    if nrm <= nrm_min2 || conv && nrm >= nrm_ # done
+      if slow
+        @warn "exp! slow convergence: required n = $(j) iterations"
+      end
+      return Qout
+    end
+
+    if nrm <= nrm_min1 # convergence reached just refine a bit
+      conv = true
+    end
+    nrm_ = nrm
+  end
+  @warn "exp convergence not reached for $nmax iterations"
+  return 
+end
+
+function show(io::IO, Q::Quaternion{<:TPS})
+  GTPSA.show_map!(io, collect(Q), Ref{Int}(0), false, [" q0:"," q1:"," q2:"," q3:"])
+end
+
+show(io::IO, ::MIME"text/plain", Q::Quaternion{<:TPS}) = GTPSA.show_map!(io, collect(Q), Ref{Int}(0), false, [" q0:"," q1:"," q2:"," q3:"])
+
+
+
 #convert(::Type{Quaternion{S}}, Q::Quaternion{T}) where {S,T} = Quaternion(map(x->(S)(x), Q.q))
 #Quaternion(Q::Quaternion{T}) where T <: Number = Quaternion(map(x->T(x), Q.q))
 #Quaternion(q0, q1, q2, q3) = Quaternion(MVector{4}(promote(q0, q1, q2, q3)))
@@ -23,9 +117,7 @@ end
 #eltype(q::Quaternion{T}) where T = T
 
 
-function norm(Q1::Quaternion)
-  return sqrt(Q1.q0^2 + Q1.q1^2 + Q1.q2^2 + Q1.q3^2)
-end
+#=
 
 function mul!(Q::Quaternion, Q1::Quaternion, Q2::Quaternion)
   q0 = Q1.q0 * Q2.q0 - Q1.q1 * Q2.q1 - Q1.q2 * Q2.q2 - Q1.q3 * Q2.q3
@@ -70,47 +162,13 @@ function inv!(Q::Quaternion, Q1::Quaternion)
   return
 end
 
-# This needs to be optimized
-function exp(Q1::Quaternion{T}) where {T<:TPS}
-  nmax = 100
-  nrm_min1 = 1e-9
-  nrm_min2 = 100*eps(Float64)*4
-  nrm_ =Inf
-  conv = false
-  slow = false
+=#
 
-  Qout = Quaternion{T}(1,0,0,0)
-  Q = Quaternion{T}(1,0,0,0)
-  for j=1:nmax
-    Q = Q*Q1/j
-    Qout .+= Q
-
-    nrm = norm(norm(Q.q0) + norm(Q.q1) + norm(Q.q2) + norm(Q.q2))
-    if nrm <= nrm_min2 || conv && nrm >= nrm_ # done
-      if slow
-        @warn "exp! slow convergence: required n = $(j) iterations"
-      end
-      return Qout
-    end
-
-    if nrm <= nrm_min1 # convergence reached just refine a bit
-      conv = true
-    end
-    nrm_ = nrm
-  end
-  @warn "exp convergence not reached for $nmax iterations"
-  return 
-end
 
 #mad_compose!(na, ma::Quaternion{TPS{Float64}},    nb, mb::AbstractVector{TPS{Float64}},    mc::Quaternion{TPS{Float64}}) = GTPSA.mad_tpsa_compose!(Cint(na), ma, Cint(nb), mb, mc)
 #mad_compose!(na, ma::Quaternion{TPS{ComplexF64}}, nb, mb::AbstractVector{TPS{ComplexF64}}, mc::Quaternion{TPS{ComplexF64}}) = GTPSA.mad_ctpsa_compose!(Cint(na), ma, Cint(nb), mb, mc)
 #Base.unsafe_convert(::Type{Ptr{TPS{T}}}, Q::Quaternion{<:TPS{<:T}}) where {T} = unsafe_convert(Ptr{TPS{T}}, Ref(Q))
 
-function show(io::IO, Q::Quaternion{<:TPS})
-  GTPSA.show_map!(io, Vector(Q), Ref{Int}(0), false, [" q0:"," q1:"," q2:"," q3:"])
-end
-
-show(io::IO, ::MIME"text/plain", Q::Quaternion{<:TPS}) = GTPSA.show_map!(io, Vector(Q), Ref{Int}(0), false, [" q0:"," q1:"," q2:"," q3:"])
 
 #=
 ## THIS IS DEPRECATED! WE NOW USE 

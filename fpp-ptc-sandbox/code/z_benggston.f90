@@ -149,7 +149,7 @@ program Guignard_normal_form_average_x
   one_turn_map=ray
   
   call print(one_turn_map)
-  
+stop
   
   
   call c_normal(one_turn_map,normal_form,dospin=state%spin,phase=phase)  ! (6)

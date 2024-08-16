@@ -32,10 +32,10 @@ function prep_work_ref(m1::TaylorMap)
   return Vector{eltype(eltype(m1.x))}(undef, numvars(m1))
 end
 
-function prep_vf_work_Q(F::VectorField)
-  if !isnothing(F.Q)
-    T = eltype(F.Q)
-    use = getdesc(F)
+function prep_work_Q(m::Union{TaylorMap,VectorField})
+  if !isnothing(m.Q)
+    T = eltype(m.Q)
+    use = getdesc(m)
     return Quaternion(T(use=use), T(use=use), T(use=use), T(use=use))
   else
     return nothing

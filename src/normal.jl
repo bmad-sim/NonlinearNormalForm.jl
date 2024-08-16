@@ -217,7 +217,7 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
   end
 
   #return as
-  return a
+  return NormalForm(a,eg)
   
    
 
