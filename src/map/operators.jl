@@ -70,11 +70,13 @@ for t = (:DAMap, :TPSAMap)
 $($t) composition, $( $t == DAMap ? "ignoring the scalar part of `m1`" : "including the scalar part of `m1`")
 """
 ∘(m2::$t, m1::$t) = compose(m2, m1)
+∘(m2::AbstractVector{<:TPS{<:Union{Float64,ComplexF64}}}, m1::$t) = GTPSA.compose(m2,m1.x)
 
 literal_pow(::typeof(^), m::$t{S,T,U,V}, vn::Val{n}) where {S,T,U,V,n} = ^(m,n)
 
 # Also allow * for simpliticty and \ and / because why not
 *(m2::$t,m1::$t) = ∘(m2,m1)
+*(m2::AbstractVector{<:TPS{<:Union{Float64,ComplexF64}}},m1::$t) = ∘(m2,m1.x)
 /(m2::$t,m1::$t) = m2∘inv(m1) 
 \(m2::$t,m1::$t) = inv(m2)∘m1
 

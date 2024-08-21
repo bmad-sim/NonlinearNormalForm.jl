@@ -43,6 +43,26 @@ function VectorField(h::TPS; Q::Union{Quaternion,Nothing}=nothing, spin::Union{B
   return outF
 end
 
+"""
+    VectorField(m::DAMap)
+
+Creates a `VectorField` from the map
+"""
+function VectorField(m::DAMap)
+  F =  zero(VectorField{typeof(m.x),typeof(m.Q)}, use=m) 
+  for i=1:numvars(F)
+    F.x[i] = copy(m.x[i])
+  end
+
+  if !isnothing(m.Q)
+    F.Q.q0 = copy(m.Q.q0)
+    F.Q.q1 = copy(m.Q.q1)
+    F.Q.q2 = copy(m.Q.q2)
+    F.Q.q3 = copy(m.Q.q3)
+  end
+  return F
+end
+
 
 # --- zero ---
 function zero(F::VectorField{T,U}) where {T,U}

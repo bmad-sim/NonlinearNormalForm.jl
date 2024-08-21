@@ -29,30 +29,29 @@ end
 
     tol = 1e-12
 
-
     # Normal form -------------------------------------
-    # 2D all pseudo-harmonic oscillators order 3
+    # 1D all pseudo-harmonic oscillators order 3
     m = read_fpp_map("order2/test.map",spin=false)
     R_fpp = read_fpp_map("order2/R.map",spin=false)
     c = to_phasor(m)
     a = normal(m).a
     @test norm(inv(c)∘inv(a)∘m∘a∘c - R_fpp) < tol
 
-    # 2D all pseudo-harmonic oscillators order 10
+    # 1D all pseudo-harmonic oscillators order 10
     m = read_fpp_map("order10/test.map",spin=false)
     R_fpp = read_fpp_map("order10/R.map",spin=false)
     c = to_phasor(m)
     a = normal(m).a
     @test norm(inv(c)∘inv(a)∘m∘a∘c - R_fpp) < tol
 
-    # 4D all pseudo-harmonic oscillators order 6
+    # 2D all pseudo-harmonic oscillators order 6
     m = read_fpp_map("order6var4/test.map",spin=false)
     R_fpp = read_fpp_map("order6var4/R.map",spin=false)
     c = to_phasor(m)
     a = normal(m).a
     @test norm(inv(c)∘inv(a)∘m∘a∘c - R_fpp) < 1e-8
 
-    # 6D coasting last plane order 3
+    # 3D coasting last plane order 3
     m = read_fpp_map("coast/test.map",idpt=true,spin=false)
     R_fpp = read_fpp_map("coast/R.map",idpt=true,spin=false)
     c = to_phasor(m)
@@ -75,10 +74,41 @@ end
     @test norm(Σ - Σ_fpp) < tol
 
 
+    
+    # Factorize -----------------------------
+    # 3D all pseudo harmonic oscillators
+    a = read_fpp_map("factorize1/a.map")
+    a0_fpp = read_fpp_map("factorize1/a0.map")
+    a1_fpp = read_fpp_map("factorize1/a1.map")
+    a2_fpp = read_fpp_map("factorize1/a2.map")
+    
+    as, a0, a1, a2 = factorize(a)
+    @test norm(a0-a0_fpp) < tol
+    @test norm(a1-a1_fpp) < tol
+    @test norm(a2-a2_fpp) < tol
+
+    # 3D coasting beam
+    a = read_fpp_map("factorize2/a.map",idpt=true)
+    as_fpp = read_fpp_map("factorize2/as.map",idpt=true)
+    a0_fpp = read_fpp_map("factorize2/a0.map",idpt=true)
+    a1_fpp = read_fpp_map("factorize2/a1.map",idpt=true)
+    a2_fpp = read_fpp_map("factorize2/a2.map",idpt=true)
+    
+    as, a0, a1, a2 = factorize(a)
+    @test norm(a0-a0_fpp) < tol
+    @test norm(a1-a1_fpp) < tol
+    @test norm(a2-a2_fpp) < tol
+    @test norm(as-as_fpp) < tol
+
+    
+
+
     m = read_fpp_map("spin_res/test.map")
     R_fpp = read_fpp_map("spin_res/R.map")
     a = normal(m,res=[0; 1], spin_res=[-1])  # Q_y - Q_s resonance
     
+
+
 
 
 end

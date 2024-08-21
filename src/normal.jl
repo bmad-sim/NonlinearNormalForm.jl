@@ -46,13 +46,16 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
 
   a1 = zero(promote_type(eltype(a1_inv_matrix),typeof(m0)),use=m0,idpt=m.idpt)
   setmatrix!(a1, inv(a1_inv_matrix))
-
+#=
   a1_mat = fast_canonize(a1)
   clear!(a1)
   setmatrix!(a1, a1_mat)
+  =#
   if !isnothing(m.Q)
     a1.Q.q0[0] = 1
   end
+
+  #return a1
 
   m1 = a1^-1 ∘ m0 ∘ a1
 
@@ -213,7 +216,7 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
       as = as*Qnr # put in normalizing map
       m1 = inv(Qnr)*m1*Qnr # kill the terms in m1
     end
-    return  a*c*as*c^-1
+    a = a*c*as*c^-1
   end
 
   #return as
@@ -231,6 +234,17 @@ end
 # then calculate lattice functions. Lattice functions will be TPSA and then you 
 # can extract dbeta/ddelta
 function factorize(a)
+
+  if !isnothing(a.Q)
+    as = one(a)
+    tmp = inv(a)
+    tmp.Q.q0 = 1
+    tmp.Q.q1 = 0
+    tmp.Q.q2 = 0
+    tmp.Q.q3 = 0
+    as.Q .= a.Q∘tmp
+  end
+
   # We get a0*a1*an
   if !isnothing(a.idpt) # if coasting, set number of variables executing pseudo-harmonic oscillations
     nhv = numvars(a)-2
@@ -239,11 +253,34 @@ function factorize(a)
     nt = ndpt+sgn # timelike variable index
     zer = zero(a); zer.x[nt][nt]=1; zer.x[ndpt][ndpt] = 1
 
-    a0 = a∘zer
+    eye = zero(a)
+    setmatrix!(eye, I(nhv))
+    if !isnothing(eye.Q)
+      eye.Q.q0[0] = 1
+    end
 
+    vf = VectorField(a∘zer)
+    vf.x[nt] = 0
+    vf.x[ndpt] = 0
+    # set the timelike variable so poisson bracket does not change
+    for i=1:Int(nhv/2)
+      vf.x[nt] += -sgn*deriv((a∘zer).x[2*i-1], ndpt)*mono(2*i, use=getdesc(a))
+      vf.x[nt] += sgn*deriv((a∘zer).x[2*i], ndpt)*mono(2*i-1, use=getdesc(a))
+    end
 
-    nhv = numvars(a)-2
+    #return vf
 
+    a0 = exp(vf)
+    a0 = DAMap(a0,idpt=a.idpt)
+
+    att = inv(a0)*a
+
+    # Extra iteration for parameters to vanish from time-like variable
+    ast = one(att)
+    ast.x[nt] = par(att.x[nt], zeros(Int, nhv))
+    a0 = ast*a0
+
+    #=
     # ensure poisson bracket does not change
     for i=1:Int(nhv/2)
       a0.x[nt] += sgn*deriv(a0.x[2*i], ndpt)*mono(2*i-1,use=getdesc(a)) - sgn*deriv(a0.x[2*i-1], ndpt)*mono(2*i,use=getdesc(a)) # first order
@@ -254,12 +291,8 @@ function factorize(a)
       a0.x[nt] += sgn*0.5*(deriv(a0.x[2*i], ndpt)*a0.x[2*i-1] - deriv(a0.x[2*i-1], ndpt)*a0.x[2*i])
     end
 
-    eye = zero(a)
-    setmatrix!(eye, I(nhv))
-    if !isnothing(eye.Q)
-      eye.Q.q0[0] = 1
-    end
-    a0 += eye
+
+    a0 += eye=#
   else
     nhv = numvars(a)
     a0 = a∘zero(a)+I
@@ -277,6 +310,22 @@ function factorize(a)
     a1.x[i] = tmp
   end
 
+  if !isnothing(a.idpt)
+    tmp = zero(a1.x[nt])
+    nn = numnn(a)
+    m = Vector{UInt8}(undef, nn)
+    v = Ref{eltype(a1.x[nt])}()
+    idx = GTPSA.cycle!(a1.x[nt], nn, nn, m, v)
+    while idx > -1
+      if sum(view(m, 1:nhv)) <= 2
+        tmp += v[]*mono(m, use=getdesc(a1))
+      end
+      idx = GTPSA.cycle!(a1.x[nt], idx, nn, m, v)
+    end
+    a1.x[nt] = tmp
+    a1.x[nt][nt] = 1
+  end
+
   if !isnothing(a.Q)
     a1.Q.q0 = 1
     a1.Q.q1 = 0
@@ -291,12 +340,13 @@ function factorize(a)
     a2.Q.q1 = 0
     a2.Q.q2 = 0
     a2.Q.q3 = 0
-
-    as = inv(a2)*inv(a1)*inv(a0)*a
-    return a0, a1, a2, as
   end
 
-  return a0, a1, a2
+  if !isnothing(a.Q)
+    return as, a0, a1, a2
+  else
+    return a0, a1, a2
+  end
 
 end
 
@@ -493,6 +543,7 @@ end
 
 # making the 12, 34, 56 elements 0 in the normalizing map
 # and returns the phase added to do so
+# only canonizes linear part, see c_full_canonise for nonlinear
 function fast_canonize(a::DAMap, damping::Bool=!isnothing(a.E))
   # Basically rotates a so that we are in Courant-Snyder form of a
 
@@ -534,7 +585,7 @@ function fast_canonize(a::DAMap, damping::Bool=!isnothing(a.E))
     ri[nt,ndpt] = -a_matrix[nt,ndpt]
     phase[end] += a_matrix[nt,ndpt]
   end
-  #return ri
+  println(ri)
   a_rot = a_matrix*ri
   #return a_rot
 
