@@ -1,0 +1,13 @@
+ select layout
+   1  
+ set families  
+  2  
+  1 qf1  
+ 2 1  
+  1 qd1  
+ 2 2  
+ FITTUNE  
+ 0.0000000001  
+ 0.367269834767751         0.404042919  !2293877         !6057  0.336  0.218992743820551  
+ deallocate families  
+ return

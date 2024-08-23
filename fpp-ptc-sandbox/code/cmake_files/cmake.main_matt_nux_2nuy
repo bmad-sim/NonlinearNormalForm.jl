@@ -1,0 +1,10 @@
+set (EXENAME main_matt_nux_2nuy)
+
+FILE (GLOB SRC_FILES main_matt_nux_2nuy.f90)
+
+set (INC_DIRS
+)
+
+set (LINK_LIBS
+  forest
+)

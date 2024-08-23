@@ -42,5 +42,8 @@ project(ACC)
    cmake_files/cmake.z_benggston
    cmake_files/cmake.main_matt_accel_als_quad_strobos_with_res
    cmake_files/cmake.main_matt_accel_als_quad_strobos_with_res_x_y
+   cmake_files/cmake.main_matt_accel_als_quad_strobos_with_res_ac_new
+   cmake_files/cmake.main_matt_3nux
+   cmake_files/cmake.main_matt_nux_2nuy
  )
 include($ENV{ACC_BUILD_SYSTEM}/Master.cmake)

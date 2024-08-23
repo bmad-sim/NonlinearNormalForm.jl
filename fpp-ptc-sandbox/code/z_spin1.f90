@@ -172,7 +172,7 @@ write(*,*) "exiting NF"
    
    one_turn_map=ci_phasor()*normal_form%atot**(-1)*id_s*normal_form%atot*c_phasor()
     one_turn_map%e_ij = 0
-   call clean(one_turn_map, one_turn_map, prec=1.e-7_dp)
+   !call clean(one_turn_map, one_turn_map, prec=1.e-7_dp)
    call print(one_turn_map)
    stop
    

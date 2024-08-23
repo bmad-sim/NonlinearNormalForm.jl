@@ -1,4 +1,4 @@
-program spin_phase_advance_isf
+program spin_resonance_isf
 use madx_ptc_module
 use pointer_lattice
 implicit none
@@ -10,21 +10,21 @@ integer mf,mf1,i,k,pos,no,kp,nturn,mfa,ks,kn,j
 type(fibre),pointer:: p , fib
 type(integration_node),pointer:: tt
 type(internal_state),target :: state
-real(dp)  prec,cut, closed(6),x(6), ph(4),stu(2),damp(3),thi,nu_mod,circ,epsr,f3r,f3i,emi,xturn
+real(dp)  prec,cut, closed(6),x(6), ph(4),stu(2),damp(3),circ,epsr,xturn
 real(dp) mu(3),del,tunespin,crossing_position
 complex(dp) epsb
-logical first,use_original_fq
-logical :: mis=.false.,thin=.false.
+logical first,recomputing_h_r
+logical :: mis=.false.,thin=.false.,low_amplitude=.false.
 type(c_damap) id,one_turn_map,U_0,U_1,U_2,fp,N,Nc,n_isf,rot_c_inverse
 type(c_taylor) phase(4),nu_spin,delspin,delorb
 type(c_normal_form) c_n
 type(c_spinor) isf
-type(c_vector_field) fq,f_comoving
+type(c_vector_field) fq,f_comoving,n_isvf,f_barber
 type(c_quaternion) qf
 type(quaternion) q0,qr
 TYPE(c_spinor) N_spin
 TYPE(work) werk
-real(dp) nus_in,nus_out,dnudn,dnus,pol_rat,dnuda,a_in,a_out,dnda,del_a,nus_shift,p_res,k1
+real(dp) nus_in,nus_out,dnudn,dnus,pol_rat,dnuda,a_in,a_out,dnda,del_a,nus_shift,p_res,k1,k0
 character(255) filename
 real(dp), target ,allocatable ::  vr(:,:),vo(:,:),vecr(:) 
 real(dp), target  :: mr 
@@ -40,20 +40,20 @@ call ptc_ini_no_append
  call append_empty_layout(m_u)
  ring=>m_u%start
   n_cai=-i_
-call build_lu(ring)
+call build_fu(ring)
 
 
  
-
-no=7
+no=3
+write(6,*) "order >= 2 ( order=2 : bad prediction of ADST effect) "
+read(5,*) no
 
 ring=>m_u%start
 call MAKE_node_LAYOUT(ring)
 call survey(ring)
  
-!goto 1001
  
-state=only_4d0+spin0 !+modulation0
+state=only_4d0+spin0
 
 werk=ring%start
 
@@ -63,9 +63,9 @@ write(6,*) "circumference ",circ
 
 p=>ring%start  
  
- 
-
-  
+!!!!!! Parameter of the lattice set for fake acceleration 
+!!!!!!  and strong ADST effect  
+!!!!!!  Also the symmetry is broken 
  p=>ring%start
 tunespin= 1.d0-0.617439583248228+0.001d0  ! 0.159169892732279d0 
 do i=1,ring%n
@@ -102,8 +102,7 @@ call alloc(c_n)
 call alloc(xs)
 call alloc(isf)
 call alloc(phase)
-call alloc(fq)
-call alloc(f_comoving)
+call alloc(fq,f_comoving,n_isvf,f_barber)
 call alloc(nu_spin,delspin,delorb)
 call alloc(qf)
 call alloc(N_spin) 
@@ -147,6 +146,11 @@ call gramschmidt(vr)
 
  vr=mr*vr
  vo=vo/mr
+ 
+ write(6,*) "************** Vectors m and a1 and a2 **********************"
+write(6,*) vr(1,1:3)
+write(6,*) vr(2,1:3)
+write(6,*) vr(3,1:3)
 
 !!!!!!!!!!!! Normalization  !!!!!!!!!!!!! 
 call c_normal(one_turn_map,c_n, phase=phase, nu_spin=nu_spin,dospin=state%spin)
@@ -159,16 +163,9 @@ mu(3)=  nu_spin
 write(6,*) " nus including spin "  
 write(6,*) mu
  
-write(6,*) " x,y and spin tunes "
-write(6,*) c_n%tune(1:2), c_n%spin_tune
-write(6,*) mu
-write(6,*) " term multipliying the quaternion  e_2 in units of pi "
-write(6,*)  c_n%quaternion_angle/pi
-
-write(6,*) c_n%M(1,1)*c_n%tune(1)+c_n%M(2,1)*c_n%tune(2)+c_n%ms(1)*c_n%spin_tune
  
  
-!!!! co-moving  
+!!!! Put map into a single resonance using A and later in phasors basis
  N=c_n%atot**(-1)*one_turn_map*c_n%atot
 N=Ci_phasor()*N*c_phasor()
 
@@ -179,44 +176,27 @@ N=Ci_phasor()*N*c_phasor()
 !!!! notice that this is similar to J_x= (x^2+p^2)/2
 !!!!  so e_2 is truly like the Courant-Snyder invariant
  
- del= (vr(1,1)*mu(1)+vr(1,2)*mu(2)+vr(1,3)*mu(3))
- !    if(del <-0.5_dp ) del=(del+1.0_dp) 
- !    if(del> 0.5_dp ) del=(del-1.0_dp) 
-p_res=nint(del)
+f_comoving=0
 
-
+do k=1,c_%nd+1
+del=0
+ do ks=1,c_%nd+1
+  del= vr(k,ks)*mu(ks)+del
+ enddo
+if(k==1) then
+ p_res=nint(del)
  del=p_res*twopi/mr**2
-!write(6,*) del,p_res
-!stop
-   do i=1,c_%nd
-    f_comoving%v(2*i-1)=-i_*del* vr(1,i)  *dz_c(2*i-1)  
-    f_comoving%v(2*i)=  i_*del*  vr(1,i)*dz_c(2*i)  
-  enddo
- f_comoving%q%x(2)=-vr(1,c_%nd+1)*del/2
-
- del= (vr(2,1)*mu(1)+vr(2,2)*mu(2)+vr(2,3)*mu(3))/mr**2
- !    if(del <-0.5_dp ) del=(del+1.0_dp) 
- !    if(del> 0.5_dp ) del=(del-1.0_dp) 
- del=del*twopi
+else
+ del=del*twopi/mr**2
+endif
 
    do i=1,c_%nd
-    f_comoving%v(2*i-1)=-i_*del* vr(2,i)  *dz_c(2*i-1) +f_comoving%v(2*i-1)
-    f_comoving%v(2*i)=  i_*del*  vr(2,i)*dz_c(2*i) + f_comoving%v(2*i)
+    f_comoving%v(2*i-1)=-i_*del* vr(k,i)  *dz_c(2*i-1)  + f_comoving%v(2*i-1)
+    f_comoving%v(2*i)=  i_*del*  vr(k,i)*dz_c(2*i)  +   f_comoving%v(2*i)
   enddo
- f_comoving%q%x(2)=-vr(2,c_%nd+1)*del/2+f_comoving%q%x(2)
+  f_comoving%q%x(2)=-vr(k,c_%nd+1)*del/2 + f_comoving%q%x(2)
 
- del= (vr(3,1)*mu(1)+vr(3,2)*mu(2)+vr(3,3)*mu(3))/mr**2
-!    if(del <-0.5_dp ) del=(del+1.0_dp) 
-!     if(del> 0.5_dp ) del=(del-1.0_dp) 
- del=del*twopi
-
-   do i=1,c_%nd
-    f_comoving%v(2*i-1)=-i_*del* vr(3,i)  *dz_c(2*i-1) +f_comoving%v(2*i-1)
-    f_comoving%v(2*i)=  i_*del*  vr(3,i)*dz_c(2*i) + f_comoving%v(2*i)
-  enddo
- f_comoving%q%x(2)=-vr(3,c_%nd+1)*del/2+f_comoving%q%x(2)
-
-
+enddo
 
 
  rot_c_inverse= exp(-f_comoving)
@@ -226,10 +206,24 @@ Nc= N*rot_c_inverse
 
 
 fq=ln(Nc)
-call clean(nc,nc,prec=1.d-10)
 
-call print(nc)
-pause 7733
+
+ 
+call clean(fq,fq,prec=1.d-4,relative=.true.)
+call clean(fq,fq,prec=1.d-4 )
+
+call print(fq)
+
+Id=n*rot_c_inverse
+U_1=rot_c_inverse*n
+call c_full_norm_damap(U_1,k0)
+
+u_2=U_1-id
+call c_full_norm_damap(U_2,k1)
+ write(6,*) "Should be zero ",k1,k1/k0 
+  
+ 
+
 !!!!!!!!!!!!!  up to this point  the theory was like orbital!!!!!!!!!!!    
  
 
@@ -240,6 +234,12 @@ pause 7733
 !!!!!!!!!!!!!   via another co-moving rotation  !!!!!!!!!!!    
 !!!!!!!!!!!!!   This is equation 6.54 explained in a sloppy way in the blue book !!!!!!!!!!
  
+!!!  The total removal of all orbital operator is possible because the orbital
+!!! J's are exact invariants in any combination
+!!!  that is different in the nux+2nuy orbital resonance
+!!!
+
+ delorb=0.0_dp
 do i=1,c_%nd
   delorb=vr(1,i)*aimag(fq%v(2*i).k.(2*i))+delorb
 enddo 
@@ -248,31 +248,28 @@ enddo
 
 !!! uncomment below and the ISF is slightly wrong as well as the prediction
 !!! for the resonance crossing
-!!!  since the Berber H_r is only correct in leading order
+!!!  since the Barber H_r is only correct in leading order
 
 ! delorb = delorb.sub.'0'     
 
 
 !!!!  This is equation 6.54 of the blue book
 
-
- ! do i=1,c_%nd
- !   f_comoving%v(2*i-1)=-i_*delorb* vr(1,i)  *dz_c(2*i-1)  +f_comoving%v(2*i-1)
- !   f_comoving%v(2*i)=  i_*delorb*  vr(1,i)*dz_c(2*i)  + f_comoving%v(2*i)
- ! enddo
-
-
-  do i=1,c_%nd
-    f_comoving%v(2*i-1)=fq%v(2*i-1) +f_comoving%v(2*i-1)
-    f_comoving%v(2*i)= fq%v(2*i)  + f_comoving%v(2*i)
+write(6,*) "recomputing_h_r "
+read(5,*) recomputing_h_r
+f_barber=0
+  do i=1,c_%nd 
+    f_barber%v(2*i-1)=fq%v(2*i-1)  !+f_comoving%v(2*i-1)
+    f_barber%v(2*i)= fq%v(2*i)   !+ f_comoving%v(2*i)
   enddo
  
  delspin= -delorb/c_n%ms(1)
- f_comoving%q%x(2)=-delspin/2 + f_comoving%q%x(2)
- 
- 
+ f_barber%q%x(2)=-delspin/2    !+ f_comoving%q%x(2)
  
 
+if(recomputing_h_r) then
+
+ f_comoving=f_comoving+f_barber
 
 rot_c_inverse= exp(-f_comoving)
 
@@ -280,51 +277,61 @@ Nc= N*rot_c_inverse
 
  
 fq=ln(Nc)
-
-call clean(fq,fq,prec=1.d-10)
-
-call print(fq)
-
- 
- 
-
 Id=n*rot_c_inverse
 U_1=rot_c_inverse*n
+call c_full_norm_damap(U_1,k0)
+
 u_2=U_1-id
- 
 call c_full_norm_damap(U_2,k1)
-write(6,*) "Should be zero ",k1
-  
-call clean(fq,fq,prec=1.d-10)
+ write(6,*) "Should be zero ",k1,k1/k0 
+
  
 
-write(6,*) " Barber H_r : THE gadget "
+write(6,*) " Barber H_r with an extra logarithm: THE gadget "
 call c_q0_to_qr(fq%q,qf)
+ else
  
+ fq=fq-f_barber
+
+write(6,*) " Barber H_r without taking log for a second time: THE gadget "
+ call c_q0_to_qr(fq%q,qf)
+
+endif
+
+   
  
 
+  
 
-
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!  call clean(qf,qf,prec=1.d-4 ,relative=.true.)
+  call clean(qf,qf,prec=1.d-4  )
+call print(qf)
+ 
 
 !!!!!!!!!!!! initial conditions in the laboratory frame (around closed orbit) !!!!!!!!!!!!!!!
 
 x=0
-x(1)=9.3676d-005
-x(2)=-1.9044d-005
-x(3)=9.3676d-005
-x(4)=-1.9044d-005
-  
- 
-x=x*30  
+ x(1)=2.8d-3 
+ x(2)=-6.0d-4 
+ x(3)=2.8d-3 
+ x(4)=-6.0d-4 
+
+! 
+!low_amplitude=.true.
+if(low_amplitude) then 
+ write(6,*) " Small amplitude selected "
+ write(6,*) " The  total normal will produce a good ISF"
+ write(6,*) " Read section 5.4.4 of blue book for a rigorous justification"
+ write(6,*) " in the orbital case "
+ x=x*0.1d0
+endif
 
 do i=1,4
 u_1%v(i)=x(i)
 enddo
 
  !!!! put Barber H_r in laboratory basis
-!!!!! and evaluatec
+!!!!! and evaluate
  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 U_0=c_n%atot*c_phasor()
@@ -356,7 +363,8 @@ call c_qr_to_q0(qf,qf)
 
  damp=damp/sqrt(damp(1)**2+damp(2)**2+damp(3)**2)
  
- 
+ if(.false.) then
+
 n_isf=1
 do i=1,3
  n_isf%q%x(i)=damp(i)
@@ -365,13 +373,31 @@ enddo
 n_isf=c_n%atot*n_isf*c_n%atot**(-1)
 
 !!!!  Moving the ISF into the laboratory variables
-!!!!  as computed by stroboscopic average 
+!!!!  
 
 
  n_isf%q=n_isf%q.o.u_1
 do i=1,3
  damp(i)=n_isf%q%x(i)
 enddo
+else
+n_isvf=0
+do i=1,3
+ n_isvf%q%x(i)=damp(i)
+enddo
+
+!n_isvf=c_n%atot*n_isvf*c_n%atot**(-1)
+n_isvf= c_n%atot**(-1)*n_isvf
+
+!!!!  Moving the ISF into the laboratory variables
+!!!!  
+
+
+ n_isvf%q=n_isvf%q.o.u_1
+do i=1,3
+ damp(i)=n_isvf%q%x(i)
+enddo
+endif
  damp=damp/sqrt(damp(1)**2+damp(2)**2+damp(3)**2)
   
 if(damp(2)<0) damp=-damp
@@ -379,9 +405,13 @@ if(damp(2)<0) damp=-damp
 use_quaternion=.true.
  write(6,format6) x
   
- 
-write(6,*) " pol_rat "
-read(5,*) pol_rat
+if(low_amplitude) then
+ write(6,*) " Final polatization is set to 0.99995 because epsilon is small"
+ pol_rat=0.99995d0
+else
+ write(6,*) " pol_rat "
+ read(5,*) pol_rat
+endif
 dnus=.02d0
 
 !!!! fake acceleration computed to achieve desired polarization
@@ -427,6 +457,8 @@ crossing_position=nus_shift+tunespin
 write(6,*) " position of crossing ", crossing_position
 first=.true.
 
+ write(6,"(85x,a48)")  " Polarization, difference with final prediction "
+
 p=>ring%start
 do i=1,nturn
 fib=>ring%start
@@ -452,9 +484,12 @@ if(fib%ag/werk%gamma0I-int(fib%ag/werk%gamma0I)> crossing_position.and.first) th
 first=.false.
 Write(6,*) " Resonance crossing predicted around here "
 endif
+k1=(q0%x(2)-pol_rat)/(1.d0-pol_rat)*10000
+k1=nint(k1)
+k1=k1/100
 ! write(mf,format6)float(i), float(i)/nturn ,fib%ag/werk%gamma0I, q0%x(2)
- write(mf,format6)float(i), float(i)/nturn ,fib%ag/werk%gamma0I-int(fib%ag/werk%gamma0I), q0%x(2)
- write(6,format6)float(i), float(i)/nturn ,fib%ag/werk%gamma0I-int(fib%ag/werk%gamma0I), q0%x(2)
+ write(mf,"(i8,3(1x,g23.16,1x),(1x,f6.2,1x),a2)")i, float(i)/nturn ,fib%ag/werk%gamma0I-int(fib%ag/werk%gamma0I),q0%x(2), k1," %"
+ write(6,"(i8,3(1x,g23.16,1x),(1x,f6.2,1x),a2)")i, float(i)/nturn ,fib%ag/werk%gamma0I-int(fib%ag/werk%gamma0I),q0%x(2), k1," %"
 
  
  endif
@@ -484,7 +519,7 @@ write(6,*) " numerical stroboscopic average"
 
 write(6,*) n_stroboscopic%x
  
-write(6,*) "We leave a resonance in the map computation "
+write(6,*) "We leave a resonance in the map computation : recomputing_h_r ",recomputing_h_r
 
 write(6,*) damp(1:3)
 
@@ -495,13 +530,16 @@ call c_normal(one_turn_map,c_n, phase=phase, nu_spin=nu_spin,dospin=state%spin)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!! No resonances left in the map so the normalized ISF is e_2.
-
+!!! two ways to get the isf 
 n_isf=1
 n_isf%q=2
+n_isvf=0
+n_isvf%q=2
 
 n_isf=c_n%atot*n_isf*c_n%atot**(-1)
-
- n_isf%q=n_isf%q.o.u_1
+n_isvf=c_n%atot**(-1)*n_isvf
+  
+ n_isf%q=n_isvf%q.o.u_1
 do i=1,3
  damp(i)=n_isf%q%x(i)
 enddo
@@ -524,7 +562,7 @@ close(mf)
 
 contains
 
-subroutine  build_lu(ring)
+subroutine  build_fu(ring)
 use madx_ptc_module
 use pointer_lattice
 implicit none
@@ -551,17 +589,9 @@ ksd=0.d0
 Lbend=1.d0
 alpha=pi/2
 B2=sbend("B2", LBEND, ANGLE=ALPHA)
-
-
- 
-
  
  beg=marker("start");
  ende=marker("end");
-
- 
- 
-
  
  ring =beg+4*(QZ1 + B2 +QZ1) +ende;
  
@@ -570,12 +600,9 @@ ring = .ring.ring
 
 call survey(ring)
  
-end subroutine build_lu
+end subroutine build_fu
 
-
-
-
-end program spin_phase_advance_isf
+end program spin_resonance_isf
 
 
 

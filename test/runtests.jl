@@ -73,7 +73,6 @@ end
     Σ = equilibrium_moments(m,a)
     @test norm(Σ - Σ_fpp) < tol
 
-
     
     # Factorize -----------------------------
     # 3D all pseudo harmonic oscillators
@@ -100,9 +99,8 @@ end
     @test norm(a2-a2_fpp) < tol
     @test norm(as-as_fpp) < tol
 
-    
 
-
+    # Spin resonance
     m = read_fpp_map("spin_res/test.map")
     R_fpp = read_fpp_map("spin_res/R.map")
     a = normal(m,res=[0; 1], spin_res=[-1])  # Q_y - Q_s resonance

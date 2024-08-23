@@ -1,4 +1,4 @@
-program spin_phase_advance_isf
+program spin_resonance_isf
 use madx_ptc_module
 use pointer_lattice
 implicit none
@@ -11,20 +11,20 @@ type(fibre),pointer:: p , fib
 type(integration_node),pointer:: tt
 type(internal_state),target :: state
 real(dp)  prec,cut, closed(6),x(6), ph(4),stu(2),damp(3),thi,nu_mod,circ,epsr,f3r,f3i,emi,xturn
-real(dp) mu(3),del,tunespin,crossing_position
+real(dp) mu(3),del,tunespin,crossing_position,k1,k0
 complex(dp) epsb
-logical first,use_original_fq
+logical first,recomputing_h_r
 logical :: mis=.false.,thin=.false.
 type(c_damap) id,one_turn_map,U_0,U_1,U_2,fp,N,Nc,n_isf,rot_c_inverse
 type(c_taylor) phase(4),nu_spin,delspin,delorb
 type(c_normal_form) c_n
 type(c_spinor) isf
-type(c_vector_field) fq,f_comoving
+type(c_vector_field) fq,f_comoving,n_isvf
 type(c_quaternion) qf
 type(quaternion) q0,qr
 TYPE(c_spinor) N_spin
 TYPE(work) werk
-real(dp) nus_in,nus_out,dnudn,dnus,pol_rat,dnuda,a_in,a_out,dnda,del_a,nus_shift,p_res,k1
+real(dp) nus_in,nus_out,dnudn,dnus,pol_rat,dnuda,a_in,a_out,dnda,del_a,nus_shift,p_res
 character(255) filename
 real(dp), target ,allocatable ::  vr(:,:),vo(:,:) 
 real(dp), target  :: mr 
@@ -40,12 +40,9 @@ call ptc_ini_no_append
  call append_empty_layout(m_u)
  ring=>m_u%start
   n_cai=-i_
-call build_lu(ring)
+call build_fu(ring)
 
-
- 
-
-no=7
+no=5
 
 ring=>m_u%start
 call MAKE_node_LAYOUT(ring)
@@ -53,7 +50,7 @@ call survey(ring)
  
 !goto 1001
  
-state=only_4d0+spin0 !+modulation0
+state=only_4d0+spin0 
 
 werk=ring%start
 
@@ -63,16 +60,14 @@ write(6,*) "circumference ",circ
 
 p=>ring%start  
  
- 
 
-  
  p=>ring%start
 tunespin= 0.159169892732279d0 
 do i=1,ring%n
  p%ag=(2.d0+ tunespin)*werk%gamma0I
 if(p%mag%name(1:2)=="B2") then
 prec=i*0.01d0
-call add(p,4,1,-5000.d0)
+call add(p,4,1,-4000.d0)
 call add(p,2,1,prec)
 endif
 p=>p%next
@@ -102,8 +97,7 @@ call alloc(c_n)
 call alloc(xs)
 call alloc(isf)
 call alloc(phase)
-call alloc(fq)
-call alloc(f_comoving)
+call alloc(fq,f_comoving,n_isvf)
 call alloc(nu_spin,delspin,delorb)
 call alloc(qf)
 call alloc(N_spin) 
@@ -174,41 +168,28 @@ N=Ci_phasor()*N*c_phasor()
 !!!! notice that this is similar to J_x= (x^2+p^2)/2
 !!!!  so e_2 is truly like the Courant-Snyder invariant
  
- del= (vr(1,1)*mu(1)+vr(1,2)*mu(2)+vr(1,3)*mu(3))
-   !  if(del <-0.5_dp ) del=(del+1.0_dp) 
-   !  if(del> 0.5_dp ) del=(del-1.0_dp) 
-p_res=nint(del)
 
+f_comoving=0
+
+do k=1,c_%nd+1
+del=0
+ do ks=1,c_%nd+1
+  del= vr(k,ks)*mu(ks)+del
+ enddo
+if(k==1) then
+ p_res=nint(del)
  del=p_res*twopi/mr**2
+else
+ del=del*twopi/mr**2
+endif
 
    do i=1,c_%nd
-    f_comoving%v(2*i-1)=-i_*del* vr(1,i)  *dz_c(2*i-1)  
-    f_comoving%v(2*i)=  i_*del*  vr(1,i)*dz_c(2*i)  
+    f_comoving%v(2*i-1)=-i_*del* vr(k,i)  *dz_c(2*i-1)  + f_comoving%v(2*i-1)
+    f_comoving%v(2*i)=  i_*del*  vr(k,i)*dz_c(2*i)  +   f_comoving%v(2*i)
   enddo
- f_comoving%q%x(2)=-vr(1,c_%nd+1)*del/2
+  f_comoving%q%x(2)=-vr(k,c_%nd+1)*del/2 + f_comoving%q%x(2)
 
- del= (vr(2,1)*mu(1)+vr(2,2)*mu(2)+vr(2,3)*mu(3))/mr**2
-   !  if(del <-0.5_dp ) del=(del+1.0_dp) 
-   !  if(del> 0.5_dp ) del=(del-1.0_dp) 
- del=del*twopi
-
-   do i=1,c_%nd
-    f_comoving%v(2*i-1)=-i_*del* vr(2,i)  *dz_c(2*i-1) +f_comoving%v(2*i-1)
-    f_comoving%v(2*i)=  i_*del*  vr(2,i)*dz_c(2*i) + f_comoving%v(2*i)
-  enddo
- f_comoving%q%x(2)=-vr(2,c_%nd+1)*del/2+f_comoving%q%x(2)
-
- del= (vr(3,1)*mu(1)+vr(3,2)*mu(2)+vr(3,3)*mu(3))/mr**2
-   !  if(del <-0.5_dp ) del=(del+1.0_dp) 
-   !  if(del> 0.5_dp ) del=(del-1.0_dp) 
- del=del*twopi
-
-   do i=1,c_%nd
-    f_comoving%v(2*i-1)=-i_*del* vr(3,i)  *dz_c(2*i-1) +f_comoving%v(2*i-1)
-    f_comoving%v(2*i)=  i_*del*  vr(3,i)*dz_c(2*i) + f_comoving%v(2*i)
-  enddo
- f_comoving%q%x(2)=-vr(3,c_%nd+1)*del/2+f_comoving%q%x(2)
-
+enddo
 
 
 
@@ -234,54 +215,48 @@ enddo
  
 !!! uncomment below and the ISF is slightly wrong as well as the prediction
 !!! for the resonance crossing
-!!!  since the Berber H_r is only correct in leading order
+!!!  since the Barber H_r is only correct in leading order
 
 ! delorb = delorb.sub.'0'     
 
 
 !!!!  This is equation 6.54 of the blue book
-
- ! do i=1,c_%nd
- !   f_comoving%v(2*i-1)=-i_*delorb* vr(1,i)  *dz_c(2*i-1)  +f_comoving%v(2*i-1)
- !   f_comoving%v(2*i)=  i_*delorb*  vr(1,i)*dz_c(2*i)  + f_comoving%v(2*i)
- ! enddo
-
-
+recomputing_h_r=.true.
+if(recomputing_h_r) then
   do i=1,c_%nd
     f_comoving%v(2*i-1)=fq%v(2*i-1) +f_comoving%v(2*i-1)
     f_comoving%v(2*i)= fq%v(2*i)  + f_comoving%v(2*i)
   enddo
-! delspin= -(delorb-p_res*twopi)/c_n%ms(1)
+ 
  delspin= -delorb/c_n%ms(1)
-
  f_comoving%q%x(2)=-delspin/2 + f_comoving%q%x(2)
  
-
-
+ 
 rot_c_inverse= exp(-f_comoving)
 
 Nc= N*rot_c_inverse
 
+ 
 fq=ln(Nc)
-
-
-
 Id=n*rot_c_inverse
 U_1=rot_c_inverse*n
+call c_full_norm_damap(U_1,k0)
+
 u_2=U_1-id
- 
 call c_full_norm_damap(U_2,k1)
-write(6,*) "Should be zero ",k1
- 
-call clean(fq,fq,prec=1.d-10)
+ write(6,*) "Should be zero ",k1,k1/k0 
+call clean(fq,fq,prec=1.d-10,relative=.true.)
  
 
 write(6,*) " Barber H_r : THE gadget "
 call c_q0_to_qr(fq%q,qf)
- 
- 
+ else
+write(6,*) " Barber H_r : THE gadget "
+ delspin= -delorb/c_n%ms(1)
+call c_q0_to_qr(fq%q,qf)
+ qf%x(2)= delspin/2 + qf%x(2)
 
-
+endif
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -300,7 +275,7 @@ u_1%v(i)=x(i)
 enddo
 
  !!!! put Barber H_r in laboratory basis
-!!!!! and evaluatec
+!!!!! and evaluate
  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 U_0=c_n%atot*c_phasor()
@@ -333,6 +308,14 @@ call c_qr_to_q0(qf,qf)
  damp=damp/sqrt(damp(1)**2+damp(2)**2+damp(3)**2)
  
  
+ 
+
+!!!!  Moving the ISF into the laboratory variables
+!!!!  as computed by stroboscopic average 
+
+
+ if(.false.) then
+
 n_isf=1
 do i=1,3
  n_isf%q%x(i)=damp(i)
@@ -348,6 +331,29 @@ n_isf=c_n%atot*n_isf*c_n%atot**(-1)
 do i=1,3
  damp(i)=n_isf%q%x(i)
 enddo
+else
+n_isvf=0
+do i=1,3
+ n_isvf%q%x(i)=damp(i)
+enddo
+
+ n_isf%q=n_isf%q.o.u_1
+do i=1,3
+ damp(i)=n_isf%q%x(i)
+enddo
+!n_isvf=c_n%atot*n_isvf*c_n%atot**(-1)
+n_isvf= c_n%atot**(-1)*n_isvf
+
+!!!!  Moving the ISF into the laboratory variables
+!!!!  as computed by stroboscopic average 
+
+
+ n_isvf%q=n_isvf%q.o.u_1
+do i=1,3
+ damp(i)=n_isvf%q%x(i)
+enddo
+endif
+
  damp=damp/sqrt(damp(1)**2+damp(2)**2+damp(3)**2)
   
 if(damp(2)<0) damp=-damp
@@ -500,7 +506,7 @@ close(mf)
 
 contains
 
-subroutine  build_lu(ring)
+subroutine  build_fu(ring)
 use madx_ptc_module
 use pointer_lattice
 implicit none
@@ -546,12 +552,9 @@ ring = .ring.ring
 
 call survey(ring)
  
-end subroutine build_lu
+end subroutine build_fu
 
-
-
-
-end program spin_phase_advance_isf
+end program spin_resonance_isf
 
 
 
