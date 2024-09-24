@@ -6,9 +6,9 @@
 
 ## Overview
 
-_This package is still in an early development stage_
+_This package is still in development_
 
-This package provides routines for calculating parameter-dependent normal forms of nonlinear Hamiltonian (and nearly Hamiltonian) maps expressed as truncated power series in the variables, using Lie algebraic methods. Basically, given some map, it computes a symplectic transformation of the variables to coordinates where the nonlinear motion lies on circles in phase space. This allows calculation of invariants of the motion, and when leaving one resonance in the map, a single-resonance normal form, from which resonance driving terms can be calculated. This package may be of particular interest to those in accelerator physics, electron microscopy, and astronomy.
+This package provides routines for calculating parameter-dependent normal forms of nonlinear Hamiltonian (and nearly Hamiltonian) maps expressed as truncated power series in the variables, using Lie algebraic methods. Given a differential algebraic map, a symplectic transformation of the variables to coordinates where the nonlinear motion lies on circles in phase space is calculated. This allows for easy calculation of invariants of the motion, and when leaving one resonance in the map, a single-resonance normal form, from which resonance driving terms and effective resonance Hamiltonians can be calculated. This package may be of particular interest to those in accelerator physics, electron microscopy, and astronomy.
 
 <!--- For simplicity, we define an operator using the Poisson bracket as 
 $$:f:g \triangleq \lbrace f, q \rbrace \ , $$
@@ -46,8 +46,8 @@ a _Lie operator_ generating the map. If the system is Hamiltonian, the generator
 
 To use this package, in the Julia REPL run:
 
-```juliai
-import Pkg; Pkg.add(path="https://github.com/bmad-sim/NonlinearNormalForm.jl")
+```julia
+import Pkg; Pkg.add(url="https://github.com/bmad-sim/NonlinearNormalForm.jl")
 ```
 
 ## Basic Usage
