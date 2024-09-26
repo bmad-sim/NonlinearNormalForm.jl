@@ -101,12 +101,12 @@ end
 
 
     # Spin resonance
+    # WHEN LEAVING RESONANCES IN THE MAP, the PHASE of the normal 
+    # form is important!
     m = read_fpp_map("spin_res/test.map")
     R_fpp = read_fpp_map("spin_res/R.map")
-    a = normal(m,res=[0; 1], spin_res=[-1])  # Q_y - Q_s resonance
+    a = normal(m,res=[0; 1], spin_res=[-1]).a  # Q_y - Q_s resonance
     
-
-
 
 
 end

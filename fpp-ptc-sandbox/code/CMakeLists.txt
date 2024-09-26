@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.27)
+cmake_minimum_required(VERSION $ENV{ACC_CMAKE_VERSION})
 project(ACC)
 
 #find_library(FOREST_LIBRARY forest REQUIRED PATHS /Users/mgs255/Software/bmad/bmad-ecosystem/production/lib/)

@@ -98,10 +98,11 @@ function exp(Q1::Quaternion{T}) where {T<:TPS}
 end
 
 function show(io::IO, Q::Quaternion{<:TPS})
-  GTPSA.show_map!(io, collect(Q), Ref{Int}(0), false, [" q0:"," q1:"," q2:"," q3:"])
+  println(io, "$(typeof(Q)):")
+  GTPSA.show_map!(io, collect(Q), Ref{Int}(1), false, [" q0:"," q1:"," q2:"," q3:"])
 end
 
-show(io::IO, ::MIME"text/plain", Q::Quaternion{<:TPS}) = GTPSA.show_map!(io, collect(Q), Ref{Int}(0), false, [" q0:"," q1:"," q2:"," q3:"])
+show(io::IO, ::MIME"text/plain", Q::Quaternion{<:TPS}) = (println(io, "$(typeof(Q)):"); GTPSA.show_map!(io, collect(Q), Ref{Int}(1), false, [" q0:"," q1:"," q2:"," q3:"]))
 
 
 

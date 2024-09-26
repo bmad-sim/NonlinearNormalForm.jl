@@ -17,9 +17,9 @@ function norm(m::Union{TaylorMap,VectorField})
   return nrm
 end
 
-# --- complex ---
 for t = (:DAMap, :TPSAMap)
 @eval begin    
+# --- complex ---
 function complex(m::$t)
   outm = zero_op(m,im)
   copy!(outm, m)
@@ -29,6 +29,11 @@ end
 # --- complex type ---
 function complex(::Type{$t{S,T,U,V,W}}) where {S,T,U,V,W}
   return $t{Vector{ComplexF64},Vector{ComplexTPS64},U == Nothing ? Nothing : Quaternion{ComplexTPS64}, V == Nothing ? Nothing : Matrix{ComplexF64}, W}
+end
+
+# --- real type ---
+function real(::Type{$t{S,T,U,V,W}}) where {S,T,U,V,W}
+  return $t{Vector{Float64},Vector{TPS64},U == Nothing ? Nothing : Quaternion{TPS64}, V == Nothing ? Nothing : Matrix{Float64}, W}
 end
 
 end
@@ -61,6 +66,37 @@ function copy!(m::TaylorMap, m1::TaylorMap)
 
   return m
 end
+
+copy(m1::TaylorMap) = (m = zero(m1); copy!(m, m1); return m)
+
+function real!(m::TaylorMap, m1::TaylorMap)
+  m.x0 .= real.(m1.x0)
+  desc = getdesc(m)
+  nn = numnn(desc)
+  nv = numvars(desc)
+  np = numparams(desc)
+
+  for i=1:nv
+    @FastGTPSA! m.x[i] = real(m1.x[i])
+  end
+
+  if !isnothing(m1.Q)
+    @FastGTPSA! begin
+      m.Q.q0 = real(m1.Q.q0)
+      m.Q.q1 = real(m1.Q.q1)
+      m.Q.q2 = real(m1.Q.q2)
+      m.Q.q3 = real(m1.Q.q3)
+    end
+  end
+
+  if !isnothing(m1.E)
+    m.E .= real.(m1.E)
+  end
+
+  return m
+end
+
+real(m1::TaylorMap) = (m = zero(real(typeof(m1)), use=m1, idpt=m1.idpt); real!(m, m1); return m)
 
 # --- clear ---
 function clear!(m::TaylorMap)

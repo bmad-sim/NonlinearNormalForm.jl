@@ -140,6 +140,10 @@ c_n%positive=.false.
  
 
 call c_normal(id,c_n, phase=phase, nu_spin=nu_spin,dospin=state%spin)
+write(*,*) "yo:L"
+N=c_n%atot**(-1)*id*c_n%atot
+call print(N)
+stop
 
 write(6,*) c_n%tune(1:2)
 write(6,*) c_n%spin_tune,c_n%quaternion_angle/pi

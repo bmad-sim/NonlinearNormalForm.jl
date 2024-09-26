@@ -161,13 +161,15 @@ program Guignard_normal_form_average_x
    call print(one_turn_map,i)
    close(I)
    !stop
-   normal_form%nres=1
-   normal_form%m(2,1)=1
-   normal_form%ms(1)=-1
+  normal_form%nres=1
+  normal_form%m(2,1)=1
+  normal_form%ms(1)=-1
    write(*,*) "entering NF"
-   call c_normal(one_turn_map,normal_form,dospin=state%spin,phase=phase)  ! (6)
+   call c_normal(one_turn_map,normal_form,dospin=state%spin,phase=phase, canonize=.true.)  ! (6)
 write(*,*) "exiting NF"
    id_s=one_turn_map
+   !call print(normal_form%atot)
+  !stop
    
    
    one_turn_map=ci_phasor()*normal_form%atot**(-1)*id_s*normal_form%atot*c_phasor()

@@ -46,11 +46,11 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
 
   a1 = zero(promote_type(eltype(a1_inv_matrix),typeof(m0)),use=m0,idpt=m.idpt)
   setmatrix!(a1, inv(a1_inv_matrix))
-#=
+  
   a1_mat = fast_canonize(a1)
   clear!(a1)
   setmatrix!(a1, a1_mat)
-  =#
+  
   if !isnothing(m.Q)
     a1.Q.q0[0] = 1
   end
@@ -132,7 +132,6 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
   a = a0 ∘ a1 ∘ c*an*c^-1
 
   #return m1
-
 
   # Fully nonlinear map in regular basis
 
@@ -279,20 +278,6 @@ function factorize(a)
     ast = one(att)
     ast.x[nt] = par(att.x[nt], zeros(Int, nhv))
     a0 = ast*a0
-
-    #=
-    # ensure poisson bracket does not change
-    for i=1:Int(nhv/2)
-      a0.x[nt] += sgn*deriv(a0.x[2*i], ndpt)*mono(2*i-1,use=getdesc(a)) - sgn*deriv(a0.x[2*i-1], ndpt)*mono(2*i,use=getdesc(a)) # first order
-      #return a0.x[2*i-1]
-      # dies at second order poisson bracket
-      #print(sgn*0.5*(deriv(a0.x[2*i], ndpt)*a0.x[2*i-1] - deriv(a0.x[2*i-1], ndpt)*a0.x[2*i]))
-      #return
-      a0.x[nt] += sgn*0.5*(deriv(a0.x[2*i], ndpt)*a0.x[2*i-1] - deriv(a0.x[2*i-1], ndpt)*a0.x[2*i])
-    end
-
-
-    a0 += eye=#
   else
     nhv = numvars(a)
     a0 = a∘zero(a)+I
