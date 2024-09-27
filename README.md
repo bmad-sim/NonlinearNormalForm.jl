@@ -6,41 +6,9 @@
 
 ## Overview
 
-_This package is still in development_
+_This package is still in development, and certain bugs/feature and syntax changes must be expected._
 
-This package provides routines for calculating parameter-dependent normal forms of nonlinear Hamiltonian (and nearly Hamiltonian) maps expressed as truncated power series in the variables, using Lie algebraic methods. Given a differential algebraic map, a symplectic transformation of the variables to coordinates where the nonlinear motion lies on circles in phase space is calculated. This allows for easy calculation of invariants of the motion, and when leaving one resonance in the map, a single-resonance normal form, from which resonance driving terms and effective resonance Hamiltonians can be calculated. This package may be of particular interest to those in accelerator physics, electron microscopy, and astronomy.
-
-<!--- For simplicity, we define an operator using the Poisson bracket as 
-$$:f:g \triangleq \lbrace f, q \rbrace \ , $$
-
-where $:f:$ can act on scalar functions, or element-wise on vector functions. With this definition, Hamilton's equations can then be expressed as
-
-$$ \frac{d}{dt} \vec{z} = :-H:\ \vec{z} \ .$$
-
-This has the solution (for some time $t$)
-
-$$ \vec{z}\_f = \exp{\left(:h:\right)}\vec{z}\_0 = \vec{\zeta}\_{t_0\rightarrow t_0+t}(\vec{z}_0) \ , \ \ \ \ \ \ \ h=-\int\_{t_0}^t H \ dt$$
-
-
-The transfer map $\vec{\zeta}\_{t_0\rightarrow t_0+t}$ acts on phase space variables; it is finite dimension (= number of phase space variables) but, expressed as a power series in small phase space variables, may be infinite in order. It is more useful to instead work with the Lie representation of the map $\mathcal{M}\_{\vec{\zeta}}=\exp{\left(:h:\right)}$, which acts on functions of the phase space variables instead of the phase space variables themselves, e.g.
-
-$$\mathcal{M}\_{\vec{\zeta}}f=f\circ\vec{\zeta} \ .$$  
-
-$\mathcal{M}_{\vec{\zeta}}$ is a [Koopman operator](https://en.wikipedia.org/wiki/Composition_operator). This replaces the nonlinear problem of a finite dimension (describing how the phase space variables transform to infinite order in the phase space variables), to a linear problem of infinite dimension (describing how each monomial coefficient in the Hamiltonian map transforms). The number of monomial coefficients is simply truncated at some order, chosen by the user.
-
-Because the problem is now linear, the transformation of the monomial coefficients could be expressed using a (truncated) matrix, however this is notoriously slow and inconvenient to work with. This package implements the full Lie algebraic formulation using Lie operators.
-
-While using the time-integral of the Hamiltonian as a generator of the time evolution (canonical transformation) in this way is useful, it is not always practical. In a particle tracking code for example, the motion may not always be exactly symplectic, e.g. when there is some small dissipation due to synchrotron radiation emission. In this case, a Hamiltonian cannot be obtained from an integrator, however the force field $\vec{F}$ on the particle is of course known from the integrator. Using the operator isomorphism $\vec{F}\cdot\vec{\nabla} \triangleq \ :h: $. --->
-
-<!--- $$\mathcal{M}\_{t_0\rightarrow t_0+dt} = \exp{(\vec{F}\cdot\vec{\nabla}\ dt)} \ , \ \ \ \ \ \ \vec{\zeta}\_{t_0\rightarrow t_0+\Delta t}= \exp{(:-H\ dt:)}\vec{x}$$
-
-An isomorphism can be used to express the above equations, which use the Hamiltonian, to instead use the force field
-
-
-
-
-a _Lie operator_ generating the map. If the system is Hamiltonian, the generator of the map would simply be a Poisson bracket, however vector fields are used so the formalism applies correctly even for nearly-Hamiltonian maps. --->
-
+This package provides routines for doing canonical perturbation theory on nonlinear Hamiltonian (and nearly Hamiltonian) maps, including parameters, using Lie algebraic methods. Functions are provided which, given some dynamical map expressed as a truncated power series in the variables (and parameters), can be used for calculating and analyzing the canonical transformation of the variables to the _**normal form**_ - coordinates where the nonlinear motion lies on action-dependent circles in phase space. This allows for easy calculation of invariants and other (parameter-dependent) properties of the map. Optionally, one single resonance may be left in the map, leaving a single resonance normal form from which resonance driving terms and the positions of fixed points in phase space may calculated. This package may be of particular interest to those in accelerator physics, celestial mechanics, electron microscopy, geometrical optics, and plasma physics.
 
 ## Setup
 
@@ -54,4 +22,35 @@ import Pkg; Pkg.add(url="https://github.com/bmad-sim/NonlinearNormalForm.jl")
 
 This package imports and reexports [`GTPSA.jl`](https://github.com/bmad-sim/GTPSA.jl), a library for computing real and complex truncated power series to arbitrary orders in the variables and parameters. Before using `NonlinearNormalForm.jl`, you should have some familiarity with `GTPSA.jl`. 
 
+The package currently provides various functionalities already provided by the [Full Polymorphic Package (FPP)](https://github.com/bmad-sim/bmad-ecosystem/blob/main/forest/fpp_manual/fpp-manual.pdf) written by Etienne Forest in Fortran90. This includes real and complex differential algebraic maps with properly overloaded operators, map composition and inversion (using routines provided by `GTPSA.jl`), parametric normal form calculation routines optionally including a "coasting" plane (including a constant "energy-like" canonical variable), factorization of the normalizing map, Lie operators including a quaternion for spin, calculations for the `log` and `exp` of Lie operators to construct Lie maps, and one resonance normal form analysis tools.
 
+After a `DAMap` is calculated via polymorphic tracking of the truncated power series, the map can be analyzed using the routines here. Some example maps randomly generated by FPP are provided in the `test` directory.
+
+```julia
+julia> m = read_fpp_map("test/spin_res/test.map") # read one of the randomly-generated maps from FPP into Julia
+
+julia> m_lin = cutord(m, 2); # extract the linear part in orbital
+
+julia> m_nonlinear = inv(m_lin) ∘ m; # remove the linear part
+
+julia> F = log(m_nonlinear); # Get the Lie operator (including quaternion) generating nonlinear part
+
+julia> m = m_lin ∘ exp(F);  # Reconstruct same map using Lie exponent and linear part separately
+
+julia> a = normal(m);  # Calculate the nonlinear (parametric) normalizing canonical transformation
+
+julia> R_z = inv(a) ∘ m ∘ a; # Nonlinear amplitude-dependent rotation in regular phase space (x, px, …)
+
+julia> c = to_phasor(m);  # Get the transform to phasors basis √(J)*exp(±im*ϕ)
+
+julia> R_J = inv(c) ∘ R_z ∘ c; # Nonlinear amplitude-dependent rotation in phasors basis
+
+julia> a_spin, a0, a1, a2 = factorize(a); # Spin part, nonlinear parameter-dependent fixed point, a1, a2
+
+julia> Σ = equilibrium_moments(m, a); # Calculate equilibrium sigma matrix when fluctuation-dissipation
+
+julia> a = normal(m, m=[0; 1], m_spin=[-1]);  # Leaving in a Q_y - Q_spin resonance
+```
+
+## Acknowledgements
+Thanks to Etienne Forest for his significant time and patience in teaching the normal form methods and guiding the implementation of the tools in this package.
