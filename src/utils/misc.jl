@@ -19,7 +19,6 @@ vpords(m::Union{Probe{<:Real,TPS,<:Any,<:Any},<:TaylorMap,VectorField}) = unsafe
 vords(m::Union{Probe{<:Real,TPS,<:Any,<:Any},<:TaylorMap,VectorField}) = unsafe_wrap(Vector{UInt8}, unsafe_load(getdesc(m).desc).no, numvars(m))
 pords(m::Union{Probe{<:Real,TPS,<:Any,<:Any},<:TaylorMap,VectorField}) = unsafe_wrap(Vector{UInt8}, unsafe_load(getdesc(m).desc).no, numparams(m))
 
-@inline checkidpt(maps::TaylorMap...) = all(x->x.idpt==first(maps).idpt, maps) || error("Maps have disagreeing idpt")
 @inline checkspin(stuff...) = all(x->isnothing(x.Q), stuff) || all(x->!isnothing(x.Q), stuff) || error("Atleast one map/vector field includes spin while others do not")
 @inline checkFD(maps::TaylorMap...) = all(x->isnothing(x.E), maps) || all(x->!isnothing(x.E), maps) || error("Atleast one map includes fluctuations/dissipation while others do not")
 
@@ -66,11 +65,6 @@ pords(m::Union{Probe{<:Real,TPS,<:Any,<:Any},<:TaylorMap,VectorField}) = unsafe_
   return true
 end
 
-@inline function checkmapsanity(m::TaylorMap)
-  eltype(m.x0) == eltype(eltype(m.x)) || error("Reference orbit type $(eltype(m.x0)) must be $(eltype(eltype(m.x))) (equal to scalar of orbital)")
-  isnothing(m.Q) || eltype(m.Q) == eltype(m.x) || error("Quaternion type $(eltype(m.Q)) must be $(eltype(m.x)) (equal to orbital)")
-  isnothing(m.E)|| eltype(m.E) == eltype(eltype(m.x)) || error("Stochastic matrix type $(eltype(m.E)) must be $(eltype(eltype(m.x))) (equal to scalar of orbital)")
-end
 #=
 # --- random symplectic map ---
 function rand(t::Union{Type{DAMap},Type{TPSAMap}}; spin::Union{Bool,Nothing}=nothing, FD::Union{Bool,Nothing}=nothing, use::Union{Descriptor,TPS,ComplexTPS}=GTPSA.desc_current, ndpt::Union{Nothing,Integer}=nothing)
