@@ -9,13 +9,14 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
   # 1: Go to parameter-dependent fixed point to first order ONLY!
   # Higher orders will be taken care of in nonlinear part
  # zero(m) is zero in variables but identity in parameters
-  if !isnothing(m.idpt) # if coasting, set number of variables executing pseudo-harmonic oscillations
+  ndpt = coastidx(m)
+  if ndpt != -1 #!isnothing(m.idpt) # if coasting, set number of variables executing pseudo-harmonic oscillations
     nhv = numvars(m)-2
     eye = zero(m)
     setmatrix!(eye, I(nhv))
     #eye = DAMap(I(nhv),use=m,idpt=m.idpt)
-    ndpt = numvars(m)-1+m.idpt # energy like variable index
-    sgn = 1-2*m.idpt
+    #ndpt = numvars(m)-1+m.idpt # energy like variable index
+    sgn =  -(1+2*(ndpt-numvars(m)))
     nt = ndpt+sgn # timelike variable index
     zer = zero(m); zer.x[nt][nt]=1; zer.x[ndpt][ndpt] = 1
     a0 = (cutord(m,2)-eye)^-1 * zer + eye
@@ -40,11 +41,11 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
       a1_inv_matrix[2*j,i] = sqrt(2)*imag(F.vectors[i,2*j-1])  
     end
   end
-  if !isnothing(m.idpt)
+  if ndpt != -1
     a1_inv_matrix[nhv+1,nhv+1] = 1; a1_inv_matrix[nhv+2,nhv+2] = 1;
   end
 
-  a1 = zero(promote_type(eltype(a1_inv_matrix),typeof(m0)),use=m0,idpt=m.idpt)
+  a1 = zero(promote_type(eltype(a1_inv_matrix),typeof(m0)),use=m0)
   setmatrix!(a1, inv(a1_inv_matrix))
   
   a1_mat = fast_canonize(a1)
@@ -150,13 +151,13 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
     nrm = sqrt(n0[1]^2+n0[3]^2)
     Qr = Quaternion(cos(alpha/2), sin(alpha/2)*n0[3]/nrm, 0, -sin(alpha/2)*n0[1]/nrm)
     # now concatenate m1:
-    as = DAMap(Q=Qr,idpt=m.idpt)
+    as = DAMap(Q=Qr)
     m1 = inv(as)*m1*as # == Quaternion(scalar.(Qr*m.Q*inv(Qr)))
     nu0 = 2*acos(scalar(m1.Q.q0))  # closed orbit spin tune ( i guess we could have gotten this earlier?)
     # it is equal to  2*acos(Quaternion(scalar.(m.Q)).q0) (i.e. before transforming)
     # Now we start killing the spin. The first step is to start with a map 
     # (identity in orbital because we are done with orbital) that does this zero order rotation
-    Qr_inv = DAMap(Q=inv(Quaternion(scalar.(m1.Q))),idpt=m.idpt)
+    Qr_inv = DAMap(Q=inv(Quaternion(scalar.(m1.Q))))
     # Now store analogous to eg -> egspin
     egspin = SVector(cos(nu0)+im*sin(nu0), 1, cos(nu0)-im*sin(nu0))
 
@@ -211,7 +212,7 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
 
       
       # Exponentiate this part now
-      Qnr = DAMap(Q=exp(Quaternion(0,na...)),idpt=m.idpt)
+      Qnr = DAMap(Q=exp(Quaternion(0,na...)))
       as = as*Qnr # put in normalizing map
       m1 = inv(Qnr)*m1*Qnr # kill the terms in m1
     end
@@ -245,10 +246,11 @@ function factorize(a)
   end
 
   # We get a0*a1*an
-  if !isnothing(a.idpt) # if coasting, set number of variables executing pseudo-harmonic oscillations
+  ndpt = coastidx(a)
+  if ndpt != -1 #!isnothing(a.idpt) # if coasting, set number of variables executing pseudo-harmonic oscillations
     nhv = numvars(a)-2
-    ndpt = numvars(a)-1+a.idpt # energy like variable index
-    sgn = 1-2*a.idpt
+    #ndpt = numvars(a)-1+a.idpt # energy like variable index
+    sgn =  -(1+2*(ndpt-numvars(a)))
     nt = ndpt+sgn # timelike variable index
     zer = zero(a); zer.x[nt][nt]=1; zer.x[ndpt][ndpt] = 1
 
@@ -270,7 +272,7 @@ function factorize(a)
     #return vf
 
     a0 = exp(vf)
-    a0 = DAMap(a0,idpt=a.idpt)
+    a0 = DAMap(a0)
 
     att = inv(a0)*a
 
@@ -295,7 +297,7 @@ function factorize(a)
     a1.x[i] = tmp
   end
 
-  if !isnothing(a.idpt)
+  if ndpt != -1
     tmp = zero(a1.x[nt])
     nn = numnn(a)
     m = Vector{UInt8}(undef, nn)
@@ -536,7 +538,8 @@ function fast_canonize(a::DAMap, damping::Bool=!isnothing(a.E))
   ri = zero(a_matrix)
   #ri .= 0
 
-  if !isnothing(a.idpt) # if coasting, set number of variables executing pseudo-harmonic oscillations
+  ndpt = coastidx(a)
+  if ndpt != -1 #!isnothing(a.idpt) # if coasting, set number of variables executing pseudo-harmonic oscillations
     nhv = numvars(a)-2
   else
     nhv = numvars(a)
@@ -561,9 +564,9 @@ function fast_canonize(a::DAMap, damping::Bool=!isnothing(a.E))
     phase[i] += atan(sphi,cphi)/(2*pi)
   end
 
-  if !isnothing(a.idpt)
-    ndpt = numvars(a)-1+a.idpt
-    sgn = 1-2*a.idpt
+  if ndpt != -1
+    #ndpt = numvars(a)-1+a.idpt
+    sgn =  -(1+2*(ndpt-numvars(a)))
     nt = ndpt+sgn
     ri[nt,nt] = 1
     ri[ndpt,ndpt] = 1
@@ -691,11 +694,10 @@ end
 
 # computes c^-1
 function from_phasor!(cinv::DAMap, m::DAMap)
-  checkidpt(cinv,m)
   clear!(cinv)
 
   nhv = numvars(m)
-  if !isnothing(m.idpt)
+  if coastidx(m) != -1
     nhv -= 2
     cinv.x[nhv+1][nhv+1] = 1
     cinv.x[nhv+2][nhv+2] = 1
@@ -719,18 +721,17 @@ function from_phasor!(cinv::DAMap, m::DAMap)
 end
 
 function from_phasor(m::DAMap)
-  cinv=zero(complex(typeof(m)),use=m,idpt=m.idpt);
+  cinv=zero(complex(typeof(m)),use=m);
   from_phasor!(cinv,m);
   return cinv
 end
 
 # computes c
 function to_phasor!(c::DAMap, m::DAMap)
-  checkidpt(c,m)
   clear!(c)
 
   nhv = numvars(m)
-  if !isnothing(m.idpt)
+  if coastidx(m) != -1
     nhv -= 2
     c.x[nhv+1][nhv+1] = 1
     c.x[nhv+2][nhv+2] = 1
@@ -753,7 +754,7 @@ function to_phasor!(c::DAMap, m::DAMap)
 end
 
 function to_phasor(m::DAMap)
-  c=zero(complex(typeof(m)),use=m,idpt=m.idpt);
+  c=zero(complex(typeof(m)),use=m);
   to_phasor!(c,m);
   return c
 end

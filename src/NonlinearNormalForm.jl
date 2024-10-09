@@ -14,6 +14,7 @@ import Base: ∘,
              one,
              complex,
              real,
+             imag,
              log,
              exp,
              ==,
@@ -65,8 +66,7 @@ import GTPSA: Desc,
 
 
 export        TaylorMap, 
-              Quaternion, 
-              Probe,      
+              Quaternion,    
               TPSAMap, 
               DAMap, 
               VectorField,
@@ -125,24 +125,24 @@ coast_threshold::Float64 = eps(Float64)
 
 include("utils/quaternion.jl")
 include("types.jl")
-include("probe.jl")
 
 include("utils/matrix.jl")
 include("utils/symplectic_s.jl")
-include("utils/gtpsa.jl")
+include("sanity.jl")
 
-include("probe.jl")
+include("methods.jl")
+include("operators.jl")
+
 include("map/ctors.jl")
 include("map/compose.jl")
-include("map/compose_it.jl")
+include("map/inv.jl")
+include("map/map_methods.jl")
+include("map/map_operators.jl")
 
-include("map/methods.jl")
-include("map/operators.jl")
 
 include("vectorfield/ctors.jl")
-include("vectorfield/methods.jl")
-include("vectorfield/operators.jl")
-include("map/inv.jl")
+include("vectorfield/vf_methods.jl")
+
 include("work.jl")
 include("normal.jl")
 

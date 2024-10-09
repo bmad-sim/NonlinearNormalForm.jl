@@ -1,73 +1,50 @@
+#=
+
+coastidx is also defined to quickly check for the coasting plane case, returning 
+the index of which variable is constant (energy-like). Note that the last plane 
+must be the coasting plane.
+
+=#
+
 # --- helper functions to get the numvars/numparams/descriptor in any context ---
 
 # GTPSA provides these functions for only pure TPS/ComplexTPSs
-getdesc(m::Union{Probe{<:Real,<:TPS,<:Any,<:Any},<:TaylorMap,VectorField}) = getdesc(first(m.x))
-numvars(m::Union{Probe{<:Real,TPS,<:Any,<:Any},<:TaylorMap,VectorField}) = numvars(first(m.x))
-numparams(m::Union{Probe{<:Real,TPS,<:Any,<:Any},<:TaylorMap,VectorField}) = numparams(first(m.x))
-numnn(m::Union{Probe{<:Real,TPS,<:Any,<:Any},<:TaylorMap,VectorField}) = numnn(first(m.x))
+getdesc(m::Union{TaylorMap,VectorField}) = getdesc(first(m.x))
+numvars(m::Union{TaylorMap,VectorField}) = numvars(first(m.x))
+numparams(m::Union{TaylorMap,VectorField}) = numparams(first(m.x))
+numnn(m::Union{TaylorMap,VectorField}) = numnn(first(m.x))
 #=
 getdesc(m::Quaternion{<:Union{ComplexTPS,TPS}}) = Descriptor(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.q).tpsa).d))
 numvars(m::Quaternion{<:Union{ComplexTPS,TPS}}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.q).tpsa).d)).nv
 numparams(m::Quaternion{<:Union{ComplexTPS,TPS}}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.q).tpsa).d)).np
 numnn(m::Quaternion{<:Union{ComplexTPS,TPS}}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.q).tpsa).d)).nn
 =#
-eltype(m::Union{Probe{<:Real,T,<:Any,<:Any},<:TaylorMap{<:Number,T,<:Any,<:Any},VectorField{T,<:Any}}) where {T<:TPS} = eltype(T)
+eltype(m::Union{TaylorMap{<:Number,T,<:Any,<:Any},VectorField{T,<:Any}}) where {T<:TPS} = eltype(T)
 
-maxord(m::Union{Probe{<:Real,TPS,<:Any,<:Any},<:TaylorMap,VectorField}) = unsafe_load(getdesc(m).desc).mo
-prmord(m::Union{Probe{<:Real,TPS,<:Any,<:Any},<:TaylorMap,VectorField}) = unsafe_load(getdesc(m).desc).po
-vpords(m::Union{Probe{<:Real,TPS,<:Any,<:Any},<:TaylorMap,VectorField}) = unsafe_wrap(Vector{UInt8}, unsafe_load(getdesc(m).desc).no, numnn(m))
-vords(m::Union{Probe{<:Real,TPS,<:Any,<:Any},<:TaylorMap,VectorField}) = unsafe_wrap(Vector{UInt8}, unsafe_load(getdesc(m).desc).no, numvars(m))
-pords(m::Union{Probe{<:Real,TPS,<:Any,<:Any},<:TaylorMap,VectorField}) = unsafe_wrap(Vector{UInt8}, unsafe_load(getdesc(m).desc).no, numparams(m))
+maxord(m::Union{TaylorMap,VectorField}) = unsafe_load(getdesc(m).desc).mo
+prmord(m::Union{TaylorMap,VectorField}) = unsafe_load(getdesc(m).desc).po
+vpords(m::Union{TaylorMap,VectorField}) = unsafe_wrap(Vector{UInt8}, unsafe_load(getdesc(m).desc).no, numnn(m))
+vords(m::Union{TaylorMap,VectorField}) = unsafe_wrap(Vector{UInt8}, unsafe_load(getdesc(m).desc).no, numvars(m))
+pords(m::Union{TaylorMap,VectorField}) = unsafe_wrap(Vector{UInt8}, unsafe_load(getdesc(m).desc).no, numparams(m))
 
-@inline checkspin(stuff...) = all(x->isnothing(x.Q), stuff) || all(x->!isnothing(x.Q), stuff) || error("Atleast one map/vector field includes spin while others do not")
-@inline checkFD(maps::TaylorMap...) = all(x->isnothing(x.E), maps) || all(x->!isnothing(x.E), maps) || error("Atleast one map includes fluctuations/dissipation while others do not")
-
-@inline checkop(stuff...) = checkidpt(filter(x->(x isa TaylorMap), stuff)...) && checkspin(filter(x->(x isa Union{TaylorMap,VectorField}), stuff)...) && checkFD(filter(x->(x isa TaylorMap), stuff)...)
-
-# checkinplace is preferred to using the "where {S,..}.." syntax as this also ensure idpt is consistent
-# and checks promotion as well. It also gives descriptive errors rather than just "function not found"
-@inline function checkinplace(m::Union{TaylorMap,VectorField}, stuff...)
-  checkop(m, stuff...)
-
-  # Checks that the output map has all types properly promoted
-  # or NOT promoted if unneccessary
-  maps = filter(x->(x isa TaylorMap), stuff)
-  mapsvfs = filter(x->(x isa Union{TaylorMap,VectorField}), stuff)
-  nums = filter(x->(x isa Number), stuff)
-  eltypes = map(x->typeof(x), nums) # scalars only affect x and Q, not x0 or E in FPP
-
-  xtypes = map(x->eltype(x.x), mapsvfs)
-  xeltypes = map(x->eltype(x),xtypes)
-
-  if m isa TaylorMap
-    x0types = map(x->eltype(x.x0), maps)
-    outx0type = promote_type(x0types..., xeltypes...) # reference orbit in composition is affected by orbital part
-    eltype(m.x0) == outx0type || error("Output $(typeof(m)) reference orbit type $(eltype(m.x0)) must be $outx0type")
+function coastidx(m)
+  nv = numvars(m)
+  for i in nv-1:nv # check only the last two planes
+    if abs(m.x[i][0]) < NonlinearNormalForm.coast_threshold
+      cycleidx = GTPSA.cycle!(m.x[i], 0, 0, C_NULL, C_NULL)
+      if cycleidx == i && abs(m.x[i][i] - 1) < NonlinearNormalForm.coast_threshold
+        return i
+      end
+    end
   end
 
-  outxtype = promote_type(xtypes..., eltypes...)
-  eltype(m.x) == outxtype || error("Output $(typeof(m)) orbital ray type $(eltype(m.x)) must be $xtype")
-
-  if !isnothing(m.Q)
-    qtypes = map(x->eltype(x.Q), mapsvfs)
-    outqtype = promote_type(qtypes..., eltypes...)
-    eltype(m.Q) == outqtype || error("Output $(typeof(m)) quaternion type $(eltype(m.Q)) must be $outqtype")
-  end
-
-  # Part of the promotion is stochasticity:
-  # the output map must include stochasticity if any input includes stochasticity:
-  if m isa TaylorMap && !isnothing(m.E)
-    Etypes = map(x->eltype(x.E), maps)
-    outtype = promote_type(xeltypes..., Etypes...)
-    eltype(m.E) == outtype || error("Output $(typeof(m)) FD matrix type $(eltype(m.E)) must be $outtype")
-  end
-
-  return true
+  return -1
 end
+
 
 #=
 # --- random symplectic map ---
-function rand(t::Union{Type{DAMap},Type{TPSAMap}}; spin::Union{Bool,Nothing}=nothing, FD::Union{Bool,Nothing}=nothing, use::Union{Descriptor,TPS,ComplexTPS}=GTPSA.desc_current, ndpt::Union{Nothing,Integer}=nothing)
+function rand(t::Union{Type{DAMap},Type{TPSAMap}}; spin::Union{Bool,Nothing}=nothing, stochastic::Union{Bool,Nothing}=nothing, use::Union{Descriptor,TPS,ComplexTPS}=GTPSA.desc_current, ndpt::Union{Nothing,Integer}=nothing)
   if isnothing(spin)
     U = Nothing
   else
@@ -163,7 +140,7 @@ end
 
 
 
-function read_fpp_map(file; FD::Union{Nothing,Bool}=nothing,spin::Union{Nothing,Bool}=nothing,idpt::Union{Nothing,Bool}=nothing) 
+function read_fpp_map(file; stochastic::Union{Nothing,Bool}=nothing,spin::Union{Nothing,Bool}=nothing) 
   data = readdlm(file, skipblanks=true)
   nv = data[findfirst(t->t=="Dimensional", data)- CartesianIndex(0,1)]
   no = data[findfirst(t->t=="NO", data) + CartesianIndex(0,2)]
@@ -172,20 +149,20 @@ function read_fpp_map(file; FD::Union{Nothing,Bool}=nothing,spin::Union{Nothing,
 
   # Check if map has stochasticity
   stoch_idx = findfirst(t->t=="Stochastic", data)
-  if isnothing(FD) # Default
-    if !isnothing(stoch_idx) && stoch_idx[2]== 1 # FD in first column meaning no "No"
-      FD = true
+  if isnothing(stochastic) # Default
+    if !isnothing(stoch_idx) && stoch_idx[2]== 1 # stochastic in first column meaning no "No"
+      stochastic = true
     else
-      FD = nothing
+      stochastic = nothing
     end
-  elseif FD == true
-    if !isnothing(stoch_idx) && stoch_idx[2]== 1 # FD in first column meaning no "No"
-      FD = true
+  elseif stochastic == true
+    if !isnothing(stoch_idx) && stoch_idx[2]== 1 # stochastic in first column meaning no "No"
+      stochastic = true
     else
-      error("Cannot include FD: no stochastic matrix detected")
+      error("Cannot include stochastic: no stochastic matrix detected")
     end
   else
-    FD = nothing
+    stochastic = nothing
   end
 
   # Check if map has spin
@@ -209,7 +186,7 @@ function read_fpp_map(file; FD::Union{Nothing,Bool}=nothing,spin::Union{Nothing,
 
   # Make the TPSA
   d = Descriptor(nv, no, np, no)
-  m = complex(DAMap(use=d,idpt=idpt,FD=FD,spin=spin)) #repeat([ComplexTPS(use=d)], nv), Q=Quaternion([ComplexTPS(1,use=d), repeat([ComplexTPS(use=d)], 3)...]))
+  m = complex(DAMap(use=d,stochastic=stochastic,spin=spin)) #repeat([ComplexTPS(use=d)], nv), Q=Quaternion([ComplexTPS(1,use=d), repeat([ComplexTPS(use=d)], 3)...]))
 
   idx=3
   data=data[3:end,:]
@@ -271,8 +248,8 @@ function read_fpp_map(file; FD::Union{Nothing,Bool}=nothing,spin::Union{Nothing,
     end 
   end
 
-  # FD
-  if !isnothing(FD)
+  # stochastic
+  if !isnothing(stochastic)
     idx = findfirst(t->t=="Stochastic", data)[1]
     data = data[idx+1:end,:]
     for i=1:size(data, 1)

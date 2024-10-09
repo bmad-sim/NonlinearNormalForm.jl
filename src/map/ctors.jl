@@ -1,3 +1,13 @@
+#=
+
+Constructors for the DAMap and TPSAMap. Includes zero, one, 
+copy ctor (with possible descriptor change), custom map ctor using 
+keyword arguments, map ctor from a matrix, and zero_op which creates 
+a zero map of the properly promoted type (useful for out-of-place 
+functions).
+
+=#
+
 for t = (:DAMap, :TPSAMap)
 @eval begin
 
@@ -25,17 +35,17 @@ function zero(::Type{$t{S,T,U,V}}; use::UseType=GTPSA.desc_current) where {S,T,U
   x0 .= 0
 
   for i=1:nv
-    @inbounds x[i] = eltype(x)(use=desc)
+    x[i] = eltype(x)(use=desc)
   end
 
   # use same parameters if use isa TaylorMap and eltype(x) == eltype(use.x)
   if use isa TaylorMap && eltype(x) == eltype(use.x)
-    @inbounds x[nv+1:nn] .= view(use.x, nv+1:nn)
+    x[nv+1:nn] .= view(use.x, nv+1:nn)
   else # allocate
     if eltype(x) == TPS{Float64}
-      @inbounds x[nv+1:nn] .= params(desc)
+      x[nv+1:nn] .= params(desc)
     else
-      @inbounds x[nv+1:nn] .= complexparams(desc)
+      x[nv+1:nn] .= complexparams(desc)
     end
   end
 
@@ -72,27 +82,27 @@ function one(t::Type{$t{S,T,U,V}}; use::UseType=GTPSA.desc_current) where {S,T,U
   nv = numvars(m)
   
   for i=1:nv
-    @inbounds m.x[i][i] = 1
+    m.x[i][i] = 1
   end
 
   if !isnothing(m.Q)
-    @inbounds m.Q.q0[0] = 1
+    m.Q.q0[0] = 1
   end
 
   return m
 end
 
 """
-    $($t)(m::Union{TaylorMap{S,T,U,V},Probe{S,T,U,V}; use::UseType=m) where {S,T,U,V}
+    $($t)(m::Union{TaylorMap{S,T,U,V}; use::UseType=m) where {S,T,U,V}
 
 Creates a new copy of the passed `TaylorMap` as a `$($t)`. 
 
 If `use` is not specified, then the same GTPSA `Descriptor` as `m` will be used. If `use` is 
-specified (could be another `Descriptor`, `TaylorMap`, or a `Probe` containing `TPS`s), then the 
-copy of `m` as a new $($(t)) will have the same `Descriptor` as in `use.` The total number of variables + 
-parameters must agree, however the orders may be different.
+specified (could be another `Descriptor` or `TaylorMap`), then the copy of `m` as a new $($(t)) 
+will have the same `Descriptor` as in `use.` The total number of variables + parameters must 
+agree, however the orders may be different.
 """
-function $t(m::Union{TaylorMap{S,T,U,V},Probe{S,T,U,V}}; use::UseType=m) where {S,T,U,V}
+function $t(m::Union{TaylorMap{S,T,U,V}}; use::UseType=m) where {S,T,U,V}
   numnn(use) == numnn(m) || error("Number of variables + parameters in GTPSAs for `m` and `use` disagree!")
   
   outm = zero($t{S,T,U,V}, use=use)
@@ -100,7 +110,7 @@ function $t(m::Union{TaylorMap{S,T,U,V},Probe{S,T,U,V}}; use::UseType=m) where {
 
   # set variables
   for i=1:nv
-    @inbounds setTPS!(outm.x[i], m.x[i], change=true)
+    setTPS!(outm.x[i], m.x[i], change=true)
   end
 
   # set quaternion
@@ -202,7 +212,7 @@ function $t(;use::UseType=GTPSA.desc_current, x::Vector=vars(getdesc(use)), x0::
 
   # set variables
   for i=1:nv
-    @inbounds setTPS!(outm.x[i], x[i], change=true)
+    setTPS!(outm.x[i], x[i], change=true)
   end
 
   # set quaternion
@@ -239,50 +249,32 @@ specified is type-unstable. This constructor also checks for consistency in the 
 """
 function $t(M::AbstractMatrix; use::UseType=GTPSA.desc_current, x0::Vector=zeros(eltype(M), size(M,1)), Q::Union{Quaternion,Nothing}=nothing, E::Union{Matrix,Nothing}=nothing, spin::Union{Bool,Nothing}=nothing, stochastic::Union{Bool,Nothing}=nothing) 
   Base.require_one_based_indexing(M)
-  nv = numvars(use)
-  nn = numnn(use)
-
-  nv >= size(M,1) || error("Number of rows in matrix > number of variables in GTPSA!")
-
   m = DAMap(use=use, x0=x0, Q=Q, E=E, spin=spin, stochastic=stochastic)
-
-  for i=1:size(M,1)
-    for j=1:size(M,2)
-      m.x[i][j] = M[i,j]
-    end
-  end
-
+  setmatrix!(m, M)
   return m
 end
 
 
 """
 
-    zero_op(m2::Union{$t,Number}, m1::Union{$t,Number})
+    zero_op(m2::$($t), m1::Union{$($t),Number})
 
 Returns a new zero $($t) with type equal to promoted type of `m1` and `m2`.
-`m1` or `m2` could be numbers. This function is necessary to both ensure 
-correct usage of the GTPSA descriptor and share the immutable parameters 
-when possible.
+`m2` could be a number. This function is necessary to both ensure correct 
+usage of the GTPSA descriptor and share the immutable parameters when possible.
 """
-function zero_op(m2::Union{$t,Number}, m1::Union{$t,Number})
+function zero_op(m2::$t, m1::Union{$t,Number})
   outtype = promote_type(typeof(m1),typeof(m2))
 
   # If either inputs are ComplexTPS64, use those parameters
-  if m2 isa $t
-    if m1 isa $t
-      if eltype(m2.x) == ComplexTPS64
-        return zero(outtype,use=m2)
-      else
-        return zero(outtype,use=m1)
-      end
-    else
+  if m1 isa $t
+    if eltype(m2.x) == ComplexTPS64
       return zero(outtype,use=m2)
+    else
+      return zero(outtype,use=m1)
     end
-  elseif m1 isa $t
-    return zero(outtype,use=m1)
   else
-    error("Cannot create new map based only on scalars")
+    return zero(outtype,use=m2)
   end
 end
 

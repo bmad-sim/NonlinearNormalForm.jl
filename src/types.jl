@@ -1,4 +1,10 @@
+#=
 
+Defines the types used throughout the package. Specifically, the abstract 
+type TaylorMap, and concrete types DAMap and TPSAMap (which differ only in 
+concatenation and inversion rules). 
+
+=#
 """
     TaylorMap{S,T<:TPS,U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing}}
 
@@ -63,32 +69,6 @@ end
   isnothing(m.E)|| eltype(m.E) == eltype(eltype(m.x)) || error("Stochastic matrix type $(eltype(m.E)) must be $(eltype(eltype(m.x))) (equal to scalar of orbital)")
 end
 
-"""
-    Probe{S,T,U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing}}
-
-Parametric type used for tracking. The orbital/spin part can contain 
-either scalars or `TPS`s. If spin is included, the field `Q` is a `Quaternion` 
-with the same type as `x`, else `Q` is `nothing`. If radiation is included, 
-the field `E` contains the FD matrix with `eltype(E)==S`, else `E` is `nothing`.
-"""
-struct Probe{S,T,U<:Union{Quaternion,Nothing},V<:Union{Matrix,Nothing}}
-  x0::Vector{S}   # Entrance coordinates
-  x::Vector{T}    # Out coordinates
-  Q::U            # Quaternion
-  E::V            # Stochastic matrix
-end
-
-"""
-
-
-Lie operator to act on maps. Can be turned into a map with exp(:F:)
-"""
-struct VectorField{T<:Vector, U<:Union{Quaternion,Nothing}}
-  x::T
-  Q::U           
-end
-
-const UseType = Union{Descriptor, TPS, DAMap, TPSAMap, Probe{<:Any,TPS,<:Any,<:Any}, VectorField, Nothing}
 
 for t = (:DAMap, :TPSAMap)
 @eval begin    
@@ -114,8 +94,52 @@ function promote_rule(::Type{$t{S1,T1,U1,V1}}, ::Type{$t{S2,T2,U2,V2}}) where {S
   return $t{outS,outT,outU,outV}
 end 
 
+# --- complex type ---
+function complex(::Type{$t{S,T,U,V}}) where {S,T,U,V}
+  return $t{Vector{ComplexF64},Vector{ComplexTPS64},U == Nothing ? Nothing : Quaternion{ComplexTPS64}, V == Nothing ? Nothing : Matrix{ComplexF64}}
+end
+
+# --- real type ---
+function real(::Type{$t{S,T,U,V}}) where {S,T,U,V}
+  return $t{Vector{Float64},Vector{TPS64},U == Nothing ? Nothing : Quaternion{TPS64}, V == Nothing ? Nothing : Matrix{Float64}}
+end
+
 end
 end
+
+
+"""
+    VectorField{T<:Vector, U<:Union{Quaternion,Nothing}}
+
+Lie operator to act on maps. Can be turned into a map with exp(:F:)
+"""
+struct VectorField{T<:Vector, U<:Union{Quaternion,Nothing}}
+  x::T
+  Q::U           
+end
+
+# --- complex type ---
+function complex(::Type{VectorField{T,U}}) where {T,U}
+  return VectorField{ComplexTPS64, U == Nothing ? Nothing : Quaternion{ComplexTPS64}}
+end
+
+# --- real type ---
+function real(::Type{VectorField{T,U}}) where {T,U}
+  return VectorField{Vector{TPS64},U == Nothing ? Nothing : Quaternion{TPS64}}
+end
+
+function promote_rule(::Type{VectorField{T,U}}, ::Type{G}) where {T,U,G<:Union{Number,Complex}}
+  outT = Vector{promote_type(eltype(T),G)}
+  U != Nothing ? outU = Quaternion{promote_type(eltype(U), G)} : outU = Nothing
+  return VectorField{outT,outU}
+end
+
+
+const UseType = Union{Descriptor, TPS, DAMap, TPSAMap, VectorField, Nothing}
+
+
+
+
 
 
 

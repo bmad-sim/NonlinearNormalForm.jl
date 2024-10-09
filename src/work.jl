@@ -42,6 +42,6 @@ function prep_work_Q(m::Union{TaylorMap,VectorField})
   end
 end
 
-function prep_log_work(m::DAMap{S,T,U,V,W}) where {S,T,U,V,W}
+function prep_log_work(m::DAMap{S,T,U,V}) where {S,T,U,V}
   return (zero(m), zero(m), zero(m), zero(VectorField{T,U},use=m), zero(VectorField{T,U},use=m))
 end

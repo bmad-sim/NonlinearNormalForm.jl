@@ -1,4 +1,4 @@
-function show(io::IO, m::Union{Probe,TaylorMap})
+function show(io::IO, m::TaylorMap)
   println(io, typeof(m),":")
   lines_used=Ref{Int}(2)
   if eltype(m.x) <: TPS
@@ -52,9 +52,10 @@ function show(io::IO, m::Union{Probe,TaylorMap})
   !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || (println(io, "\t⋮"); return)
   println(io)
   lines_used[] += 1
-  if !isnothing(m.idpt)
+  ndpt = coastidx(m)
+  if ndpt != -1
     !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || (println(io, "\t⋮"); return)
-    println("Last plane is coasting: variable #", numvars(m)-1+m.idpt, " is constant")
+    println("Last plane is coasting: variable #", ndpt, " is constant")
     lines_used[] += 1
   end
   !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || (println(io, "\t⋮"); return)

@@ -52,8 +52,8 @@ end
     @test norm(inv(c)∘inv(a)∘m∘a∘c - R_fpp) < 1e-8
 
     # 3D coasting last plane order 3
-    m = read_fpp_map("coast/test.map",idpt=true,spin=false)
-    R_fpp = read_fpp_map("coast/R.map",idpt=true,spin=false)
+    m = read_fpp_map("coast/test.map",spin=false)
+    R_fpp = read_fpp_map("coast/R.map",spin=false)
     c = to_phasor(m)
     a = normal(m).a
     @test norm(inv(c)∘inv(a)∘m∘a∘c - R_fpp) < tol
@@ -87,11 +87,11 @@ end
     @test norm(a2-a2_fpp) < tol
 
     # 3D coasting beam
-    a = read_fpp_map("factorize2/a.map",idpt=true)
-    as_fpp = read_fpp_map("factorize2/as.map",idpt=true)
-    a0_fpp = read_fpp_map("factorize2/a0.map",idpt=true)
-    a1_fpp = read_fpp_map("factorize2/a1.map",idpt=true)
-    a2_fpp = read_fpp_map("factorize2/a2.map",idpt=true)
+    a = read_fpp_map("factorize2/a.map")
+    as_fpp = read_fpp_map("factorize2/as.map")
+    a0_fpp = read_fpp_map("factorize2/a0.map")
+    a1_fpp = read_fpp_map("factorize2/a1.map")
+    a2_fpp = read_fpp_map("factorize2/a2.map")
     
     as, a0, a1, a2 = factorize(a)
     @test norm(a0-a0_fpp) < tol

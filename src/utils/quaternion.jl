@@ -45,21 +45,21 @@ norm(Q1::Quaternion{<:TPS}) = @FastGTPSA sqrt(Q1.q0^2 + Q1.q1^2 + Q1.q2^2 + Q1.q
 function inv!(Q::Quaternion{<:TPS}, Q1::Quaternion{<:TPS})
   @assert !(Q === Q1) "Aliasing Q with Q1 not allowed!"
   @FastGTPSA! begin
-  Q.q0 = Q1.q0 * Q1.q0 + Q1.q1 * Q1.q1 + Q1.q2 * Q1.q2 + Q1.q3 * Q1.q3
-  Q.q1 = -Q1.q1/Q.q0
-  Q.q2 = -Q1.q2/Q.q0
-  Q.q3 = -Q1.q3/Q.q0
-  Q.q0 = Q1.q0/Q.q0
+    Q.q0 = Q1.q0 * Q1.q0 + Q1.q1 * Q1.q1 + Q1.q2 * Q1.q2 + Q1.q3 * Q1.q3
+    Q.q1 = -Q1.q1/Q.q0
+    Q.q2 = -Q1.q2/Q.q0
+    Q.q3 = -Q1.q3/Q.q0
+    Q.q0 = Q1.q0/Q.q0
   end
   return
 end
 
 function inv(Q1::Quaternion)
   @FastGTPSA begin
-  q0 = Q1.q0 * Q1.q0 + Q1.q1 * Q1.q1 + Q1.q2 * Q1.q2 + Q1.q3 * Q1.q3
-  q1 = -Q1.q1/q0
-  q2 = -Q1.q2/q0
-  q3 = -Q1.q3/q0
+    q0 = Q1.q0 * Q1.q0 + Q1.q1 * Q1.q1 + Q1.q2 * Q1.q2 + Q1.q3 * Q1.q3
+    q1 = -Q1.q1/q0
+    q2 = -Q1.q2/q0
+    q3 = -Q1.q3/q0
   end
   @FastGTPSA! q0 = Q1.q0/q0
   return Quaternion(q0,q1,q2,q3)
