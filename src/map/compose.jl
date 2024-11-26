@@ -1,6 +1,10 @@
-# compose.jl contains the high-level composition functions for both DAMaps and TPSAMaps
+#=
 
-# --- compose! ---
+In-place composition functions compose! for both 
+DAMaps and TPSAMaps, as well as the low-level 
+compose_it! function which is called by both.
+
+=#
 
 """
 compose!(m::DAMap, m2::DAMap, m1::DAMap; keep_scalar::Bool=true, work_ref::Union{Nothing,Vector{<:Union{Float64,ComplexF64}}}=nothing, dospin::Bool=true, work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS64}}}}=prep_comp_work_prom(m,m2,m1))
@@ -43,12 +47,12 @@ function compose!(m::DAMap, m2::DAMap, m1::DAMap; keep_scalar::Bool=true, work_r
 
     # Take out scalar part and store it
     for i=1:nv
-        @inbounds ref[i] = m1.x[i][0]
-        @inbounds m1.x[i][0] = 0
+        ref[i] = m1.x[i][0]
+        m1.x[i][0] = 0
     end
   else
     for i=1:nv
-      @inbounds m1.x[i][0] = 0
+      m1.x[i][0] = 0
     end
   end
 
@@ -58,12 +62,12 @@ function compose!(m::DAMap, m2::DAMap, m1::DAMap; keep_scalar::Bool=true, work_r
   if keep_scalar
     if m1 === m2
       for i=1:nv
-          @inbounds m1.x[i][0] = ref[i]
-          @inbounds m.x[i][0] += ref[i]
+          m1.x[i][0] = ref[i]
+          m.x[i][0] += ref[i]
       end
     else
       for i=1:nv
-          @inbounds m1.x[i][0] = ref[i]
+          m1.x[i][0] = ref[i]
       end
     end
   end
@@ -97,7 +101,7 @@ function compose!(m::TPSAMap, m2::TPSAMap, m1::TPSAMap; dospin::Bool=true, work_
   desc = getdesc(m1)
   nv = numvars(desc)
   for i=1:nv
-    @inbounds m1.x[i][0] -= m2.x0[i]
+    m1.x[i][0] -= m2.x0[i]
   end
 
   compose_it!(m, m2, m1, dospin=dospin, work_prom=work_prom)
@@ -107,33 +111,109 @@ function compose!(m::TPSAMap, m2::TPSAMap, m1::TPSAMap; dospin::Bool=true, work_
   # Because we are still expressing in terms of z_0 (m1 x0)
   if m1 === m2
     for i=1:nv
-       @inbounds m1.x[i][0] += m2.x0[i]
-       @inbounds m.x[i][0] += m2.x0[i]
+       m1.x[i][0] += m2.x0[i]
+       m.x[i][0] += m2.x0[i]
     end
   else
     for i=1:nv
-       @inbounds m1.x[i][0] += m2.x0[i]
+       m1.x[i][0] += m2.x0[i]
     end
   end
 
   return m
 end
 
-# --- compose ---
+
 for t = (:DAMap, :TPSAMap)
 @eval begin
   
+"""
+    compose_it!(m, m2, m1; dospin::Bool=true, dostochastic::Bool=true, work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS64}}}}=prep_comp_work_prom(m,m2,m1))
+
+Low level composition function, `m = m2 ∘ m1`. Aliasing `m` with `m2` is allowed, but not `m` with `m1`.
+Assumes the destination map is properly set up (with correct types promoted if necessary), and 
+that `m.x[1:nv]` (and `m.Q` if spin) contain allocated TPSs. The parameters part of `m.x` (`m.x[nv+1:nn]`) 
+does not need to contain allocated TPSs.
+
+If promotion is occuring, then one of the maps is `ComplexTPS64` and the other `TPS`, with output map `ComplexTPS64`. 
+Note that the spin part is required to agree with the orbital part in terms of type by definition of the `TaylorMap` 
+struct. `work_prom` can optionally be passed as a tuple containing the temporary `ComplexTPS64`s if promotion is occuring:
+
+If `eltype(m.x) != eltype(m1.x)` (then `m1` must be promoted):
+`work_prom[1] = m1x_prom  # Length >= nv+np, Vector{ComplexTPS64}`
+
+else if `eltype(m.x) != eltype(m2.x)` (then `m2` must be promoted):
+```
+work_prom[1] = m2x_prom  # Length >= nv, Vector{ComplexTPS64}
+work_prom[2] = m2Q_prom  # Length >= 4, Vector{ComplexTPS64}
+```
+Note that the `ComplexTPS64`s in the vector(s) must be allocated and have the same `Descriptor`.
+
+If spin is included, not that the final quaternion concatenation step mul! will create allocations
+""" 
+function compose_it!(m::$t, m2::$t, m1::$t; dospin::Bool=true, dostochastic::Bool=true, work_Q::Union{Nothing,Quaternion}=prep_work_Q(m), work_prom::Union{Nothing,Tuple{Vararg{Vector{<:ComplexTPS64}}}}=prep_comp_work_prom(m,m2,m1))
+  @assert !(m === m1) "Cannot compose_it!(m, m2, m1) with m === m1"
+
+  desc = getdesc(m1)
+  nn = numnn(desc)
+  nv = numvars(desc)
+  np = numparams(desc)
+  outT = eltype(m.x)
+
+  # Work sanity check:
+  if outT != eltype(m1.x)
+    x_prom = work_prom[1]
+    Q_prom = nothing
+    @assert length(x_prom) >= nn "Incorrect length for work_prom[1] = x_prom: Received $(length(x_prom)), should be >=$nn"
+  elseif outT != eltype(m2.x)
+    x_prom = work_prom[1]
+    if !isnothing(m.Q) && dospin
+      Q_prom = work_prom[2]
+      @assert length(Q_prom) >= 4 "Incorrect length for work_prom[2] = Q_prom: Received $(length(Q_prom)), should be >=4"
+    else
+      Q_prom = nothing
+    end
+    @assert length(x_prom) >= nv "Incorrect length for work_prom[1] = x_prom: Received $(length(x_prom)), should be >=$nv"
+  else
+    x_prom = nothing
+    Q_prom = nothing
+  end
+
+  # Deal with x0:
+  m.x0 .= m1.x0
+
+  # Do the composition, promoting if necessary
+  compose!(view(m.x, 1:nv), view(m2.x, 1:nv), view(m1.x, 1:nn), work=x_prom)
+
+  # Spin:
+  if !isnothing(m.Q) && dospin
+    compose!(work_Q, m2.Q, m1.x, work=Q_prom)
+    mul!(m.Q, work_Q, m1.Q) # This will be made faster eventually
+  end 
+
+  # Stochastic
+  # MAKE THIS FASTER!
+  if !isnothing(m.E) && dostochastic
+    M2 = jacobian(m2)   
+    m.E .= M2*m1.E*transpose(M2) + m2.E
+  end
+
+  return 
+end
+
 """
     compose(m2::$($t),m1::$($t)) -> $($t)
 
 $($t) composition, which calculates `m2 ∘ m1` $( $t == DAMap ? "ignoring the scalar part of `m1`" : "including the scalar part of `m1`")
 """
 function compose(m2::$t,m1::$t)
-  checkop(m2, m1)
-  m = zero_op(m1,m2)
+  m = zero_op(m1, m2)
   compose!(m, m2, m1)
   
   return m
 end
+
 end
 end
+
+

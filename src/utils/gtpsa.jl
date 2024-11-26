@@ -1,3 +1,9 @@
+#=
+
+These functions should be moved into GTPSA.jl
+
+=#
+
 # From GTPSA:
 #=
 # --- Poisson bracket ---
@@ -63,31 +69,6 @@ function pb(f::Union{TPS, ComplexTPS64}, g::Union{TPS, ComplexTPS64})
   return h
 end
 =#
-
-# --- F . grad ---
-function fgrad!(g::T, F::AbstractVector{<:T}, h::T) where {T<:TPS{<:Union{Float64,ComplexF64}}}
-  Base.require_one_based_indexing(F)
-  nv = numvars(h)
-  @assert length(F) == nv "Incorrect length of F; received $(length(F)), should be $nv"
-  @assert !(g === h) "Aliasing g === h not allowed for fgrad!"
-  if T != ComplexTPS64
-    GTPSA.mad_tpsa_fgrad!(Cint(length(F)), F, h, g)
-  else
-    GTPSA.mad_ctpsa_fgrad!(Cint(length(F)), F, h, g)
-  end
-  return g
-end
-
-"""
-    fgrad(F::AbstractVector{<:T}, h::T) where {T<:TPS{<:Union{Float64,ComplexF64}}}    
-
-Calculates `F⋅∇h`.
-"""
-function fgrad(F::AbstractVector{<:T}, h::T) where {T<:TPS{<:Union{Float64,ComplexF64}}}
-  g = zero(h)
-  fgrad!(g, F, h)
-  return g
-end
 
 
 

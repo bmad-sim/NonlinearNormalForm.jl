@@ -1,75 +1,10 @@
-# --- copy! ---
-function copy!(F::VectorField, F1::Union{VectorField,TaylorMap})
-  checkinplace(F, F1)
-
-  desc = getdesc(F)
-  nv = numvars(desc)
-
-  for i=1:nv
-   @inbounds copy!(F.x[i], F1.x[i])
-  end
-
-  if !isnothing(F.Q)
-    copy!(F.Q.q0, F1.Q.q0)
-    copy!(F.Q.q1, F1.Q.q1)
-    copy!(F.Q.q2, F1.Q.q2)
-    copy!(F.Q.q3, F1.Q.q3)
-  end
-
-  return F
-end
-
-# --- clear! ---
-
-function clear!(F::VectorField)
-  nv = numvars(F)
-  for i=1:nv
-    @inbounds clear!(F.x[i])
-  end
-  if !isnothing(F.Q)
-    clear!(F.Q.q0)
-    clear!(F.Q.q1)
-    clear!(F.Q.q2)
-    clear!(F.Q.q3)
-  end
-  return
-end
-
-# --- complex ---
 #=
-function complex(F::VectorField)
-  desc = getdesc(F)
-  nn = numnn(desc)
-  nv = numvars(desc)
-  
-  x = Vector{ComplexTPS64}(undef, nv)
-  for i=1:nv
-    @inbounds x[i] = ComplexTPS64(F.x[i],use=desc)
-  end
 
-  if !isnothing(m.Q)
-    q = Vector{ComplexTPS64}(undef, 4)
-    for i=1:4
-      @inbounds q[i] = ComplexTPS64(F.Q.q[i],use=desc)
-    end
-    Q = Quaternion(q)
-  else
-    Q = nothing
-  end
+Non-arithmetic functions acting on vector fields.
 
-  return VectorField(x,Q)
-end
 =#
-# --- complex type ---
-function complex(::Type{VectorField{T,U}}) where {T,U}
-  return VectorField{ComplexTPS64, U == Nothing ? Nothing : Quaternion{ComplexTPS64}}
-end
 
 # --- Lie bracket including spin ---
-# GTPSA only provides routines for orbital part:
-liebra!(na, m1::Vector{TPS{Float64}},    m2::Vector{TPS{Float64}},    m3::Vector{TPS{Float64}})    = GTPSA.mad_tpsa_liebra!(Cint(na), m1, m2, m3)
-liebra!(na, m1::Vector{TPS{ComplexF64}}, m2::Vector{TPS{ComplexF64}}, m3::Vector{TPS{ComplexF64}}) = GTPSA.mad_ctpsa_liebra!(Cint(na), m1, m2, m3)
-
 """
     lb(F::VectorField, H::VectorField)
 
@@ -81,8 +16,6 @@ spin (with the lower case letter for the quaternion of the vector field), this i
 where `[h,f] = h*f - f*h` is just a quaternion commutator. See Equation 44.52 in the Bmad manual
 """
 function lb(F::VectorField, H::VectorField)
-  checkop(F,H)
-
   G = zero(F)
   lb!(G,F,H)
   return G
@@ -107,7 +40,7 @@ function lb!(G::VectorField, F::VectorField, H::VectorField; work_Q::Union{Quate
   @assert !(G === F) && !(G === H) "Aliasing any source arguments with the destination in lb! is not allowed"
 
   # Orbital part (Eq. 44.51 in Bmad manual, handled by GTPSA):
-  liebra!(nv, F.x, H.x, G.x)
+  GTPSA.liebra!(nv, F.x, H.x, G.x)
 
   # Spin (Eq. 44.51 in Bmad manual, NOT handled by GTPSA):
   if !isnothing(F.Q)
@@ -163,7 +96,6 @@ function *(F::VectorField, m1::Union{DAMap,UniformScaling})
   if m1 isa UniformScaling 
     m1 = one(DAMap{Vector{eltype(eltype(F.x))},typeof(F.x),typeof(F.Q),Nothing,Nothing},use=getdesc(F))
   end
-  checkop(F, m1)
   m = zero(m1)
   mul!(m, F, m1)
   return m
@@ -189,7 +121,7 @@ function mul!(m::DAMap, F::VectorField, m1::DAMap; work_Q::Union{Quaternion,Noth
   m.x0 .= m1.x0
   # Orbital part F⋅∇m1 :
   for i=1:nv
-    @inbounds fgrad!(m.x[i], F.x, m1.x[i])
+    fgrad!(m.x[i], F.x, m1.x[i])
   end
 
   # Spin F⋅∇q + qf (quaternion part acts in reverse order):
@@ -219,9 +151,8 @@ end
 # each variable and does not include spin. Here I include spin and do the entire map at once.
 function exp(F::VectorField, m1::Union{UniformScaling,DAMap}=I)
   if m1 isa UniformScaling 
-    m1 = one(DAMap{Vector{eltype(eltype(F.x))},typeof(F.x),typeof(F.Q),Nothing,Nothing},use=getdesc(F))
+    m1 = one(DAMap{Vector{eltype(eltype(F.x))},typeof(F.x),typeof(F.Q),Nothing},use=getdesc(F))
   end
-  checkop(F,m1)
 
   m = zero(m1)
   exp!(m, F, m1)
