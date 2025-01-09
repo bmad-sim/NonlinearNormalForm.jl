@@ -19,7 +19,7 @@ numvars(m::Quaternion{<:Union{ComplexTPS,TPS}}) = unsafe_load(Base.unsafe_conver
 numparams(m::Quaternion{<:Union{ComplexTPS,TPS}}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.q).tpsa).d)).np
 numnn(m::Quaternion{<:Union{ComplexTPS,TPS}}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.q).tpsa).d)).nn
 =#
-eltype(m::Union{TaylorMap{<:Number,T,<:Any,<:Any},VectorField{T,<:Any}}) where {T<:TPS} = eltype(T)
+#eltype(m::Union{TaylorMap{<:Number,T,<:Any,<:Any},VectorField{T,<:Any}}) where {T<:TPS} = eltype(T)
 
 maxord(m::Union{TaylorMap,VectorField}) = unsafe_load(getdesc(m).desc).mo
 prmord(m::Union{TaylorMap,VectorField}) = unsafe_load(getdesc(m).desc).po
@@ -40,6 +40,7 @@ function coastidx(m)
 
   return -1
 end
+
 
 
 #=

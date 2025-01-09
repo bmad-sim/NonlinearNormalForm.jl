@@ -33,11 +33,11 @@ and the checks should be optimized away in the JIT compilation if valid.
   eltypes = map(x->typeof(x), nums) # scalars only affect x and Q, not x0 or E in FPP
 
   xtypes = map(x->eltype(x.x), mapsvfs)
-  xeltypes = map(x->eltype(x),xtypes)
+  xnumtypes = map(x->GTPSA.numtype(x),xtypes)
 
   if m isa TaylorMap
     x0types = map(x->eltype(x.x0), maps)
-    outx0type = promote_type(x0types..., xeltypes...) # reference orbit in composition is affected by orbital part
+    outx0type = promote_type(x0types..., xnumtypes...) # reference orbit in composition is affected by orbital part
     eltype(m.x0) == outx0type || error("Output $(typeof(m)) reference orbit type $(eltype(m.x0)) must be $outx0type")
   end
 
@@ -54,7 +54,7 @@ and the checks should be optimized away in the JIT compilation if valid.
   # the output map must include stochasticity if any input includes stochasticity:
   if m isa TaylorMap && !isnothing(m.E)
     Etypes = map(x->eltype(x.E), maps)
-    outtype = promote_type(xeltypes..., Etypes...)
+    outtype = promote_type(xnumtypes..., Etypes...)
     eltype(m.E) == outtype || error("Output $(typeof(m)) stochastic matrix type $(eltype(m.E)) must be $outtype")
   end
 

@@ -8,36 +8,21 @@ functions).
 
 =#
 
-for t = (:DAMap, :TPSAMap)
-@eval begin
-
-"""
-    zero(m::$($t))
-
-Creates a $($t) with the same GTPSA `Descriptor`, and spin/stochastic on/off,
-as `m` but with all zeros for each quantity (except for the immutable parameters 
-in `x[nv+1:nn]`, which will be copied from `m.x`)
-"""
-function zero(m::$t)
-  return zero(typeof(m), use=m)
+function init_x0(::Type{S}, use) where {S}
+  nv = numvars(use)
+  x0 = similar(S, nv)
+  x0 .= 0
+  return x0
 end
 
-function zero(::Type{$t{S,T,U,V}}; use::UseType=GTPSA.desc_current) where {S,T,U,V}
+function init_x(::Type{T}, use) where {T}
   desc = getdesc(use)
   nv = numvars(desc)
-  np = numparams(desc)
   nn = numnn(desc)
-
-  x0 = similar(S, nv) 
-  x = similar(T, nn) 
-  Base.require_one_based_indexing(x0, x)
-
-  x0 .= 0
-
-  for i=1:nv
+  x = similar(T, nn)
+  for i in 1:nv
     x[i] = eltype(x)(use=desc)
   end
-
   # use same parameters if use isa TaylorMap and eltype(x) == eltype(use.x)
   if use isa TaylorMap && eltype(x) == eltype(use.x)
     x[nv+1:nn] .= view(use.x, nv+1:nn)
@@ -48,8 +33,12 @@ function zero(::Type{$t{S,T,U,V}}; use::UseType=GTPSA.desc_current) where {S,T,U
       x[nv+1:nn] .= complexparams(desc)
     end
   end
+  return x
+end
 
+function init_Q(::Type{U}, use) where {U}
   if U != Nothing
+    desc = getdesc(use)
     q0 = eltype(x)(use=desc)
     q1 = eltype(x)(use=desc)
     q2 = eltype(x)(use=desc)
@@ -58,13 +47,40 @@ function zero(::Type{$t{S,T,U,V}}; use::UseType=GTPSA.desc_current) where {S,T,U
   else
     Q = nothing
   end
+  return Q
+end
 
+function init_E(::Type{V}, use) where {V}
   if V != Nothing
+    nv = numvars(use)
     E = similar(V, nv, nv)
     E .= 0
   else
     E = nothing
   end
+  return E
+end
+
+
+for t = (:DAMap, :TPSAMap)
+@eval begin
+
+"""
+    zero(m::$($t))
+
+Creates a zero $($t) with the same properties as `m`, including GTPSA `Descriptor`,
+spin, and stochasticity
+"""
+function zero(m::$t)
+  return zero(typeof(m), use=m)
+end
+
+function zero(::Type{$t{S,T,U,V}}; use::UseType=GTPSA.desc_current) where {S,T,U,V}
+  getdesc(use).desc != C_NULL || error("GTPSA Descriptor not defined!")
+  x0 = init_x0(S, use)
+  x = init_x(T, use)
+  Q = init_Q(U, use)
+  E = init_E(V, use)
   return $t(x0, x, Q, E)
 end
 
@@ -81,7 +97,7 @@ function one(t::Type{$t{S,T,U,V}}; use::UseType=GTPSA.desc_current) where {S,T,U
   m = zero(t, use=use)
   nv = numvars(m)
   
-  for i=1:nv
+  for i in 1:nv
     m.x[i][i] = 1
   end
 
@@ -144,7 +160,7 @@ function $t(m::Union{TaylorMap{S,T,U,V}}; use::UseType=m) where {S,T,U,V}
 end
 
 """
-    $($t)(;use::UseType=GTPSA.desc_current, x::Vector=vars(getdesc(use)), x0::Vector=zeros(eltype(eltype(x)), numvars(use)), Q::Union{Quaternion,Nothing}=nothing, E::Union{Matrix,Nothing}=nothing, spin::Union{Bool,Nothing}=nothing, stochastic::Union{Bool,Nothing}=nothing) 
+    $($t)(;use::UseType=GTPSA.desc_current, x::Vector=vars(getdesc(use)), x0::Vector=zeros(GTPSA.numtype(eltype(x)), numvars(use)), Q::Union{Quaternion,Nothing}=nothing, E::Union{Matrix,Nothing}=nothing, spin::Union{Bool,Nothing}=nothing, stochastic::Union{Bool,Nothing}=nothing) 
 
 Constructs a $($t) with the passed vector of `TPS`/`ComplexTPS64` as the orbital ray, and optionally the entrance 
 coordinates `x0`, `Quaternion` for spin `Q`, and stochastic matrix `E` as keyword arguments. The helper keyword 
@@ -154,7 +170,7 @@ specified is type-unstable. This constructor also checks for consistency in the 
 `Descriptor`. The `use` kwarg may also be used to change the `Descriptor` of the TPSs, provided the number of variables 
 + parameters agree (orders may be different).
 """
-function $t(;use::UseType=GTPSA.desc_current, x::Vector=vars(getdesc(use)), x0::Vector=zeros(eltype(eltype(x)), numvars(use)), Q::Union{Quaternion,Nothing}=nothing, E::Union{Matrix,Nothing}=nothing, spin::Union{Bool,Nothing}=nothing, stochastic::Union{Bool,Nothing}=nothing) 
+function $t(;use::UseType=GTPSA.desc_current, x::Vector=vars(getdesc(use)), x0::Vector=zeros(GTPSA.numtype(eltype(x)), numvars(use)), Q::Union{Quaternion,Nothing}=nothing, E::Union{Matrix,Nothing}=nothing, spin::Union{Bool,Nothing}=nothing, stochastic::Union{Bool,Nothing}=nothing) 
   Base.require_one_based_indexing(x,x0)
 
   if !isnothing(Q)
@@ -168,7 +184,7 @@ function $t(;use::UseType=GTPSA.desc_current, x::Vector=vars(getdesc(use)), x0::
     T = Vector{promote_type(TPS{Float64},eltype(x0),eltype(x))}
   end
 
-  S = Vector{eltype(eltype(T))}
+  S = Vector{GTPSA.numtype(eltype(T))}
   
   # set up
   if isnothing(spin)
@@ -188,10 +204,10 @@ function $t(;use::UseType=GTPSA.desc_current, x::Vector=vars(getdesc(use)), x0::
     if isnothing(E)
       V = Nothing
     else
-      V = Matrix{eltype(eltype(T))}
+      V = Matrix{GTPSA.numtype(eltype(T))}
     end
   elseif stochastic
-    V = Matrix{eltype(eltype(T))}
+    V = Matrix{GTPSA.numtype(eltype(T))}
   else
     error("For no fluctuation-dissipation, please omit the stochastic kwarg or set stochastic=nothing") # For type stability
     #V = Nothing # For type instability

@@ -74,7 +74,7 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
   end
 
   # Store the tunes
-  eg = Vector{eltype(eltype(R_inv.x))}(undef, numvars(m))
+  eg = Vector{GTPSA.numtype(eltype(R_inv.x))}(undef, numvars(m))
   for i=1:nhv
     eg[i] = R_inv.x[i][i]
   end

@@ -94,7 +94,7 @@ included that is `F * m = (F.x, F.Q) * (m.x, m.Q) = (F.x ⋅ ∇ m.x , F.x ⋅ �
 """
 function *(F::VectorField, m1::Union{DAMap,UniformScaling})
   if m1 isa UniformScaling 
-    m1 = one(DAMap{Vector{eltype(eltype(F.x))},typeof(F.x),typeof(F.Q),Nothing,Nothing},use=getdesc(F))
+    m1 = one(DAMap{Vector{GTPSA.numtype(eltype(F.x))},typeof(F.x),typeof(F.Q),Nothing,Nothing},use=getdesc(F))
   end
   m = zero(m1)
   mul!(m, F, m1)
@@ -151,7 +151,7 @@ end
 # each variable and does not include spin. Here I include spin and do the entire map at once.
 function exp(F::VectorField, m1::Union{UniformScaling,DAMap}=I)
   if m1 isa UniformScaling 
-    m1 = one(DAMap{Vector{eltype(eltype(F.x))},typeof(F.x),typeof(F.Q),Nothing},use=getdesc(F))
+    m1 = one(DAMap{Vector{GTPSA.numtype(eltype(F.x))},typeof(F.x),typeof(F.Q),Nothing},use=getdesc(F))
   end
 
   m = zero(m1)

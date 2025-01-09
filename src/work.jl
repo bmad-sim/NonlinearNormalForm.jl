@@ -29,7 +29,7 @@ function prep_comp_work_prom(m::TaylorMap, m2::TaylorMap, m1::TaylorMap)
 end
 
 function prep_work_ref(m1::TaylorMap)
-  return Vector{eltype(eltype(m1.x))}(undef, numvars(m1))
+  return Vector{GTPSA.numtype(eltype(m1.x))}(undef, numvars(m1))
 end
 
 function prep_work_Q(m::Union{TaylorMap,VectorField})

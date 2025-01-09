@@ -5,25 +5,45 @@ type TaylorMap, and concrete types DAMap and TPSAMap (which differ only in
 concatenation and inversion rules). 
 
 =#
+
 """
-    TaylorMap{S,T<:TPS,U<:Union{Quaternion{T},Nothing},V<:Union{Matrix,Nothing}}
+    TaylorMap{S,T,U,V}
 
 Abstract type for `TPSAMap` and `DAMap` used for normal form analysis. 
 
-All `TaylorMap`s contain `x0` and `x` as the entrance coordinates and transfer map 
-as a truncated power series respectively. If spin is included, a field `Q` containing 
-a `Quaternion` as a truncated power series is included, else `Q` is `nothing`. If 
-stochasticity is included, a field `E` contains a matrix of the envelope for the 
-fluctuations, else `E` is nothing.
+# Fields
+- `x0::S` -- Reference orbit. The entrance coordinates of the map as scalars, or equivalently the Taylor map expansion point.
+- `x::T`  -- Orbital ray as truncated power series, expansion around `x0`, with scalar part equal to EXIT coordinates of map
+- `Q::U`  -- `Quaternion` as truncated power series if spin is included, else `nothing`
+- `E::V`  -- Matrix of the envelope for stochastic kicks as scalars if included, else `nothing`
 
-### Fields
-- `x0`   -- Entrance coordinates of the map, Taylor expansion point
-- `x`    -- Orbital ray as a truncated power series, expansion around `x0` + scalar part equal to EXIT coordinates of map
-- `Q`    -- `Quaternion` as a truncated power series if spin is included, else `nothing`
-- `E`    -- Matrix of the envelope for stochastic kicks if included, else `nothing`
+# Type Requirements
+- `S <: AbstractVector{<:Number}` where `ismutable(S) == true` and 
+- `T <: AbstractVector{<:TPS}`
+- `U <: Union{Quaternion{<:TPS},Nothing}` and 
+- `V <: Union{AbstractMatrix{<:Number},Nothing}` where if not `Nothing` then `ismutable(V) == true`
+- `eltype(S) == GTPSA.numtype(eltype(T))`
+- If `U != Nothing` then `eltype(U) == eltype(T)`
+- If `V != Nothing` then `eltype(V) == GTPSA.numtype(eltype(T))`
 
+Because the `TPS` type is `mutable` and `GTPSA.jl` provides in-place functions for modifying 
+`TPS`s, at the lowest level all operations on `TaylorMap`s are in-place for performance. Therefore, 
+the `x` and `Q` arrays which contain `TPS`s may be `immutable`, e.g. the orbital ray `x` may be an 
+`SVector` from the `StaticArrays.jl` package, and the `Quaternion` type which is taken from 
+`ReferenceFrameRotations.jl` is already `immutable`. The default for the orbital ray is `SVector`.
+
+The `x0` and `E` arrays contain `immutable` number types, and so these arrays MUST be `mutable`.
 """
-abstract type TaylorMap{S<:Vector,T<:Vector,U<:Union{Quaternion,Nothing},V<:Union{Matrix,Nothing}} end 
+abstract type TaylorMap{S<:AbstractVector{<:Number},T<:AbstractVector{<:TPS},U<:Union{Quaternion{<:TPS},Nothing},V<:Union{AbstractMatrix{<:Number},Nothing}} end 
+
+
+@inline function checkmapsanity(m::TaylorMap{S,T,U,V}) where {S,T,U,V}
+  ismutabletype(S) || error("Reference orbit array must be mutable: $S is immutable.")
+  eltype(S) == GTPSA.numtype(eltype(T)) || error("Reference orbit number type $(eltype(S)) must be $(GTPSA.numtype(eltype(T))) (equal to the type of the orbital ray scalar part)")
+  U == Nothing || eltype(U) == eltype(T) || error("Quaternion number type $(eltype(U)) must be $(eltype(T)) (equal to orbital ray)")
+  V == Nothing || ismutabletype(V) || error("Stochastic envelope matrix must be mutable: $V is immutable.")
+  V == Nothing || eltype(V) == GTPSA.numtype(eltype(T)) || error("Stochastic envelope matrix number type $(eltype(V)) must be $(GTPSA.numtype(eltype(T))) (equal to the type of the orbital ray scalar part)")
+end
 
 """
     DAMap{S,T,U,V} <: TaylorMap{S,T,U,V}
@@ -33,7 +53,7 @@ See `TaylorMap` for more information.
 """
 struct DAMap{S,T,U,V} <: TaylorMap{S,T,U,V}
   x0::S     # Entrance value of map
-  x::T      # Expansion around x0, with scalar part equal to EXIT value of map wrt initial coordinates x0
+  x::T      # Expansion around x0, with scalar part equal to EXIT value of map
   Q::U      # Quaternion for spin
   E::V      # Envelope for stochasticity
 
@@ -52,7 +72,7 @@ See `TaylorMap` for more information.
 """
 struct TPSAMap{S,T,U,V} <: TaylorMap{S,T,U,V}
   x0::S     # Entrance value of map
-  x::T      # Expansion around x0, with scalar part equal to EXIT value of map wrt initial coordinates x0
+  x::T      # Expansion around x0, with scalar part equal to EXIT value of map
   Q::U      # Quaternion for spin
   E::V      # Envelope for stochasticity
 
@@ -63,40 +83,36 @@ struct TPSAMap{S,T,U,V} <: TaylorMap{S,T,U,V}
   end
 end
 
-@inline function checkmapsanity(m::TaylorMap)
-  eltype(m.x0) == eltype(eltype(m.x)) || error("Reference orbit type $(eltype(m.x0)) must be $(eltype(eltype(m.x))) (equal to scalar of orbital)")
-  isnothing(m.Q) || eltype(m.Q) == eltype(m.x) || error("Quaternion type $(eltype(m.Q)) must be $(eltype(m.x)) (equal to orbital)")
-  isnothing(m.E)|| eltype(m.E) == eltype(eltype(m.x)) || error("Stochastic matrix type $(eltype(m.E)) must be $(eltype(eltype(m.x))) (equal to scalar of orbital)")
-end
-
+# Promotion utility functions for easy override
+promote_x0_type(::Type{S}, ::Type{G}) where {S,G<:Union{Number,Complex}} = Vector{promote_type(eltype(S), G)}
+promote_x_type(::Type{T}, ::Type{G}) where {T,G<:Union{Number,Complex}} = Vector{promote_type(eltype(T), G)}
+promote_Q_type(::Type{U}, ::Type{G}) where {U,G<:Union{Number,Complex}} = U != Nothing ? Quaternion{promote_type(eltype(U), G)} : Nothing
+promote_E_type(::Type{V}, ::Type{G}) where {V,G<:Union{Number,Complex}} = V != Nothing ? Matrix{promote_type(G, eltype(V))} : Nothing
 
 for t = (:DAMap, :TPSAMap)
 @eval begin    
 
 function promote_rule(::Type{$t{S,T,U,V}}, ::Type{G}) where {S,T,U,V,G<:Union{Number,Complex}}
-  outS = Vector{promote_type(eltype(S),eltype(eltype(T)),G)}
-  outT = Vector{promote_type(eltype(T),G)}
-  U != Nothing ? outU = Quaternion{promote_type(eltype(U), G)} : outU = Nothing
-  V != Nothing ? outV = Matrix{promote_type(G,eltype(V))} : outV = Nothing
+  outS = promote_x0_type(S, G)
+  outT = promote_x_type(T, G)
+  outU = U != Nothing ? Quaternion{promote_type(eltype(U), G)} : Nothing
+  outV = promote_E_type(V, G)
   return $t{outS,outT,outU,outV}
 end
 
-# Currently promote_type in promotion.jl gives
-# promote_type(::Type{T}, ::Type{T}) where {T} = T
-# and does not even call promote_rule, therefore this is never reached
-# Therefore I will required the reference orbit to have the same eltype as the 
-# TPS at construction.
-function promote_rule(::Type{$t{S1,T1,U1,V1}}, ::Type{$t{S2,T2,U2,V2}}) where {S1,S2,T1,T2,U1,U2,V1,V2} 
-  outS = Vector{promote_type(eltype(eltype(T1)), eltype(eltype(T2)))}
-  outT = Vector{promote_type(eltype(T1), eltype(T2))}
-  U1 != Nothing ? outU = Quaternion{promote_type(eltype(U2),eltype(U2))} : outU = Nothing
-  V1 != Nothing ? outV = promote_type(V1,V2) : outV = Nothing
+#=
+function promote_rule(::Type{$t{S,T,U,V}}, ::Type{G}) where {S,T,U,V,G<:Union{Number,Complex}}
+  outS = S <: StaticArray ? similar_type(S, promote_type(eltype(S), G)) : Vector{promote_type(eltype(S), G)}
+  outT = T <: StaticArray ? similar_type(T, promote_type(eltype(T), G), Size(T)) : Vector{promote_type(eltype(T), G)}
+  outU = U != Nothing ? Quaternion{promote_type(eltype(U), G)} : Nothing
+  outV = V != Nothing ? ( V <: StaticArray ? similar_type(V, promote_type(eltype(V), G)) : Matrix{promote_type(G, eltype(V))}) : Nothing
   return $t{outS,outT,outU,outV}
-end 
-
+end
+=#
 # --- complex type ---
-function complex(::Type{$t{S,T,U,V}}) where {S,T,U,V}
-  return $t{Vector{ComplexF64},Vector{ComplexTPS64},U == Nothing ? Nothing : Quaternion{ComplexTPS64}, V == Nothing ? Nothing : Matrix{ComplexF64}}
+function complex(type::Type{$t{S,T,U,V}}) where {S,T,U,V}
+  return promote_type(type, ComplexF64)
+  #$t{Vector{ComplexF64},Vector{ComplexTPS64},U == Nothing ? Nothing : Quaternion{ComplexTPS64}, V == Nothing ? Nothing : Matrix{ComplexF64}}
 end
 
 # --- real type ---
