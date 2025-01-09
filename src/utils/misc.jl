@@ -6,6 +6,29 @@ must be the coasting plane.
 
 =#
 
+function _promote_array_eltype(::Type{A}, ::Type{G}, ::Type{Val{M}}=Val{N}) where {M,N,A<:Array{T,N} where{T}, G<:Number}
+  arrtype = Base.typename(A).wrapper
+  neweltype = promote_type(eltype(A), G)
+  return arrtype{neweltype, M}
+end
+# Default fallback:
+function _promote_array_eltype(::Type{A}, ::Type{G}, ::Type{Val{M}}=Val{ndims(A)}) where {M,A,G<:Number}
+  return _promote_array_eltype(Array{eltype(A),M}, G, Val{M})
+end
+
+function _real_array_eltype(::Type{A}, ::Type{Val{M}}=Val{N}) where {M,N, A<:Array{T,N} where{T}}
+  arrtype = Base.typename(A).wrapper
+  neweltype = real(eltype(A))
+  return arrtype{neweltype, M}
+end
+# Default fallback:
+function _real_array_eltype(::Type{A}, ::Type{Val{M}}=Val{ndims(A)})  where {M,A}
+  return _real_array_eltype(Array{eltype(A),M}, Val{M})
+end
+
+#_vec_type(::Type{A}) where {T,N,A<:AbstractArray{T,N}} = (Base.typename(A).wrapper){T, 1}
+#_mat_type(::Type{A}) where {T,N,A<:AbstractArray{T,N}} = (Base.typename(A).wrapper){T, 2}
+
 # --- helper functions to get the numvars/numparams/descriptor in any context ---
 
 # GTPSA provides these functions for only pure TPS/ComplexTPSs
@@ -13,13 +36,6 @@ getdesc(m::Union{TaylorMap,VectorField}) = getdesc(first(m.x))
 numvars(m::Union{TaylorMap,VectorField}) = numvars(first(m.x))
 numparams(m::Union{TaylorMap,VectorField}) = numparams(first(m.x))
 numnn(m::Union{TaylorMap,VectorField}) = numnn(first(m.x))
-#=
-getdesc(m::Quaternion{<:Union{ComplexTPS,TPS}}) = Descriptor(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.q).tpsa).d))
-numvars(m::Quaternion{<:Union{ComplexTPS,TPS}}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.q).tpsa).d)).nv
-numparams(m::Quaternion{<:Union{ComplexTPS,TPS}}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.q).tpsa).d)).np
-numnn(m::Quaternion{<:Union{ComplexTPS,TPS}}) = unsafe_load(Base.unsafe_convert(Ptr{GTPSA.Desc}, unsafe_load(first(m.q).tpsa).d)).nn
-=#
-#eltype(m::Union{TaylorMap{<:Number,T,<:Any,<:Any},VectorField{T,<:Any}}) where {T<:TPS} = eltype(T)
 
 maxord(m::Union{TaylorMap,VectorField}) = unsafe_load(getdesc(m).desc).mo
 prmord(m::Union{TaylorMap,VectorField}) = unsafe_load(getdesc(m).desc).po

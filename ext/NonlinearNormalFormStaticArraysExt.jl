@@ -2,12 +2,12 @@ module NonlinearNormalFormStaticArraysExt
 import NonlinearNormalForm as NNF
 using StaticArrays
 
-NNF.numvars(::TaylorMap{S,T,U,V}) where {S<:StaticArray,T,U,V} = length(S)
-NNF.numnn(::TaylorMap{S,T,U,V}) where {S,T<:StaticArray,U,V} = length(T)
-NNF.numparams(::TaylorMap{S,T,U,V}) where {S<:StaticArray,T<:StaticArray,U,V} = length(S) - length(T)
+NNF.numvars(::NNF.TaylorMap{S,T,U,V}) where {S<:StaticArray,T,U,V} = length(S)
+NNF.numnn(::NNF.TaylorMap{S,T,U,V}) where {S,T<:StaticArray,U,V} = length(T)
+NNF.numparams(::NNF.TaylorMap{S,T,U,V}) where {S<:StaticArray,T<:StaticArray,U,V} = length(S) - length(T)
 
 NNF.promote_x0_type(::Type{S}, ::Type{G}) where {S<:StaticArray,G<:Union{Number,Complex}} = similar_type(S, promote_type(eltype(S), G))
-NNF.promote_x_type(::Type{T}, ::Type{G}) where {T<:StaticArray,G<:Union{Number,Complex}} = similar_type(T, promote_type(eltype(T), G), Size(T))
+NNF.promote_x_type(::Type{T}, ::Type{G}) where {T<:StaticArray,G<:Union{Number,Complex}} = similar_type(T, promote_type(eltype(T), G), Size(Size(T)[1]))
 NNF.promote_E_type(::Type{V}, ::Type{G}) where {V<:StaticArray,G<:Union{Number,Complex}} = V != Nothing ? similar_type(V, promote_type(eltype(V), G)) : Nothing
 
 function NNF.init_x0(::Type{S}, use) where {S<:StaticArray}

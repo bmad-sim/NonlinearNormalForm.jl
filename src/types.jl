@@ -18,24 +18,19 @@ Abstract type for `TPSAMap` and `DAMap` used for normal form analysis.
 - `E::V`  -- Matrix of the envelope for stochastic kicks as scalars if included, else `nothing`
 
 # Type Requirements
-- `S <: AbstractVector{<:Number}` where `ismutable(S) == true` and 
-- `T <: AbstractVector{<:TPS}`
-- `U <: Union{Quaternion{<:TPS},Nothing}` and 
-- `V <: Union{AbstractMatrix{<:Number},Nothing}` where if not `Nothing` then `ismutable(V) == true`
-- `eltype(S) == GTPSA.numtype(eltype(T))`
-- If `U != Nothing` then `eltype(U) == eltype(T)`
-- If `V != Nothing` then `eltype(V) == GTPSA.numtype(eltype(T))`
+- `S <: AbstractVector{<:Number}` where `ismutabletype(S) == true` 
+- `T <: AbstractVector{<:TPS}` where `GTPSA.numtype(T) == eltype(S)`
+- `U <: Union{Quaternion{<:TPS},Nothing}` and if `U != Nothing` then `eltype(U) == eltype(T)`
+- `V <: Union{AbstractMatrix{<:Number},Nothing}` where `V != Nothing` then `eltype(V) == GTPSA.numtype(eltype(T))` AND `ismutabletype(V) == true`
 
 Because the `TPS` type is `mutable` and `GTPSA.jl` provides in-place functions for modifying 
-`TPS`s, at the lowest level all operations on `TaylorMap`s are in-place for performance. Therefore, 
+`TPS`s, at the lowest level, all operations on `TaylorMap`s are in-place for performance. Therefore, 
 the `x` and `Q` arrays which contain `TPS`s may be `immutable`, e.g. the orbital ray `x` may be an 
 `SVector` from the `StaticArrays.jl` package, and the `Quaternion` type which is taken from 
 `ReferenceFrameRotations.jl` is already `immutable`. The default for the orbital ray is `SVector`.
-
 The `x0` and `E` arrays contain `immutable` number types, and so these arrays MUST be `mutable`.
 """
 abstract type TaylorMap{S<:AbstractVector{<:Number},T<:AbstractVector{<:TPS},U<:Union{Quaternion{<:TPS},Nothing},V<:Union{AbstractMatrix{<:Number},Nothing}} end 
-
 
 @inline function checkmapsanity(m::TaylorMap{S,T,U,V}) where {S,T,U,V}
   ismutabletype(S) || error("Reference orbit array must be mutable: $S is immutable.")
@@ -48,7 +43,7 @@ end
 """
     DAMap{S,T,U,V} <: TaylorMap{S,T,U,V}
 
-`TaylorMap` that composes and inverses as a `DAMap` (with the scalar part ignored).
+`TaylorMap` that composes and inverts as a `DAMap` (with the scalar part ignored).
 See `TaylorMap` for more information.
 """
 struct DAMap{S,T,U,V} <: TaylorMap{S,T,U,V}
@@ -67,7 +62,7 @@ end
 """
     TPSAMap{S,T,U,V} <: TaylorMap{S,T,U,V}
 
-`TaylorMap` that composes and inverses as a `TPSAMap` (with the scalar part included).
+`TaylorMap` that composes and inverts as a `TPSAMap` (with the scalar part included).
 See `TaylorMap` for more information.
 """
 struct TPSAMap{S,T,U,V} <: TaylorMap{S,T,U,V}
@@ -83,11 +78,17 @@ struct TPSAMap{S,T,U,V} <: TaylorMap{S,T,U,V}
   end
 end
 
-# Promotion utility functions for easy override
-promote_x0_type(::Type{S}, ::Type{G}) where {S,G<:Union{Number,Complex}} = Vector{promote_type(eltype(S), G)}
-promote_x_type(::Type{T}, ::Type{G}) where {T,G<:Union{Number,Complex}} = Vector{promote_type(eltype(T), G)}
+# Promotion utility functions for easy override by external array packages
+# Should promote the element type and return it as a vector (x,x0) or matrix (E)
+# with dimensionality specified by Val.
+promote_x0_type(::Type{S}, ::Type{G}) where {S,G<:Union{Number,Complex}} = _promote_array_eltype(S, G, Val{1})
+promote_x_type(::Type{T}, ::Type{G}) where {T,G<:Union{Number,Complex}} = _promote_array_eltype(T, G, Val{1})
 promote_Q_type(::Type{U}, ::Type{G}) where {U,G<:Union{Number,Complex}} = U != Nothing ? Quaternion{promote_type(eltype(U), G)} : Nothing
-promote_E_type(::Type{V}, ::Type{G}) where {V,G<:Union{Number,Complex}} = V != Nothing ? Matrix{promote_type(G, eltype(V))} : Nothing
+promote_E_type(::Type{V}, ::Type{G}) where {V,G<:Union{Number,Complex}} = V != Nothing ? _promote_array_eltype(V, G, Val{2}) : Nothing
+real_x0_type(::Type{S}) where {S} = _real_array_eltype(S, Val{1})
+real_x_type(::Type{T}) where {T} = _real_array_eltype(T, Val{1})
+real_Q_type(::Type{U}) where {U} = U != Nothing ? Quaternion{real(eltype(U))} : Nothing 
+real_E_type(::Type{V}) where {V} = V != Nothing ? _real_array_eltype(V, Val{2}) : Nothing
 
 for t = (:DAMap, :TPSAMap)
 @eval begin    
@@ -95,29 +96,23 @@ for t = (:DAMap, :TPSAMap)
 function promote_rule(::Type{$t{S,T,U,V}}, ::Type{G}) where {S,T,U,V,G<:Union{Number,Complex}}
   outS = promote_x0_type(S, G)
   outT = promote_x_type(T, G)
-  outU = U != Nothing ? Quaternion{promote_type(eltype(U), G)} : Nothing
+  outU = promote_Q_type(U, G)
   outV = promote_E_type(V, G)
   return $t{outS,outT,outU,outV}
 end
 
-#=
-function promote_rule(::Type{$t{S,T,U,V}}, ::Type{G}) where {S,T,U,V,G<:Union{Number,Complex}}
-  outS = S <: StaticArray ? similar_type(S, promote_type(eltype(S), G)) : Vector{promote_type(eltype(S), G)}
-  outT = T <: StaticArray ? similar_type(T, promote_type(eltype(T), G), Size(T)) : Vector{promote_type(eltype(T), G)}
-  outU = U != Nothing ? Quaternion{promote_type(eltype(U), G)} : Nothing
-  outV = V != Nothing ? ( V <: StaticArray ? similar_type(V, promote_type(eltype(V), G)) : Matrix{promote_type(G, eltype(V))}) : Nothing
-  return $t{outS,outT,outU,outV}
-end
-=#
 # --- complex type ---
 function complex(type::Type{$t{S,T,U,V}}) where {S,T,U,V}
-  return promote_type(type, ComplexF64)
-  #$t{Vector{ComplexF64},Vector{ComplexTPS64},U == Nothing ? Nothing : Quaternion{ComplexTPS64}, V == Nothing ? Nothing : Matrix{ComplexF64}}
+  return promote_type(type, complex(GTPSA.numtype(eltype(T))))
 end
 
 # --- real type ---
 function real(::Type{$t{S,T,U,V}}) where {S,T,U,V}
-  return $t{Vector{Float64},Vector{TPS64},U == Nothing ? Nothing : Quaternion{TPS64}, V == Nothing ? Nothing : Matrix{Float64}}
+  outS = real_x0_type(S)
+  outT = real_x_type(T)
+  outU = real_Q_type(U)
+  outV = real_E_type(V)
+  return $t{outS,outT,outU,outV}
 end
 
 end
@@ -125,33 +120,49 @@ end
 
 
 """
-    VectorField{T<:Vector, U<:Union{Quaternion,Nothing}}
+    VectorField{T,U}
 
-Lie operator to act on maps. Can be turned into a map with exp(:F:)
+Lie operator which acts on `DAMap`s e.g. dM/dt = FM where F is the `VectorField` and 
+`M` is the `DAMap`. `F` can be promoted to a `DAMap` using `exp(F)`.
+
+# Fields
+- `x::T`  -- Orbital ray as truncated power series, expansion around `x0`, with scalar part equal to EXIT coordinates of map
+- `Q::U`  -- `Quaternion` as truncated power series if spin is included, else `nothing`
+
+# Type Requirements
+- `T <: AbstractVector{<:TPS}`
+- `U <: Union{Quaternion{<:TPS},Nothing}` and if `U != Nothing` then `eltype(U) == eltype(T)`
 """
-struct VectorField{T<:Vector, U<:Union{Quaternion,Nothing}}
+struct VectorField{T<:AbstractVector{<:TPS},U<:Union{Quaternion{<:TPS},Nothing}}
   x::T
-  Q::U           
+  Q::U     
+  function VectorField(x, Q)
+    m = new{typeof(x),typeof(Q)}(x, Q)
+    typeof(Q) == Nothing || eltype(Q) == eltype(x) || error("Quaternion number type $(eltype(Q)) must be $(eltype(x)) (equal to orbital ray)")
+    return m
+  end
+end
+
+
+function promote_rule(::Type{VectorField{T,U}}, ::Type{G}) where {T,U,G<:Union{Number,Complex}}
+  outT = promote_x_type(T, G)
+  outU = promote_Q_type(U, G)
+  return VectorField{outT,outU}
 end
 
 # --- complex type ---
-function complex(::Type{VectorField{T,U}}) where {T,U}
-  return VectorField{ComplexTPS64, U == Nothing ? Nothing : Quaternion{ComplexTPS64}}
+function complex(type::Type{VectorField{T,U}}) where {T,U}
+  return promote_type(type, complex(GTPSA.numtype(eltype(T))))
 end
 
 # --- real type ---
 function real(::Type{VectorField{T,U}}) where {T,U}
-  return VectorField{Vector{TPS64},U == Nothing ? Nothing : Quaternion{TPS64}}
-end
-
-function promote_rule(::Type{VectorField{T,U}}, ::Type{G}) where {T,U,G<:Union{Number,Complex}}
-  outT = Vector{promote_type(eltype(T),G)}
-  U != Nothing ? outU = Quaternion{promote_type(eltype(U), G)} : outU = Nothing
+  outT = real_x_type(T)
+  outU = real_Q_type(U)
   return VectorField{outT,outU}
 end
 
-
-const UseType = Union{Descriptor, TPS, DAMap, TPSAMap, VectorField, Nothing}
+const UseType = Union{Descriptor, TPS, DAMap, TPSAMap, VectorField}
 
 
 

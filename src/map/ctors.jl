@@ -39,10 +39,10 @@ end
 function init_Q(::Type{U}, use) where {U}
   if U != Nothing
     desc = getdesc(use)
-    q0 = eltype(x)(use=desc)
-    q1 = eltype(x)(use=desc)
-    q2 = eltype(x)(use=desc)
-    q3 = eltype(x)(use=desc)
+    q0 = eltype(U)(use=desc)
+    q1 = eltype(U)(use=desc)
+    q2 = eltype(U)(use=desc)
+    q3 = eltype(U)(use=desc)
     Q = Quaternion(q0,q1,q2,q3)
   else
     Q = nothing
@@ -65,234 +65,141 @@ end
 for t = (:DAMap, :TPSAMap)
 @eval begin
 
+# Blank lowest-level ctor
+function $t{S,T,U,V}(use::UseType=GTPSA.desc_current) where {S,T,U,V}
+  getdesc(use).desc != C_NULL || error("GTPSA Descriptor not defined!")
+  out_x0 = init_x0(S, use)
+  out_x = init_x(T, use)
+  out_Q = init_Q(U, use)
+  out_E = init_E(V, use)
+
+  return $t(out_x0, out_x, out_Q, out_E)
+end
+
+# Copy ctor including optional Descriptor change
+function $t(m::TaylorMap{S,T,U,V}; use::UseType=m) where {S,T,U,V}
+  numvars(use) == numvars(m) || error("Number of variables in GTPSAs for `m` and `use` disagree!")
+  numparams(use) == numparams(m) || error("Number of parameters in GTPSAs for `m` and `use` disagree!") 
+
+  out_m = $t{S,T,U,V}(use)
+  out_m.x0 = m.x0
+  foreach((out_xi, xi)->setTPS!(out_xi, xi, change=true), view(out_m.x, 1:numvars(use)), m.x)
+  if !isnothing(out_m.Q)
+    foreach((out_Qi, Qi)->setTPS!(out_Qi, Qi, change=true), out_m.Q, m.Q)
+  end
+  if !isnothing(out_m.E)
+    out_m.E .= m.E
+  end
+  return out_m
+end
+
+function $t(;
+  use::UseType=GTPSA.desc_current,
+  x0::Union{AbstractVector,Nothing}=nothing,
+  x::Union{AbstractVector,AbstractMatrix,UniformScaling,Nothing}=nothing,
+  Q::Union{Quaternion,AbstractVector,AbstractMatrix,UniformScaling,Nothing}=nothing,
+  E::Union{AbstractMatrix,Nothing}=nothing,
+  spin::Union{Bool,Nothing}=nothing,
+  stochastic::Union{Bool,Nothing}=nothing,
+) 
+  # Assemble types:
+  W = promote_type(map(t->(!isnothing(t) ? GTPSA.numtype(eltype(t)) : Float64), (x0, x, Q, E))...)
+  
+  S = isnothing(x0) ? Vector{W} : promote_x0_type(typeof(x0), W)
+  T = isnothing(x) ? Vector{TPS{W}} : promote_x_type(typeof(x), TPS{W})
+
+  if isnothing(spin)
+    U = isnothing(Q) ? Nothing : Quaternion{TPS{W}}
+  elseif spin
+    U = Quaternion{TPS{W}}
+  else
+    U = Nothing
+  end
+
+  if isnothing(stochastic)
+    V = isnothing(E) ? Nothing : promote_E_type(typeof(E), W)
+  elseif stochastic
+    V = isnothing(E) ? Matrix{W} : promote_E_type(typeof(E), W)
+  else
+    V = Nothing
+  end
+
+  # Construct map using low level ctor:
+  m = $t{S,T,U,V}(use)
+
+  # Set if values provided:
+  if !isnothing(x0)
+    m.x0 .= x0
+  end
+  
+  if !isnothing(x)
+    if x isa AbstractVector #  TPSA map or scalar part provided:
+      length(x) <= numvars(use) || error("Length of input vector `x` cannot be greater than the number of variables in `use` GTPSA!")
+      foreach((out_xi, xi)->setTPS!(out_xi, xi, change=true), view(m.x, 1:length(x)), x)
+    elseif x isa AbstractMatrix # Map as a matrix:
+      size(x,1) <= numvars(use) || error("Number of rows of input matrix `x` cannot be greater than the number of variables in `use` GTPSA!")
+      size(x,2) <= GTPSA.numcoefs(first(m.x))-1 || error("Number of columns of input matrix `x` cannot be greater than the number of coefficients in `use` GTPSA!")
+      for varidx in 1:size(x,1)
+        m.x[varidx][1:size(x,2)] = view(x, varidx, :)
+      end
+    else # Uniform scaling: Making identity map
+      for varidx in 1:numvars(use)
+        m.x[varidx][varidx] = 1
+      end
+    end
+  end
+
+  if !isnothing(m.Q) && !isnothing(Q)
+    if Q isa AbstractVector || Q isa Quaternion #  TPSA map or scalar part provided:
+      length(Q) <= 4 || error("Length of input vector `Q` cannot be greater than 4!")
+      foreach((out_Qi, Qi)->setTPS!(out_Qi, Qi, change=true), m.Q, Q)
+    elseif Q isa AbstractMatrix # Map as a matrix:
+      size(Q,1) <= 4 || error("Number of rows of input matrix `Q` cannot be greater than 4!")
+      size(Q,2) <= GTPSA.numcoefs(first(m.Q))-1 || error("Number of columns of input matrix `x` cannot be greater than the number of coefficients in `use` GTPSA!")
+      for qidx in 1:size(Q,1)
+        m.Q[qidx][1:size(Q,2)] = view(Q, qidx, :)
+      end
+    else # Uniform scaling: Making identity quaternion:
+      m.Q.q0[0] = 1
+    end
+  end
+
+  if !isnothing(m.E) && !isnothing(E)
+    m.E .= E
+  end
+
+  return m
+end
+
+
 """
     zero(m::$($t))
 
 Creates a zero $($t) with the same properties as `m`, including GTPSA `Descriptor`,
-spin, and stochasticity
+spin, and stochasticity.
 """
-function zero(m::$t)
-  return zero(typeof(m), use=m)
-end
-
-function zero(::Type{$t{S,T,U,V}}; use::UseType=GTPSA.desc_current) where {S,T,U,V}
-  getdesc(use).desc != C_NULL || error("GTPSA Descriptor not defined!")
-  x0 = init_x0(S, use)
-  x = init_x(T, use)
-  Q = init_Q(U, use)
-  E = init_E(V, use)
-  return $t(x0, x, Q, E)
-end
+zero(m::$t) = typeof(m)(use=m)
 
 """
     one(m::$($t))
   
-Construct an identity map based on `m`.
+Creates an identity $($t) with the same properties as `m`, including GTPSA
+`Descriptor`, spin, and stochasticity.
 """
 function one(m::$t)
-  return one(typeof(m), use=m)
-end
+  out_m = zero(m)
 
-function one(t::Type{$t{S,T,U,V}}; use::UseType=GTPSA.desc_current) where {S,T,U,V}
-  m = zero(t, use=use)
-  nv = numvars(m)
-  
   for i in 1:nv
-    m.x[i][i] = 1
+    out_m.x[i][i] = 1
   end
 
   if !isnothing(m.Q)
-    m.Q.q0[0] = 1
+    out_m.Q.q0[0] = 1
   end
 
-  return m
+  return out_m
 end
 
-"""
-    $($t)(m::Union{TaylorMap{S,T,U,V}; use::UseType=m) where {S,T,U,V}
-
-Creates a new copy of the passed `TaylorMap` as a `$($t)`. 
-
-If `use` is not specified, then the same GTPSA `Descriptor` as `m` will be used. If `use` is 
-specified (could be another `Descriptor` or `TaylorMap`), then the copy of `m` as a new $($(t)) 
-will have the same `Descriptor` as in `use.` The total number of variables + parameters must 
-agree, however the orders may be different.
-"""
-function $t(m::Union{TaylorMap{S,T,U,V}}; use::UseType=m) where {S,T,U,V}
-  numnn(use) == numnn(m) || error("Number of variables + parameters in GTPSAs for `m` and `use` disagree!")
-  
-  outm = zero($t{S,T,U,V}, use=use)
-  nv = numvars(use)
-
-  # set variables
-  for i=1:nv
-    setTPS!(outm.x[i], m.x[i], change=true)
-  end
-
-  # set quaternion
-  if !isnothing(outm.Q)
-    setTPS!(outm.Q.q0, m.Q.q0, change=true)
-    setTPS!(outm.Q.q1, m.Q.q1, change=true)
-    setTPS!(outm.Q.q2, m.Q.q2, change=true)
-    setTPS!(outm.Q.q3, m.Q.q3, change=true)
-  end
-  
-  # set the reference orbit properly
-  if nv > numvars(m)  # Increasing dimensionality
-    outm.x0[1:numvars(m)] .= m.x0
-    outm.x0[numvars(m)+1:nv] .= 0
-  else    # Reducing or keeping same dimensionality
-    outm.x0[1:nv] .= view(m.x0, 1:nv)
-  end
-
-  # set the stochastic matrix properly
-  if !isnothing(outm.E)
-    if nv > numvars(m)  # Increasing dimensionality
-      outm.E[1:numvars(m),1:numvars(m)] .= view(m.E, 1:numvars(m), 1:numvars(m))
-      outm.E[numvars(m)+1:nv,:] .= 0
-      outm.E[:,numvars(m)+1:nv] .= 0
-    else
-      outm.E[1:nv,1:nv] .= view(m.E, 1:nv, 1:nv)
-    end
-  end
-
-  return outm
-end
-
-"""
-    $($t)(;use::UseType=GTPSA.desc_current, x::Vector=vars(getdesc(use)), x0::Vector=zeros(GTPSA.numtype(eltype(x)), numvars(use)), Q::Union{Quaternion,Nothing}=nothing, E::Union{Matrix,Nothing}=nothing, spin::Union{Bool,Nothing}=nothing, stochastic::Union{Bool,Nothing}=nothing) 
-
-Constructs a $($t) with the passed vector of `TPS`/`ComplexTPS64` as the orbital ray, and optionally the entrance 
-coordinates `x0`, `Quaternion` for spin `Q`, and stochastic matrix `E` as keyword arguments. The helper keyword 
-arguments `spin` and `stochastic` may be set to `true` to construct a $($t) with an identity quaternion/stochastic 
-matrix, or `false` for no spin/stochastic. Note that setting `spin`/`stochastic` to any `Bool` value without `Q` or `E` 
-specified is type-unstable. This constructor also checks for consistency in the length of the orbital ray and GTPSA 
-`Descriptor`. The `use` kwarg may also be used to change the `Descriptor` of the TPSs, provided the number of variables 
-+ parameters agree (orders may be different).
-"""
-function $t(;use::UseType=GTPSA.desc_current, x::Vector=vars(getdesc(use)), x0::Vector=zeros(GTPSA.numtype(eltype(x)), numvars(use)), Q::Union{Quaternion,Nothing}=nothing, E::Union{Matrix,Nothing}=nothing, spin::Union{Bool,Nothing}=nothing, stochastic::Union{Bool,Nothing}=nothing) 
-  Base.require_one_based_indexing(x,x0)
-
-  if !isnothing(Q)
-    if !isnothing(E)
-      T = Vector{promote_type(TPS{Float64},eltype(x0),eltype(x),eltype(Q),eltype(E))}
-      Base.require_one_based_indexing(E)
-    else
-      T = Vector{promote_type(TPS{Float64},eltype(x0),eltype(x),eltype(Q))}
-    end
-  else
-    T = Vector{promote_type(TPS{Float64},eltype(x0),eltype(x))}
-  end
-
-  S = Vector{GTPSA.numtype(eltype(T))}
-  
-  # set up
-  if isnothing(spin)
-    if isnothing(Q)
-      U = Nothing
-    else
-      U = Quaternion{eltype(T)}
-    end
-  elseif spin
-    U = Quaternion{eltype(T)}
-  else
-    error("For no spin tracking, please omit the spin kwarg or set spin=nothing") # For type stability
-    #U = Nothing # For type instability
-  end
-
-  if isnothing(stochastic)
-    if isnothing(E)
-      V = Nothing
-    else
-      V = Matrix{GTPSA.numtype(eltype(T))}
-    end
-  elseif stochastic
-    V = Matrix{GTPSA.numtype(eltype(T))}
-  else
-    error("For no fluctuation-dissipation, please omit the stochastic kwarg or set stochastic=nothing") # For type stability
-    #V = Nothing # For type instability
-  end
-
-  outm = zero($t{S,T,U,V}, use=use)   
-
-  nv = numvars(use)
-  np = numparams(use)
-  nn = numnn(use)
-
-  # sanity checks
-  length(x0) <= nv || error("Number of variables $nv != length of reference orbit vector $(length(x0))!")
-  length(x) <= nv || error("Number of variables in GTPSAs for `x` and `use` disagree!")
-
-
-  @views outm.x0 .= x0[1:length(outm.x0)]
-
-  # set variables
-  for i=1:nv
-    setTPS!(outm.x[i], x[i], change=true)
-  end
-
-  # set quaternion
-  if !isnothing(outm.Q)
-    if !isnothing(Q)
-      setTPS!(outm.Q.q0, Q.q0, change=true)
-      setTPS!(outm.Q.q1, Q.q1, change=true)
-      setTPS!(outm.Q.q2, Q.q2, change=true)
-      setTPS!(outm.Q.q3, Q.q3, change=true)
-    else
-      outm.Q.q0[0] = 1
-    end
-  end
-
-  if !isnothing(outm.E) && !isnothing(E)
-    (nv,nv) == size(E) || error("Size of stochastic matrix inconsistent with number of variables!")
-    outm.E .= E
-  end
-
-  return outm
-end
-
-"""
-    $($t)(M::AbstractMatrix; use::UseType=GTPSA.desc_current, x0::Vector=zeros(eltype(M), size(M,1)), Q::Union{Quaternion,Nothing}=nothing, E::Union{Matrix,Nothing}=nothing, spin::Union{Bool,Nothing}=nothing, stochastic::Union{Bool,Nothing}=nothing) 
-
-`M` must be a matrix with linear indexing.
-
-Constructs a $($t) with the passed matrix of scalars `M` as the linear part of the `TaylorMap`, and optionally the entrance 
-coordinates `x0`, `Quaternion` for spin `Q`, and stochastic matrix `E` as keyword arguments. The helper keyword 
-arguments `spin` and `stochastic` may be set to `true` to construct a $($t) with an identity quaternion/stochastic 
-matrix, or `false` for no spin/stochastic. Note that setting `spin`/`stochastic` to any `Bool` value without `Q` or `E` 
-specified is type-unstable. This constructor also checks for consistency in the length of the orbital ray and GTPSA 
-`Descriptor`.
-"""
-function $t(M::AbstractMatrix; use::UseType=GTPSA.desc_current, x0::Vector=zeros(eltype(M), size(M,1)), Q::Union{Quaternion,Nothing}=nothing, E::Union{Matrix,Nothing}=nothing, spin::Union{Bool,Nothing}=nothing, stochastic::Union{Bool,Nothing}=nothing) 
-  Base.require_one_based_indexing(M)
-  m = DAMap(use=use, x0=x0, Q=Q, E=E, spin=spin, stochastic=stochastic)
-  setmatrix!(m, M)
-  return m
-end
-
-
-"""
-
-    zero_op(m2::$($t), m1::Union{$($t),Number})
-
-Returns a new zero $($t) with type equal to promoted type of `m1` and `m2`.
-`m2` could be a number. This function is necessary to both ensure correct 
-usage of the GTPSA descriptor and share the immutable parameters when possible.
-"""
-function zero_op(m2::$t, m1::Union{$t,Number})
-  outtype = promote_type(typeof(m1),typeof(m2))
-
-  # If either inputs are ComplexTPS64, use those parameters
-  if m1 isa $t
-    if eltype(m2.x) == ComplexTPS64
-      return zero(outtype,use=m2)
-    else
-      return zero(outtype,use=m1)
-    end
-  else
-    return zero(outtype,use=m2)
-  end
-end
 
 end
 end

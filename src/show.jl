@@ -44,11 +44,15 @@ function show(io::IO, m::TaylorMap)
 
 
   println(io, "Reference Orbit ", typeof(m.x0),":")
+  println(io, m.x0)
+  lines_used[] += 1
+  #=
   for i =1:length(m.x0)
     !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || (println(io, "\t⋮"); return)
     @printf(io, "%-3s  ", "$(i):"); println(io, m.x0[i])
     lines_used[] += 1
   end
+  =#
   !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || (println(io, "\t⋮"); return)
   println(io)
   lines_used[] += 1
@@ -113,3 +117,12 @@ function show(io::IO, m::TaylorMap)
   end
   
 end
+
+
+function show(io::IO, Q::Quaternion{<:TPS})
+  println(io, "$(typeof(Q)):")
+  GTPSA.show_map!(io, collect(Q), Ref{Int}(1), false, [" q0:"," q1:"," q2:"," q3:"])
+end
+
+show(io::IO, ::MIME"text/plain", Q::Quaternion{<:TPS}) = (println(io, "$(typeof(Q)):"); GTPSA.show_map!(io, collect(Q), Ref{Int}(1), false, [" q0:"," q1:"," q2:"," q3:"]))
+
