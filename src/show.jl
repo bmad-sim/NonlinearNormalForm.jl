@@ -10,17 +10,17 @@ function show(io::IO, m::TaylorMap)
         lines_used[] += 1
       end
     end
-    if eltype(m.Q) <: TPS
+    if eltype(m.q) <: TPS
       diffdescsq = false
-      for qi in m.Q
-        if !diffdescsq && getdesc(first(m.Q)) != getdesc(qi)
-          println(io, "WARNING: Atleast one $(eltype(m.Q)) in the quaternion has a different Descriptor!")
+      for qi in m.q
+        if !diffdescsq && getdesc(first(m.q)) != getdesc(qi)
+          println(io, "WARNING: Atleast one $(eltype(m.q)) in the quaternion has a different Descriptor!")
           diffdescsq = true
           lines_used[] += 1
         end
       end
       diffdescsxq = false
-      if getdesc(first(m.x)) != getdesc(first(m.Q))
+      if getdesc(first(m.x)) != getdesc(first(m.q))
         println(io, "WARNING: First element in orbital ray has different Descriptor than first element in quaternion!")
         diffdescsxq = true
         lines_used[] += 1
@@ -94,20 +94,20 @@ function show(io::IO, m::TaylorMap)
     !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 ||  (println(io, "\t⋮"); return)
   end
 
-  if !isnothing(m.Q)
+  if !isnothing(m.q)
     println(io)
     lines_used[]+= 1
     !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || (println(io, "\t⋮"); return)
-    println(io,typeof(m.Q),":")
+    println(io,typeof(m.q),":")
     lines_used[] += 1
 
     
-    if eltype(m.Q) <: TPS
+    if eltype(m.q) <: TPS
       !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || (println(io, "\t⋮"); return)
-      GTPSA.show_map!(io, collect(m.Q), lines_used, false, [" q0:"," q1:"," q2:"," q3:"])
+      GTPSA.show_map!(io, collect(m.q), lines_used, false, [" q0:"," q1:"," q2:"," q3:"])
     else
       i=1
-      for qi in m.Q
+      for qi in m.q
         !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || (println(io, "\t⋮"); return)
         @printf(io, "%-3s  ", "q$(i):"); println(io, qi)
         lines_used[] += 1
@@ -119,10 +119,10 @@ function show(io::IO, m::TaylorMap)
 end
 
 
-function show(io::IO, Q::Quaternion{<:TPS})
-  println(io, "$(typeof(Q)):")
-  GTPSA.show_map!(io, collect(Q), Ref{Int}(1), false, [" q0:"," q1:"," q2:"," q3:"])
+function show(io::IO, q::Quaternion{<:TPS})
+  println(io, "$(typeof(q)):")
+  GTPSA.show_map!(io, collect(q), Ref{Int}(1), false, [" q0:"," q1:"," q2:"," q3:"])
 end
 
-show(io::IO, ::MIME"text/plain", Q::Quaternion{<:TPS}) = (println(io, "$(typeof(Q)):"); GTPSA.show_map!(io, collect(Q), Ref{Int}(1), false, [" q0:"," q1:"," q2:"," q3:"]))
+show(io::IO, ::MIME"text/plain", q::Quaternion{<:TPS}) = (println(io, "$(typeof(q)):"); GTPSA.show_map!(io, collect(q), Ref{Int}(1), false, [" q0:"," q1:"," q2:"," q3:"]))
 

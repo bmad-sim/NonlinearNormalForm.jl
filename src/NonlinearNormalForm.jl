@@ -119,12 +119,12 @@ export        TaylorMap,
 coast_threshold::Float64 = eps(Float64)
 
 
-
-
-
 #include("utils/quaternion.jl")
-include("types.jl")
 
+include("types.jl")
+include("utils.jl")
+include("map/ctors.jl")
+#=
 include("utils/matrix.jl")
 include("utils/symplectic_s.jl")
 include("sanity.jl")
@@ -132,7 +132,7 @@ include("sanity.jl")
 include("methods.jl")
 include("operators.jl")
 
-include("map/ctors.jl")
+
 include("map/compose.jl")
 include("map/inv.jl")
 include("map/map_methods.jl")
@@ -146,6 +146,7 @@ include("work.jl")
 include("normal.jl")
 
 include("utils/misc.jl")
+=#
 include("show.jl")
 
 

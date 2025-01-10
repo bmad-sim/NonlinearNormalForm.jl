@@ -1,131 +1,143 @@
-#=
-
-Constructors for the DAMap and TPSAMap. Includes zero, one, 
-copy ctor (with possible descriptor change), custom map ctor using 
-keyword arguments, map ctor from a matrix, and zero_op which creates 
-a zero map of the properly promoted type (useful for out-of-place 
-functions).
-
-=#
-
-function init_x0(::Type{S}, use) where {S}
-  nv = numvars(use)
-  x0 = similar(S, nv)
-  x0 .= 0
-  return x0
-end
-
-function init_x(::Type{T}, use) where {T}
-  desc = getdesc(use)
-  nv = numvars(desc)
-  nn = numnn(desc)
-  x = similar(T, nn)
-  for i in 1:nv
-    x[i] = eltype(x)(use=desc)
-  end
-  # use same parameters if use isa TaylorMap and eltype(x) == eltype(use.x)
-  if use isa TaylorMap && eltype(x) == eltype(use.x)
-    x[nv+1:nn] .= view(use.x, nv+1:nn)
-  else # allocate
-    if eltype(x) == TPS{Float64}
-      x[nv+1:nn] .= params(desc)
-    else
-      x[nv+1:nn] .= complexparams(desc)
-    end
-  end
-  return x
-end
-
-function init_Q(::Type{U}, use) where {U}
-  if U != Nothing
-    desc = getdesc(use)
-    q0 = eltype(U)(use=desc)
-    q1 = eltype(U)(use=desc)
-    q2 = eltype(U)(use=desc)
-    q3 = eltype(U)(use=desc)
-    Q = Quaternion(q0,q1,q2,q3)
-  else
-    Q = nothing
-  end
-  return Q
-end
-
-function init_E(::Type{V}, use) where {V}
-  if V != Nothing
-    nv = numvars(use)
-    E = similar(V, nv, nv)
-    E .= 0
-  else
-    E = nothing
-  end
-  return E
-end
-
-
 for t = (:DAMap, :TPSAMap)
 @eval begin
 
 # Blank lowest-level ctor
-function $t{S,T,U,V}(use::UseType=GTPSA.desc_current) where {S,T,U,V}
+function $t{X0,X,Q,S}(use::UseType=GTPSA.desc_current) where {X0,X,Q,S}
   getdesc(use).desc != C_NULL || error("GTPSA Descriptor not defined!")
-  out_x0 = init_x0(S, use)
-  out_x = init_x(T, use)
-  out_Q = init_Q(U, use)
-  out_E = init_E(V, use)
+  out_x0 = init_x0(X0, use)
+  out_x = init_x(X, use)
+  out_q = init_q(Q, use)
+  out_s = init_s(S, use)
 
-  return $t(out_x0, out_x, out_Q, out_E)
+  return $t(out_x0, out_x, out_q, out_s)
 end
 
 # Copy ctor including optional Descriptor change
-function $t(m::TaylorMap{S,T,U,V}; use::UseType=m) where {S,T,U,V}
+function $t(m::TaylorMap{X0,X,Q,S}; use::UseType=m) where {X0,X,Q,S}
   numvars(use) == numvars(m) || error("Number of variables in GTPSAs for `m` and `use` disagree!")
   numparams(use) == numparams(m) || error("Number of parameters in GTPSAs for `m` and `use` disagree!") 
 
-  out_m = $t{S,T,U,V}(use)
+  out_m = $t{X0,X,Q,S}(use)
   out_m.x0 = m.x0
   foreach((out_xi, xi)->setTPS!(out_xi, xi, change=true), view(out_m.x, 1:numvars(use)), m.x)
-  if !isnothing(out_m.Q)
-    foreach((out_Qi, Qi)->setTPS!(out_Qi, Qi, change=true), out_m.Q, m.Q)
+  if !isnothing(out_m.q)
+    foreach((out_qi, Qi)->setTPS!(out_qi, Qi, change=true), out_m.q, m.q)
   end
-  if !isnothing(out_m.E)
-    out_m.E .= m.E
+  if !isnothing(out_m.s)
+    out_m.s .= m.s
   end
   return out_m
 end
 
+
+"""
+    $($t){X0,X,Q,S} <: TaylorMap{X0,X,Q,S}
+  
+A `$($t)` is a `TaylorMap` which composes and inverts $( $t == DAMap ? "with the scalar part IGNORED" : "with the scalar part INCLUDED").
+Both `DAMap` and `TPSAMap` have the exact same internal structures. See the documentation for 
+`TaylorMap` for more details of the differences.
+
+# Constructors
+
+1. At the lowest level, one may call
+
+```julia
+$($t){X0,X,Q,S}(use::UseType=GTPSA.desc_current) where {X0,X,Q,S}
+```
+
+where the types `{X0,X,Q,S}` of each field are specified (see `TaylorMap`), and the GTPSA 
+`Descriptor` defined in `use` is used (see `UseType` for allowed types for `use`). A `TaylorMap` 
+type is generally recommended for performance reasons as the already allocated `TPS`s for the 
+parameters can be reused.
+
+------
+
+2. A copy constructor with possible change of `Descriptor` via
+
+```julia
+$($t)(m::TaylorMap{X0,X,Q,S}; use::UseType=m) where {X0,X,Q,S}
+```
+
+The number variables and number of parameters must agree for a `Descriptor` change.
+
+------
+
+3. The general purpose constructor
+
+```julia
+$($t)(;
+  use::UseType=GTPSA.desc_current,
+  x0::Union{AbstractVector,Nothing}=nothing,
+  x::Union{AbstractVector,Nothing}=nothing,
+  x_matrix::Union{AbstractMatrix,UniformScaling,Nothing}=nothing,
+  q::Union{Quaternion,AbstractVector,UniformScaling,Nothing}=nothing,
+  q_map::Union{AbstractMatrix,Nothing}=nothing,
+  s::Union{AbstractMatrix,Nothing}=nothing,
+  spin::Union{Bool,Nothing}=nothing,
+  stochastic::Union{Bool,Nothing}=nothing,
+) 
+```
+If provided, the keyword arguments have the following behaviors:
+### Keyword Arguments
+- `use`        -- Specifies which GTPSA `Descriptor` to use. Must be a `Descriptor`, `TPS`, `TaylorMap`, or `VectorField`
+- `x0`         -- Sets the values of the reference orbit equal to `x0`. Must be an `AbstractVector`
+- `x`          -- Sets the orbital ray equal to `x`. Must be an `AbstractVector`
+- `x_matrix`   -- Sets the linear (and optionally nonlinear) part of the orbital ray equal to the transfer matrix `x_matrix`. This will be done after setting `x`. Must be an `AbstractMatrix` or `UniformScaling`
+- `q`          -- Sets the quaternion equal to `q`. Must be a `Quaternion`, `AbstractVector`, or `UniformScaling`
+- `q_map`      -- Sets the linear (and optionally nonlinear) part of the quaternion map equal to the transfer matrix `q_map`. This will be done after setting `q`. Must be an `AbstractMatrix`
+- `s`          -- Sets the stochastic kicks envelope matrix equal to `s`
+- `spin`       -- Boolean which specifies if spin tracking should be included. This is type-unstable and should not be used in performance-critical places
+- `stochastic` -- Boolean which specifies if the envelope matrix of stochastic kicks should be included. This is type-unstable and should not be used in performance-critical places
+
+All of the setter keyword arguments do NOT use the directly passed inputs in the map, rather set the 
+values equal to those after construction of the map. So for example:
+
+```julia
+julia> v = collect(Float64, 1:6);
+
+julia> m = DAMap(x0=v);
+
+julia> m.x0 === v
+false
+```
+"""
+$t
+
 function $t(;
   use::UseType=GTPSA.desc_current,
   x0::Union{AbstractVector,Nothing}=nothing,
-  x::Union{AbstractVector,AbstractMatrix,UniformScaling,Nothing}=nothing,
-  Q::Union{Quaternion,AbstractVector,AbstractMatrix,UniformScaling,Nothing}=nothing,
-  E::Union{AbstractMatrix,Nothing}=nothing,
+  x::Union{AbstractVector,Nothing}=nothing,
+  x_matrix::Union{AbstractMatrix,UniformScaling,Nothing}=nothing,
+  q::Union{Quaternion,AbstractVector,UniformScaling,Nothing}=nothing,
+  q_map::Union{AbstractMatrix,Nothing}=nothing,
+  s::Union{AbstractMatrix,Nothing}=nothing,
   spin::Union{Bool,Nothing}=nothing,
   stochastic::Union{Bool,Nothing}=nothing,
 ) 
   # Assemble types:
-  W = promote_type(map(t->(!isnothing(t) ? GTPSA.numtype(eltype(t)) : Float64), (x0, x, Q, E))...)
+  W = promote_type(map(t->(!isnothing(t) ? GTPSA.numtype(eltype(t)) : Float64), (x0, x, q, s))...)
   
-  S = isnothing(x0) ? Vector{W} : promote_x0_type(typeof(x0), W)
-  T = isnothing(x) ? Vector{TPS{W}} : promote_x_type(typeof(x), TPS{W})
+  X0 = isnothing(x0) ? Vector{W} : promote_x0_type(typeof(x0), W)
+  X = isnothing(x) ? Vector{TPS{W}} : promote_x_type(typeof(x), TPS{W})
 
   if isnothing(spin)
-    U = isnothing(Q) ? Nothing : Quaternion{TPS{W}}
+    Q = isnothing(q) && isnothing(q_map) ? Nothing : Quaternion{TPS{W}}
   elseif spin
-    U = Quaternion{TPS{W}}
+    Q = Quaternion{TPS{W}}
   else
-    U = Nothing
+    Q = Nothing
   end
 
   if isnothing(stochastic)
-    V = isnothing(E) ? Nothing : promote_E_type(typeof(E), W)
+    S = isnothing(s) ? Nothing : promote_s_type(typeof(s), W)
   elseif stochastic
-    V = isnothing(E) ? Matrix{W} : promote_E_type(typeof(E), W)
+    S = isnothing(s) ? Matrix{W} : promote_s_type(typeof(s), W)
   else
-    V = Nothing
+    S = Nothing
   end
 
   # Construct map using low level ctor:
-  m = $t{S,T,U,V}(use)
+  m = $t{X0,X,Q,S}(use)
 
   # Set if values provided:
   if !isnothing(x0)
@@ -133,14 +145,16 @@ function $t(;
   end
   
   if !isnothing(x)
-    if x isa AbstractVector #  TPSA map or scalar part provided:
-      length(x) <= numvars(use) || error("Length of input vector `x` cannot be greater than the number of variables in `use` GTPSA!")
-      foreach((out_xi, xi)->setTPS!(out_xi, xi, change=true), view(m.x, 1:length(x)), x)
-    elseif x isa AbstractMatrix # Map as a matrix:
-      size(x,1) <= numvars(use) || error("Number of rows of input matrix `x` cannot be greater than the number of variables in `use` GTPSA!")
-      size(x,2) <= GTPSA.numcoefs(first(m.x))-1 || error("Number of columns of input matrix `x` cannot be greater than the number of coefficients in `use` GTPSA!")
-      for varidx in 1:size(x,1)
-        m.x[varidx][1:size(x,2)] = view(x, varidx, :)
+    length(x) <= numvars(use) || error("Length of input vector `x` cannot be greater than the number of variables in `use` GTPSA!")
+    foreach((out_xi, xi)->setTPS!(out_xi, xi, change=true), view(m.x, 1:length(x)), x)
+  end
+
+  if !isnothing(x_matrix)
+    if x isa AbstractMatrix # Map as a matrix:
+      size(x_matrix,1) <= numvars(use) || error("Number of rows of `x_matrix` cannot be greater than the number of variables in `use` GTPSA!")
+      size(x_matrix,2) <= GTPSA.numcoefs(first(m.x))-1 || error("Number of columns of `x_matrix` cannot be greater than the number of coefficients in `use` GTPSA!")
+      for varidx in 1:size(x_matrix,1)
+        m.x[varidx][1:size(x_matrix,2)] = view(x_matrix, varidx, :)
       end
     else # Uniform scaling: Making identity map
       for varidx in 1:numvars(use)
@@ -149,57 +163,42 @@ function $t(;
     end
   end
 
-  if !isnothing(m.Q) && !isnothing(Q)
-    if Q isa AbstractVector || Q isa Quaternion #  TPSA map or scalar part provided:
-      length(Q) <= 4 || error("Length of input vector `Q` cannot be greater than 4!")
-      foreach((out_Qi, Qi)->setTPS!(out_Qi, Qi, change=true), m.Q, Q)
-    elseif Q isa AbstractMatrix # Map as a matrix:
-      size(Q,1) <= 4 || error("Number of rows of input matrix `Q` cannot be greater than 4!")
-      size(Q,2) <= GTPSA.numcoefs(first(m.Q))-1 || error("Number of columns of input matrix `x` cannot be greater than the number of coefficients in `use` GTPSA!")
-      for qidx in 1:size(Q,1)
-        m.Q[qidx][1:size(Q,2)] = view(Q, qidx, :)
-      end
-    else # Uniform scaling: Making identity quaternion:
-      m.Q.q0[0] = 1
-    end
-  end
-
-  if !isnothing(m.E) && !isnothing(E)
-    m.E .= E
+  if !isnothing(m.s) && !isnothing(s)
+    m.s .= s
   end
 
   return m
 end
 
+end
+end
+
 
 """
-    zero(m::$($t))
+    zero(m::TaylorMap)
 
-Creates a zero $($t) with the same properties as `m`, including GTPSA `Descriptor`,
+Creates a zero `m` with the same properties as `m` including GTPSA `Descriptor`,
 spin, and stochasticity.
 """
-zero(m::$t) = typeof(m)(use=m)
+zero(m::TaylorMap) = typeof(m)(m)
 
 """
-    one(m::$($t))
+    one(m::TaylorMap)
   
-Creates an identity $($t) with the same properties as `m`, including GTPSA
+Creates an identity `m` with the same properties as `m`, including GTPSA
 `Descriptor`, spin, and stochasticity.
 """
-function one(m::$t)
+function one(m::TaylorMap)
   out_m = zero(m)
+  nv = numvars(m)
 
   for i in 1:nv
     out_m.x[i][i] = 1
   end
 
-  if !isnothing(m.Q)
-    out_m.Q.q0[0] = 1
+  if !isnothing(m.q)
+    out_m.q.q0[0] = 1
   end
 
   return out_m
-end
-
-
-end
 end
