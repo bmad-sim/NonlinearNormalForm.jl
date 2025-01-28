@@ -1,6 +1,8 @@
-# --- inverse ---
-minv!(na, ma::Vector{TPS{Float64}},    nb, mc::Vector{TPS{Float64}})    = GTPSA.mad_tpsa_minv!(Cint(na), ma, Cint(nb), mc)
-minv!(na, ma::Vector{TPS{ComplexF64}}, nb, mc::Vector{TPS{ComplexF64}}) = GTPSA.mad_ctpsa_minv!(Cint(na), ma, Cint(nb), mc)
+#=
+
+TaylorMap inversion.
+
+=#
 
 """
     inv(m1::TaylorMap; dospin::Bool=true)
@@ -65,13 +67,11 @@ function inv!(m::TaylorMap, m1::TaylorMap; dospin::Bool=true, work_ref::Union{No
     end
     map!(t->t[0], ref, view(m1.x,1:nv))
   elseif !isnothing(work_ref)
-    #@warn "work_ref provided to inv!, but !(m1 === m)"
+    @warn "work_ref provided to inv!, but !(m1 === m)"
   end
-  # add immutable parameters to outx
-  @inbounds m.x[nv+1:nn] .= view(m1.x, nv+1:nn)
 
   # This C function ignores the scalar part so no need to take it out
-  minv!(nn, m1.x, nv, m.x)
+  GTPSA.minv!(nn, m1.x, nv, m.x)
 
   # Now do quaternion: inverse of q(z0) is q^-1(M^-1(zf))
   if !isnothing(m.Q) && dospin
@@ -81,13 +81,13 @@ function inv!(m::TaylorMap, m1::TaylorMap; dospin::Bool=true, work_ref::Union{No
 
   if m1 === m
     for i=1:nv
-      @inbounds m.x[i][0] = m.x0[i]
-      @inbounds m.x0[i] = ref[i]
+      m.x[i][0] = m.x0[i]
+      m.x0[i] = ref[i]
     end
   else
     for i=1:nv
-       @inbounds m.x0[i] = m1.x[i][0]
-       @inbounds m.x[i][0] = m1.x0[i]
+       m.x0[i] = m1.x[i][0]
+       m.x[i][0] = m1.x0[i]
     end
   end
   

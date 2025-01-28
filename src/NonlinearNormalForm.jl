@@ -14,6 +14,7 @@ import Base: ∘,
              one,
              complex,
              real,
+             imag,
              log,
              exp,
              ==,
@@ -27,19 +28,22 @@ import Base: ∘,
              unsafe_convert
 
 import LinearAlgebra: norm,
-                      dot,
-                      mul!
+                      dot
 
+import TPSAInterface as TI
+import TPSAInterface: AbstractTPSADef, getdef, nvars, nparams, ndiffs, maxord, nmonos
 using LinearAlgebra,
       SkewLinearAlgebra,
       Printf,
-      Reexport,
+      StaticArrays,
       DelimitedFiles
       
-#using ReferenceFrameRotations: Quaternion
-#import ReferenceFrameRotations: show
-using StaticArrays
+using ReferenceFrameRotations: Quaternion
 
+
+
+#import ReferenceFrameRotations: show
+#=
 @reexport using GTPSA
 
 # We want these guys in our workspace:
@@ -63,10 +67,9 @@ import GTPSA: Desc,
               getord!,
               compose!             
 
-
+=#
 export        TaylorMap, 
-              Quaternion, 
-              Probe,      
+              Quaternion,    
               TPSAMap, 
               DAMap, 
               VectorField,
@@ -117,36 +120,52 @@ export        TaylorMap,
 
 
 
+const COAST = eps(Float64)
 
+macro _DEFAULT_X0(NV)
+  return :(MVector{$(esc(NV))})
+end
 
+macro _DEFAULT_X(NN)
+  return :(MVector{$(esc(NN))})
+end
 
+macro _DEFAULT_S(NV)
+  return :(MMatrix{$(esc(NV))})
+end
 
+#include("utils/quaternion.jl")
 
-
-
-include("utils/quaternion.jl")
 include("types.jl")
+include("utils.jl")
+include("map/ctors.jl")
+include("staticarrays.jl")
+include("set.jl")
+#include("staticarrays.jl")
+#=
 include("utils/matrix.jl")
 include("utils/symplectic_s.jl")
-include("utils/gtpsa.jl")
+include("sanity.jl")
 
-include("probe.jl")
-include("map/ctors.jl")
+include("methods.jl")
+include("operators.jl")
+
+
 include("map/compose.jl")
-include("map/compose_it.jl")
+include("map/inv.jl")
+include("map/map_methods.jl")
+include("map/map_operators.jl")
 
-include("map/methods.jl")
-include("map/operators.jl")
 
 include("vectorfield/ctors.jl")
-include("vectorfield/methods.jl")
-include("vectorfield/operators.jl")
-include("map/inv.jl")
+include("vectorfield/vf_methods.jl")
+
 include("work.jl")
 include("normal.jl")
 
 include("utils/misc.jl")
-include("show.jl")
+=#
+#include("show.jl")
 
 
 

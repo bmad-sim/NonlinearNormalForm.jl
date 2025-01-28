@@ -1,292 +1,246 @@
 for t = (:DAMap, :TPSAMap)
 @eval begin
 
-"""
-    $($t)(m::Union{TaylorMap{S,T,U,V,W},Probe{S,T,U,V,W}}; use::UseType=m, idpt::Union{Nothing,Bool}=m.idpt) where {S,T,U,V,W}
+# Explicit type specification
+# Def change would be static (in type)
+# This one will probably not be used
+function $t{X0,X,Q,S}(m::Union{TaylorMap,Nothing}=nothing) where {X0,X,Q,S}
+  def = getdef(eltype(X))
+  out_x0 = init_x0(X0, def)
+  out_x = init_x(X, def, m)
+  out_q = init_q(Q, def)
+  out_s = init_s(S, def)
 
-Creates a new copy of the passed `TaylorMap` as a `$($t)`. 
+  out_m = $t(out_x0, out_x, out_q, out_s)
 
-If `use` is not specified, then the same GTPSA `Descriptor` as `m` will be used. If `use` is 
-specified (could be another `Descriptor`, `TaylorMap`, or a `Probe` containing `TPS`s), then the 
-copy of `m` as a new $($(t)) will have the same `Descriptor` as in `use.` The total number of variables + 
-parameters must agree, however the orders may be different.
-
-If `idpt` is not specified, then the same `idpt` as `m` will be used, else that specified will be used.
-"""
-function $t(m::Union{TaylorMap{S,T,U,V,W},Probe{S,T,U,V,W}}; use::UseType=m, idpt::Union{Nothing,Bool}=m.idpt) where {S,T,U,V,W}
-  numnn(use) == numnn(m) || error("Number of variables + parameters in GTPSAs for `m` and `use` disagree!")
-  
-  outm = zero($t{S,T,U,V,typeof(idpt)}, use=use, idpt=idpt)
-  nv = numvars(use)
-
-  # set variables
-  for i=1:nv
-    @inbounds setTPS!(outm.x[i], m.x[i], change=true)
-  end
-
-  # set quaternion
-  if !isnothing(outm.Q)
-    setTPS!(outm.Q.q0, m.Q.q0, change=true)
-    setTPS!(outm.Q.q1, m.Q.q1, change=true)
-    setTPS!(outm.Q.q2, m.Q.q2, change=true)
-    setTPS!(outm.Q.q3, m.Q.q3, change=true)
-  end
-  
-  # set the reference orbit properly
-  if nv > numvars(m)  # Increasing dimensionality
-    outm.x0[1:numvars(m)] .= m.x0
-    outm.x0[numvars(m)+1:nv] .= 0
-  else    # Reducing or keeping same dimensionality
-    outm.x0[1:nv] .= view(m.x0, 1:nv)
-  end
-
-  # set the FD matrix properly
-  if !isnothing(outm.E)
-    if nv > numvars(m)  # Increasing dimensionality
-      outm.E[1:numvars(m),1:numvars(m)] .= view(m.E, 1:numvars(m), 1:numvars(m))
-      outm.E[numvars(m)+1:nv,:] .= 0
-      outm.E[:,numvars(m)+1:nv] .= 0
-    else
-      outm.E[1:nv,1:nv] .= view(m.E, 1:nv, 1:nv)
+  if !isnothing(m)
+    nvars(def) == nvars(m) || error("Number of variables in TPSAs for `m` and output map disagree!")
+    nparams(def) == nparams(m) || error("Number of parameters in TPSAs for `m` and output map disagree!")   
+    out_m.x0 = m.x0
+    foreach((out_xi, xi)->TI.copy!(out_xi, xi), view(out_m.x, 1:nvars(def)), m.x)
+    if !isnothing(out_m.q)
+      foreach((out_qi, Qi)->copy!(out_qi, Qi), out_m.q, m.q)
+    end
+    if !isnothing(out_m.s)
+      out_m.s .= m.s
     end
   end
 
-  return outm
+
+  return $t(out_x0, out_x, out_q, out_s)
 end
 
-"""
-    $($t)(;use::UseType=GTPSA.desc_current, x::Vector=vars(getdesc(use)), x0::Vector=zeros(eltype(eltype(x)), numvars(use)), Q::Union{Quaternion,Nothing}=nothing, E::Union{Matrix,Nothing}=nothing, idpt::Union{Bool,Nothing}=nothing, spin::Union{Bool,Nothing}=nothing, FD::Union{Bool,Nothing}=nothing) 
-
-Constructs a $($t) with the passed vector of `TPS`/`ComplexTPS64` as the orbital ray, and optionally the entrance 
-coordinates `x0`, `Quaternion` for spin `Q`, and FD matrix `E` as keyword arguments. The helper keyword 
-arguments `spin` and `FD` may be set to `true` to construct a $($t) with an identity quaternion/FD 
-matrix, or `false` for no spin/FD. Note that setting `spin`/`FD` to any `Bool` value without `Q` or `E` 
-specified is type-unstable. This constructor also checks for consistency in the length of the orbital ray and GTPSA 
-`Descriptor`. The `use` kwarg may also be used to change the `Descriptor` of the TPSs, provided the number of variables 
-+ parameters agree (orders may be different).
-"""
-function $t(;use::UseType=GTPSA.desc_current, x::Vector=vars(getdesc(use)), x0::Vector=zeros(eltype(eltype(x)), numvars(use)), Q::Union{Quaternion,Nothing}=nothing, E::Union{Matrix,Nothing}=nothing, idpt::Union{Bool,Nothing}=nothing, spin::Union{Bool,Nothing}=nothing, FD::Union{Bool,Nothing}=nothing) 
-  Base.require_one_based_indexing(x,x0)
-
-  if !isnothing(Q)
-    if !isnothing(E)
-      T = Vector{promote_type(TPS{Float64},eltype(x0),eltype(x),eltype(Q),eltype(E))}
-      Base.require_one_based_indexing(E)
-    else
-      T = Vector{promote_type(TPS{Float64},eltype(x0),eltype(x),eltype(Q))}
-    end
+# Copy ctor including optional TPSA def change
+function $t(m::TaylorMap; def::Union{AbstractTPSADef,Nothing}=nothing)
+  if isnothing(def)
+    def = getdef(m)
   else
-    T = Vector{promote_type(TPS{Float64},eltype(x0),eltype(x))}
+    nvars(def) == nvars(m) || error("Number of variables in TPSAs for `m` and `def` disagree!")
+    nparams(def) == nparams(m) || error("Number of parameters in TPSAs for `m` and `def` disagree!")   
+  end
+  W = TI.numtype(eltype(m.x0))
+  X0 = promote_x0_type(typeof(m.x0), W)
+  X = promote_x_type(typeof(m.x), TI.init_tps_type(W, def))
+  Q = promote_q_type(typeof(m.q), TI.init_tps_type(W, def))
+  S = promote_s_type(typeof(m.s), W)
+
+  out_x0 = init_x0(X0, def)
+  out_x = init_x(X, def, m)
+  out_q = init_q(Q, def)
+  out_s = init_s(S, def)
+
+  out_m = $t(out_x0, out_x, out_q, out_s)
+  
+  out_m.x0 .= m.x0
+  foreach((out_xi, xi)->TI.copy!(out_xi, xi), view(out_m.x, 1:nvars(def)), m.x)
+  if !isnothing(out_m.q)
+    foreach((out_qi, Qi)->copy!(out_qi, Qi), out_m.q, m.q)
+  end
+  if !isnothing(out_m.s)
+    out_m.s .= m.s
   end
 
-  S = Vector{eltype(eltype(T))}
+  return out_m
+end
+
+# Kwarg-esque ctor:
+function $t(;
+  def::Union{AbstractTPSADef,Nothing}=nothing,
+  x0::Union{AbstractVector,Nothing}=nothing,
+  x::Union{AbstractVector,Nothing}=nothing,
+  x_matrix::Union{AbstractMatrix,UniformScaling,Nothing}=nothing,
+  q::Union{Quaternion,AbstractVector,UniformScaling,Nothing}=nothing,
+  q_map::Union{AbstractMatrix,Nothing}=nothing,
+  s::Union{AbstractMatrix,Nothing}=nothing,
+  spin::Union{Bool,Nothing}=nothing,
+  stochastic::Union{Bool,Nothing}=nothing,
+) 
+  if isnothing(def)
+    if !isnothing(x) && TI.is_tps_type(eltype(x)) isa TI.IsTPSType
+      def = getdef(first(x))
+    elseif !isnothing(q) && TI.is_tps_type(eltype(q))
+      def = getdef(first(q))
+    else
+      error("No TPSA definition has been provided, nor is one inferrable from the input arguments!")
+    end
+  end
+
+
+  # Assemble types:
+  W = promote_type(map(t->(!isnothing(t) ? TI.numtype(eltype(t)) : Float64), (x0, x, q, s))...)
+  TW = TI.init_tps_type(W, def)
+  X0 = isnothing(x0) ? @_DEFAULT_X0(nvars(def)){W} : promote_x0_type(typeof(x0), W)
+  X = isnothing(x) ? @_DEFAULT_X(ndiffs(def)){TW} : promote_x_type(typeof(x), TW)
   
-  # set up
   if isnothing(spin)
-    if isnothing(Q)
-      U = Nothing
-    else
-      U = Quaternion{eltype(T)}
-    end
+    Q = isnothing(q) && isnothing(q_map) ? Nothing : Quaternion{TW}
   elseif spin
-    U = Quaternion{eltype(T)}
+    Q = Quaternion{TW}
   else
-    error("For no spin tracking, please omit the spin kwarg or set spin=nothing") # For type stability
-    #U = Nothing # For type instability
+    Q = Nothing
   end
 
-  if isnothing(FD)
-    if isnothing(E)
-      V = Nothing
-    else
-      V = Matrix{eltype(eltype(T))}
-    end
-  elseif FD
-    V = Matrix{eltype(eltype(T))}
+  if isnothing(stochastic)
+    S = isnothing(s) ? Nothing : promote_s_type(typeof(s), W)
+  elseif stochastic
+    S = isnothing(s) ? @_DEFAULT_S(nvars(def)){W} : promote_s_type(typeof(s), W)
   else
-    error("For no fluctuation-dissipation, please omit the FD kwarg or set FD=nothing") # For type stability
-    #V = Nothing # For type instability
+    S = Nothing
   end
 
-  outm = zero($t{S,T,U,V,typeof(idpt)}, use = use, idpt = idpt)   
+  # Construct map:
+  out_x0 = init_x0(X0, def)
+  out_x = init_x(X, def)
+  out_q = init_q(Q, def)
+  out_s = init_s(S, def)
 
-  nv = numvars(use)
-  np = numparams(use)
-  nn = numnn(use)
-
-  # sanity checks
-  length(x0) <= nv || error("Number of variables $nv != length of reference orbit vector $(length(x0))!")
-  length(x) <= nv || error("Number of variables in GTPSAs for `x` and `use` disagree!")
+  out_m = $t(out_x0, out_x, out_q, out_s)
 
 
-  @views outm.x0 .= x0[1:length(outm.x0)]
-
-  # set variables
-  for i=1:nv
-    @inbounds setTPS!(outm.x[i], x[i], change=true)
+  if !isnothing(x0)
+    out_m.x0 .= x0
   end
 
-  # set quaternion
-  if !isnothing(outm.Q)
-    if !isnothing(Q)
-      setTPS!(outm.Q.q0, Q.q0, change=true)
-      setTPS!(outm.Q.q1, Q.q1, change=true)
-      setTPS!(outm.Q.q2, Q.q2, change=true)
-      setTPS!(outm.Q.q3, Q.q3, change=true)
-    else
-      outm.Q.q0[0] = 1
-    end
+  setray!(out_m.x, x=x, x_matrix=x_matrix)
+  if !isnothing(out_m.q) && !isnothing(q)
+    setquat!(out_m.q, q=q, q_map=q_map)
   end
 
-  if !isnothing(outm.E) && !isnothing(E)
-    (nv,nv) == size(E) || error("Size of FD matrix inconsistent with number of variables!")
-    outm.E .= E
+  if !isnothing(out_m.s) && !isnothing(s)
+    out_m.s .= s
   end
 
-  return outm
+  return out_m
 end
 
-"""
-    $($t)(M::AbstractMatrix; use::UseType=GTPSA.desc_current, x0::Vector=zeros(eltype(M), size(M,1)), Q::Union{Quaternion,Nothing}=nothing, E::Union{Matrix,Nothing}=nothing, idpt::Union{Bool,Nothing}=nothing, spin::Union{Bool,Nothing}=nothing, FD::Union{Bool,Nothing}=nothing) 
-
-This function could be optimized.
-
-`M` must represent a matrix with linear indexing.
-
-Constructs a $($t) with the passed matrix of scalars `M` as the linear part of the `TaylorMap`, and optionally the entrance 
-coordinates `x0`, `Quaternion` for spin `Q`, and FD matrix `E` as keyword arguments. The helper keyword 
-arguments `spin` and `FD` may be set to `true` to construct a $($t) with an identity quaternion/FD 
-matrix, or `false` for no spin/FD. Note that setting `spin`/`FD` to any `Bool` value without `Q` or `E` 
-specified is type-unstable. This constructor also checks for consistency in the length of the orbital ray and GTPSA 
-`Descriptor`.
-"""
-function $t(M::AbstractMatrix; use::UseType=GTPSA.desc_current, x0::Vector=zeros(eltype(M), size(M,1)), Q::Union{Quaternion,Nothing}=nothing, E::Union{Matrix,Nothing}=nothing, idpt::Union{Bool,Nothing}=nothing, spin::Union{Bool,Nothing}=nothing, FD::Union{Bool,Nothing}=nothing) 
-  Base.require_one_based_indexing(M)
-  nv = numvars(use)
-  nn = numnn(use)
-
-  nv >= size(M,1) || error("Number of rows in matrix > number of variables in GTPSA!")
-
-  if eltype(M) <: Complex
-    T = ComplexTPS64
-  else
-    T = TPS{Float64}
-  end
-
-  x = Vector{T}(undef, nv)
-  for i=1:size(M,1)
-    @inbounds x[i] = T(use=getdesc(use))
-    for j=1:size(M,2)
-      @inbounds x[i][j] = M[i,j]
-    end
-  end
-
-  return DAMap(use=use,x=x,x0=x0,Q=Q,E=E,idpt=idpt,spin=spin,FD=FD)
+end
 end
 
 
 """
-    zero(m::$($t))
+    zero(m::TaylorMap)
 
-Creates a $($t) with the same GTPSA `Descriptor`, and spin/FD on/off,
-as `m` but with all zeros for each quantity (except for the immutable parameters 
-in `x[nv+1:nn]`, which will be copied from `m.x`)
+Creates a zero `m` with the same properties as `m` including GTPSA `Descriptor`,
+spin, and stochasticity.
 """
-function zero(m::$t)
-  return zero(typeof(m), use=m, idpt=m.idpt)
-end
-
-function zero(::Type{$t{S,T,U,V,W}}; use::UseType=GTPSA.desc_current, idpt::W=nothing) where {S,T,U,V,W}
-  desc = getdesc(use)
-  nv = numvars(desc)
-  np = numparams(desc)
-  nn = numnn(desc)
-
-  x0 = similar(S, nv) 
-  x = similar(T, nn) 
-  Base.require_one_based_indexing(x0, x)
-
-  x0 .= 0
-
-  for i=1:nv
-    @inbounds x[i] = eltype(x)(use=desc)
-  end
-
-  # use same parameters if use isa TaylorMap and eltype(x) == eltype(use.x)
-  if use isa TaylorMap && eltype(x) == eltype(use.x)
-    @inbounds x[nv+1:nn] .= view(use.x, nv+1:nn)
-  else # allocate
-    if eltype(x) == TPS{Float64}
-      @inbounds x[nv+1:nn] .= params(desc)
-    else
-      @inbounds x[nv+1:nn] .= complexparams(desc)
-    end
-  end
-
-  if U != Nothing
-    q0 = eltype(x)(use=desc)
-    q1 = eltype(x)(use=desc)
-    q2 = eltype(x)(use=desc)
-    q3 = eltype(x)(use=desc)
-    Q = Quaternion(q0,q1,q2,q3)
-  else
-    Q = nothing
-  end
-
-  if V != Nothing
-    E = similar(V, nv, nv)
-    E .= 0
-  else
-    E = nothing
-  end
-  return $t(x0, x, Q, E, idpt)
-end
-
-function zero_op(m2::Union{$t,Number}, m1::Union{$t,Number})
-  outtype = promote_type(typeof(m1),typeof(m2))
-
-  # If either inputs are ComplexTPS64, use those parameters
-  if m2 isa $t
-    if m1 isa $t
-      if eltype(m2.x) == ComplexTPS64
-        return zero(outtype,use=m2,idpt=m2.idpt)
-      else
-        return zero(outtype,use=m1,idpt=m1.idpt)
-      end
-    else
-      return zero(outtype,use=m2,idpt=m2.idpt)
-    end
-  elseif m1 isa $t
-    return zero(outtype,use=m1,idpt=m1.idpt)
-  else
-    error("Cannot create new map based only on scalars")
-  end
-end
-
+zero(m::TaylorMap) = typeof(m)(m)
 
 """
-    one(m::$($t))
+    one(m::TaylorMap)
   
-Construct an identity map based on `m`.
+Creates an identity `m` with the same properties as `m`, including GTPSA
+`Descriptor`, spin, and stochasticity.
 """
-function one(m::$t)
-  return one(typeof(m), use=m, idpt=m.idpt)
+function one(m::TaylorMap)
+  out_m = zero(m)
+  nv = nvars(m)
+
+  for i in 1:nv
+    out_m.x[i][i] = 1
+  end
+
+  if !isnothing(m.q)
+    out_m.q.q0[0] = 1
+  end
+
+  return out_m
 end
 
-function one(t::Type{$t{S,T,U,V,W}}; use::UseType=GTPSA.desc_current, idpt::W=nothing) where {S,T,U,V,W}
-  m = zero(t, use=use, idpt=idpt)
-  nv = numvars(m)
+
+
+#=
+
+"""
+    $($t){X0,X,Q,S} <: TaylorMap{X0,X,Q,S}
   
-  for i=1:nv
-    @inbounds m.x[i][i] = 1
-  end
+A `$($t)` is a `TaylorMap` which composes and inverts $( $t == DAMap ? "with the scalar part IGNORED" : "with the scalar part INCLUDED").
+Both `DAMap` and `TPSAMap` have the exact same internal structures. See the documentation for 
+`TaylorMap` for more details of the differences.
 
-  if !isnothing(m.Q)
-    @inbounds m.Q.q0[0] = 1
-  end
+# Constructors
 
-  return m
-end
+1. Explicit type specification and optional copy:
 
-end
-end
+```julia
+$($t){X0,X,Q,S}(m::Union{TaylorMap,Nothing}=nothing) where {X0,X,Q,S}
+```
+
+where the types `{X0,X,Q,S}` of each field are specified (see `TaylorMap`). The TPSA definition 
+is inferred from `eltype(X)`, and must have the same number of variables + parameters as `m` if 
+provided. The result is a `$($t){X0,X,Q,S}` with values equal to `m`, up to any truncations, if 
+provided.
+
+------
+
+2. A copy constructor with possible change of `Descriptor` via
+
+```julia
+$($t)(m::Union{TaylorMap,Nothing}=nothing; def::Union{AbstractTPSADef,Nothing}=nothing)
+```
+
+The number variables and number of parameters must agree for a `Descriptor` change.
+
+------
+
+3. The general purpose constructor
+
+```julia
+$($t)(;
+  use::UseType=GTPSA.desc_current,
+  x0::Union{AbstractVector,Nothing}=nothing,
+  x::Union{AbstractVector,Nothing}=nothing,
+  x_matrix::Union{AbstractMatrix,UniformScaling,Nothing}=nothing,
+  q::Union{Quaternion,AbstractVector,UniformScaling,Nothing}=nothing,
+  q_map::Union{AbstractMatrix,Nothing}=nothing,
+  s::Union{AbstractMatrix,Nothing}=nothing,
+  spin::Union{Bool,Nothing}=nothing,
+  stochastic::Union{Bool,Nothing}=nothing,
+) 
+```
+If provided, the keyword arguments have the following behaviors:
+### Keyword Arguments
+- `use`        -- Specifies which GTPSA `Descriptor` to use. Must be a `Descriptor`, `TPS`, `TaylorMap`, or `VectorField`
+- `x0`         -- Sets the values of the reference orbit equal to `x0`. Must be an `AbstractVector`
+- `x`          -- Sets the orbital ray equal to `x`. Must be an `AbstractVector`
+- `x_matrix`   -- Sets the linear (and optionally nonlinear) part of the orbital ray equal to the transfer matrix `x_matrix`. This will be done after setting `x`. Must be an `AbstractMatrix` or `UniformScaling`
+- `q`          -- Sets the quaternion equal to `q`. Must be a `Quaternion`, `AbstractVector`, or `UniformScaling`
+- `q_map`      -- Sets the linear (and optionally nonlinear) part of the quaternion map equal to the transfer matrix `q_map`. This will be done after setting `q`. Must be an `AbstractMatrix`
+- `s`          -- Sets the stochastic kicks envelope matrix equal to `s`
+- `spin`       -- Boolean which specifies if spin tracking should be included. This is type-unstable and should not be used in performance-critical places
+- `stochastic` -- Boolean which specifies if the envelope matrix of stochastic kicks should be included. This is type-unstable and should not be used in performance-critical places
+
+All of the setter keyword arguments do NOT use the directly passed inputs in the map, rather set the 
+values equal to those after construction of the map. So for example:
+
+```julia
+julia> v = collect(Float64, 1:6);
+
+julia> m = DAMap(x0=v);
+
+julia> m.x0 === v
+false
+```
+"""
+$t
+
+=#

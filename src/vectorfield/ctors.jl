@@ -1,7 +1,66 @@
-# --- getvectorfield ---
-vec2fld!(na::Cint, tpsa::TPS{Float64}, m::Vector{TPS{Float64}}) = (@inline; GTPSA.mad_tpsa_vec2fld!(na, tpsa, m))
-vec2fld!(na::Cint, ctpsa::TPS{ComplexF64}, m::Vector{TPS{ComplexF64}}) = (@inline; GTPSA.mad_ctpsa_vec2fld!(na, ctpsa, m))
+#=
 
+Constructors for the VectorField. Includes zero, copy ctor (with possible 
+descriptor change), a ctor from a hamiltonian, and zero_op.
+
+=#
+
+# --- zero ---
+function zero(F::VectorField{T,U}) where {T,U}
+  return zero(typeof(F), use=F)
+end
+
+function zero(::Type{VectorField{T,U}}; use::UseType=GTPSA.desc_current) where {T,U}
+  desc = getdesc(use)
+  nv = numvars(desc)
+  x = similar(T, nv) 
+  Base.require_one_based_indexing(x)
+
+  for i=1:nv
+    x[i] = eltype(x)(use=desc)
+  end
+
+  if U != Nothing
+    q0 = eltype(x)(use=desc)
+    q1 = eltype(x)(use=desc)
+    q2 = eltype(x)(use=desc)
+    q3 = eltype(x)(use=desc)
+    Q = Quaternion(q0,q1,q2,q3)
+  else
+    Q = nothing
+  end
+
+  return VectorField(x, Q)
+end
+
+
+# --- copy ctor (map or vector field) --- 
+"""
+    VectorField(m::Union{TaylorMap,VectorField}, use::UseType=m)
+
+Creates a copy `VectorField` from the map or vector field with 
+possible GTPSA descriptor change if specified.
+"""
+function VectorField(m::Union{TaylorMap,VectorField}; use::UseType=m)
+  F = zero(VectorField{typeof(m.x),typeof(m.Q)}, use=use) 
+  nv = numvars(F)
+  for i=1:nv
+    setTPS!(F.x[i], m.x[i], change=true)
+  end
+
+  # set quaternion
+  if !isnothing(F.Q)
+    setTPS!(F.Q.q0, m.Q.q0, change=true)
+    setTPS!(F.Q.q1, m.Q.q1, change=true)
+    setTPS!(F.Q.q2, m.Q.q2, change=true)
+    setTPS!(F.Q.q3, m.Q.q3, change=true)
+  end
+  return F
+end
+
+
+
+# --- from hamiltonian (getvectorfield) ---
 """
 VectorField(h::TPS; Q::Union{Quaternion,Nothing}=nothing, spin::Union{Bool,Nothing}=nothing)
 
@@ -32,67 +91,32 @@ function VectorField(h::TPS; Q::Union{Quaternion,Nothing}=nothing, spin::Union{B
   end
 
   outF = zero(VectorField{T,U},use=h)
-  return outF
 
   nv = numvars(h)
-  @assert length(work_low) >= nv "Incorrect length for work_low; received $(length(work_low)), require >=$nv"
+  GTPSA.vec2fld!(nv, h.tpsa, outF.x)
 
-  map!(t->t.tpsa, work_low, outF.x)
-  vec2fld!(nv, h.tpsa, work_low)
+  if !isnothing(outF.Q) && !isnothing(Q)
+    outF.Q .= Q
+  end
 
   return outF
 end
 
+
 """
-    VectorField(m::DAMap)
 
-Creates a `VectorField` from the map
+    zero_op(F2::VectorField, F1::Union{VectorField,Number})
+
+Returns a new zero VectorField with type equal to promoted type of `F1` and `F2`.
+`F2` could be a number. This function is easy for VectorField because VectorFields 
+do not carry the immutable parameters like maps do.
 """
-function VectorField(m::DAMap)
-  F =  zero(VectorField{typeof(m.x),typeof(m.Q)}, use=m) 
-  for i=1:numvars(F)
-    F.x[i] = copy(m.x[i])
-  end
-
-  if !isnothing(m.Q)
-    F.Q.q0 = copy(m.Q.q0)
-    F.Q.q1 = copy(m.Q.q1)
-    F.Q.q2 = copy(m.Q.q2)
-    F.Q.q3 = copy(m.Q.q3)
-  end
-  return F
+function zero_op(F2::VectorField, F1::Union{VectorField,Number})
+  outtype = promote_type(typeof(F1),typeof(F2))
+  return zero(outtype, use=F2)
 end
 
 
-# --- zero ---
-function zero(F::VectorField{T,U}) where {T,U}
-  return zero(typeof(F), use=F)
-end
-
-function zero(::Type{VectorField{T,U}}; use::UseType=GTPSA.desc_current) where {T,U}
-  desc = getdesc(use)
-  nv = numvars(desc)
-  np = numparams(desc)
-
-  x = similar(T, nv) 
-  Base.require_one_based_indexing(x)
-
-  for i=1:nv
-    @inbounds x[i] = eltype(x)(use=desc)
-  end
-
-  if U != Nothing
-    q0 = eltype(x)(use=desc)
-    q1 = eltype(x)(use=desc)
-    q2 = eltype(x)(use=desc)
-    q3 = eltype(x)(use=desc)
-    Q = Quaternion(q0,q1,q2,q3)
-  else
-    Q = nothing
-  end
-
-  return VectorField(x, Q)
-end
 
 #= --- one ---
 """
