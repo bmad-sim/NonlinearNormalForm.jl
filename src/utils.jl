@@ -1,18 +1,11 @@
 # =================================================================================== #
-# GTPSA helper functions
-
-maxord(m::Union{TaylorMap,VectorField}) = unsafe_load(getdesc(m).desc).mo
-prmord(m::Union{TaylorMap,VectorField}) = unsafe_load(getdesc(m).desc).po
-vpords(m::Union{TaylorMap,VectorField}) = unsafe_wrap(Vector{UInt8}, unsafe_load(getdesc(m).desc).no, numnn(m))
-vords(m::Union{TaylorMap,VectorField}) = unsafe_wrap(Vector{UInt8}, unsafe_load(getdesc(m).desc).no, numvars(m))
-pords(m::Union{TaylorMap,VectorField}) = unsafe_wrap(Vector{UInt8}, unsafe_load(getdesc(m).desc).no, numparams(m))
-
-# GTPSA provides these functions for only pure TPS/ComplexTPSs and Descriptor
-getdesc(m::Union{TaylorMap{S,T,U,V},VectorField{T,U}}) where {S,T,U,V} = getdesc(first(m.x))
-numvars(m::Union{TaylorMap{S,T,U,V},VectorField{T,U}}) where {S,T,U,V} = numvars(first(m.x))
-numparams(m::Union{TaylorMap{S,T,U,V},VectorField{T,U}}) where {S,T,U,V} = numparams(first(m.x))
-numnn(m::Union{TaylorMap{S,T,U,V},VectorField{T,U}}) where {S,T,U,V} = numnn(first(m.x))
-
+# Helper functions
+getdef(m::Union{TaylorMap,VectorField}) = TI.getdef(first(m.x))
+nvars(m::Union{TaylorMap,VectorField}) = length(m.x0)
+nparams(m::Union{TaylorMap,VectorField}) = length(m.x) - length(m.x0)
+ndiffs(m::Union{TaylorMap,VectorField}) = length(m.x)
+nmonos(m::Union{TaylorMap,VectorField}) = TI.nmonos(first(m.x))
+maxord(m::Union{TaylorMap,VectorField}) = TI.maxord(first(m.x))
 # =================================================================================== #
 # Array type promotion
 

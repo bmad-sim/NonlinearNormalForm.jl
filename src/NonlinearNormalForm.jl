@@ -28,18 +28,22 @@ import Base: ∘,
              unsafe_convert
 
 import LinearAlgebra: norm,
-                      dot,
-                      mul!
+                      dot
 
+import TPSAInterface as TI
+import TPSAInterface: AbstractTPSADef, getdef, nvars, nparams, ndiffs, maxord, nmonos
 using LinearAlgebra,
       SkewLinearAlgebra,
       Printf,
-      Reexport,
+      StaticArrays,
       DelimitedFiles
       
 using ReferenceFrameRotations: Quaternion
-#import ReferenceFrameRotations: show
 
+
+
+#import ReferenceFrameRotations: show
+#=
 @reexport using GTPSA
 
 # We want these guys in our workspace:
@@ -63,7 +67,7 @@ import GTPSA: Desc,
               getord!,
               compose!             
 
-
+=#
 export        TaylorMap, 
               Quaternion,    
               TPSAMap, 
@@ -116,14 +120,28 @@ export        TaylorMap,
 
 
 
-coast_threshold::Float64 = eps(Float64)
+const COAST = eps(Float64)
 
+macro _DEFAULT_X0(NV)
+  return :(MVector{$(esc(NV))})
+end
+
+macro _DEFAULT_X(NN)
+  return :(MVector{$(esc(NN))})
+end
+
+macro _DEFAULT_S(NV)
+  return :(MMatrix{$(esc(NV))})
+end
 
 #include("utils/quaternion.jl")
 
 include("types.jl")
 include("utils.jl")
 include("map/ctors.jl")
+include("staticarrays.jl")
+include("set.jl")
+#include("staticarrays.jl")
 #=
 include("utils/matrix.jl")
 include("utils/symplectic_s.jl")
@@ -147,7 +165,7 @@ include("normal.jl")
 
 include("utils/misc.jl")
 =#
-include("show.jl")
+#include("show.jl")
 
 
 
