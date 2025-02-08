@@ -108,6 +108,65 @@ end
   TI.is_tps_type(eltype(X)) isa TI.IsTPSType || error("Orbital ray element type must be a truncated power series type supported by `TPSAInterface.jl`!")
   Q == Nothing || eltype(Q) == eltype(X) || error("Quaternion number type $(eltype(Q)) must be $(eltype(X)) (equal to orbital ray)")
 end
+
+
+# =================================================================================== #
+# Field initialization functions.
+# Note that even when a TPSA definition is inferrable from the types (X0, X, ...),
+# we still explicitly pass the def in case it is not. This is redundant, however ensures 
+# flexibility for different TPSA packages/modes.
+
+# These may be overrided by external array packages.
+function init_x0(::Type{X0_0}, ::Type{W}, def::AbstractTPSADef) where {X0_0,W}
+  nv = nvars(def)
+  x0 = similar(X0_0, W, nv)
+  x0 .= 0
+  return x0
+end
+
+function init_x(::Type{X_0}, ::Type{W}, def::AbstractTPSADef, reuse::Union{Nothing,TaylorMap}=nothing) where {X_0,W}
+  nv = nvars(def)
+  nn = ndiffs(def)
+  x = similar(X_0, nn)
+  for i in 1:nv
+    x[i] = TI.init_tps(TI.numtype(eltype(X_0)), def) 
+  end
+  # use same parameters if use isa TaylorMap and eltype(x) == eltype(reuse.x)
+  if reuse isa TaylorMap && eltype(x) == eltype(reuse.x)
+    x[nv+1:nn] .= view(reuse.x, nv+1:nn)
+  else # allocate
+    for i in nv+1:nn
+      x[i] = TI.init_tps(TI.numtype(eltype(X_0)), def) 
+      TI.seti!(x[i], 1, i)
+    end
+  end
+  return x
+end
+
+function init_q(::Type{Q}, def::AbstractTPSADef) where {Q}
+  if Q != Nothing
+    q0 = TI.init_tps(TI.numtype(eltype(Q)), def) 
+    q1 = TI.init_tps(TI.numtype(eltype(Q)), def) 
+    q2 = TI.init_tps(TI.numtype(eltype(Q)), def) 
+    q3 = TI.init_tps(TI.numtype(eltype(Q)), def) 
+    q = Quaternion(q0,q1,q2,q3)
+  else
+    q = nothing
+  end
+  return q
+end
+
+function init_s(::Type{S}, def::AbstractTPSADef) where {S}
+  if S != Nothing
+    nv = nvars(def)
+    s = similar(S, nv, nv)
+    s .= 0
+  else
+    s = nothing
+  end
+  return s
+end
+
  
 
 # =================================================================================== #
@@ -178,59 +237,6 @@ function real(::Type{VectorField{X,Q}}) where {X,Q}
 end
 
 
-# =================================================================================== #
-# Field initialization functions.
-
-# These may be overrided by external array packages.
-function init_x0(::Type{X0}, def::AbstractTPSADef) where {X0}
-  nv = nvars(def)
-  x0 = similar(X0, nv)
-  x0 .= 0
-  return x0
-end
-
-function init_x(::Type{X}, def::AbstractTPSADef, reuse::Union{Nothing,TaylorMap}=nothing) where {X}
-  nv = nvars(def)
-  nn = ndiffs(def)
-  x = similar(X, nn)
-  for i in 1:nv
-    x[i] = TI.init_tps(TI.numtype(eltype(X)), def) 
-  end
-  # use same parameters if use isa TaylorMap and eltype(x) == eltype(reuse.x)
-  if reuse isa TaylorMap && eltype(x) == eltype(reuse.x)
-    x[nv+1:nn] .= view(reuse.x, nv+1:nn)
-  else # allocate
-    for i in nv+1:nn
-      x[i] = TI.init_tps(TI.numtype(eltype(X)), def) 
-      TI.seti!(x[i], 1, i)
-    end
-  end
-  return x
-end
-
-function init_q(::Type{Q}, def::AbstractTPSADef) where {Q}
-  if Q != Nothing
-    q0 = TI.init_tps(TI.numtype(eltype(Q)), def) 
-    q1 = TI.init_tps(TI.numtype(eltype(Q)), def) 
-    q2 = TI.init_tps(TI.numtype(eltype(Q)), def) 
-    q3 = TI.init_tps(TI.numtype(eltype(Q)), def) 
-    q = Quaternion(q0,q1,q2,q3)
-  else
-    q = nothing
-  end
-  return q
-end
-
-function init_s(::Type{S}, def::AbstractTPSADef) where {S}
-  if S != Nothing
-    nv = nvars(def)
-    s = similar(S, nv, nv)
-    s .= 0
-  else
-    s = nothing
-  end
-  return s
-end
 
 
 

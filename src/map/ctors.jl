@@ -1,65 +1,66 @@
+function copy!(m::Union{TaylorMap,VectorField}, m1::Union{TaylorMap,VectorField})
+  checkstates(m, m1)
+  if m1 isa TaylorMap && m isa TaylorMap
+    m.x0 = m1.x0
+  end
+  NV = nvars(m)
+  foreach((xi, x1i)->TI.copy!(xi, x1i), view(m.x, 1:NV), m1.x)
+  if !isnothing(m.q)
+    foreach((qi, q1i)->copy!(qi, q1i), m.q, m1.q)
+  end
+  if !isnothing(m.s) && m1 isa TaylorMap
+    m.s .= m1.s
+  end
+  return m
+end
+
+
+"""
+    zero(m::TaylorMap)
+
+Creates a zero `m` with the same properties as `m` including TPSA definiton,
+spin, and stochasticity.
+"""
+function zero(m::TaylorMap) 
+  return _zero_map(typeof(m), getdef(m), m)
+end
+
 for t = (:DAMap, :TPSAMap)
 @eval begin
 
-# Explicit type specification
-# Def change would be static (in type)
-# This one will probably not be used
-function $t{X0,X,Q,S}(m::Union{TaylorMap,Nothing}=nothing) where {X0,X,Q,S}
-  def = getdef(eltype(X))
+# Lowest-level, internal
+function _zero_map(::Type{$t{X0,X,Q,S}}, def::AbstractTPSADef, reuse::Union{TaylorMap,Nothing}) where {X0,X,Q,S}
   out_x0 = init_x0(X0, def)
-  out_x = init_x(X, def, m)
+  out_x = init_x(X, def, reuse)
   out_q = init_q(Q, def)
   out_s = init_s(S, def)
-
   out_m = $t(out_x0, out_x, out_q, out_s)
+  return out_m
+end
 
+function zero(::Type{$t{X0,X,Q,S}}) where {X0,X,Q,S}
+  return _zero_map($t{X0,X,Q,S}, getdef(eltype(X)), nothing)
+end
+
+# Explicit type specification
+# Def change would be static (in type)
+function $t{X0,X,Q,S}(m::Union{TaylorMap,Nothing}=nothing) where {X0,X,Q,S}
+  out_m = _zero_map($t{X0,X,Q,S}, getdef(eltype(X)), m)
   if !isnothing(m)
-    nvars(def) == nvars(m) || error("Number of variables in TPSAs for `m` and output map disagree!")
-    nparams(def) == nparams(m) || error("Number of parameters in TPSAs for `m` and output map disagree!")   
-    out_m.x0 = m.x0
-    foreach((out_xi, xi)->TI.copy!(out_xi, xi), view(out_m.x, 1:nvars(def)), m.x)
-    if !isnothing(out_m.q)
-      foreach((out_qi, Qi)->copy!(out_qi, Qi), out_m.q, m.q)
-    end
-    if !isnothing(out_m.s)
-      out_m.s .= m.s
-    end
+    copy!(out_m, m)
   end
-
-
-  return $t(out_x0, out_x, out_q, out_s)
+  return out_m
 end
 
 # Copy ctor including optional TPSA def change
-function $t(m::TaylorMap; def::Union{AbstractTPSADef,Nothing}=nothing)
-  if isnothing(def)
-    def = getdef(m)
-  else
-    nvars(def) == nvars(m) || error("Number of variables in TPSAs for `m` and `def` disagree!")
-    nparams(def) == nparams(m) || error("Number of parameters in TPSAs for `m` and `def` disagree!")   
-  end
+function $t(m::TaylorMap; def::AbstractTPSADef=getdef(m))
   W = TI.numtype(eltype(m.x0))
   X0 = promote_x0_type(typeof(m.x0), W)
   X = promote_x_type(typeof(m.x), TI.init_tps_type(W, def))
   Q = promote_q_type(typeof(m.q), TI.init_tps_type(W, def))
   S = promote_s_type(typeof(m.s), W)
-
-  out_x0 = init_x0(X0, def)
-  out_x = init_x(X, def, m)
-  out_q = init_q(Q, def)
-  out_s = init_s(S, def)
-
-  out_m = $t(out_x0, out_x, out_q, out_s)
-  
-  out_m.x0 .= m.x0
-  foreach((out_xi, xi)->TI.copy!(out_xi, xi), view(out_m.x, 1:nvars(def)), m.x)
-  if !isnothing(out_m.q)
-    foreach((out_qi, Qi)->copy!(out_qi, Qi), out_m.q, m.q)
-  end
-  if !isnothing(out_m.s)
-    out_m.s .= m.s
-  end
-
+  out_m = _zero_map($t{X0,X,Q,S}, def, m)
+  copy!()
   return out_m
 end
 
