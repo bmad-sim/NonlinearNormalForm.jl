@@ -15,18 +15,19 @@ become way too verbose when using "where". All sanity checks are type stable,
 and the checks should be optimized away in the JIT compilation if valid.
 
 =#
-@inline checkspin(stuff...) = all(x->isnothing(x.Q), stuff) || all(x->!isnothing(x.Q), stuff) || error("Atleast one map/vector field includes spin while others do not")
-@inline checkstochastic(maps::TaylorMap...) = all(x->isnothing(x.E), maps) || all(x->!isnothing(x.E), maps) || error("Atleast one map includes stochasticity while others do not")
-
-@inline checkstates(stuff...) = checktpsas(stuff...) && checkspin(filter(x->(x isa Union{TaylorMap,VectorField}), stuff)...) && checkstochastic(filter(x->(x isa TaylorMap), stuff)...)
+@inline checkspin(stuff...) = all(x->isnothing(x.q), stuff) || all(x->!isnothing(x.q), stuff) || error("Atleast one map/vector field includes spin while others do not")
+@inline checkstochastic(maps::TaylorMap...) = all(x->isnothing(x.s), maps) || all(x->!isnothing(x.s), maps) || error("Atleast one map includes stochasticity while others do not")
 @inline function checktpsas(stuff...)
   NV = nvars(first(stuff))
   NN = ndiffs(first(stuff))
   return all(stuff) do m
-    nvars(m) == NV || error("Atleast one map/vector field has TPSA with disagreeing number of variables")
-    ndiffs(m) == NN || error("Atleast one map/vector field has TPSA with disagreeing number of parameters")
+    nvars(m) == NV || error("Atleast one argument has TPSA with different number of variables")
+    ndiffs(m) == NN || error("Atleast one argument has TPSA with different number of parameters")
   end
 end
+
+@inline checkstates(stuff...) = checktpsas(stuff...) && checkspin(filter(x->(x isa Union{TaylorMap,VectorField}), stuff)...) && checkstochastic(filter(x->(x isa TaylorMap), stuff)...)
+
 
 # checkinplace is preferred to using the "where {S,..}.." syntax as this 
 # gives descriptive errors rather than just "function not found"

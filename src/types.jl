@@ -105,8 +105,13 @@ struct VectorField{X<:AbstractVector,Q<:Union{Quaternion,Nothing},}
 end
 
 @inline function checkmapsanity(::VectorField{X,Q}) where {X,Q}
-  TI.is_tps_type(eltype(X)) isa TI.IsTPSType || error("Orbital ray element type must be a truncated power series type supported by `TPSAInterface.jl`!")
+  # Static checks:
+  TI.is_tps_type(eltype(X)) isa TI.IsTPSType || error("Orbital ray element type must be a truncated power series type supported by `TPSAInterface.jl`")
   Q == Nothing || eltype(Q) == eltype(X) || error("Quaternion number type $(eltype(Q)) must be $(eltype(X)) (equal to orbital ray)")
+
+  # Runtime checks:
+  ndiffs(first(m.x)) == length(m.x) || error("Orbital ray length disagrees with number of differentials (variables + parameters) in TPSA")
+  Q == Nothing || getdef(first(m.q)) == getdef(first(m.x)) || error("Quaternion TPSA definition disagrees with orbital ray TPSA definition")
 end
 
 
@@ -117,33 +122,33 @@ end
 # flexibility for different TPSA packages/modes.
 
 # These may be overrided by external array packages.
-function init_x0(::Type{X0_0}, ::Type{W}, def::AbstractTPSADef) where {X0_0,W}
+function init_x0(::Type{X0}, def::AbstractTPSADef) where {X0<:AbstractVector}
   nv = nvars(def)
-  x0 = similar(X0_0, W, nv)
+  x0 = similar(X0, nv)
   x0 .= 0
   return x0
 end
 
-function init_x(::Type{X_0}, ::Type{W}, def::AbstractTPSADef, reuse::Union{Nothing,TaylorMap}=nothing) where {X_0,W}
+function init_x(::Type{X}, def::AbstractTPSADef, reuse::Union{Nothing,TaylorMap}=nothing) where {X<:AbstractVector}
   nv = nvars(def)
   nn = ndiffs(def)
-  x = similar(X_0, nn)
+  x = similar(X, nn)
   for i in 1:nv
-    x[i] = TI.init_tps(TI.numtype(eltype(X_0)), def) 
+    x[i] = TI.init_tps(TI.numtype(eltype(X)), def) 
   end
-  # use same parameters if use isa TaylorMap and eltype(x) == eltype(reuse.x)
-  if reuse isa TaylorMap && eltype(x) == eltype(reuse.x)
+  # use same parameters if reuse isa TaylorMap and eltype(x) == eltype(reuse.x)
+  if reuse isa TaylorMap && eltype(x) == eltype(reuse.x) && def == getdef(reuse)
     x[nv+1:nn] .= view(reuse.x, nv+1:nn)
   else # allocate
     for i in nv+1:nn
-      x[i] = TI.init_tps(TI.numtype(eltype(X_0)), def) 
+      x[i] = TI.init_tps(TI.numtype(eltype(X)), def) 
       TI.seti!(x[i], 1, i)
     end
   end
   return x
 end
 
-function init_q(::Type{Q}, def::AbstractTPSADef) where {Q}
+function init_q(::Type{Q}, def::AbstractTPSADef) where {Q<:Union{Nothing,Quaternion}}
   if Q != Nothing
     q0 = TI.init_tps(TI.numtype(eltype(Q)), def) 
     q1 = TI.init_tps(TI.numtype(eltype(Q)), def) 
@@ -156,7 +161,7 @@ function init_q(::Type{Q}, def::AbstractTPSADef) where {Q}
   return q
 end
 
-function init_s(::Type{S}, def::AbstractTPSADef) where {S}
+function init_s(::Type{S}, def::AbstractTPSADef) where {S<:Union{Nothing,AbstractMatrix}}
   if S != Nothing
     nv = nvars(def)
     s = similar(S, nv, nv)
@@ -167,11 +172,9 @@ function init_s(::Type{S}, def::AbstractTPSADef) where {S}
   return s
 end
 
- 
-
 # =================================================================================== #
 # Field promotion rules
-
+#=
 # Promotion utility functions for easy override by external array packages
 # Should promote the element type and return it as a vector (x,x0) or matrix (s)
 # with dimensionality specified by Val.
@@ -189,16 +192,17 @@ promote_q_type(::Type{Nothing}, ::Type{G}) where {G<:Union{Number,Complex}} = No
 promote_s_type(::Type{Nothing}, ::Type{G}) where {G<:Union{Number,Complex}} = Nothing
 real_q_type(::Type{Nothing}) = Nothing
 real_s_type(::Type{Nothing}) = Nothing
+=#
 
 for t = (:DAMap, :TPSAMap)
 @eval begin    
 
 function promote_rule(::Type{$t{X0,X,Q,S}}, ::Type{G}) where {X0,X,Q,S,G<:Union{Number,Complex}}
-  outS = promote_x0_type(X0, G)
-  outT = promote_x_type(X, G)
-  outU = promote_q_type(Q, G)
-  outV = promote_s_type(S, G)
-  return $t{outS,outT,outU,outV}
+  out_X0 = similar_eltype(X0, promote_type(eltype(X0), G))
+  out_X = similar_eltype(X, promote_type(eltype(X), G))
+  out_Q = isnothing(Q) ? Nothing : similar_eltype(Q, promote_type(eltype(Q), G))
+  out_S = isnothing(S) ? Nothing : similar_eltype(S, promote_type(eltype(S), G))
+  return $t{out_X0,out_X,out_Q,out_S}
 end
 
 # --- complex type ---
@@ -208,20 +212,21 @@ end
 
 # --- real type ---
 function real(::Type{$t{X0,X,Q,S}}) where {X0,X,Q,S}
-  outS = real_x0_type(X0)
-  outT = real_x_type(X)
-  outU = real_q_type(Q)
-  outV = real_s_type(S)
-  return $t{outS,outT,outU,outV}
+  out_X0 = similar_eltype(X0, real(eltype(X0)))
+  out_X = similar_eltype(X, real(eltype(X)))
+  out_Q = isnothing(Q) ? Nothing : similar_eltype(Q, real(eltype(Q)))
+  out_S = isnothing(S) ? Nothing : similar_eltype(S, real(eltype(S)))
+  return $t{out_X0,out_X,out_Q,out_S}
 end
 
 end
 end
 
+# VectorField:
 function promote_rule(::Type{VectorField{X,Q}}, ::Type{G}) where {X,Q,G<:Union{Number,Complex}}
-  outT = promote_x_type(X, G)
-  outU = promote_q_type(Q, G)
-  return VectorField{outT,outU}
+  out_X = similar_eltype(X, promote_type(eltype(X), G))
+  out_Q = similar_eltype(Q, promote_type(eltype(Q), G))
+  return VectorField{out_X,out_Q}
 end
 
 # --- complex type ---
@@ -231,9 +236,9 @@ end
 
 # --- real type ---
 function real(::Type{VectorField{X,Q}}) where {X,Q}
-  outT = real_x_type(X)
-  outU = real_q_type(Q)
-  return VectorField{outT,outU}
+  out_X = similar_eltype(X, real(eltype(X)))
+  out_Q = isnothing(Q) ? Nothing : similar_eltype(Q, real(eltype(Q)))
+  return VectorField{out_X,out_Q}
 end
 
 

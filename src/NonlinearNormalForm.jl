@@ -131,7 +131,7 @@ macro _DEFAULT_X(NN)
 end
 
 macro _DEFAULT_S(NV)
-  return :(MMatrix{$(esc(NV))})
+  return :(MMatrix{$(esc(NV)),$(esc(NV))})
 end
 
 #include("utils/quaternion.jl")
@@ -141,6 +141,7 @@ include("utils.jl")
 include("map/ctors.jl")
 include("staticarrays.jl")
 include("set.jl")
+include("sanity.jl")
 #include("staticarrays.jl")
 #=
 include("utils/matrix.jl")

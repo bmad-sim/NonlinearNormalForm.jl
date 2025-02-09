@@ -1,12 +1,12 @@
 function copy!(m::Union{TaylorMap,VectorField}, m1::Union{TaylorMap,VectorField})
   checkstates(m, m1)
   if m1 isa TaylorMap && m isa TaylorMap
-    m.x0 = m1.x0
+    m.x0 .= m1.x0
   end
   NV = nvars(m)
   foreach((xi, x1i)->TI.copy!(xi, x1i), view(m.x, 1:NV), m1.x)
   if !isnothing(m.q)
-    foreach((qi, q1i)->copy!(qi, q1i), m.q, m1.q)
+    foreach((qi, q1i)->TI.copy!(qi, q1i), m.q, m1.q)
   end
   if !isnothing(m.s) && m1 isa TaylorMap
     m.s .= m1.s
@@ -14,6 +14,7 @@ function copy!(m::Union{TaylorMap,VectorField}, m1::Union{TaylorMap,VectorField}
   return m
 end
 
+copy(m::Union{TaylorMap,VectorField}) = (out_m = zero(m); copy!(out_m, m); return out_m)
 
 """
     zero(m::TaylorMap)
@@ -41,9 +42,11 @@ end
 function zero(::Type{$t{X0,X,Q,S}}) where {X0,X,Q,S}
   return _zero_map($t{X0,X,Q,S}, getdef(eltype(X)), nothing)
 end
-
+#=
 # Explicit type specification
 # Def change would be static (in type)
+# The current problem with this is that dynamic gtpsa resolution would have a problem
+# because GPSA.desc_current will be used
 function $t{X0,X,Q,S}(m::Union{TaylorMap,Nothing}=nothing) where {X0,X,Q,S}
   out_m = _zero_map($t{X0,X,Q,S}, getdef(eltype(X)), m)
   if !isnothing(m)
@@ -51,16 +54,16 @@ function $t{X0,X,Q,S}(m::Union{TaylorMap,Nothing}=nothing) where {X0,X,Q,S}
   end
   return out_m
 end
-
+=#
 # Copy ctor including optional TPSA def change
 function $t(m::TaylorMap; def::AbstractTPSADef=getdef(m))
-  W = TI.numtype(eltype(m.x0))
-  X0 = promote_x0_type(typeof(m.x0), W)
-  X = promote_x_type(typeof(m.x), TI.init_tps_type(W, def))
-  Q = promote_q_type(typeof(m.q), TI.init_tps_type(W, def))
-  S = promote_s_type(typeof(m.s), W)
+  checktpsas(m, def)
+  X0 = typeof(m.x0)
+  X = similar_eltype(typeof(m.x), TI.init_tps_type(eltype(X0), def))
+  Q = isnothing(m.q) ? Nothing : Quaternion{TI.init_tps_type(eltype(X0), def)}
+  S = typeof(m.s)
   out_m = _zero_map($t{X0,X,Q,S}, def, m)
-  copy!()
+  copy!(out_m, m)
   return out_m
 end
 
@@ -79,7 +82,7 @@ function $t(;
   if isnothing(def)
     if !isnothing(x) && TI.is_tps_type(eltype(x)) isa TI.IsTPSType
       def = getdef(first(x))
-    elseif !isnothing(q) && TI.is_tps_type(eltype(q))
+    elseif !isnothing(q) && TI.is_tps_type(eltype(q)) isa TI.IsTPSType
       def = getdef(first(q))
     else
       error("No TPSA definition has been provided, nor is one inferrable from the input arguments!")
@@ -90,8 +93,8 @@ function $t(;
   # Assemble types:
   W = promote_type(map(t->(!isnothing(t) ? TI.numtype(eltype(t)) : Float64), (x0, x, q, s))...)
   TW = TI.init_tps_type(W, def)
-  X0 = isnothing(x0) ? @_DEFAULT_X0(nvars(def)){W} : promote_x0_type(typeof(x0), W)
-  X = isnothing(x) ? @_DEFAULT_X(ndiffs(def)){TW} : promote_x_type(typeof(x), TW)
+  X0 = isnothing(x0) ? @_DEFAULT_X0(nvars(def)){W} : similar_eltype(typeof(x0), W)
+  X = isnothing(x) ? @_DEFAULT_X(ndiffs(def)){TW} : similar_eltype(typeof(x), TW)
   
   if isnothing(spin)
     Q = isnothing(q) && isnothing(q_map) ? Nothing : Quaternion{TW}
@@ -102,9 +105,9 @@ function $t(;
   end
 
   if isnothing(stochastic)
-    S = isnothing(s) ? Nothing : promote_s_type(typeof(s), W)
+    S = isnothing(s) ? Nothing : similar_eltype(typeof(s), W)
   elseif stochastic
-    S = isnothing(s) ? @_DEFAULT_S(nvars(def)){W} : promote_s_type(typeof(s), W)
+    S = isnothing(s) ? @_DEFAULT_S(nvars(def)){W} : similar_eltype(typeof(s), W)
   else
     S = Nothing
   end
@@ -136,7 +139,7 @@ end
 
 end
 end
-
+#=
 
 """
     zero(m::TaylorMap)
@@ -145,7 +148,7 @@ Creates a zero `m` with the same properties as `m` including GTPSA `Descriptor`,
 spin, and stochasticity.
 """
 zero(m::TaylorMap) = typeof(m)(m)
-
+=#
 """
     one(m::TaylorMap)
   
@@ -157,11 +160,11 @@ function one(m::TaylorMap)
   nv = nvars(m)
 
   for i in 1:nv
-    out_m.x[i][i] = 1
+    TI.seti!(out_m.x[i], 1, i)
   end
 
   if !isnothing(m.q)
-    out_m.q.q0[0] = 1
+    TI.seti!(out_m.q.q0, 1, 0)
   end
 
   return out_m

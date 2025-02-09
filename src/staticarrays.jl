@@ -1,39 +1,30 @@
 # Field promotion rules
-promote_x0_type(::Type{X0}, ::Type{G}) where {X0<:StaticArray,G<:Union{Number,Complex}} = MVector{Size(X0)[1], promote_type(eltype(X0), G)} 
-promote_x_type(::Type{X}, ::Type{G}) where {X<:StaticArray,G<:Union{Number,Complex}} = similar_type(X, promote_type(eltype(X), G), Size(Size(X)[1]))
-promote_s_type(::Type{S}, ::Type{G}) where {S<:StaticArray,G<:Union{Number,Complex}} = MMatrix{Size(S)[1], Size(S)[1], promote_type(eltype(S), G)} 
-real_x0_type(::Type{X0}) where {X0<:StaticArray} = real(X0)
-real_x_type(::Type{X}) where {X<:StaticArray} = real(X)
-real_s_type(::Type{S}) where {S<:StaticArray} = real(S)
+function similar_eltype(::Type{A}, ::Type{G}, ::Type{Val{M}}=Val{N}) where {M,N,A<:StaticArray{N,T} where{T},G}
+  return similar_type(A, G, Size(M))
+end
 
 # Field initialization functions
 # Consistency checks are made by the `checkmapsanity` run by every map construction,
 # so lengths of arrays here are not checked for consistency with the TPSA
-function init_x0(a::Type{X0}, def::AbstractTPSADef) where {X0<:StaticArray}
+function init_x0(a::Type{X0}, ::AbstractTPSADef) where {X0<:StaticVector}
   x0 = StaticArrays.sacollect(X0, 0 for i in 1:length(a))
   return x0
 end
 
-function init_x(::Type{X}, def::AbstractTPSADef, reuse::Union{Nothing,TaylorMap}=nothing) where {X<:StaticArray}
+function init_x(::Type{X}, def::AbstractTPSADef, reuse::Union{Nothing,TaylorMap}=nothing) where {X<:StaticVector}
   nv = nvars(def)
-  nn = length(X)
   # reuse parameters if applicable
-  if reuse isa TaylorMap && eltype(X) == eltype(reuse.x)
+  if reuse isa TaylorMap && eltype(X) == eltype(reuse.x) && def == getdef(reuse)
     x = StaticArrays.sacollect(X, (i <= nv ? TI.init_tps(TI.numtype(eltype(X)), def) :  reuse.x[i]) for i in 1:length(X))
   else # allocate
-    x = StaticArrays.sacollect(X, TI.init_tps(TI.numtype(eltype(X)), def) for i in 1:length(X))
-    for i in nv+1:nn
-      TI.seti!(x[i], 1, i)
-    end
+    x = StaticArrays.sacollect(X, (i <= nv ? 
+                                    TI.init_tps(TI.numtype(eltype(X)), def) : 
+                                    (t = TI.init_tps(TI.numtype(eltype(X)), def); TI.seti!(t, 1, i); t)) for i in 1:length(X))
   end
   return x
 end
 
-function init_s(::Type{S}, def::AbstractTPSADef) where {S<:StaticArray}
-  if S != Nothing
-    s = StaticArrays.sacollect(S, 0 for i in 1:length(S))
-  else
-    s = nothing
-  end
+function init_s(::Type{S}, ::AbstractTPSADef) where {S<:StaticMatrix}
+  s = StaticArrays.sacollect(S, 0 for i in 1:length(S))
   return s
 end
