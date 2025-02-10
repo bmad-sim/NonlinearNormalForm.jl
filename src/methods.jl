@@ -4,165 +4,116 @@ Non-arithmetic functions acting on both maps and vector fields.
 
 =#
 
+# --- clear! ---
+function clear!(m::Union{TaylorMap,VectorField})
+  nv = nvars(m)
+  
+  for i=1:nv
+    TI.clear!(m.x[i])
+  end
+  if !isnothing(m.q)
+    TI.clear!(m.q.q0)
+    TI.clear!(m.q.q1)
+    TI.clear!(m.q.q2)
+    TI.clear!(m.q.q3)
+  end
+
+  if m isa TaylorMap
+    m.x0 .= 0
+    if !isnothing(m.s)
+      m.s .= 0
+    end
+  end
+  return
+end
+
+# --- copy!/copy ---
+function copy!(m::Union{TaylorMap,VectorField}, m1::Union{TaylorMap,VectorField})
+  checkstates(m, m1)
+  if m1 isa TaylorMap && m isa TaylorMap
+    m.x0 .= m1.x0
+  end
+  nv = nvars(m)
+  foreach((xi, x1i)->TI.copy!(xi, x1i), view(m.x, 1:nv), m1.x)
+  if m isa TaylorMap && !isnothing(m.q)
+    foreach((qi, q1i)->TI.copy!(qi, q1i), m.q, m1.q)
+  end
+  if m isa TaylorMap && !isnothing(m.s) && m1 isa TaylorMap
+    m.s .= m1.s
+  end
+  return m
+end
+
+copy(m::Union{TaylorMap,VectorField}) = (out_m = zero(m); copy!(out_m, m); return out_m)
 
 # --- norm ---
 function norm(m::Union{TaylorMap,VectorField})
   nrm = 0.
 
-  nv = numvars(m)
+  nv = nvars(m)
   for i=1:nv
-    nrm += normTPS(m.x[i])
+    nrm += TI.norm_tps(m.x[i])
   end
   
-  if !isnothing(m.Q)
-    nrm += normTPS(m.Q.q0)
-    nrm += normTPS(m.Q.q1)
-    nrm += normTPS(m.Q.q2)
-    nrm += normTPS(m.Q.q3)
+  if !isnothing(m.q)
+    nrm += TI.norm_tps(m.q.q0)
+    nrm += TI.norm_tps(m.q.q1)
+    nrm += TI.norm_tps(m.q.q2)
+    nrm += TI.norm_tps(m.q.q3)
   end
 
   return nrm
 end
 
-# --- complex ---
-function complex(m::Union{TaylorMap,VectorField})
-  outm = zero_op(m,im)
-  copy!(outm, m)
-  return outm
-end
-
-
-# --- copy --- 
-function copy!(m::Union{TaylorMap,VectorField}, m1::Union{TaylorMap,VectorField})
-  checkstates(m, m1)
-  nv = numvars(m)
-
-  for i=1:nv
-    copy!(m.x[i], m1.x[i])
-  end
-
-  if !isnothing(m1.Q)
-    copy!(m.Q.q0, m1.Q.q0)
-    copy!(m.Q.q1, m1.Q.q1)
-    copy!(m.Q.q2, m1.Q.q2)
-    copy!(m.Q.q3, m1.Q.q3)
-  end
-
-  if m isa TaylorMap 
-    if m1 isa TaylorMap
-      m.x0 .= m1.x0
-      if !isnothing(m1.E)
-        m.E .= m1.E
-      end
-    else
-      m.x0 .= 0
-      if !isnothing(m1.E)
-        m.E .= 0
-      end
-    end
-  end
-
-  return m
-end
-
-copy(m1::Union{TaylorMap,VectorField}) = (m = zero(m1); copy!(m, m1); return m)
-
 # --- real/imag ---
 function real!(m::Union{TaylorMap,VectorField}, m1::Union{TaylorMap,VectorField})
-  checkstates(m, m1) # no checkinplace because m can be real
-  nv = numvars(m)
-
-  for i=1:nv
-    @FastGTPSA! m.x[i] = real(m1.x[i])
+  checkstates(m, m1) # No checkinplace because m can be real
+  if m1 isa TaylorMap && m isa TaylorMap
+    @. m.x0 = real(m1.x0)
   end
-
-  if !isnothing(m1.Q)
-    @FastGTPSA! begin
-      m.Q.q0 = real(m1.Q.q0)
-      m.Q.q1 = real(m1.Q.q1)
-      m.Q.q2 = real(m1.Q.q2)
-      m.Q.q3 = real(m1.Q.q3)
-    end
+  nv = nvars(m)
+  foreach((xi, x1i)->TI.real!(xi, x1i), view(m.x, 1:nv), m1.x)
+  if m isa TaylorMap && !isnothing(m.q)
+    foreach((qi, q1i)->TI.real!(qi, q1i), m.q, m1.q)
   end
-
-  if m isa TaylorMap 
-    if m1 isa TaylorMap
-      m.x0 .= real.(m1.x0)
-      if !isnothing(m1.E)
-        m.E .= real.(m1.E)
-      end
-    else
-      m.x0 .= 0
-      if !isnothing(m1.E)
-        m.E .= 0
-      end
-    end
+  if m isa TaylorMap && !isnothing(m.s) && m1 isa TaylorMap
+    @. m.s = real(m1.s)
   end
-
   return m
 end
 
 function imag!(m::Union{TaylorMap,VectorField}, m1::Union{TaylorMap,VectorField})
-  checkstates(m, m1) # no checkinplace because m can be real
-
-  m.x0 .= imag.(m1.x0)
-  nv = numvars(m)
-
-  for i=1:nv
-    @FastGTPSA! m.x[i] = imag(m1.x[i])
+  checkstates(m, m1) # No checkinplace because m can be real
+  if m1 isa TaylorMap && m isa TaylorMap
+    @. m.x0 = imag(m1.x0)
   end
-
-  if !isnothing(m1.Q)
-    @FastGTPSA! begin
-      m.Q.q0 = imag(m1.Q.q0)
-      m.Q.q1 = imag(m1.Q.q1)
-      m.Q.q2 = imag(m1.Q.q2)
-      m.Q.q3 = imag(m1.Q.q3)
-    end
+  nv = nvars(m)
+  foreach((xi, x1i)->TI.imag!(xi, x1i), view(m.x, 1:nv), m1.x)
+  if m isa TaylorMap && !isnothing(m.q)
+    foreach((qi, q1i)->TI.imag!(qi, q1i), m.q, m1.q)
   end
-
-  if m isa TaylorMap 
-    if m1 isa TaylorMap
-      m.x0 .= imag.(m1.x0)
-      if !isnothing(m1.E)
-        m.E .= imag.(m1.E)
-      end
-    else
-      m.x0 .= 0
-      if !isnothing(m1.E)
-        m.E .= 0
-      end
-    end
+  if m isa TaylorMap && !isnothing(m.s) && m1 isa TaylorMap
+    @. m.s = imag(m1.s)
   end
-
   return m
 end
 
+function real(m::TaylorMap)
+  out_m = _zero(real(typeof(m)), getdef(m), m)
+  real!(out_m, m)
+  return m
+end
 
-real(m1::Union{TaylorMap,VectorField}) = (m = zero(real(typeof(m1)), use=m1); real!(m, m1); return m)
-imag(m1::Union{TaylorMap,VectorField}) = (m = zero(real(typeof(m1)), use=m1); imag!(m, m1); return m)
+function imag(m::TaylorMap)
+  out_m = _zero(real(typeof(m)), getdef(m), m)
+  imag!(out_m, m)
+  return m
+end
 
-# --- clear! ---
-function clear!(m::Union{TaylorMap,VectorField})
-  nv = numvars(m)
-  
-  for i=1:nv
-    clear!(m.x[i])
-  end
-  if !isnothing(m.Q)
-    clear!(m.Q.q0)
-    clear!(m.Q.q1)
-    clear!(m.Q.q2)
-    clear!(m.Q.q3)
-  end
-
-  if m isa TaylorMap
-    m.x0 .= 0
-    if !isnothing(m.E)
-      m.E .= 0
-    end
-  end
-  return
+function complex(m::TaylorMap)
+  out_m = _zero(complex(typeof(m)), getdef(m), m)
+  copy!(out_m, m)
+  return m
 end
 
 
@@ -170,29 +121,29 @@ end
 function cutord!(m::Union{TaylorMap,VectorField}, m1::Union{TaylorMap,VectorField}, order::Integer, spin_order::Integer=order; dospin::Bool=true)
   checkinplace(m, m1)
 
-  nv = numvars(m)
+  nv = nvars(m)
   
   for i=1:nv
-    cutord!(m.x[i], m1.x[i], order)
+    TI.cutord!(m.x[i], m1.x[i], order)
   end
 
-  if !isnothing(m1.Q) && dospin
-    cutord!(m.Q.q0, m1.Q.q0, spin_order)
-    cutord!(m.Q.q1, m1.Q.q1, spin_order)
-    cutord!(m.Q.q2, m1.Q.q2, spin_order)
-    cutord!(m.Q.q3, m1.Q.q3, spin_order)
+  if !isnothing(m1.q) && dospin
+    TI.cutord!(m.q.q0, m1.q.q0, spin_order)
+    TI.cutord!(m.q.q1, m1.q.q1, spin_order)
+    TI.cutord!(m.q.q2, m1.q.q2, spin_order)
+    TI.cutord!(m.q.q3, m1.q.q3, spin_order)
   end
 
   if m isa TaylorMap 
     if m1 isa TaylorMap
       m.x0 .= m1.x0
-      if !isnothing(m1.E)
-        m.E .= m1.E
+      if !isnothing(m1.s)
+        m.s .= m1.s
       end
     else
       m.x0 .= 0
-      if !isnothing(m1.E)
-        m.E .= 0
+      if !isnothing(m1.s)
+        m.s .= 0
       end
     end
   end
@@ -210,29 +161,29 @@ end
 function getord!(m::Union{TaylorMap,VectorField}, m1::Union{TaylorMap,VectorField}, order::Integer, spin_order::Integer=order; dospin::Bool=true)
   checkinplace(m, m1)
   
-  nv = numvars(m)
+  nv = nvars(m)
 
   for i=1:nv
-    getord!(m.x[i], m1.x[i], order)
+    TI.getord!(m.x[i], m1.x[i], order)
   end
 
-  if !isnothing(m1.Q) && dospin
-    getord!(m.Q.q0, m1.Q.q0, spin_order)
-    getord!(m.Q.q1, m1.Q.q1, spin_order)
-    getord!(m.Q.q2, m1.Q.q2, spin_order)
-    getord!(m.Q.q3, m1.Q.q3, spin_order)
+  if !isnothing(m1.q) && dospin
+    TI.getord!(m.q.q0, m1.q.q0, spin_order)
+    TI.getord!(m.q.q1, m1.q.q1, spin_order)
+    TI.getord!(m.q.q2, m1.q.q2, spin_order)
+    TI.getord!(m.q.q3, m1.q.q3, spin_order)
   end
 
   if m isa TaylorMap 
     if m1 isa TaylorMap
       m.x0 .= m1.x0
-      if !isnothing(m1.E)
-        m.E .= m1.E
+      if !isnothing(m1.s)
+        m.s .= m1.s
       end
     else
       m.x0 .= 0
-      if !isnothing(m1.E)
-        m.E .= 0
+      if !isnothing(m1.s)
+        m.s .= 0
       end
     end
   end

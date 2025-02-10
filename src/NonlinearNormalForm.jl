@@ -40,34 +40,6 @@ using LinearAlgebra,
       
 using ReferenceFrameRotations: Quaternion
 
-
-
-#import ReferenceFrameRotations: show
-#=
-@reexport using GTPSA
-
-# We want these guys in our workspace:
-import GTPSA: Desc, 
-              getdesc,
-              numvars,
-              numparams,
-              numnn, 
-              mad_compose!,
-
-              add!,
-              sub!,
-              div!,
-
-              jacobian,
-              jacobiant,
-              clear!,
-              cutord,
-              cutord!,
-              getord,
-              getord!,
-              compose!             
-
-=#
 export        TaylorMap, 
               Quaternion,    
               TPSAMap, 
@@ -136,12 +108,12 @@ end
 
 #include("utils/quaternion.jl")
 
-include("types.jl")
+include("map.jl")
+include("vectorfield.jl")
 include("utils.jl")
-include("map/ctors.jl")
-include("staticarrays.jl")
 include("set.jl")
 include("sanity.jl")
+include("methods.jl")
 
 #include("staticarrays.jl")
 #=

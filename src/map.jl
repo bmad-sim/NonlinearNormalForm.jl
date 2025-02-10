@@ -1,10 +1,13 @@
 #=
 
-Defines the types used throughout the package. Specifically, the abstract 
-type TaylorMap, and concrete types DAMap and TPSAMap (which differ only in 
-concatenation and inversion rules). 
+Defines the types abstract type TaylorMap, and concrete types DAMap 
+and TPSAMap (which differ only in concatenation and inversion rules), 
+promotion rules, and constructors.
 
 =#
+
+# =================================================================================== #
+# Types
 
 """
     TaylorMap{X0,X,Q,S}
@@ -81,41 +84,6 @@ struct TPSAMap{X0,X,Q,S} <: TaylorMap{X0,X,Q,S}
   end
 end
 
-"""
-    VectorField{X,Q}
-
-Lie operator which acts on `DAMap`s e.g. dM/dt = FM where F is the `VectorField` and 
-`M` is the `DAMap`. `F` can be promoted to a `DAMap` using `exp(F)`.
-
-# Fields
-- `x::X` -- Orbital ray as truncated power series, expansion with scalar part equal to EXIT coordinates of map
-- `q::Q` -- `Quaternion` as truncated power series if spin is included, else `nothing`
-
-# Type Requirements
-- `X <: AbstractVector{<:TPS}`
-- `Q <: Union{Quaternion{<:TPS},Nothing}` and if `Q != Nothing` then `eltype(Q) == eltype(X)`
-"""
-struct VectorField{X<:AbstractVector,Q<:Union{Quaternion,Nothing},}
-  x::X
-  q::Q     
-  function VectorField(x, q)
-    vf = new{typeof(x),typeof(q)}(x, q)
-    checkvfsanity(vf)
-    return vf
-  end
-end
-
-@inline function checkvfsanity(::VectorField{X,Q}) where {X,Q}
-  # Static checks:
-  TI.is_tps_type(eltype(X)) isa TI.IsTPSType || error("Orbital ray element type must be a truncated power series type supported by `TPSAInterface.jl`")
-  Q == Nothing || eltype(Q) == eltype(X) || error("Quaternion number type $(eltype(Q)) must be $(eltype(X)) (equal to orbital ray)")
-
-  # Runtime checks:
-  ndiffs(first(m.x)) == length(m.x) || error("Orbital ray length disagrees with number of differentials (variables + parameters) in TPSA")
-  Q == Nothing || getdef(first(m.q)) == getdef(first(m.x)) || error("Quaternion TPSA definition disagrees with orbital ray TPSA definition")
-end
-
-
 # =================================================================================== #
 # Field initialization functions.
 # Note that even when a TPSA definition is inferrable from the types (X0, X, ...),
@@ -123,14 +91,14 @@ end
 # flexibility for different TPSA packages/modes.
 
 # These may be overrided by external array packages.
-function init_x0(::Type{X0}, def::AbstractTPSADef) where {X0<:AbstractVector}
+function init_map_x0(::Type{X0}, def::AbstractTPSADef) where {X0<:AbstractVector}
   nv = nvars(def)
   x0 = similar(X0, nv)
   x0 .= 0
   return x0
 end
 
-function init_x(::Type{X}, def::AbstractTPSADef, reuse::Union{Nothing,TaylorMap}=nothing) where {X<:AbstractVector}
+function init_map_x(::Type{X}, def::AbstractTPSADef, reuse::Union{Nothing,TaylorMap}=nothing) where {X<:AbstractVector}
   nv = nvars(def)
   nn = ndiffs(def)
   x = similar(X, nn)
@@ -149,7 +117,7 @@ function init_x(::Type{X}, def::AbstractTPSADef, reuse::Union{Nothing,TaylorMap}
   return x
 end
 
-function init_q(::Type{Q}, def::AbstractTPSADef) where {Q<:Union{Nothing,Quaternion}}
+function init_map_q(::Type{Q}, def::AbstractTPSADef) where {Q<:Union{Nothing,Quaternion}}
   if Q != Nothing
     q0 = TI.init_tps(TI.numtype(eltype(Q)), def) 
     q1 = TI.init_tps(TI.numtype(eltype(Q)), def) 
@@ -162,7 +130,7 @@ function init_q(::Type{Q}, def::AbstractTPSADef) where {Q<:Union{Nothing,Quatern
   return q
 end
 
-function init_s(::Type{S}, def::AbstractTPSADef) where {S<:Union{Nothing,AbstractMatrix}}
+function init_map_s(::Type{S}, def::AbstractTPSADef) where {S<:Union{Nothing,AbstractMatrix}}
   if S != Nothing
     nv = nvars(def)
     s = similar(S, nv, nv)
@@ -178,12 +146,12 @@ end
 
 # Consistency checks are made by the `checkmapsanity` run by every map construction,
 # so lengths of arrays here are not checked for consistency with the TPSA
-function init_x0(a::Type{X0}, ::AbstractTPSADef) where {X0<:StaticVector}
+function init_map_x0(a::Type{X0}, ::AbstractTPSADef) where {X0<:StaticVector}
   x0 = StaticArrays.sacollect(X0, 0 for i in 1:length(a))
   return x0
 end
 
-function init_x(::Type{X}, def::AbstractTPSADef, reuse::Union{Nothing,TaylorMap}=nothing) where {X<:StaticVector}
+function init_map_x(::Type{X}, def::AbstractTPSADef, reuse::Union{Nothing,TaylorMap}=nothing) where {X<:StaticVector}
   nv = nvars(def)
   # reuse parameters if applicable
   if reuse isa TaylorMap && eltype(X) == eltype(reuse.x) && def == getdef(reuse)
@@ -196,7 +164,7 @@ function init_x(::Type{X}, def::AbstractTPSADef, reuse::Union{Nothing,TaylorMap}
   return x
 end
 
-function init_s(::Type{S}, ::AbstractTPSADef) where {S<:StaticMatrix}
+function init_map_s(::Type{S}, ::AbstractTPSADef) where {S<:StaticMatrix}
   s = StaticArrays.sacollect(S, 0 for i in 1:length(S))
   return s
 end
@@ -232,29 +200,142 @@ end
 end
 end
 
-# VectorField:
-function promote_rule(::Type{VectorField{X,Q}}, ::Type{G}) where {X,Q,G<:Union{Number,Complex}}
-  out_X = similar_eltype(X, promote_type(eltype(X), G))
-  out_Q = similar_eltype(Q, promote_type(eltype(Q), G))
-  return VectorField{out_X,out_Q}
+
+# =================================================================================== #
+# Constructors
+for t = (:DAMap, :TPSAMap)
+@eval begin
+
+# Lowest-level, internal
+function _zero(::Type{$t{X0,X,Q,S}}, def::AbstractTPSADef, reuse::Union{TaylorMap,Nothing}) where {X0,X,Q,S}
+  out_x0 = init_map_x0(X0, def)
+  out_x = init_map_x(X, def, reuse)
+  out_q = init_map_q(Q, def)
+  out_s = init_map_s(S, def)
+  out_m = $t(out_x0, out_x, out_q, out_s)
+  return out_m
 end
 
-# --- complex type ---
-function complex(type::Type{VectorField{X,Q}}) where {X,Q}
-  return promote_type(type, complex(TI.numtype(eltype(X))))
+function zero(::Type{$t{X0,X,Q,S}}) where {X0,X,Q,S}
+  return _zero($t{X0,X,Q,S}, getdef(eltype(X)), nothing)
 end
 
-# --- real type ---
-function real(::Type{VectorField{X,Q}}) where {X,Q}
-  out_X = similar_eltype(X, real(eltype(X)))
-  out_Q = isnothing(Q) ? Nothing : similar_eltype(Q, real(eltype(Q)))
-  return VectorField{out_X,out_Q}
+# Copy ctor including optional TPSA def change
+function $t(m::TaylorMap; def::AbstractTPSADef=getdef(m))
+  checktpsas(m, def)
+  X0 = typeof(m.x0)
+  X = similar_eltype(typeof(m.x), TI.init_tps_type(eltype(X0), def))
+  Q = isnothing(m.q) ? Nothing : Quaternion{TI.init_tps_type(eltype(X0), def)}
+  S = typeof(m.s)
+  out_m = _zero($t{X0,X,Q,S}, def, m)
+  copy!(out_m, m)
+  return out_m
+end
+
+# Kwarg ctor:
+function $t(;
+  def::Union{AbstractTPSADef,Nothing}=nothing,
+  x0::Union{AbstractVector,Nothing}=nothing,
+  x::Union{AbstractVector,Nothing}=nothing,
+  x_matrix::Union{AbstractMatrix,UniformScaling,Nothing}=nothing,
+  q::Union{Quaternion,AbstractVector,UniformScaling,Nothing}=nothing,
+  q_map::Union{AbstractMatrix,Nothing}=nothing,
+  s::Union{AbstractMatrix,Nothing}=nothing,
+  spin::Union{Bool,Nothing}=nothing,
+  stochastic::Union{Bool,Nothing}=nothing,
+) 
+  if isnothing(def)
+    if !isnothing(x) && TI.is_tps_type(eltype(x)) isa TI.IsTPSType
+      def = getdef(first(x))
+    elseif !isnothing(q) && TI.is_tps_type(eltype(q)) isa TI.IsTPSType
+      def = getdef(first(q))
+    else
+      error("No TPSA definition has been provided, nor is one inferrable from the input arguments!")
+    end
+  end
+
+
+  # Assemble types:
+  W = promote_type(map(t->(!isnothing(t) ? TI.numtype(eltype(t)) : Float64), (x0, x, q, s))...)
+  TW = TI.init_tps_type(W, def)
+  X0 = isnothing(x0) ? @_DEFAULT_X0(nvars(def)){W} : similar_eltype(typeof(x0), W)
+  X = isnothing(x) ? @_DEFAULT_X(ndiffs(def)){TW} : similar_eltype(typeof(x), TW)
+  
+  if isnothing(spin)
+    Q = isnothing(q) && isnothing(q_map) ? Nothing : Quaternion{TW}
+  elseif spin
+    Q = Quaternion{TW}
+  else
+    Q = Nothing
+  end
+
+  if isnothing(stochastic)
+    S = isnothing(s) ? Nothing : similar_eltype(typeof(s), W)
+  elseif stochastic
+    S = isnothing(s) ? @_DEFAULT_S(nvars(def)){W} : similar_eltype(typeof(s), W)
+  else
+    S = Nothing
+  end
+
+  # Construct map:
+  out_x0 = init_map_x0(X0, def)
+  out_x = init_map_x(X, def)
+  out_q = init_map_q(Q, def)
+  out_s = init_map_s(S, def)
+
+  out_m = $t(out_x0, out_x, out_q, out_s)
+
+
+  if !isnothing(x0)
+    out_m.x0 .= x0
+  end
+
+  setray!(out_m.x, x=x, x_matrix=x_matrix)
+  if !isnothing(out_m.q) && !isnothing(q)
+    setquat!(out_m.q, q=q, q_map=q_map)
+  end
+
+  if !isnothing(out_m.s) && !isnothing(s)
+    out_m.s .= s
+  end
+
+  return out_m
+end
+
+end
 end
 
 
+"""
+    zero(m::TaylorMap)
 
+Creates a zero `m` with the same properties as `m` including TPSA definiton,
+spin, and stochasticity.
+"""
+function zero(m::TaylorMap) 
+  return _zero(typeof(m), getdef(m), m)
+end
 
+"""
+    one(m::TaylorMap)
+  
+Creates an identity `m` with the same properties as `m`, including GTPSA
+`Descriptor`, spin, and stochasticity.
+"""
+function one(m::TaylorMap)
+  out_m = zero(m)
+  nv = nvars(m)
 
+  for i in 1:nv
+    TI.seti!(out_m.x[i], 1, i)
+  end
 
+  if !isnothing(m.q)
+    TI.seti!(out_m.q.q0, 1, 0)
+  end
 
+  return out_m
+end
+
+# =================================================================================== #
 
