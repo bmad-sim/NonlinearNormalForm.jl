@@ -9,10 +9,11 @@ concatenation and inversion rules).
 """
     TaylorMap{X0,X,Q,S}
 
-Abstract type for `TPSAMap` and `DAMap` used for normal form analysis. For a periodic system, 
-the `DAMap` is expanded around the closed orbit, while the `TPSAMap` may be expanded around 
-any arbitrary trajectory. For normal form analysis of periodic maps, using a `DAMap` ensures 
-no truncation error up to the chosen truncation order.
+Abstract type for `TPSAMap` and `DAMap` used for normal form analysis. `DAMap`s have a coordinate 
+system chosen so that the expansion point is always around zero, e.g. Δx = x, while `TPSAMap`s 
+can have any coordinate system/expansion point, but therefore will accrue truncation error when 
+trying to compose two `TPSAMap`s with differing expansion points. For normal form analysis of 
+periodic maps, using a `DAMap` ensures no truncation error up to the chosen truncation order.
 
 Any truncated power series (TPS) type supported by `TPSAInterface.jl` is allowed for use in 
 a `TaylorMap`. Henceforth we will generically refer to this type as a `TPS`
@@ -87,7 +88,7 @@ Lie operator which acts on `DAMap`s e.g. dM/dt = FM where F is the `VectorField`
 `M` is the `DAMap`. `F` can be promoted to a `DAMap` using `exp(F)`.
 
 # Fields
-- `x::X` -- Orbital ray as truncated power series, expansion around `x0`, with scalar part equal to EXIT coordinates of map
+- `x::X` -- Orbital ray as truncated power series, expansion with scalar part equal to EXIT coordinates of map
 - `q::Q` -- `Quaternion` as truncated power series if spin is included, else `nothing`
 
 # Type Requirements
@@ -104,7 +105,7 @@ struct VectorField{X<:AbstractVector,Q<:Union{Quaternion,Nothing},}
   end
 end
 
-@inline function checkmapsanity(::VectorField{X,Q}) where {X,Q}
+@inline function checkvfsanity(::VectorField{X,Q}) where {X,Q}
   # Static checks:
   TI.is_tps_type(eltype(X)) isa TI.IsTPSType || error("Orbital ray element type must be a truncated power series type supported by `TPSAInterface.jl`")
   Q == Nothing || eltype(Q) == eltype(X) || error("Quaternion number type $(eltype(Q)) must be $(eltype(X)) (equal to orbital ray)")
@@ -173,26 +174,35 @@ function init_s(::Type{S}, def::AbstractTPSADef) where {S<:Union{Nothing,Abstrac
 end
 
 # =================================================================================== #
-# Field promotion rules
-#=
-# Promotion utility functions for easy override by external array packages
-# Should promote the element type and return it as a vector (x,x0) or matrix (s)
-# with dimensionality specified by Val.
-promote_x0_type(::Type{X0}, ::Type{G}) where {X0,G<:Union{Number,Complex}} = _promote_array_eltype(X0, G, Val{1})
-promote_x_type(::Type{X}, ::Type{G}) where {X,G<:Union{Number,Complex}} = _promote_array_eltype(X, G, Val{1})
-promote_q_type(::Type{Q}, ::Type{G}) where {Q,G<:Union{Number,Complex}} = Quaternion{promote_type(eltype(Q), G)}
-promote_s_type(::Type{S}, ::Type{G}) where {S,G<:Union{Number,Complex}} = _promote_array_eltype(S, G, Val{2})
-real_x0_type(::Type{X0}) where {X0} = _real_array_eltype(X0, Val{1})
-real_x_type(::Type{X}) where {X} = _real_array_eltype(X, Val{1})
-real_q_type(::Type{Q}) where {Q} = Quaternion{real(eltype(Q))} 
-real_s_type(::Type{S}) where {S} = _real_array_eltype(S, Val{2})
+# StaticArray field initialization functions.
 
-# Fallback for Nothing type of quaternion and stochastic envelope matrix
-promote_q_type(::Type{Nothing}, ::Type{G}) where {G<:Union{Number,Complex}} = Nothing
-promote_s_type(::Type{Nothing}, ::Type{G}) where {G<:Union{Number,Complex}} = Nothing
-real_q_type(::Type{Nothing}) = Nothing
-real_s_type(::Type{Nothing}) = Nothing
-=#
+# Consistency checks are made by the `checkmapsanity` run by every map construction,
+# so lengths of arrays here are not checked for consistency with the TPSA
+function init_x0(a::Type{X0}, ::AbstractTPSADef) where {X0<:StaticVector}
+  x0 = StaticArrays.sacollect(X0, 0 for i in 1:length(a))
+  return x0
+end
+
+function init_x(::Type{X}, def::AbstractTPSADef, reuse::Union{Nothing,TaylorMap}=nothing) where {X<:StaticVector}
+  nv = nvars(def)
+  # reuse parameters if applicable
+  if reuse isa TaylorMap && eltype(X) == eltype(reuse.x) && def == getdef(reuse)
+    x = StaticArrays.sacollect(X, (i <= nv ? TI.init_tps(TI.numtype(eltype(X)), def) :  reuse.x[i]) for i in 1:length(X))
+  else # allocate
+    x = StaticArrays.sacollect(X, (i <= nv ? 
+                                    TI.init_tps(TI.numtype(eltype(X)), def) : 
+                                    (t = TI.init_tps(TI.numtype(eltype(X)), def); TI.seti!(t, 1, i); t)) for i in 1:length(X))
+  end
+  return x
+end
+
+function init_s(::Type{S}, ::AbstractTPSADef) where {S<:StaticMatrix}
+  s = StaticArrays.sacollect(S, 0 for i in 1:length(S))
+  return s
+end
+
+# =================================================================================== #
+# Promotion rules
 
 for t = (:DAMap, :TPSAMap)
 @eval begin    
