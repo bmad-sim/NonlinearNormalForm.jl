@@ -338,4 +338,37 @@ function one(m::TaylorMap)
 end
 
 # =================================================================================== #
+# composition
+for t = (:DAMap, :TPSAMap)
+@eval begin
+  
+function _compose!(m::$t, m2::$t, m1::$t; dospin::Bool=true, dostochastic::Bool=true, work_Q::Union{Nothing,Quaternion}=prep_work_Q(m))
+  @assert !(m === m1) "Cannot compose_it!(m, m2, m1) with m === m1"
+  @assert !(m === m2) "Cannot compose_it!(m, m2, m1) with m === m2"
 
+  m.x0 .= m1.x0
+
+  TI.compose!(view(m.x, 1:nv), view(m2.x, 1:nv), view(m1.x, 1:nn))
+
+  # Spin:
+  if !isnothing(m.q) && dospin
+    TI.compose!(m.q.q0, m2.q.q0, m1.x)
+    TI.compose!(m.q.q1, m2.q.q1, m1.x)
+    TI.compose!(m.q.q2, m2.q.q2, m1.x)
+    TI.compose!(m.q.q3, m2.q.q3, m1.x)
+    mul!(m.q, m.q, m1.q) # This will be made faster eventually
+  end 
+
+  # Stochastic
+  # MAKE THIS FASTER!
+  if !isnothing(m.s) && dostochastic
+    M2 = jacobian(m2)   
+    m.s .= M2*m1.s*transpose(M2) + m2.s
+  end
+
+  return m
+end
+
+end
+end
+# =================================================================================== #

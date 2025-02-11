@@ -1,3 +1,12 @@
+#=
+
+Contains utility routines for getting TPSA info from a map/vector field,
+getting the jacobian or transpose-jacobian (jacobiant) from a map/vector 
+field array type promotion, checking if the last plane of a map is coasting, 
+matrix utility functions (e.g. symplectically-normalized eigenmode 
+calculations).
+
+=#
 # =================================================================================== #
 # Helper functions
 getdef(m::Union{TaylorMap,VectorField}) = TI.getdef(first(m.x))
@@ -6,6 +15,9 @@ nparams(m::Union{TaylorMap,VectorField}) = length(m.x) - length(m.x0)
 ndiffs(m::Union{TaylorMap,VectorField}) = length(m.x)
 nmonos(m::Union{TaylorMap,VectorField}) = TI.nmonos(first(m.x))
 maxord(m::Union{TaylorMap,VectorField}) = TI.maxord(first(m.x))
+# =================================================================================== #
+# Jacobian/jacobiant
+
 # =================================================================================== #
 # Similar eltype
 # Returns the equivalent of container A to instead have eltype G and dims M
