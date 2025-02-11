@@ -220,6 +220,16 @@ function zero(::Type{$t{X0,X,Q,S}}) where {X0,X,Q,S}
   return _zero($t{X0,X,Q,S}, getdef(eltype(X)), nothing)
 end
 
+# Explicit type specification
+# Def change would be static (in type)
+function $t{X0,X,Q,S}(m::Union{TaylorMap,Nothing}=nothing) where {X0,X,Q,S}
+  out_m = _zero_map($t{X0,X,Q,S}, getdef(eltype(X)), m)
+  if !isnothing(m)
+    copy!(out_m, m)
+  end
+  return out_m
+end
+
 # Copy ctor including optional TPSA def change
 function $t(m::TaylorMap; def::AbstractTPSADef=getdef(m))
   checktpsas(m, def)
@@ -339,29 +349,36 @@ end
 
 # =================================================================================== #
 # composition
-for t = (:DAMap, :TPSAMap)
-@eval begin
-  
-function _compose!(m::$t, m2::$t, m1::$t; dospin::Bool=true, dostochastic::Bool=true, work_Q::Union{Nothing,Quaternion}=prep_work_Q(m))
-  @assert !(m === m1) "Cannot compose_it!(m, m2, m1) with m === m1"
-  @assert !(m === m2) "Cannot compose_it!(m, m2, m1) with m === m2"
+
+# internal composer used by both TPSAMap and DAMap:
+function _compose!(
+  m::TaylorMap, 
+  m2::TaylorMap, 
+  m1::TaylorMap,
+  work_q::Union{Nothing,Quaternion}, 
+  do_spin::Bool, 
+  do_stochastic::Bool
+)
+  checkinplace(m, m2, m1)
+  @assert !(m === m1) "Cannot _compose!(m, m2, m1) with m === m1"
+  @assert !(m === m2) "Cannot _compose!(m, m2, m1) with m === m2"
 
   m.x0 .= m1.x0
 
   TI.compose!(view(m.x, 1:nv), view(m2.x, 1:nv), view(m1.x, 1:nn))
 
   # Spin:
-  if !isnothing(m.q) && dospin
-    TI.compose!(m.q.q0, m2.q.q0, m1.x)
-    TI.compose!(m.q.q1, m2.q.q1, m1.x)
-    TI.compose!(m.q.q2, m2.q.q2, m1.x)
-    TI.compose!(m.q.q3, m2.q.q3, m1.x)
-    mul!(m.q, m.q, m1.q) # This will be made faster eventually
+  if !isnothing(m.q) && do_spin
+    # TO-DO: use MQuaternion (mutable quaternion) so only 1 vectorized compose! call
+    TI.compose!(work_q.q0, m2.q.q0, m1.x)
+    TI.compose!(work_q.q1, m2.q.q1, m1.x)
+    TI.compose!(work_q.q2, m2.q.q2, m1.x)
+    TI.compose!(work_q.q3, m2.q.q3, m1.x)
+    mul!(m.q, work_q, m1.q) 
   end 
 
-  # Stochastic
-  # MAKE THIS FASTER!
-  if !isnothing(m.s) && dostochastic
+  # Stochastic (fast with StaticArrays)
+  if !isnothing(m.s) && do_stochastic
     M2 = jacobian(m2)   
     m.s .= M2*m1.s*transpose(M2) + m2.s
   end
@@ -369,6 +386,55 @@ function _compose!(m::$t, m2::$t, m1::$t; dospin::Bool=true, dostochastic::Bool=
   return m
 end
 
-end
+function compose!(
+  m::DAMap, 
+  m2::DAMap, 
+  m1::DAMap; 
+  work_q::Union{Nothing,Quaternion}=isnothing(m.q) ? Nothing : zero(m.q)
+  do_spin::Bool=true, 
+  do_stochastic::Bool=true,
+  keep_scalar::Bool=true, 
+)
+  checkinplace(m, m2, m1)
+  
+  # DAMap setup:
+  nv = nvars(m)
+
+  if keep_scalar
+    if isnothing(work_ref)
+      ref = prep_work_ref(m)
+    else
+      ref=work_ref
+    end
+    @assert length(ref) >= nv "Incorrect length for work_ref, received $(length(work_ref)) but should be atleast $nv"
+
+    # Take out scalar part and store it
+    for i=1:nv
+        ref[i] = m1.x[i][0]
+        m1.x[i][0] = 0
+    end
+  else
+    for i=1:nv
+      m1.x[i][0] = 0
+    end
+  end
+
+  compose_it!(m, m2, m1, dospin=dospin, work_prom=work_prom)
+
+  # Put back the reference and if m1 === m2, also add to outx
+  if keep_scalar
+    if m1 === m2
+      for i=1:nv
+          m1.x[i][0] = ref[i]
+          m.x[i][0] += ref[i]
+      end
+    else
+      for i=1:nv
+          m1.x[i][0] = ref[i]
+      end
+    end
+  end
+
+  return m
 end
 # =================================================================================== #

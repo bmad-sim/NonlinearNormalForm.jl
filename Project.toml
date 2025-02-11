@@ -13,8 +13,15 @@ SkewLinearAlgebra = "5c889d49-8c60-4500-9d10-5d3a22e2f4b9"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 TPSAInterface = "575459ea-959c-4603-9b15-d63fb6693033"
 
+[weakdeps]
+GTPSA = "b27dd330-f138-47c5-815b-40db9dd9b6e8"
+
+[extensions]
+NonlinearNormalFormGTPSAExt = "GTPSA"
+
 [compat]
 DelimitedFiles = "1"
+GTPSA = "1.4"
 Reexport = "1"
 ReferenceFrameRotations = "3"
 SkewLinearAlgebra = "1"

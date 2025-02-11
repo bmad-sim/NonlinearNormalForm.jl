@@ -48,12 +48,9 @@ export        TaylorMap,
               
               norm,
               dot,
-              mul!,
-              inv!,
               to_SO3,
       
               compose,
-              inv!,
       
               checksymp,
               jacobian,
@@ -110,7 +107,9 @@ end
 
 include("map.jl")
 include("vectorfield.jl")
+include("quaternion.jl")
 include("utils.jl")
+include("matrix.jl")
 include("set.jl")
 include("sanity.jl")
 include("methods.jl")
