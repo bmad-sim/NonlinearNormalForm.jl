@@ -350,7 +350,7 @@ end
 # =================================================================================== #
 # composition
 
-# internal composer used by both TPSAMap and DAMap:
+# --- internal composer used by both TPSAMap and DAMap ---
 function _compose!(
   m::TaylorMap, 
   m2::TaylorMap, 
@@ -359,13 +359,11 @@ function _compose!(
   do_spin::Bool, 
   do_stochastic::Bool
 )
-  checkinplace(m, m2, m1)
-  @assert !(m === m1) "Cannot _compose!(m, m2, m1) with m === m1"
-  @assert !(m === m2) "Cannot _compose!(m, m2, m1) with m === m2"
-
   m.x0 .= m1.x0
+  nv = nvars(m)
 
-  TI.compose!(view(m.x, 1:nv), view(m2.x, 1:nv), view(m1.x, 1:nn))
+
+  TI.compose!(view(m.x, 1:nv), view(m2.x, 1:nv), m1.x)
 
   # Spin:
   if !isnothing(m.q) && do_spin
@@ -386,55 +384,228 @@ function _compose!(
   return m
 end
 
+# --- DAMap ---
 function compose!(
   m::DAMap, 
   m2::DAMap, 
   m1::DAMap; 
-  work_q::Union{Nothing,Quaternion}=isnothing(m.q) ? Nothing : zero(m.q)
+  work_q::Union{Nothing,Quaternion}=isnothing(m.q) ? nothing : zero(m.q),
   do_spin::Bool=true, 
   do_stochastic::Bool=true,
   keep_scalar::Bool=true, 
 )
   checkinplace(m, m2, m1)
-  
-  # DAMap setup:
-  nv = nvars(m)
+  !(m === m1) || error("Cannot compose!(m, m2, m1) with m === m1")
+  !(m === m2) || error("Cannot compose!(m, m2, m1) with m === m2")
 
   if keep_scalar
-    if isnothing(work_ref)
-      ref = prep_work_ref(m)
-    else
-      ref=work_ref
-    end
-    @assert length(ref) >= nv "Incorrect length for work_ref, received $(length(work_ref)) but should be atleast $nv"
-
-    # Take out scalar part and store it
-    for i=1:nv
-        ref[i] = m1.x[i][0]
-        m1.x[i][0] = 0
-    end
-  else
-    for i=1:nv
-      m1.x[i][0] = 0
-    end
+    m1_out = getscalar(m1)
   end
 
-  compose_it!(m, m2, m1, dospin=dospin, work_prom=work_prom)
+  setscalar!(m1, 0)
 
-  # Put back the reference and if m1 === m2, also add to outx
+  _compose!(m, m2, m1, work_q, do_spin, do_stochastic)
+
+  # Put back the m1_out and if m1 === m2, also add to outx
   if keep_scalar
+    setscalar!(m1, m1_out)
     if m1 === m2
-      for i=1:nv
-          m1.x[i][0] = ref[i]
-          m.x[i][0] += ref[i]
-      end
-    else
-      for i=1:nv
-          m1.x[i][0] = ref[i]
-      end
+      setscalar!(m, m1_out, scl0=1)
     end
   end
 
   return m
 end
+
+# ---TPSAMap ---
+function compose!(
+  m::TPSAMap, 
+  m2::TPSAMap, 
+  m1::TPSAMap; 
+  work_q::Union{Nothing,Quaternion}=isnothing(m.q) ? nothing : zero(m.q),
+  do_spin::Bool=true, 
+  do_stochastic::Bool=true,
+)
+  checkinplace(m, m2, m1)
+  !(m === m1) || error("Cannot compose!(m, m2, m1) with m === m1")
+  !(m === m2) || error("Cannot compose!(m, m2, m1) with m === m2")
+
+  
+  # TPSAMap setup:
+  # For TPSA Map concatenation, we need to subtract w_0 (m2 x0) (Eq. 33)
+  # Because we are still expressing in terms of z_0 (m1 x0)
+  setscalar!(m1, m2.x0, scl0=1, scl1=-1)
+
+  _compose!(m, m2, m1, work_q, do_spin, do_stochastic)
+
+  # Now fix m1 and if m2 === m1, add to output too:
+  # For TPSA Map concatenation, we need to subtract w_0 (m2 x0) (Eq. 33)
+  # Because we are still expressing in terms of z_0 (m1 x0)
+
+  setscalar!(m1, m2.x0, scl0=1)
+  if m1 === m2
+    setscalar!(m, m2.x0, scl0=1)
+  end
+
+  return m
+end
+
 # =================================================================================== #
+# Inversion
+function inv!(
+  m::TaylorMap,
+  m1::TaylorMap; 
+  do_spin::Bool=true, 
+  work_q::Union{Nothing,Quaternion}=isnothing(m.q) ? nothing : zero(m.q)
+)
+
+  checkinplace(m, m1)
+  !(m === m1) || error("Cannot inv!(m, m1) with m === m1")
+
+  TI.inv!(m.x, m1.x)
+
+  # Now do quaternion: inverse of q(z0) is q^-1(M^-1(zf))
+  if !isnothing(m.q) && do_spin
+    inv!(work_q, m1.q)
+    compose!(m.q, work_q, m.x)
+    # TO-DO: use MQuaternion (mutable quaternion) so only 1 vectorized compose! call
+    TI.compose!(m.q.q0, work_q.q.q0, m.x)
+    TI.compose!(m.q.q1, work_q.q.q1, m.x)
+    TI.compose!(m.q.q2, work_q.q.q2, m.x)
+    TI.compose!(m.q.q3, work_q.q.q3, m.x)
+  end
+
+  m.x0 .= getscalar(m1)
+
+  setscalar!(m, m1.x0)
+
+  return m
+end
+
+# =================================================================================== #
+# Map powers/pow!
+
+# --- internal power used by both TPSAMap and DAMap ---
+function _pow!(
+  m::TaylorMap, 
+  m1::TaylorMap, 
+  n::Integer,
+  work_m::Union{Nothing,TaylorMap},
+  work_q::Union{Nothing,Quaternion},
+  keep_scalar::Bool
+)
+  checkinplace(m, m1)
+  !(m === m1) || error("Cannot pow!(m, m1) with m === m1")
+  if n == 0
+    clear!(m)
+    m.x0 .= m1.x0
+    setray!(m, x_matrix=I)
+    if !isnothing(m.q)
+      setquat!(m, q=I)
+    end
+    return m
+  end
+
+  pown = abs(n)-1
+  if n > 0
+    if isodd(pown) # after 1, 3, etc iterations, m will contain result 
+      copy!(work_m, m1)
+      for _ in 1:pown
+        compose!(m, work_m, m1, keep_scalar=keep_scalar, work_q=work_q)
+        work_m, m = m, work_m
+      end
+    else
+      copy!(m, m1)
+      for _ in 1:pown
+        compose!(work_m, m, m1, keep_scalar=keep_scalar, work_q=work_q)
+        work_m, m = m, work_m
+      end
+    end
+  else
+    if isodd(pown)  # after 1, 3, etc iterations, work_m will contain result 
+      copy!(m, m1)
+      for _ in 1:pown
+        compose!(work_m, m, m1, keep_scalar=keep_scalar, work_q=work_q)
+        work_m, m = m, work_m
+      end
+    else
+      copy!(work_m, m1)
+      for _ in 1:pown
+        compose!(m, work_m, m1, keep_scalar=keep_scalar, work_q=work_q)
+        work_m, m = m, work_m
+      end
+    end
+    inv!(m, work_m, work_q=work_q)
+  end
+end
+
+
+function pow!(
+  m::DAMap, 
+  m1::DAMap, 
+  n::Integer; 
+  work_m::Union{DAMap,Nothing}=zero(m), 
+  work_q::Union{Nothing,Quaternion}=isnothing(m.q) ? nothing : zero(m.q)
+)
+  checkinplace(m, m1, work_m)
+  !(m === m1) || error("Cannot pow!(m, m1) with m === m1")
+  !(m === work_m) || error("Cannot pow!(m, m1; work_m=work_m) with m === work_m")
+  m1_out = getscalar(m1)
+  _pow!(m, m1, n, work_m, work_q, false)
+  setscalar!(m1, m1_out)
+  return m
+end
+
+function pow!(  
+  m::TPSAMap, 
+  m1::TPSAMap, 
+  n::Integer; 
+  work_m::Union{TPSAMap,Nothing}=zero(m), 
+  work_q::Union{Nothing,Quaternion}=isnothing(m.q) ? nothing : zero(m.q)
+)
+  checkinplace(m, m1, work_m)
+  !(m === m1) || error("Cannot pow!(m, m1) with m === m1")
+  !(m === work_m) || error("Cannot pow!(m, m1; work_m=work_m) with m === work_m")
+  _pow!(m, m1, n, work_m, work_q, true)
+  return m
+end
+
+# =================================================================================== #
+# Composition and inversion out-of-place operators
+
+for t = (:DAMap, :TPSAMap)
+@eval begin
+
+∘(m2::$t, m1::$t) = (m = zero(m2); compose!(m, m2, m1); return m)
+# When composing a TPS scalar/vector function w a map, use orbital part of map:
+function ∘(m2, m1::$t)
+  TI.is_tps_type(eltype(m2)) isa TI.IsTPSType || error("Cannot compose: $(eltype(m2)) is not a TPS type supported by TPSAInterface.jl")
+  m = zero(m2)
+  TI.compose!(m, m2, m1.x)
+  return m
+end
+
+literal_pow(::typeof(^), m::$t{X0,X,Q,S}, vn::Val{n}) where {X0,X,Q,S,n} = ^(m,n)
+inv(m::$t) = (out_m = zero(m); inv!(out_m, m); return out_m)
+^(m::$t, n::Integer) = (out_m = zero(m); pow!(out_m, m, n); return m)
+
+# Also allow * for simpliticty and \ and / because why not
+*(m2, m1::$t) = ∘(m2, m1)
+/(m2::$t, m1::$t) = m2 ∘ inv(m1) 
+\(m2::$t, m1::$t) = inv(m2) ∘ m1
+
+# Uniform scaling for * (∘) and /, \
+∘(m::$t, J::UniformScaling) = $t(m)
+∘(J::UniformScaling, m::$t) = $t(m)
+*(m::$t, J::UniformScaling) = $t(m)
+*(J::UniformScaling, m::$t) = $t(m)
+/(m::$t, J::UniformScaling) = $t(m)
+/(J::UniformScaling, m::$t) = inv(m)
+\(m::$t, J::UniformScaling) = inv(m)
+\(J::UniformScaling, m::$t) = $t(m)
+
+compose!(m::$t, m1::$t, J::UniformScaling; kwargs...) = copy!(m, m1)
+compose!(m::$t, J::UniformScaling, m1::$t; kwargs...) = copy!(m, m1)
+
+end
+end

@@ -31,6 +31,56 @@ function jacobian(m::TaylorMap{X0,X,Q,S}) where {X0,X<:StaticArray,Q,S}
 end
 
 # =================================================================================== #
+# Get/set scalar part of orbital ray
+function getscalar(m::TaylorMap{X0,X,Q,S}) where {X0,X,Q,S}
+  nv = nvars(m)
+  return map(t->TI.geti(t, 0), view(m.x, 1:nv))
+end
+
+function getscalar(m::TaylorMap{X0,X,Q,S}) where {X0,X<:StaticArray,Q,S}
+  nv = nvars(m)
+  return StaticArrays.sacollect(SVector{nv,eltype(X0)}, TI.geti(m.x[i], 0) for i in 1:nv)
+end
+
+function setscalar!(
+  m::TaylorMap{X0,X,Q,S}, 
+  xs::Number; 
+  scl0::Union{Nothing,Number}=nothing,
+  scl1::Number=1
+) where {X0,X,Q,S}
+  nv = nvars(m)
+  if isnothing(scl0)
+    for i in 1:nv
+      TI.seti!(m.x[i], scl1*xs, 0)
+    end
+  else
+    for i in 1:nv
+      TI.seti!(m.x[i], TI.geti(m.x[i], 0)*scl0 + scl1*xs, 0)
+    end
+  end
+end
+
+function setscalar!(
+  m::TaylorMap{X0,X,Q,S}, 
+  xs::AbstractArray; 
+  scl0::Union{Nothing,Number}=nothing,
+  scl1::Number=1
+) where {X0,X,Q,S}
+
+  nv = nvars(m)
+  if isnothing(scl0)
+    for i in 1:nv
+      TI.seti!(m.x[i], xs[i], 0)
+    end
+  else
+    for i in 1:nv
+      TI.seti!(m.x[i], TI.geti(m.x[i], 0)*scl0 + scl1*xs[i], 0)
+    end
+  end
+end
+
+
+# =================================================================================== #
 # Similar eltype
 # Returns the equivalent of container A to instead have eltype G and dims M
 function similar_eltype(::Type{A}, ::Type{G}, ::Type{Val{M}}=Val{N}) where {M,N,A<:Array{T,N} where{T},G}
