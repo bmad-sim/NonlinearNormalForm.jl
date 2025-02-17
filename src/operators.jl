@@ -35,17 +35,17 @@ for ops = (("add!", :+), ("sub!",:-))
 function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, m1::Union{TaylorMap,VectorField}, m2::Union{TaylorMap,VectorField}; dospin::Bool=true)
   checkinplace(m, m1, m2)
   
-  nv = numvars(m)
+  nv = nvars(m)
 
-  for i=1:nv
-    $(Meta.parse(ops[1]))(m.x[i], m1.x[i], m2.x[i])
+  for i in 1:nv
+    TI.$(Meta.parse(ops[1]))(m.x[i], m1.x[i], m2.x[i])
   end
 
-  if !isnothing(m.Q) && dospin
-    $(Meta.parse(ops[1]))(m.Q.q0, m1.Q.q0, m2.Q.q0)
-    $(Meta.parse(ops[1]))(m.Q.q1, m1.Q.q1, m2.Q.q1)
-    $(Meta.parse(ops[1]))(m.Q.q2, m1.Q.q2, m2.Q.q2)
-    $(Meta.parse(ops[1]))(m.Q.q3, m1.Q.q3, m2.Q.q3)
+  if !isnothing(m.q) && dospin
+    TI.$(Meta.parse(ops[1]))(m.q.q0, m1.q.q0, m2.q.q0)
+    TI.$(Meta.parse(ops[1]))(m.q.q1, m1.q.q1, m2.q.q1)
+    TI.$(Meta.parse(ops[1]))(m.q.q2, m1.q.q2, m2.q.q2)
+    TI.$(Meta.parse(ops[1]))(m.q.q3, m1.q.q3, m2.q.q3)
   end
 
   if m isa TaylorMap
@@ -80,19 +80,19 @@ end
 function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, J::UniformScaling, m1::Union{TaylorMap,VectorField}; dospin::Bool=true)
   checkinplace(m, m1)
   
-  nv = numvars(m)
+  nv = nvars(m)
 
-  for i=1:nv
+  for i in 1:nv
     copy!(m.x[i], m1.x[i])
-    m.x[i][i] = $(ops[2])(1, m.x[i][i])
+    TI.seti!(m.x[i], $(ops[2])(1, TI.geti(m.x[i], i)), i)
   end
 
-  if !isnothing(m.Q) && dospin
-    copy!(m.Q.q0, m1.Q.q0)
-    copy!(m.Q.q1, m1.Q.q1)
-    copy!(m.Q.q2, m1.Q.q2)
-    copy!(m.Q.q3, m1.Q.q3)
-    m.Q.q0[0] = $(ops[2])(1, m.Q.q0[0])
+  if !isnothing(m.q) && dospin
+    copy!(m.q.q0, m1.q.q0)
+    copy!(m.q.q1, m1.q.q1)
+    copy!(m.q.q2, m1.q.q2)
+    copy!(m.q.q3, m1.q.q3)
+    TI.seti!(m.q.q0[0], $(ops[2])(1, TI.geti(m.q.q0, 0)), 0)
   end
 
 
@@ -119,19 +119,19 @@ end
 function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, m1::Union{TaylorMap,VectorField}, J::UniformScaling; dospin::Bool=true)
   checkinplace(m, m1)
 
-  nv = numvars(m)
+  nv = nvars(m)
 
-  for i=1:nv
+  for i in 1:nv
     copy!(m.x[i], m1.x[i])
-    m.x[i][i] = $(ops[2])(m.x[i][i], 1)
+    TI.seti!(m.x[i], $(ops[2])(TI.geti(m.x[i], i), 1), i)
   end
 
-  if !isnothing(m.Q) && dospin
-    copy!(m.Q.q0, m1.Q.q0)
-    copy!(m.Q.q1, m1.Q.q1)
-    copy!(m.Q.q2, m1.Q.q2)
-    copy!(m.Q.q3, m1.Q.q3)
-    m.Q.q0[0] = $(ops[2])(m.Q.q0[0], 1)
+  if !isnothing(m.q) && dospin
+    copy!(m.q.q0, m1.q.q0)
+    copy!(m.q.q1, m1.q.q1)
+    copy!(m.q.q2, m1.q.q2)
+    copy!(m.q.q3, m1.q.q3)
+    TI.seti!(m.q.q0[0], $(ops[2])(TI.geti(m.q.q0, 0), 1), 0)
   end
 
   if m isa TaylorMap
@@ -155,7 +155,7 @@ function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, m1::Union{Taylor
 end
 
 function $(ops[2])(m1::T, m2::T) where {T<:Union{TaylorMap,VectorField}}
-  m = zero_op(m1, m2)
+  m = zero(promote_type(typeof(m1), typeof(m2)))
   $(Meta.parse(ops[1]))(m, m1, m2)
   return m
 end
@@ -183,17 +183,17 @@ for ops = (("add!", :+), ("sub!",:-), ("mul!",:*), ("div!",:/))
 function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, a::Number, m1::Union{TaylorMap,VectorField}; dospin::Bool=true)
   checkinplace(m, a, m1)
   
-  nv = numvars(m)
+  nv = nvars(m)
 
   for i=1:nv
-    $(Meta.parse(ops[1]))(m.x[i], a, m1.x[i])
+    TI.$(Meta.parse(ops[1]))(m.x[i], a, m1.x[i])
   end
 
-  if !isnothing(m.Q) && dospin
-    $(Meta.parse(ops[1]))(m.Q.q0, a, m1.Q.q0)
-    $(Meta.parse(ops[1]))(m.Q.q1, a, m1.Q.q1)
-    $(Meta.parse(ops[1]))(m.Q.q2, a, m1.Q.q2)
-    $(Meta.parse(ops[1]))(m.Q.q3, a, m1.Q.q3)
+  if !isnothing(m.q) && dospin
+    TI.$(Meta.parse(ops[1]))(m.q.q0, a, m1.q.q0)
+    TI.$(Meta.parse(ops[1]))(m.q.q1, a, m1.q.q1)
+    TI.$(Meta.parse(ops[1]))(m.q.q2, a, m1.q.q2)
+    TI.$(Meta.parse(ops[1]))(m.q.q3, a, m1.q.q3)
   end
 
   if m isa TaylorMap
@@ -219,17 +219,17 @@ end
 function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, m1::Union{TaylorMap,VectorField}, a::Number; dospin::Bool=true)
   checkinplace(m, a, m1)
   
-  nv = numvars(m)
+  nv = nvars(m)
 
   for i=1:nv
-    $(Meta.parse(ops[1]))(m.x[i], m1.x[i], a)
+    TI.$(Meta.parse(ops[1]))(m.x[i], m1.x[i], a)
   end
 
-  if !isnothing(m.Q) && dospin
-    $(Meta.parse(ops[1]))(m.Q.q0, m1.Q.q0, a)
-    $(Meta.parse(ops[1]))(m.Q.q1, m1.Q.q1, a)
-    $(Meta.parse(ops[1]))(m.Q.q2, m1.Q.q2, a)
-    $(Meta.parse(ops[1]))(m.Q.q3, m1.Q.q3, a)
+  if !isnothing(m.q) && dospin
+    TI.$(Meta.parse(ops[1]))(m.q.q0, m1.q.q0, a)
+    TI.$(Meta.parse(ops[1]))(m.q.q1, m1.q.q1, a)
+    TI.$(Meta.parse(ops[1]))(m.q.q2, m1.q.q2, a)
+    TI.$(Meta.parse(ops[1]))(m.q.q3, m1.q.q3, a)
   end
 
   if m isa TaylorMap
@@ -253,13 +253,13 @@ function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, m1::Union{Taylor
 end
 
 function $(ops[2])(a::Number, m1::Union{TaylorMap,VectorField})
-  m = zero_op(m1, a)
+  m = zero(promote_type(typeof(m1), typeof(a)))
   $(Meta.parse(ops[1]))(m, a, m1)
   return m
 end
 
 function $(ops[2])(m1::Union{TaylorMap,VectorField}, a::Number)
-  m = zero_op(m1, a)
+  m = zero(promote_type(typeof(m1), typeof(a)))
   $(Meta.parse(ops[1]))(m, m1, a)
   return m
 end

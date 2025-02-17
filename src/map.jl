@@ -230,6 +230,20 @@ function zero(::Type{$t{X0,X,Q,S}}) where {X0,X,Q,S}
   return _zero($t{X0,X,Q,S}, getdef(eltype(X)), nothing)
 end
 
+function one(::Type{$t{X0,X,Q,S}}) where {X0,X,Q,S}
+  out_m = _zero($t{X0,X,Q,S}, getdef(eltype(X)), nothing)
+  nv = nvars(out_m)
+
+  for i in 1:nv
+    TI.seti!(out_m.x[i], 1, i)
+  end
+
+  if !isnothing(m.q)
+    TI.seti!(out_m.q.q0, 1, 0)
+  end
+  return out_m
+end
+
 # Explicit type specification
 # Def change would be static (in type)
 function $t{X0,X,Q,S}(m::Union{TaylorMap,Nothing}=nothing) where {X0,X,Q,S}

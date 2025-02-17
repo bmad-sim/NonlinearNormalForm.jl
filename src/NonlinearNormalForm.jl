@@ -10,7 +10,6 @@ import Base: ∘,
              literal_pow,
              inv, 
              zero,
-             zeros,
              one,
              complex,
              real,
@@ -23,12 +22,9 @@ import Base: ∘,
              convert,
              show,
              rand,
-             promote_rule,
-             eltype,
-             unsafe_convert
+             promote_rule
 
-import LinearAlgebra: norm,
-                      dot
+import LinearAlgebra: norm
 
 import TPSAInterface as TI
 import TPSAInterface: AbstractTPSADef, getdef, nvars, nparams, ndiffs, maxord, nmonos
@@ -47,7 +43,6 @@ export        TaylorMap,
               VectorField,
               
               norm,
-              dot,
               to_SO3,
       
               compose,
@@ -112,7 +107,9 @@ include("utils.jl")
 include("matrix.jl")
 include("set.jl")
 include("sanity.jl")
+include("operators.jl")
 include("methods.jl")
+
 
 #include("staticarrays.jl")
 #=

@@ -1,9 +1,11 @@
 using NonlinearNormalForm
-using Test
+using Test, GTPSA
+
+include("readfpp.jl")
 
 @testset "Composition and inversion" begin
     d = Descriptor(1,2)
-    x1 = vars()[1]
+    x1 = @vars(d)[1]
     m1 = DAMap(x=[1+2*x1+2*x1^2], x0=[4])
     m2 = DAMap(x=[1+2*x1+2*x1^2], x0=[3])
 

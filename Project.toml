@@ -31,6 +31,7 @@ julia = "1.9"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+GTPSA = "b27dd330-f138-47c5-815b-40db9dd9b6e8"
 
 [targets]
-test = ["Test"]
+test = ["Test", "GTPSA"]
