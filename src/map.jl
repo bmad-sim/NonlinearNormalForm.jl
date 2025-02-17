@@ -2,7 +2,7 @@
 
 Defines the types abstract type TaylorMap, and concrete types DAMap 
 and TPSAMap (which differ only in concatenation and inversion rules), 
-promotion rules, and constructors.
+promotion rules, constructors, and map-specific operators.
 
 =#
 
@@ -178,8 +178,18 @@ for t = (:DAMap, :TPSAMap)
 function promote_rule(::Type{$t{X0,X,Q,S}}, ::Type{G}) where {X0,X,Q,S,G<:Union{Number,Complex}}
   out_X0 = similar_eltype(X0, promote_type(eltype(X0), G))
   out_X = similar_eltype(X, promote_type(eltype(X), G))
-  out_Q = isnothing(Q) ? Nothing : similar_eltype(Q, promote_type(eltype(Q), G))
-  out_S = isnothing(S) ? Nothing : similar_eltype(S, promote_type(eltype(S), G))
+  out_Q = Q == Nothing ? Nothing : similar_eltype(Q, promote_type(eltype(Q), G))
+  out_S = S == Nothing ? Nothing : similar_eltype(S, promote_type(eltype(S), G))
+  return $t{out_X0,out_X,out_Q,out_S}
+end
+
+function promote_rule(::Type{$t{X01,X1,Q1,S1}}, ::Type{$t{X02,X2,Q2,S2}}) where {X01,X02,X1,X2,Q1,Q2,S1,S2}
+  out_X0 = similar_eltype(X01, promote_type(eltype(X01), eltype(X02)))
+  out_X = similar_eltype(X1, promote_type(eltype(X1), eltype(X2)))
+  !xor(Q1==Nothing, Q2==Nothing) || error("Cannot promote $(t)s: one includes spin while the other does not")
+  out_Q = Q1 == Nothing ? Nothing : similar_eltype(Q1, promote_type(eltype(Q1),eltype(Q2)))
+  !xor(S1==Nothing, S2==Nothing) || error("Cannot promote $(t)s: one includes stochastic kicks while the other does not")
+  out_S = S1 == Nothing ? Nothing : similar_eltype(S1, promote_type(eltype(S1),eltype(S2)))
   return $t{out_X0,out_X,out_Q,out_S}
 end
 
@@ -192,8 +202,8 @@ end
 function real(::Type{$t{X0,X,Q,S}}) where {X0,X,Q,S}
   out_X0 = similar_eltype(X0, real(eltype(X0)))
   out_X = similar_eltype(X, real(eltype(X)))
-  out_Q = isnothing(Q) ? Nothing : similar_eltype(Q, real(eltype(Q)))
-  out_S = isnothing(S) ? Nothing : similar_eltype(S, real(eltype(S)))
+  out_Q = Q == Nothing ? Nothing : similar_eltype(Q, real(eltype(Q)))
+  out_S = S == Nothing ? Nothing : similar_eltype(S, real(eltype(S)))
   return $t{out_X0,out_X,out_Q,out_S}
 end
 
@@ -223,7 +233,7 @@ end
 # Explicit type specification
 # Def change would be static (in type)
 function $t{X0,X,Q,S}(m::Union{TaylorMap,Nothing}=nothing) where {X0,X,Q,S}
-  out_m = _zero_map($t{X0,X,Q,S}, getdef(eltype(X)), m)
+  out_m = _zero($t{X0,X,Q,S}, getdef(eltype(X)), m)
   if !isnothing(m)
     copy!(out_m, m)
   end
@@ -366,19 +376,30 @@ function _compose!(
   TI.compose!(view(m.x, 1:nv), view(m2.x, 1:nv), m1.x)
 
   # Spin:
-  if !isnothing(m.q) && do_spin
-    # TO-DO: use MQuaternion (mutable quaternion) so only 1 vectorized compose! call
-    TI.compose!(work_q.q0, m2.q.q0, m1.x)
-    TI.compose!(work_q.q1, m2.q.q1, m1.x)
-    TI.compose!(work_q.q2, m2.q.q2, m1.x)
-    TI.compose!(work_q.q3, m2.q.q3, m1.x)
-    mul!(m.q, work_q, m1.q) 
+  if !isnothing(m.q)
+    if do_spin
+      # TO-DO: use MQuaternion (mutable quaternion) so only 1 vectorized compose! call
+      TI.compose!(work_q.q0, m2.q.q0, m1.x)
+      TI.compose!(work_q.q1, m2.q.q1, m1.x)
+      TI.compose!(work_q.q2, m2.q.q2, m1.x)
+      TI.compose!(work_q.q3, m2.q.q3, m1.x)
+      mul!(m.q, work_q, m1.q) 
+    else
+      TI.clear!(m.q.q0)
+      TI.clear!(m.q.q1)
+      TI.clear!(m.q.q2)
+      TI.clear!(m.q.q3)
+    end
   end 
 
   # Stochastic (fast with StaticArrays)
-  if !isnothing(m.s) && do_stochastic
-    M2 = jacobian(m2)   
-    m.s .= M2*m1.s*transpose(M2) + m2.s
+  if !isnothing(m.s)
+    if do_stochastic
+      M2 = jacobian(m2)   
+      m.s .= M2*m1.s*transpose(M2) + m2.s
+    else
+      m.s .= 0
+    end
   end
 
   return m
@@ -425,7 +446,9 @@ function compose!(
   work_q::Union{Nothing,Quaternion}=isnothing(m.q) ? nothing : zero(m.q),
   do_spin::Bool=true, 
   do_stochastic::Bool=true,
+  keep_scalar=nothing # For TPSAMap, this is just a placeholder, scalar part is never dropped
 )
+  isnothing(keep_scalar) || error("The keep_scalar kwarg is invalid for TPSAMap, because the scalar part is never dropped")
   checkinplace(m, m2, m1)
   !(m === m1) || error("Cannot compose!(m, m2, m1) with m === m1")
   !(m === m2) || error("Cannot compose!(m, m2, m1) with m === m2")
@@ -465,14 +488,21 @@ function inv!(
   TI.inv!(m.x, m1.x)
 
   # Now do quaternion: inverse of q(z0) is q^-1(M^-1(zf))
-  if !isnothing(m.q) && do_spin
-    inv!(work_q, m1.q)
-    compose!(m.q, work_q, m.x)
-    # TO-DO: use MQuaternion (mutable quaternion) so only 1 vectorized compose! call
-    TI.compose!(m.q.q0, work_q.q.q0, m.x)
-    TI.compose!(m.q.q1, work_q.q.q1, m.x)
-    TI.compose!(m.q.q2, work_q.q.q2, m.x)
-    TI.compose!(m.q.q3, work_q.q.q3, m.x)
+  if !isnothing(m.q)
+    if do_spin
+      inv!(work_q, m1.q)
+      compose!(m.q, work_q, m.x)
+      # TO-DO: use MQuaternion (mutable quaternion) so only 1 vectorized compose! call
+      TI.compose!(m.q.q0, work_q.q.q0, m.x)
+      TI.compose!(m.q.q1, work_q.q.q1, m.x)
+      TI.compose!(m.q.q2, work_q.q.q2, m.x)
+      TI.compose!(m.q.q3, work_q.q.q3, m.x)
+    else
+      TI.clear!(m.q.q0)
+      TI.clear!(m.q.q1)
+      TI.clear!(m.q.q2)
+      TI.clear!(m.q.q3)
+    end
   end
 
   m.x0 .= getscalar(m1)
@@ -566,30 +596,40 @@ function pow!(
   checkinplace(m, m1, work_m)
   !(m === m1) || error("Cannot pow!(m, m1) with m === m1")
   !(m === work_m) || error("Cannot pow!(m, m1; work_m=work_m) with m === work_m")
-  _pow!(m, m1, n, work_m, work_q, true)
+  _pow!(m, m1, n, work_m, work_q, nothing)
   return m
 end
 
 # =================================================================================== #
 # Composition and inversion out-of-place operators
-
 for t = (:DAMap, :TPSAMap)
 @eval begin
 
-∘(m2::$t, m1::$t) = (m = zero(m2); compose!(m, m2, m1); return m)
-# When composing a TPS scalar/vector function w a map, use orbital part of map:
-function ∘(m2, m1::$t)
-  TI.is_tps_type(eltype(m2)) isa TI.IsTPSType || error("Cannot compose: $(eltype(m2)) is not a TPS type supported by TPSAInterface.jl")
-  m = zero(m2)
-  TI.compose!(m, m2, m1.x)
+function ∘(m2::$t, m1::$t)
+  m2prom, m1prom = promote(m2, m1)
+  m = zero(m2prom)
+  compose!(m, m2prom, m1prom)
   return m
 end
 
-literal_pow(::typeof(^), m::$t{X0,X,Q,S}, vn::Val{n}) where {X0,X,Q,S,n} = ^(m,n)
+# When composing a TPS scalar/vector function w a map, use orbital part of map:
+function ∘(m2, m1::$t)
+  TI.is_tps_type(eltype(m2)) isa TI.IsTPSType || error("Cannot compose: $(eltype(m2)) is not a TPS type supported by TPSAInterface.jl")
+  T = promote_type(eltype(m1.x), eltype(m2))
+  T == eltype(m1.x) ? m1xprom = m1.x : m1xprom = T.(m1.x)
+  T == eltype(m2) ? m2prom = m2 : m2prom = T.(m2)
+  m = zero(m2prom)
+  TI.compose!(m, m2prom, m1xprom)
+  return m
+end
+
+literal_pow(::typeof(^), m::$t{X0,X,Q,S}, vn::Val{1}) where {X0,X,Q,S} = copy(m)
+literal_pow(::typeof(^), m::$t{X0,X,Q,S}, vn::Val{0}) where {X0,X,Q,S} = one(m)
+literal_pow(::typeof(^), m::$t{X0,X,Q,S}, vn::Val{-1}) where {X0,X,Q,S} = inv(m)
 inv(m::$t) = (out_m = zero(m); inv!(out_m, m); return out_m)
 ^(m::$t, n::Integer) = (out_m = zero(m); pow!(out_m, m, n); return m)
 
-# Also allow * for simpliticty and \ and / because why not
+# Also allow * for simplicity and \ and / 
 *(m2, m1::$t) = ∘(m2, m1)
 /(m2::$t, m1::$t) = m2 ∘ inv(m1) 
 \(m2::$t, m1::$t) = inv(m2) ∘ m1
@@ -604,8 +644,8 @@ inv(m::$t) = (out_m = zero(m); inv!(out_m, m); return out_m)
 \(m::$t, J::UniformScaling) = inv(m)
 \(J::UniformScaling, m::$t) = $t(m)
 
-compose!(m::$t, m1::$t, J::UniformScaling; kwargs...) = copy!(m, m1)
-compose!(m::$t, J::UniformScaling, m1::$t; kwargs...) = copy!(m, m1)
+#compose!(m::$t, m1::$t, J::UniformScaling; kwargs...) = copy!(m, m1)
+#compose!(m::$t, J::UniformScaling, m1::$t; kwargs...) = copy!(m, m1)
 
 end
 end

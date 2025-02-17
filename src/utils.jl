@@ -84,8 +84,7 @@ end
 # Similar eltype
 # Returns the equivalent of container A to instead have eltype G and dims M
 function similar_eltype(::Type{A}, ::Type{G}, ::Type{Val{M}}=Val{N}) where {M,N,A<:Array{T,N} where{T},G}
-  arrtype = Base.typename(A).wrapper
-  return arrtype{G, M}
+  return Array{G, M}
 end
 
 # Default fallback:
@@ -96,6 +95,12 @@ end
 # StaticArrays definition
 function similar_eltype(::Type{A}, ::Type{G}, ::Type{Val{M}}=Val{N}) where {M,N,A<:StaticArray{N,T} where{T},G}
   return similar_type(A, G, Size(M))
+end
+
+# Quaternion
+function similar_eltype(::Type{A}, ::Type{G}, ::Type{Val{M}}=Val{1}) where {M,A<:Quaternion,G}
+  M == 1 || error("Quaternion type can only have dimension 1")
+  return Quaternion{promote_type(eltype(A),G)}
 end
 
 # =================================================================================== #

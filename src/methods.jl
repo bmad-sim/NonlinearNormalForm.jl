@@ -46,6 +46,10 @@ end
 
 copy(m::Union{TaylorMap,VectorField}) = (out_m = zero(m); copy!(out_m, m); return out_m)
 
+# --- convert ---
+convert(::Type{T}, m::Union{TaylorMap,VectorField}) where {T<:Union{TaylorMap,VectorField}} = T(m) 
+convert(::Type{T}, m::T) where {T<:Union{TaylorMap,VectorField}} = m
+
 # --- norm ---
 function norm(m::Union{TaylorMap,VectorField})
   nrm = 0.
@@ -101,19 +105,19 @@ end
 function real(m::TaylorMap)
   out_m = _zero(real(typeof(m)), getdef(m), m)
   real!(out_m, m)
-  return m
+  return out_m
 end
 
 function imag(m::TaylorMap)
   out_m = _zero(real(typeof(m)), getdef(m), m)
   imag!(out_m, m)
-  return m
+  return out_m
 end
 
 function complex(m::TaylorMap)
   out_m = _zero(complex(typeof(m)), getdef(m), m)
   copy!(out_m, m)
-  return m
+  return out_m
 end
 
 
