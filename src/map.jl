@@ -52,10 +52,9 @@ abstract type TaylorMap{X0<:AbstractVector,X<:AbstractVector,Q<:Union{Quaternion
   S == Nothing || eltype(S) == TI.numtype(eltype(X)) || error("Stochastic envelope matrix number type $(eltype(S)) must be $(TI.numtype(eltype(X))) (equal to the type of the orbital ray scalar part)")
   
   # Runtime checks:
-  nvars(first(m.x)) == length(m.x0) || error("Reference orbit array length disagrees with number of variables in TPSA")
-  ndiffs(first(m.x)) == length(m.x) || error("Orbital ray length disagrees with number of differentials (variables + parameters) in TPSA")
-  Q == Nothing || getdef(first(m.q)) == getdef(first(m.x)) || error("Quaternion TPSA definition disagrees with orbital ray TPSA definition")
-  S == Nothing || size(S) == (length(m.x0), length(m.x0)) || error("Size of stochastic matrix disagrees with number of variables in TPSA")
+  ndiffs(first(m.x)) == length(m.x) || error("Orbital ray length disagrees with number of differentials in TPSA")
+  Q == Nothing || getinit(first(m.q)) == getinit(first(m.x)) || error("Quaternion TPSA definition disagrees with orbital ray TPSA definition")
+  S == Nothing || size(S) == (length(m.x0), length(m.x0)) || error("Size of stochastic matrix disagrees with number of variables in map")
 end
 
 struct DAMap{X0,X,Q,S} <: TaylorMap{X0,X,Q,S}
@@ -87,42 +86,40 @@ end
 # =================================================================================== #
 # Field initialization functions.
 # Note that even when a TPSA definition is inferrable from the types (X0, X, ...),
-# we still explicitly pass the def in case it is not. This is redundant, however ensures 
+# we still explicitly pass the init in case it is not. This is redundant, however ensures 
 # flexibility for different TPSA packages/modes.
 
 # These may be overrided by external array packages.
-function init_map_x0(::Type{X0}, def::AbstractTPSADef) where {X0<:AbstractVector}
-  nv = nvars(def)
+function init_map_x0(::Type{X0}, init::AbstractTPSAInit, nv::Integer) where {X0<:AbstractVector}
   x0 = similar(X0, nv)
   x0 .= 0
   return x0
 end
 
-function init_map_x(::Type{X}, def::AbstractTPSADef, reuse::Union{Nothing,TaylorMap}=nothing) where {X<:AbstractVector}
-  nv = nvars(def)
-  nn = ndiffs(def)
+function init_map_x(::Type{X}, init::AbstractTPSAInit, nv::Integer, reuse::Union{Nothing,TaylorMap}=nothing) where {X<:AbstractVector}
+  nn = ndiffs(init)
   x = similar(X, nn)
   for i in 1:nv
-    x[i] = TI.init_tps(TI.numtype(eltype(X)), def) 
+    x[i] = TI.init_tps(TI.numtype(eltype(X)), init) 
   end
   # use same parameters if reuse isa TaylorMap and eltype(x) == eltype(reuse.x)
-  if reuse isa TaylorMap && eltype(x) == eltype(reuse.x) && def == getdef(reuse)
+  if reuse isa TaylorMap && eltype(x) == eltype(reuse.x) && init == getinit(reuse)
     x[nv+1:nn] .= view(reuse.x, nv+1:nn)
   else # allocate
     for i in nv+1:nn
-      x[i] = TI.init_tps(TI.numtype(eltype(X)), def) 
+      x[i] = TI.init_tps(TI.numtype(eltype(X)), init) 
       TI.seti!(x[i], 1, i)
     end
   end
   return x
 end
 
-function init_map_q(::Type{Q}, def::AbstractTPSADef) where {Q<:Union{Nothing,Quaternion}}
+function init_map_q(::Type{Q}, init::AbstractTPSAInit) where {Q<:Union{Nothing,Quaternion}}
   if Q != Nothing
-    q0 = TI.init_tps(TI.numtype(eltype(Q)), def) 
-    q1 = TI.init_tps(TI.numtype(eltype(Q)), def) 
-    q2 = TI.init_tps(TI.numtype(eltype(Q)), def) 
-    q3 = TI.init_tps(TI.numtype(eltype(Q)), def) 
+    q0 = TI.init_tps(TI.numtype(eltype(Q)), init) 
+    q1 = TI.init_tps(TI.numtype(eltype(Q)), init) 
+    q2 = TI.init_tps(TI.numtype(eltype(Q)), init) 
+    q3 = TI.init_tps(TI.numtype(eltype(Q)), init) 
     q = Quaternion(q0,q1,q2,q3)
   else
     q = nothing
@@ -130,9 +127,8 @@ function init_map_q(::Type{Q}, def::AbstractTPSADef) where {Q<:Union{Nothing,Qua
   return q
 end
 
-function init_map_s(::Type{S}, def::AbstractTPSADef) where {S<:Union{Nothing,AbstractMatrix}}
+function init_map_s(::Type{S}, init::AbstractTPSAInit, nv::Integer) where {S<:Union{Nothing,AbstractMatrix}}
   if S != Nothing
-    nv = nvars(def)
     s = similar(S, nv, nv)
     s .= 0
   else
@@ -146,25 +142,24 @@ end
 
 # Consistency checks are made by the `checkmapsanity` run by every map construction,
 # so lengths of arrays here are not checked for consistency with the TPSA
-function init_map_x0(a::Type{X0}, ::AbstractTPSADef) where {X0<:StaticVector}
+function init_map_x0(a::Type{X0}, ::AbstractTPSAInit, nv::Integer) where {X0<:StaticVector}
   x0 = StaticArrays.sacollect(X0, 0 for i in 1:length(a))
   return x0
 end
 
-function init_map_x(::Type{X}, def::AbstractTPSADef, reuse::Union{Nothing,TaylorMap}=nothing) where {X<:StaticVector}
-  nv = nvars(def)
+function init_map_x(::Type{X}, init::AbstractTPSAInit, nv::Integer, reuse::Union{Nothing,TaylorMap}=nothing) where {X<:StaticVector}
   # reuse parameters if applicable
-  if reuse isa TaylorMap && eltype(X) == eltype(reuse.x) && def == getdef(reuse)
-    x = StaticArrays.sacollect(X, (i <= nv ? TI.init_tps(TI.numtype(eltype(X)), def) :  reuse.x[i]) for i in 1:length(X))
+  if reuse isa TaylorMap && eltype(X) == eltype(reuse.x) && init == getinit(reuse)
+    x = StaticArrays.sacollect(X, (i <= nv ? TI.init_tps(TI.numtype(eltype(X)), init) :  reuse.x[i]) for i in 1:length(X))
   else # allocate
     x = StaticArrays.sacollect(X, (i <= nv ? 
-                                    TI.init_tps(TI.numtype(eltype(X)), def) : 
-                                    (t = TI.init_tps(TI.numtype(eltype(X)), def); TI.seti!(t, 1, i); t)) for i in 1:length(X))
+                                    TI.init_tps(TI.numtype(eltype(X)), init) : 
+                                    (t = TI.init_tps(TI.numtype(eltype(X)), init); TI.seti!(t, 1, i); t)) for i in 1:length(X))
   end
   return x
 end
 
-function init_map_s(::Type{S}, ::AbstractTPSADef) where {S<:StaticMatrix}
+function init_map_s(::Type{S}, ::AbstractTPSAInit, nv::Integer) where {S<:StaticMatrix}
   s = StaticArrays.sacollect(S, 0 for i in 1:length(S))
   return s
 end
@@ -217,21 +212,22 @@ for t = (:DAMap, :TPSAMap)
 @eval begin
 
 # Lowest-level, internal
-function _zero(::Type{$t{X0,X,Q,S}}, def::AbstractTPSADef, reuse::Union{TaylorMap,Nothing}) where {X0,X,Q,S}
-  out_x0 = init_map_x0(X0, def)
-  out_x = init_map_x(X, def, reuse)
-  out_q = init_map_q(Q, def)
-  out_s = init_map_s(S, def)
+function _zero(::Type{$t{X0,X,Q,S}}, init::AbstractTPSAInit, nv::Integer, reuse::Union{TaylorMap,Nothing}=nothing) where {X0,X,Q,S}
+  out_x0 = init_map_x0(X0, init, nv)
+  out_x = init_map_x(X, init, nv, reuse)
+  out_q = init_map_q(Q, init)
+  out_s = init_map_s(S, init, nv)
   out_m = $t(out_x0, out_x, out_q, out_s)
   return out_m
 end
 
+#=
 function zero(::Type{$t{X0,X,Q,S}}) where {X0,X,Q,S}
-  return _zero($t{X0,X,Q,S}, getdef(eltype(X)), nothing)
+  return _zero($t{X0,X,Q,S}, getinit(eltype(X)), nothing)
 end
 
 function one(::Type{$t{X0,X,Q,S}}) where {X0,X,Q,S}
-  out_m = _zero($t{X0,X,Q,S}, getdef(eltype(X)), nothing)
+  out_m = _zero($t{X0,X,Q,S}, getinit(eltype(X)), nothing)
   nv = nvars(out_m)
 
   for i in 1:nv
@@ -243,32 +239,38 @@ function one(::Type{$t{X0,X,Q,S}}) where {X0,X,Q,S}
   end
   return out_m
 end
-
+=#
 # Explicit type specification
-# Def change would be static (in type)
-function $t{X0,X,Q,S}(m::Union{TaylorMap,Nothing}=nothing) where {X0,X,Q,S}
-  out_m = _zero($t{X0,X,Q,S}, getdef(eltype(X)), m)
-  if !isnothing(m)
-    copy!(out_m, m)
-  end
+# Init change would be static (in type)
+function $t{X0,X,Q,S}(m::TaylorMap) where {X0,X,Q,S}
+  out_m = zero($t{X0,X,Q,S}, m) 
+  copy!(out_m, m)
   return out_m
 end
 
-# Copy ctor including optional TPSA def change
-function $t(m::TaylorMap; def::AbstractTPSADef=getdef(m))
-  checktpsas(m, def)
+# zero but new type potentially
+function zero(::Type{$t{X0,X,Q,S}}, m::TaylorMap) where {X0,X,Q,S}
+  return _zero($t{X0,X,Q,S}, getinit(eltype(X)), nvars(m), m)
+end
+
+zero(::Type{$t}, m::TaylorMap{X0,X,Q,S}) where {X0,X,Q,S} = zero($t{X0,X,Q,S}, m)
+
+# Copy ctor including optional TPSA init change
+function $t(m::TaylorMap; init::AbstractTPSAInit=getinit(m))
   X0 = typeof(m.x0)
-  X = similar_eltype(typeof(m.x), TI.init_tps_type(eltype(X0), def))
-  Q = isnothing(m.q) ? Nothing : Quaternion{TI.init_tps_type(eltype(X0), def)}
+  X = similar_eltype(typeof(m.x), TI.init_tps_type(eltype(X0), init))
+  Q = isnothing(m.q) ? Nothing : Quaternion{TI.init_tps_type(eltype(X0), init)}
   S = typeof(m.s)
-  out_m = _zero($t{X0,X,Q,S}, def, m)
+  out_m = _zero($t{X0,X,Q,S}, init, nvars(m), m)
   copy!(out_m, m)
   return out_m
 end
 
 # Kwarg ctor:
 function $t(;
-  def::Union{AbstractTPSADef,Nothing}=nothing,
+  init::Union{AbstractTPSAInit,Nothing}=nothing,
+  nv::Union{Integer,Nothing}=nothing,
+  np::Union{Integer,Nothing}=nothing,
   x0::Union{AbstractVector,Nothing}=nothing,
   x::Union{AbstractVector,Nothing}=nothing,
   x_matrix::Union{AbstractMatrix,UniformScaling,Nothing}=nothing,
@@ -278,22 +280,44 @@ function $t(;
   spin::Union{Bool,Nothing}=nothing,
   stochastic::Union{Bool,Nothing}=nothing,
 ) 
-  if isnothing(def)
+  if isnothing(init)
     if !isnothing(x) && TI.is_tps_type(eltype(x)) isa TI.IsTPSType
-      def = getdef(first(x))
+      init = getinit(first(x))
     elseif !isnothing(q) && TI.is_tps_type(eltype(q)) isa TI.IsTPSType
-      def = getdef(first(q))
+      init = getinit(first(q))
     else
-      error("No TPSA definition has been provided, nor is one inferrable from the input arguments!")
+      error("No TPSA definition has been provided, nor is one inferrable from the input arguments")
     end
   end
 
+  # Try to infer nv if not provided
+  if isnothing(nv)
+    if !isnothing(x0)
+      nv = length(x0)
+    elseif !isnothing(x)
+      nv = length(x)
+    elseif x_matrix isa AbstractMatrix
+      nv = size(x_matrix, 1)
+    elseif !isnothing(s)
+      nv = size(s, 1)
+    else
+      nv = DEFAULT_NVARS
+    end
+  end
+
+  if isnothing(np)
+    np = 0
+  end
+  
+  nn = nv+np
+  # Check if nv+np agrees with ndiffs in init
+  nn == ndiffs(init) || error("Number of variables + parameters does not agree with the number of differentials in the TPSA")
 
   # Assemble types:
   W = promote_type(map(t->(!isnothing(t) ? TI.numtype(eltype(t)) : Float64), (x0, x, q, s))...)
-  TW = TI.init_tps_type(W, def)
-  X0 = isnothing(x0) ? @_DEFAULT_X0(nvars(def)){W} : similar_eltype(typeof(x0), W)
-  X = isnothing(x) ? @_DEFAULT_X(ndiffs(def)){TW} : similar_eltype(typeof(x), TW)
+  TW = TI.init_tps_type(W, init)
+  X0 = isnothing(x0) ? @_DEFAULT_X0(nv){W} : similar_eltype(typeof(x0), W)
+  X = isnothing(x) ? @_DEFAULT_X(nn){TW} : similar_eltype(typeof(x), TW)
   
   if isnothing(spin)
     Q = isnothing(q) && isnothing(q_map) ? Nothing : Quaternion{TW}
@@ -306,19 +330,13 @@ function $t(;
   if isnothing(stochastic)
     S = isnothing(s) ? Nothing : similar_eltype(typeof(s), W)
   elseif stochastic
-    S = isnothing(s) ? @_DEFAULT_S(nvars(def)){W} : similar_eltype(typeof(s), W)
+    S = isnothing(s) ? @_DEFAULT_S(nv){W} : similar_eltype(typeof(s), W)
   else
     S = Nothing
   end
 
   # Construct map:
-  out_x0 = init_map_x0(X0, def)
-  out_x = init_map_x(X, def)
-  out_q = init_map_q(Q, def)
-  out_s = init_map_s(S, def)
-
-  out_m = $t(out_x0, out_x, out_q, out_s)
-
+  out_m = _zero($t{X0,X,Q,S}, init, nv)
 
   if !isnothing(x0)
     out_m.x0 .= x0
@@ -347,7 +365,7 @@ Creates a zero `m` with the same properties as `m` including TPSA definiton,
 spin, and stochasticity.
 """
 function zero(m::TaylorMap) 
-  return _zero(typeof(m), getdef(m), m)
+  return _zero(typeof(m), getinit(m), nvars(m), m)
 end
 
 """
@@ -385,7 +403,6 @@ function _compose!(
 )
   m.x0 .= m1.x0
   nv = nvars(m)
-
 
   TI.compose!(view(m.x, 1:nv), view(m2.x, 1:nv), m1.x)
 
@@ -467,7 +484,6 @@ function compose!(
   !(m === m1) || error("Cannot compose!(m, m2, m1) with m === m1")
   !(m === m2) || error("Cannot compose!(m, m2, m1) with m === m2")
 
-  
   # TPSAMap setup:
   # For TPSA Map concatenation, we need to subtract w_0 (m2 x0) (Eq. 33)
   # Because we are still expressing in terms of z_0 (m1 x0)
@@ -536,7 +552,7 @@ function _pow!(
   n::Integer,
   work_m::Union{Nothing,TaylorMap},
   work_q::Union{Nothing,Quaternion},
-  keep_scalar::Bool
+  keep_scalar::Union{Bool,Nothing}
 )
   checkinplace(m, m1)
   !(m === m1) || error("Cannot pow!(m, m1) with m === m1")
@@ -551,36 +567,40 @@ function _pow!(
   end
 
   pown = abs(n)-1
+  tmp1 = m
+  tmp2 = work_m
   if n > 0
-    if isodd(pown) # after 1, 3, etc iterations, m will contain result 
-      copy!(work_m, m1)
+    if isodd(pown) # e.g. n = 2 corresponds to pown = 1
+      copy!(tmp2, m1)
       for _ in 1:pown
-        compose!(m, work_m, m1, keep_scalar=keep_scalar, work_q=work_q)
-        work_m, m = m, work_m
+        compose!(tmp1, tmp2, m1, keep_scalar=keep_scalar, work_q=work_q)
+        tmp2, tmp1 = tmp1, tmp2
       end
-    else
-      copy!(m, m1)
+    else  # e.g. n = 3 corresponds to pown = 2
+      copy!(tmp1, m1)
       for _ in 1:pown
-        compose!(work_m, m, m1, keep_scalar=keep_scalar, work_q=work_q)
-        work_m, m = m, work_m
+        compose!(tmp2, tmp1, m1, keep_scalar=keep_scalar, work_q=work_q)
+        tmp2, tmp1 = tmp1, tmp2
       end
     end
   else
-    if isodd(pown)  # after 1, 3, etc iterations, work_m will contain result 
-      copy!(m, m1)
+    # If n < 0 then we need one more step to invert the map, so opposite of above
+    if isodd(pown) 
+      copy!(tmp1, m1)
       for _ in 1:pown
-        compose!(work_m, m, m1, keep_scalar=keep_scalar, work_q=work_q)
-        work_m, m = m, work_m
+        compose!(tmp2, tmp1, m1, keep_scalar=keep_scalar, work_q=work_q)
+        tmp2, tmp1 = tmp1, tmp2
       end
     else
-      copy!(work_m, m1)
+      copy!(tmp2, m1)
       for _ in 1:pown
-        compose!(m, work_m, m1, keep_scalar=keep_scalar, work_q=work_q)
-        work_m, m = m, work_m
+        compose!(tmp1, tmp2, m1, keep_scalar=keep_scalar, work_q=work_q)
+        tmp2, tmp1 = tmp1, tmp2
       end
     end
     inv!(m, work_m, work_q=work_q)
   end
+  return m
 end
 
 
@@ -637,11 +657,14 @@ function ∘(m2, m1::$t)
   return m
 end
 
+# necessary because inv(m)^n != inv(m^n) but Julia defaults to the first
+literal_pow(::typeof(^), m::$t{X0,X,Q,S}, vn::Val{n}) where {X0,X,Q,S,n} = ^(m, n) 
+
 literal_pow(::typeof(^), m::$t{X0,X,Q,S}, vn::Val{1}) where {X0,X,Q,S} = copy(m)
 literal_pow(::typeof(^), m::$t{X0,X,Q,S}, vn::Val{0}) where {X0,X,Q,S} = one(m)
 literal_pow(::typeof(^), m::$t{X0,X,Q,S}, vn::Val{-1}) where {X0,X,Q,S} = inv(m)
-inv(m::$t) = (out_m = zero(m); inv!(out_m, m); return out_m)
-^(m::$t, n::Integer) = (out_m = zero(m); pow!(out_m, m, n); return m)
+inv(m::$t; do_spin::Bool=true) = (out_m = zero(m); inv!(out_m, m, do_spin=do_spin); return out_m)
+^(m::$t, n::Integer) = (out_m = zero(m); pow!(out_m, m, n); return out_m)
 
 # Also allow * for simplicity and \ and / 
 *(m2, m1::$t) = ∘(m2, m1)

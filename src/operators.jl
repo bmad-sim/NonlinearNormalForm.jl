@@ -155,7 +155,7 @@ function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, m1::Union{Taylor
 end
 
 function $(ops[2])(m1::T, m2::T) where {T<:Union{TaylorMap,VectorField}}
-  m = zero(promote_type(typeof(m1), typeof(m2)))
+  m = zero(promote_type(typeof(m1), typeof(m2)), m1)
   $(Meta.parse(ops[1]))(m, m1, m2)
   return m
 end
@@ -253,13 +253,13 @@ function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, m1::Union{Taylor
 end
 
 function $(ops[2])(a::Number, m1::Union{TaylorMap,VectorField})
-  m = zero(promote_type(typeof(m1), typeof(a)))
+  m = zero(promote_type(typeof(m1), typeof(a)), m1)
   $(Meta.parse(ops[1]))(m, a, m1)
   return m
 end
 
 function $(ops[2])(m1::Union{TaylorMap,VectorField}, a::Number)
-  m = zero(promote_type(typeof(m1), typeof(a)))
+  m = zero(promote_type(typeof(m1), typeof(a)), m1)
   $(Meta.parse(ops[1]))(m, m1, a)
   return m
 end

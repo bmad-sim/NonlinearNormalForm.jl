@@ -7,12 +7,14 @@ field array type promotion, checking if the last plane of a map is coasting.
 =#
 # =================================================================================== #
 # Helper functions
-getdef(m::Union{TaylorMap,VectorField}) = TI.getdef(first(m.x))
-nvars(m::Union{TaylorMap,VectorField}) = length(m.x0)
-nparams(m::Union{TaylorMap,VectorField}) = length(m.x) - length(m.x0)
+getinit(m::Union{TaylorMap,VectorField}) = TI.getinit(first(m.x))
 ndiffs(m::Union{TaylorMap,VectorField}) = length(m.x)
 nmonos(m::Union{TaylorMap,VectorField}) = TI.nmonos(first(m.x))
 maxord(m::Union{TaylorMap,VectorField}) = TI.maxord(first(m.x))
+
+# NNF-specific helpers:
+nvars(m::Union{TaylorMap,VectorField}) = length(m.x0)
+nparams(m::Union{TaylorMap,VectorField}) = length(m.x) - length(m.x0)
 # =================================================================================== #
 # Jacobian/jacobiant
 
@@ -20,15 +22,30 @@ function jacobian(m::TaylorMap{X0,X,Q,S}) where {X0,X,Q,S}
   nv = nvars(m)
   M = similar(X0, (nv,nv))
   for i in 1:nv^2
-    M[i] = TI.geti(m.x[mod1(i,nv)], floor(Int, (i-1)/nv))
+    M[i] = TI.geti(m.x[mod1(i,nv)], floor(Int, (i-1)/nv)+1)
   end
   return M
 end
 
 function jacobian(m::TaylorMap{X0,X,Q,S}) where {X0,X<:StaticArray,Q,S}
   nv = nvars(m)
-  return StaticArrays.sacollect(SMatrix{nv,nv,eltype(X0)}, TI.geti(m.x[mod1(i,nv)], floor(Int, (i-1)/nv)) for i in 1:nv^2)
+  return StaticArrays.sacollect(SMatrix{nv,nv,eltype(X0)}, TI.geti(m.x[mod1(i,nv)], floor(Int, (i-1)/nv)+1) for i in 1:nv^2)
 end
+
+function jacobiant(m::TaylorMap{X0,X,Q,S}) where {X0,X,Q,S}
+  nv = nvars(m)
+  M = similar(X0, (nv,nv))
+  for i in 1:nv^2
+    M[i] = TI.geti(m.x[floor(Int, (i-1)/nv)+1], mod1(i,nv))
+  end
+  return M
+end
+
+function jacobiant(m::TaylorMap{X0,X,Q,S}) where {X0,X<:StaticArray,Q,S}
+  nv = nvars(m)
+  return StaticArrays.sacollect(SMatrix{nv,nv,eltype(X0)}, TI.geti(m.x[floor(Int, (i-1)/nv)+1], mod1(i,nv)) for i in 1:nv^2)
+end
+
 
 # =================================================================================== #
 # Get/set scalar part of orbital ray
@@ -109,9 +126,9 @@ end
 function coastidx(m)
   nv = nvars(m)
   for i in nv-1:nv # check only the last two planes
-    if abs(TI.geti(m.x[i], 0)) < NonlinearNormalForm.coast_threshold # if scalar part is 0
+    if abs(TI.geti(m.x[i], 0)) < COAST # if scalar part is 0
       cycleidx = TI.cycle!(m.x[i], 0)
-      if cycleidx == i && abs(TI.geti(m.x[i], i) - 1) < NonlinearNormalForm.coast_threshold
+      if cycleidx == i && abs(TI.geti(m.x[i], i) - 1) < COAST
         return i
       end
     end

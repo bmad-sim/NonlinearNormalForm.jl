@@ -44,8 +44,8 @@ function read_fpp_map(file; stochastic::Union{Nothing,Bool}=nothing,spin::Union{
 
 
   # Make the TPSA
-  d = DefGTPSA{Descriptor(nv, no, np, no),Nothing}()
-  m = complex(DAMap(def=d,stochastic=stochastic,spin=spin))
+  d = InitGTPSA{Descriptor(nv, no, np, no),Nothing}()
+  m = complex(DAMap(init=d,nv=nv,np=np,stochastic=stochastic,spin=spin))
 
   idx=3
   data=data[3:end,:]

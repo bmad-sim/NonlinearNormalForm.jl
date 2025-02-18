@@ -103,19 +103,19 @@ function imag!(m::Union{TaylorMap,VectorField}, m1::Union{TaylorMap,VectorField}
 end
 
 function real(m::TaylorMap)
-  out_m = _zero(real(typeof(m)), getdef(m), m)
+  out_m = _zero(real(typeof(m)), getinit(m), nvars(m), m)
   real!(out_m, m)
   return out_m
 end
 
 function imag(m::TaylorMap)
-  out_m = _zero(real(typeof(m)), getdef(m), m)
+  out_m = _zero(real(typeof(m)), getinit(m), nvars(m), m)
   imag!(out_m, m)
   return out_m
 end
 
 function complex(m::TaylorMap)
-  out_m = _zero(complex(typeof(m)), getdef(m), m)
+  out_m = _zero(complex(typeof(m)), getinit(m), nvars(m), m)
   copy!(out_m, m)
   return out_m
 end

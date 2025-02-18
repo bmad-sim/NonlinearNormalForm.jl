@@ -8,16 +8,17 @@ function setray!(
 ) where {T}
   TI.is_tps_type(T) isa TI.IsTPSType || error("Orbital ray element type must be a truncated power series type supported by `TPSAInterface.jl`")
 
-  NV = nvars(first(r))
+  length(r) <= ndiffs(first(r)) || error("Length of output orbital ray `r` cannot be greater than the number of differentials in the TPSA!")
+
   if !isnothing(x)
-    length(x) <= NV || error("Length of input vector `x` cannot be greater than the number of variables in the TPSA!")
+    length(x) <= length(r) || error("Length of input vector `x` cannot be greater than the length of output vector `r`!")
     foreach((out_xi, xi)->copy!(out_xi, xi), view(r, 1:length(x)), x)
   end
 
   if !isnothing(x_matrix)
     if x_matrix isa AbstractMatrix # Map as a matrix:
       Base.require_one_based_indexing(x_matrix)
-      size(x_matrix,1) <= NV || error("Number of rows of `x_matrix` cannot be greater than the number of variables in the TPSA!")
+      size(x_matrix,1) <= length(r) || error("Number of rows of `x_matrix` cannot be greater than the length of output vector `r`!")
       size(x_matrix,2) <= nmonos(first(r))-1 || error("Number of columns of `x_matrix` cannot be greater than the number of monomial coefficients in the TPSA!")
       for varidx in 1:size(x_matrix,1)
         for monoidx in 1:size(x_matrix,2)
@@ -25,7 +26,7 @@ function setray!(
         end
       end
     else # Uniform scaling: Making identity map
-      for varidx in 1:NV
+      for varidx in 1:length(r)
         TI.seti!(r[varidx], 1, varidx)
       end
     end

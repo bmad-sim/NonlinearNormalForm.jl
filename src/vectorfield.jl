@@ -37,32 +37,31 @@ end
   Q == Nothing || eltype(Q) == eltype(X) || error("Quaternion number type $(eltype(Q)) must be $(eltype(X)) (equal to orbital ray)")
 
   # Runtime checks:
-  nvars(first(F.x)) == length(F.x) || error("VectorField orbital ray length disagrees with number of variables in TPSA")
-  Q == Nothing || getdef(first(F.q)) == getdef(first(F.x)) || error("Quaternion TPSA definition disagrees with orbital ray TPSA definition")
+  length(F.x) <= ndiffs(getinit(F.x)) || error("Orbital ray number of variables ($(length(F.x))) exceeds number of differentials in TPSA ($(ndiffs(getinit(F.x))))")
+  Q == Nothing || getinit(first(F.q)) == getinit(first(F.x)) || error("Quaternion TPSA definition disagrees with orbital ray TPSA definition")
 end
 
 # =================================================================================== #
 # Field initialization functions.
 
 # These may be overrided by external array packages.
-function init_vf_x(::Type{X}, def::AbstractTPSADef) where {X<:AbstractVector}
-  nv = nvars(def)
+function init_vf_x(::Type{X}, init::AbstractTPSAInit, nv::Integer) where {X<:AbstractVector}
   x = similar(X, nv)
   for i in 1:nv
-    x[i] = TI.init_tps(TI.numtype(eltype(X)), def) 
+    x[i] = TI.init_tps(TI.numtype(eltype(X)), init) 
   end
   return x
 end
 
-init_vf_q(::Type{Q}, def::AbstractTPSADef) where {Q<:Union{Nothing,Quaternion}} = init_map_q(Q, def)
+init_vf_q(::Type{Q}, init::AbstractTPSAInit) where {Q<:Union{Nothing,Quaternion}} = init_map_q(Q, init)
 
 # =================================================================================== #
 # StaticArray field initialization functions.
 
 # Consistency checks are made by the `checkvfsanity` run by every map construction,
 # so lengths of arrays here are not checked for consistency with the TPSA
-function init_vf_x(::Type{X}, def::AbstractTPSADef) where {X<:StaticVector}
-  x = StaticArrays.sacollect(X, TI.init_tps(TI.numtype(eltype(X)), def) for i in 1:length(X))
+function init_vf_x(::Type{X}, init::AbstractTPSAInit, nv::Integer) where {X<:StaticVector}
+  x = StaticArrays.sacollect(X, TI.init_tps(TI.numtype(eltype(X)), init) for i in 1:length(X))
   return x
 end
 
@@ -98,60 +97,67 @@ end
 # Constructors
 
 # Lowest-level, internal
-function _zero(::Type{VectorField{X,Q}}, def::AbstractTPSADef) where {X,Q}
-  x = init_vf_x(X, def)
-  q = init_vf_q(Q, def)
+function _zero(::Type{VectorField{X,Q}}, init::AbstractTPSAInit, nv::Integer) where {X,Q}
+  x = init_vf_x(X, init, nv)
+  q = init_vf_q(Q, init)
   return VectorField(x, q)
 end
 
+#=
 function zero(::Type{VectorField{X,Q}}) where {X,Q}
-  return _zero(VectorField{X,Q}, getdef(eltype(X)))
+  return _zero(VectorField{X,Q}, getinit(eltype(X)))
 end
-
+=#
 # Explicit type specification
 # Def change would be static (in type)
-function VectorField{X,Q}(F::Union{VectorField,Nothing}=nothing) where {X,Q}
-  out_F = _zero(VectorField{X,Q}, getdef(eltype(X)))
-  if !isnothing(F)
-    copy!(out_F, F)
-  end
+function VectorField{X,Q}(F::VectorField) where {X,Q}
+  out_F = zero(VectorField{X,Q}, F)
+  copy!(out_F, F)
   return out_F
 end
 
-# Copy ctor including optional TPSA def change
-function VectorField(F::VectorField; def::AbstractTPSADef=getdef(F))
-  checktpsas(F, def)
-  X = similar_eltype(typeof(F.x), TI.init_tps_type(eltype(X0), def))
-  Q = isnothing(F.q) ? Nothing : Quaternion{TI.init_tps_type(eltype(X0), def)}
-  out_F = _zero(VectorField{X,Q}, def)
+# zero but new type potentially
+function zero(::Type{VectorField{X,Q}}, F::VectorField) where {X,Q}
+  return _zero(VectorField{X,Q}, getinit(eltype(X)), nvars(F))
+end
+
+zero(::Type{VectorField}, F::Union{VectorField{X,Q},TaylorMap{X0,X,Q,S}}) where {X0,X,Q,S} = zero(VectorField{X,Q}, F)
+
+# Copy ctor including optional TPSA init change
+function VectorField(F::VectorField; init::AbstractTPSAInit=getinit(F))
+  X = similar_eltype(typeof(F.x), TI.init_tps_type(eltype(X0), init))
+  Q = isnothing(F.q) ? Nothing : Quaternion{TI.init_tps_type(eltype(X0), init)}
+  out_F = _zero(VectorField{X,Q}, init, nvars(F))
   copy!(out_F, F)
   return out_F
 end
 
 # Kwarg ctor
 function VectorField(;
-  def::Union{AbstractTPSADef,Nothing}=nothing,
+  init::Union{AbstractTPSAInit,Nothing}=nothing,
+  nv::Integer=6,
   x::Union{AbstractVector,Nothing}=nothing,
   x_matrix::Union{AbstractMatrix,UniformScaling,Nothing}=nothing,
   q::Union{Quaternion,AbstractVector,UniformScaling,Nothing}=nothing,
   q_map::Union{AbstractMatrix,Nothing}=nothing,
   spin::Union{Bool,Nothing}=nothing,
 ) 
-  if isnothing(def)
+  if isnothing(init)
     if !isnothing(x) && TI.is_tps_type(eltype(x)) isa TI.IsTPSType
-      def = getdef(first(x))
+      init = getinit(first(x))
     elseif !isnothing(q) && TI.is_tps_type(eltype(q)) isa TI.IsTPSType
-      def = getdef(first(q))
+      init = getinit(first(q))
     else
-      error("No TPSA definition has been provided, nor is one inferrable from the input arguments!")
+      error("No TPSA definition has been provided, nor is one inferrable from the input arguments")
     end
   end
 
+  nv <= ndiffs(init) || error("Number of variables specified for VectorField ($nv) is greater than the number of differentials ($(ndiffs(init))) in the TPSA")
 
   # Assemble types:
   W = promote_type(map(t->(!isnothing(t) ? TI.numtype(eltype(t)) : Float64), (x, q))...)
-  TW = TI.init_tps_type(W, def)
-  X = isnothing(x) ? @_DEFAULT_X(nvars(def)){TW} : similar_eltype(typeof(x), TW)
+  TW = TI.init_tps_type(W, init)
+  X = isnothing(x) ? @_DEFAULT_X(nv){TW} : similar_eltype(typeof(x), TW)
   
   if isnothing(spin)
     Q = isnothing(q) && isnothing(q_map) ? Nothing : Quaternion{TW}
@@ -162,10 +168,7 @@ function VectorField(;
   end
 
   # Construct vector field:
-  out_x = init_vf_x(X, def)
-  out_q = init_vf_q(Q, def)
-
-  out_F = VectorField(out_x, out_q)
+  out_F = _zero(VectorField{X,Q}, init, nv)
 
   setray!(out_F.x, x=x, x_matrix=x_matrix)
   if !isnothing(out_F.q) && !isnothing(q)
@@ -176,7 +179,7 @@ function VectorField(;
 end
 
 function zero(F::VectorField)
-  return _zero(typeof(F), getdef(F))
+  return _zero(typeof(F), getinit(F), nvars(F))
 end
 
 # =================================================================================== #
@@ -311,7 +314,7 @@ function exp!(
   work_maps::Tuple{DAMap,DAMap}=ntuple(t->zero(m1), Val{2}()), 
   work_q::Union{Quaternion,Nothing}=isnothing(m.q) ? nothing : zero(m.q)
 )
-  checkinplace(m, F, m1, work_m...)
+  checkinplace(m, F, m1, work_maps...)
   nv = nvars(F)
   tmp = work_maps[1]
   tmp2 = work_maps[2]
@@ -467,13 +470,15 @@ function *(F::VectorField, m1::Union{DAMap,UniformScaling})
   zer = zero(TI.numtype(eltype(m1.x)))
   Fprom = promote(F,zer)
   m1prom = promote(m1,zer)
-  m = zero
+  m = zero(m1prom)
   mul!(m, Fprom, m1prom)
   return m
 end
 
 function exp(F::VectorField, m1::Union{UniformScaling,DAMap}=I)
   if m1 isa UniformScaling
+    error("Not currently supported please provide a map")
+    # TO-DO: How/should I store nparams in VectorField?
     m1prom = one(DAMap{typeof(F.x),typeof(F.q)})
     Fprom = F
   else
@@ -486,8 +491,8 @@ function exp(F::VectorField, m1::Union{UniformScaling,DAMap}=I)
   return m
 end
 
-function log(m1::Union{UniformScaling,DAMap})
-  F = zero(VectorField{typeof(m1.x),typeof(m1.q)})
+function log(m1::DAMap)
+  F = _zero(VectorField{typeof(m1.x),typeof(m1.q)}, getinit(m1), nvars(m1))
   log!(F, m1)
   return F
 end

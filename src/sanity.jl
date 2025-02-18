@@ -17,7 +17,7 @@ and the checks should be optimized away in the JIT compilation if valid.
 =#
 @inline checkspin(stuff...) = all(x->isnothing(x.q), stuff) || all(x->!isnothing(x.q), stuff) || error("Atleast one map/vector field includes spin while others do not")
 @inline checkstochastic(maps::TaylorMap...) = all(x->isnothing(x.s), maps) || all(x->!isnothing(x.s), maps) || error("Atleast one map includes stochasticity while others do not")
-@inline function checktpsas(stuff...)
+@inline function checkvarsparams(stuff...)
   NV = nvars(first(stuff))
   NN = ndiffs(first(stuff))
   return all(stuff) do m
@@ -26,8 +26,7 @@ and the checks should be optimized away in the JIT compilation if valid.
   end
 end
 
-@inline checkstates(stuff...) = checktpsas(stuff...) && checkspin(filter(x->(x isa Union{TaylorMap,VectorField}), stuff)...) && checkstochastic(filter(x->(x isa TaylorMap), stuff)...)
-
+@inline checkstates(stuff...) = checkvarsparams(stuff...) && checkspin(filter(x->(x isa Union{TaylorMap,VectorField}), stuff)...) && checkstochastic(filter(x->(x isa TaylorMap), stuff)...)
 
 # checkinplace is preferred to using the "where {S,..}.." syntax as this 
 # gives descriptive errors rather than just "function not found"

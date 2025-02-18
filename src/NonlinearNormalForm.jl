@@ -24,10 +24,10 @@ import Base: ∘,
              rand,
              promote_rule
 
-import LinearAlgebra: norm
+import LinearAlgebra: norm, factorize
 
 import TPSAInterface as TI
-import TPSAInterface: AbstractTPSADef, getdef, nvars, nparams, ndiffs, maxord, nmonos
+import TPSAInterface: AbstractTPSAInit, getinit, ndiffs, maxord, nmonos
 using LinearAlgebra,
       SkewLinearAlgebra,
       Printf,
@@ -98,6 +98,8 @@ macro _DEFAULT_S(NV)
   return :(MMatrix{$(esc(NV)),$(esc(NV))})
 end
 
+const DEFAULT_NVARS = 6
+
 #include("utils/quaternion.jl")
 
 include("map.jl")
@@ -109,6 +111,7 @@ include("set.jl")
 include("sanity.jl")
 include("operators.jl")
 include("methods.jl")
+include("normal.jl")
 
 
 #include("staticarrays.jl")
