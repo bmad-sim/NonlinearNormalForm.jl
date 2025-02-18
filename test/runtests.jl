@@ -1,9 +1,11 @@
 using NonlinearNormalForm
-using Test
+using Test, GTPSA
+
+include("readfpp.jl")
 
 @testset "Composition and inversion" begin
     d = Descriptor(1,2)
-    x1 = vars()[1]
+    x1 = @vars(d)[1]
     m1 = DAMap(x=[1+2*x1+2*x1^2], x0=[4])
     m2 = DAMap(x=[1+2*x1+2*x1^2], x0=[3])
 
@@ -14,13 +16,17 @@ using Test
 
     @test norm(m2∘m1 - DAMap(x=[1+4*x1+12*x1^2], x0=[4])) < tol
     @test norm(mt2∘mt1 - TPSAMap(x=[5-12*x1-4*x1^2], x0=[4])) < tol
+    @test norm(m2^2 - m2∘m2) < tol
+    @test norm(mt2^2 - mt2∘mt2) < tol
     @test norm(m2^3 - m2∘m2∘m2) < tol
     @test norm(mt2^3 - mt2∘mt2∘mt2) < tol
     @test norm(m2^3 - DAMap(x=[1+8*x1+56*x1^2], x0=[3])) < tol
     @test norm(mt2^3 - TPSAMap(x=[13+8*x1-8*x1^2], x0=[3])) < tol
 
+    @test norm(m1^-2 - inv(m1^2)) < tol
     @test norm(m1^-3 - DAMap(x=[4+0.125*x1-0.109375*x1^2],x0=[1])) < tol
     @test norm(m1^-3 - inv(m1^3)) < tol
+    @test norm(mt1^-2 - inv(mt1^2)) < tol
     @test norm(mt1^-3 - inv(mt1^3)) < tol
     @test norm(mt1^-3 - TPSAMap(x=[4+0.9615384615384616E-02*x1-0.4978379608557124E-04*x1^2],x0=[-35])) < tol 
 end
@@ -52,8 +58,8 @@ end
     @test norm(inv(c)∘inv(a)∘m∘a∘c - R_fpp) < 1e-8
 
     # 3D coasting last plane order 3
-    m = read_fpp_map("coast/test.map",idpt=true,spin=false)
-    R_fpp = read_fpp_map("coast/R.map",idpt=true,spin=false)
+    m = read_fpp_map("coast/test.map",spin=false)
+    R_fpp = read_fpp_map("coast/R.map",spin=false)
     c = to_phasor(m)
     a = normal(m).a
     @test norm(inv(c)∘inv(a)∘m∘a∘c - R_fpp) < tol
@@ -87,11 +93,11 @@ end
     @test norm(a2-a2_fpp) < tol
 
     # 3D coasting beam
-    a = read_fpp_map("factorize2/a.map",idpt=true)
-    as_fpp = read_fpp_map("factorize2/as.map",idpt=true)
-    a0_fpp = read_fpp_map("factorize2/a0.map",idpt=true)
-    a1_fpp = read_fpp_map("factorize2/a1.map",idpt=true)
-    a2_fpp = read_fpp_map("factorize2/a2.map",idpt=true)
+    a = read_fpp_map("factorize2/a.map")
+    as_fpp = read_fpp_map("factorize2/as.map")
+    a0_fpp = read_fpp_map("factorize2/a0.map")
+    a1_fpp = read_fpp_map("factorize2/a1.map")
+    a2_fpp = read_fpp_map("factorize2/a2.map")
     
     as, a0, a1, a2 = factorize(a)
     @test norm(a0-a0_fpp) < tol

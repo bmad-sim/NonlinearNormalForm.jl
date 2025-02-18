@@ -256,13 +256,3 @@ function locate_modes!(evecs, evals=nothing; sort=true, modes=nothing)
 
   return true
 end
-
-#=
-function check_eigen(M, F::Eigen)
-  return M*F.vectors-transpose(F.values).*F.vectors
-end
-
-function check_evecs_norm(evecs)
-  return sum([norm(evecs[:,i]'*S*evecs[:,i].-(isodd(i) ? im : -im))  for i=1:size(evecs, 2)])
-end
-=#

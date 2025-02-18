@@ -4,58 +4,56 @@ struct NormalForm
 end
 
 function normal(m::DAMap; res=nothing, spin_res=nothing)
-  nn = numnn(m)
+  nn = ndiffs(m)
+  init = getinit(m)
   
   # 1: Go to parameter-dependent fixed point to first order ONLY!
   # Higher orders will be taken care of in nonlinear part
- # zero(m) is zero in variables but identity in parameters
-  if !isnothing(m.idpt) # if coasting, set number of variables executing pseudo-harmonic oscillations
-    nhv = numvars(m)-2
+  # zero(m) is zero in variables but identity in parameters
+  ndpt = coastidx(m)
+  if ndpt != -1 # if coasting, set number of variables executing pseudo-harmonic oscillations
+    nhv = nvars(m)-2
     eye = zero(m)
-    setmatrix!(eye, I(nhv))
-    #eye = DAMap(I(nhv),use=m,idpt=m.idpt)
-    ndpt = numvars(m)-1+m.idpt # energy like variable index
-    sgn = 1-2*m.idpt
+    setray!(eye.x, x_matrix=I(nhv)) # identity only in harmonic variables
+    sgn =  -(1+2*(ndpt-nvars(m)))
     nt = ndpt+sgn # timelike variable index
-    zer = zero(m); zer.x[nt][nt]=1; zer.x[ndpt][ndpt] = 1
-    a0 = (cutord(m,2)-eye)^-1 * zer + eye
+    zer = zero(m); TI.seti!(zer.x[nt], 1, nt); TI.seti!(zer.x[ndpt], 1, ndpt)
+    a0 = (cutord(m,2)-eye)^-1 ∘ zer + eye
     # ensure poisson bracket does not change
     for i=1:Int(nhv/2)
-      a0.x[nt] += sgn*a0.x[2*i][ndpt]*mono(2*i-1,use=getdesc(m)) - sgn*a0.x[2*i-1][ndpt]*mono(2*i,use=getdesc(m))
+      pb = sgn*TI.geti(a0.x[2*i], ndpt)*TI.mono(init, 2*i-1) - sgn*TI.geti(a0.x[2*i-1], ndpt)*TI.mono(init, 2*i)
+      TI.add!(a0.x[nt], a0.x[nt], pb)
     end
   else
-    nhv = numvars(m)
-    a0 = inv(cutord(m,2)-I, dospin=false) ∘ zero(m) + I 
+    nhv = nvars(m)
+    a0 = inv(cutord(m,2)-I, do_spin=false) ∘ zero(m) + I 
   end
 
   m0 = a0^-1 ∘ m ∘ a0
-
   # 2: Do the linear normal form exactly
-  Mt = GTPSA.jacobiant(m0.x[1:nhv])[1:nhv,:]  # parameters (+ coast) never included
+  Mt = view(jacobiant(m0), 1:nhv, 1:nhv) # parameters (+ coast) never included
   F = mat_eigen(Mt, phase_modes=false) # Returns eigenvectors with vⱼ'*S*vⱼ = +im for odd j, and -im for even j
-  a1_inv_matrix = zeros(numvars(m),numvars(m))
+  a1_inv_matrix = zeros(nvars(m),nvars(m))
   for i=1:nhv
     for j=1:Int(nhv/2)  # See Eqs. 2.48, 2.49 in EYB
       a1_inv_matrix[2*j-1,i] = sqrt(2)*real(F.vectors[i,2*j-1])  # See Eq. 3.74 in EBB for factor of 2
       a1_inv_matrix[2*j,i] = sqrt(2)*imag(F.vectors[i,2*j-1])  
     end
   end
-  if !isnothing(m.idpt)
+  if ndpt != -1
     a1_inv_matrix[nhv+1,nhv+1] = 1; a1_inv_matrix[nhv+2,nhv+2] = 1;
   end
 
-  a1 = zero(promote_type(eltype(a1_inv_matrix),typeof(m0)),use=m0,idpt=m.idpt)
-  setmatrix!(a1, inv(a1_inv_matrix))
+  a1 = zero(promote_type(eltype(a1_inv_matrix),typeof(m0)), m0)
+  setray!(a1.x, x_matrix=inv(a1_inv_matrix))
   
-  a1_mat = fast_canonize(a1)
-  clear!(a1)
-  setmatrix!(a1, a1_mat)
+  #a1_mat = fast_canonize(a1)
+  #clear!(a1)
+  #setray!(a1.x, x_matrix=a1_mat)
   
-  if !isnothing(m.Q)
-    a1.Q.q0[0] = 1
+  if !isnothing(m.q)
+    setquat!(a1.q, q=I)
   end
-
-  #return a1
 
   m1 = a1^-1 ∘ m0 ∘ a1
 
@@ -67,13 +65,13 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
   # 4: Nonlinear algorithm
   # order by order
   # check if tune shift and kill
-  R_inv = inv(getord(m1, 1, 0, dospin=false), dospin=false) # R is diagonal matrix
-  if !isnothing(R_inv.Q)
-    R_inv.Q.q0[0] = 1
+  R_inv = inv(getord(m1, 1, 0, do_spin=false), do_spin=false) # R is diagonal matrix
+  if !isnothing(R_inv.q)
+    R_inv.q.q0[0] = 1
   end
 
   # Store the tunes
-  eg = Vector{eltype(eltype(R_inv.x))}(undef, numvars(m))
+  eg = Vector{GTPSA.numtype(eltype(R_inv.x))}(undef, numvars(m))
   for i=1:nhv
     eg[i] = R_inv.x[i][i]
   end
@@ -92,8 +90,8 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
     nonl = getord(nonl, i)  # Get only the leading order to stay in symplectic group
     # now nonl = ϵ²𝒞₂
 
-    F =  zero(VectorField{typeof(m1.x),typeof(m1.Q)}, use=m1)  # temporary to later exponentiate
-    Fker =  zero(VectorField{typeof(m1.x),typeof(m1.Q)}, use=m1)  # temporary to later exponentiate
+    F =  zero(VectorField{typeof(m1.x),typeof(m1.q)}, use=m1)  # temporary to later exponentiate
+    Fker =  zero(VectorField{typeof(m1.x),typeof(m1.q)}, use=m1)  # temporary to later exponentiate
 
     # For each variable in the nonlinear map
     for j=1:numvars(m)
@@ -135,7 +133,7 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
 
   # Fully nonlinear map in regular basis
 
-  if !isnothing(m.Q)
+  if !isnothing(m.q)
     
     # First get the 0th order quaternion to make 
     # orbital quaternion be solely a rotation around 
@@ -143,20 +141,20 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
 
     # The choice here is 
     # We do a cross product of n0 and yhat:
-    Q0 = Quaternion(scalar.(m1.Q))
+    Q0 = Quaternion(scalar.(m1.q))
     n0 = [Q0.q1, Q0.q2, Q0.q3]/sqrt(Q0.q1^2 + Q0.q2^2 + Q0.q3^2)
     alpha = acos(n0[2]) #atan(real(sqrt(n0[1]^2 + n0[3]^2)), real(n0[2]))
 
     nrm = sqrt(n0[1]^2+n0[3]^2)
     Qr = Quaternion(cos(alpha/2), sin(alpha/2)*n0[3]/nrm, 0, -sin(alpha/2)*n0[1]/nrm)
     # now concatenate m1:
-    as = DAMap(Q=Qr,idpt=m.idpt)
-    m1 = inv(as)*m1*as # == Quaternion(scalar.(Qr*m.Q*inv(Qr)))
-    nu0 = 2*acos(scalar(m1.Q.q0))  # closed orbit spin tune ( i guess we could have gotten this earlier?)
-    # it is equal to  2*acos(Quaternion(scalar.(m.Q)).q0) (i.e. before transforming)
+    as = DAMap(Q=Qr)
+    m1 = inv(as)*m1*as # == Quaternion(scalar.(Qr*m.q*inv(Qr)))
+    nu0 = 2*acos(scalar(m1.q.q0))  # closed orbit spin tune ( i guess we could have gotten this earlier?)
+    # it is equal to  2*acos(Quaternion(scalar.(m.q)).q0) (i.e. before transforming)
     # Now we start killing the spin. The first step is to start with a map 
     # (identity in orbital because we are done with orbital) that does this zero order rotation
-    Qr_inv = DAMap(Q=inv(Quaternion(scalar.(m1.Q))),idpt=m.idpt)
+    Qr_inv = DAMap(Q=inv(Quaternion(scalar.(m1.q))))
     # Now store analogous to eg -> egspin
     egspin = SVector(cos(nu0)+im*sin(nu0), 1, cos(nu0)-im*sin(nu0))
 
@@ -168,14 +166,14 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
       
       # linandnonl contains identity quaternion + delta
       # the quaternion can be written as exp(delta) = 1+delta+delta^2 etc
-      # We see at the first iteration, linandnonl.Q.q0 contains only second order stuff
+      # We see at the first iteration, linandnonl.q.q0 contains only second order stuff
       # (not first order). i.e. to leading order the scalar part is cleaned up but the vector
       # part is not (first order stuff here). At the next iteration the q0 part will be only third 
       # order and vector part second order, etc. q0 cleans up itself
       
       # vector part:
       # _s = _something bc I'm only partially understanding this 
-      n_s = linandnonl.Q[2:4]
+      n_s = linandnonl.q[2:4]
 
       # Now we go into eigen-operators of spin 
       # so we can identify the terms to kill much more easily
@@ -211,7 +209,7 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
 
       
       # Exponentiate this part now
-      Qnr = DAMap(Q=exp(Quaternion(0,na...)),idpt=m.idpt)
+      Qnr = DAMap(Q=exp(Quaternion(0,na...)))
       as = as*Qnr # put in normalizing map
       m1 = inv(Qnr)*m1*Qnr # kill the terms in m1
     end
@@ -234,28 +232,29 @@ end
 # can extract dbeta/ddelta
 function factorize(a)
 
-  if !isnothing(a.Q)
+  if !isnothing(a.q)
     as = one(a)
     tmp = inv(a)
-    tmp.Q.q0 = 1
-    tmp.Q.q1 = 0
-    tmp.Q.q2 = 0
-    tmp.Q.q3 = 0
-    as.Q .= a.Q∘tmp
+    tmp.q.q0 = 1
+    tmp.q.q1 = 0
+    tmp.q.q2 = 0
+    tmp.q.q3 = 0
+    as.q .= a.q∘tmp
   end
 
   # We get a0*a1*an
-  if !isnothing(a.idpt) # if coasting, set number of variables executing pseudo-harmonic oscillations
+  ndpt = coastidx(a)
+  if ndpt != -1 #!isnothing(a.idpt) # if coasting, set number of variables executing pseudo-harmonic oscillations
     nhv = numvars(a)-2
-    ndpt = numvars(a)-1+a.idpt # energy like variable index
-    sgn = 1-2*a.idpt
+    #ndpt = numvars(a)-1+a.idpt # energy like variable index
+    sgn =  -(1+2*(ndpt-numvars(a)))
     nt = ndpt+sgn # timelike variable index
     zer = zero(a); zer.x[nt][nt]=1; zer.x[ndpt][ndpt] = 1
 
     eye = zero(a)
     setmatrix!(eye, I(nhv))
-    if !isnothing(eye.Q)
-      eye.Q.q0[0] = 1
+    if !isnothing(eye.q)
+      eye.q.q0[0] = 1
     end
 
     vf = VectorField(a∘zer)
@@ -270,7 +269,7 @@ function factorize(a)
     #return vf
 
     a0 = exp(vf)
-    a0 = DAMap(a0,idpt=a.idpt)
+    a0 = DAMap(a0)
 
     att = inv(a0)*a
 
@@ -295,7 +294,7 @@ function factorize(a)
     a1.x[i] = tmp
   end
 
-  if !isnothing(a.idpt)
+  if ndpt != -1
     tmp = zero(a1.x[nt])
     nn = numnn(a)
     m = Vector{UInt8}(undef, nn)
@@ -311,23 +310,23 @@ function factorize(a)
     a1.x[nt][nt] = 1
   end
 
-  if !isnothing(a.Q)
-    a1.Q.q0 = 1
-    a1.Q.q1 = 0
-    a1.Q.q2 = 0
-    a1.Q.q3 = 0
+  if !isnothing(a.q)
+    a1.q.q0 = 1
+    a1.q.q1 = 0
+    a1.q.q2 = 0
+    a1.q.q3 = 0
   end
 
   a2 = inv(a1)*inv(a0)*a
 
-  if !isnothing(a.Q)
-    a2.Q.q0 = 1
-    a2.Q.q1 = 0
-    a2.Q.q2 = 0
-    a2.Q.q3 = 0
+  if !isnothing(a.q)
+    a2.q.q0 = 1
+    a2.q.q1 = 0
+    a2.q.q2 = 0
+    a2.q.q3 = 0
   end
 
-  if !isnothing(a.Q)
+  if !isnothing(a.q)
     return as, a0, a1, a2
   else
     return a0, a1, a2
@@ -536,7 +535,8 @@ function fast_canonize(a::DAMap, damping::Bool=!isnothing(a.E))
   ri = zero(a_matrix)
   #ri .= 0
 
-  if !isnothing(a.idpt) # if coasting, set number of variables executing pseudo-harmonic oscillations
+  ndpt = coastidx(a)
+  if ndpt != -1 #!isnothing(a.idpt) # if coasting, set number of variables executing pseudo-harmonic oscillations
     nhv = numvars(a)-2
   else
     nhv = numvars(a)
@@ -561,9 +561,9 @@ function fast_canonize(a::DAMap, damping::Bool=!isnothing(a.E))
     phase[i] += atan(sphi,cphi)/(2*pi)
   end
 
-  if !isnothing(a.idpt)
-    ndpt = numvars(a)-1+a.idpt
-    sgn = 1-2*a.idpt
+  if ndpt != -1
+    #ndpt = numvars(a)-1+a.idpt
+    sgn =  -(1+2*(ndpt-numvars(a)))
     nt = ndpt+sgn
     ri[nt,nt] = 1
     ri[ndpt,ndpt] = 1
@@ -658,7 +658,7 @@ function calc_Hr(m, n, res)
 
   coef = dot(mr, mu)/norm(mr)^2
 
-  F =  zero(VectorField{typeof(m.x),typeof(m.Q)}, use=m) 
+  F =  zero(VectorField{typeof(m.x),typeof(m.q)}, use=m) 
   for i in eachindex(mu)
     F.x[2*i-1][2*i-1] =  im*mu[i] - (im*coef*mr[i]) 
     F.x[2*i][2*i] =  -im*mu[i] - (-im*coef*mr[i]) 
@@ -691,11 +691,10 @@ end
 
 # computes c^-1
 function from_phasor!(cinv::DAMap, m::DAMap)
-  checkidpt(cinv,m)
   clear!(cinv)
 
   nhv = numvars(m)
-  if !isnothing(m.idpt)
+  if coastidx(m) != -1
     nhv -= 2
     cinv.x[nhv+1][nhv+1] = 1
     cinv.x[nhv+2][nhv+2] = 1
@@ -711,26 +710,25 @@ function from_phasor!(cinv::DAMap, m::DAMap)
     cinv.x[2*i][2*i]   = complex(0,-1/sqrt(2))
   end
 
-  if !isnothing(cinv.Q)
-    cinv.Q.q0[0] = 1
+  if !isnothing(cinv.q)
+    cinv.q.q0[0] = 1
   end
 
   return
 end
 
 function from_phasor(m::DAMap)
-  cinv=zero(complex(typeof(m)),use=m,idpt=m.idpt);
+  cinv=zero(complex(typeof(m)),use=m);
   from_phasor!(cinv,m);
   return cinv
 end
 
 # computes c
 function to_phasor!(c::DAMap, m::DAMap)
-  checkidpt(c,m)
   clear!(c)
 
-  nhv = numvars(m)
-  if !isnothing(m.idpt)
+  nhv = nvars(m)
+  if coastidx(m) != -1
     nhv -= 2
     c.x[nhv+1][nhv+1] = 1
     c.x[nhv+2][nhv+2] = 1
@@ -745,15 +743,15 @@ function to_phasor!(c::DAMap, m::DAMap)
     c.x[2*i][2*i]   = complex(0,1/sqrt(2))
   end
 
-  if !isnothing(c.Q)
-    c.Q.q0[0] = 1
+  if !isnothing(c.q)
+    c.q.q0[0] = 1
   end
 
   return
 end
 
 function to_phasor(m::DAMap)
-  c=zero(complex(typeof(m)),use=m,idpt=m.idpt);
+  c = zero(complex(typeof(m)), m);
   to_phasor!(c,m);
   return c
 end
@@ -783,7 +781,7 @@ function normal_fast(m::DAMap{S,T,U,V}) where {S,T,U,V}
 
     # Similarity transformation to make parameter part of jacobian = 0 (m0 = inv(a0)∘m∘a0)
     compose!(tmp2, m, tmp1, work_low=comp_work_low,keep_scalar=false)
-    inv!(tmp3, tmp1, work_low=inv_work_low,dospin=false)
+    inv!(tmp3, tmp1, work_low=inv_work_low,do_spin=false)
     compose!(tmp1, tmp3, tmp2, work_low=comp_work_low,keep_scalar=false)
 
     # tmp1 is m0 (at parameter-dependent fixed point)
@@ -798,7 +796,7 @@ function normal_fast(m::DAMap{S,T,U,V}) where {S,T,U,V}
   # tmp2 is inv(a1)
   # Now normalize linear map inv(a1)*m0*a1
   compose!(tmp3, tmp2, tmp1, work_low=comp_work_low,keep_scalar=false)
-  inv!(tmp1, tmp2, work_low=inv_work_low,dospin=false)
+  inv!(tmp1, tmp2, work_low=inv_work_low,do_spin=false)
   compose!(tmp2, tmp3, tmp1, work_low=comp_work_low,keep_scalar=false)
 
   # tmp2 is m1 , if m is complex then w
@@ -874,29 +872,29 @@ function gofix!(a0::DAMap, m::DAMap, order=1; work_map::DAMap=zero(m), comp_work
   end
 
   # 1: v = map-identity in harmonic planes, identity in spin
-  sub!(a0, m, I, dospin=false)
-  if !isnothing(a0.Q)
-    a0.Q.q0[0] = 0
+  sub!(a0, m, I, do_spin=false)
+  if !isnothing(a0.q)
+    a0.q.q0[0] = 0
   end
 
   # 2: map is cut to order 2 or above
-  cutord!(work_map,a0,order+1,dospin=false)
+  cutord!(work_map,a0,order+1,do_spin=false)
 
   # 3: map is inverted at least to order 1:
-  inv!(a0,work_map,work_low=inv_work_low,dospin=false)
+  inv!(a0,work_map,work_low=inv_work_low,do_spin=false)
 
   # 4: a map x is created with dimension nv
   clear!(work_map)
   # x is zero except for the parameters and delta if coasting
-  compose!(a0,a0,work_map,work_low=comp_work_low,dospin=false,keep_scalar=false)
+  compose!(a0,a0,work_map,work_low=comp_work_low,do_spin=false,keep_scalar=false)
 
   # 5: add back in identity
-  add!(a0, a0, I, dospin=false)
+  add!(a0, a0, I, do_spin=false)
 
   a0.x0 .= m.x0
 
-  if !isnothing(m.Q)
-    a0.Q.q0[0] = 1
+  if !isnothing(m.q)
+    a0.q.q0[0] = 1
   end
 
   return a0
@@ -910,7 +908,7 @@ function testallocs!(m, tmp1, tmp2, comp_work_low, inv_work_low, work_ref)
   gofix!(a0, m, 1, work_map=work_map, comp_work_low=comp_work_low, inv_work_low=inv_work_low)
   # Similarity transformation to make parameter part of jacobian = 0 (inv(a0)∘m∘a0)
   compose!(work_map, m, a0, work_low=comp_work_low,keep_scalar=false)
-  inv!(a0, a0, work_ref=work_ref, work_low=inv_work_low,dospin=false)
+  inv!(a0, a0, work_ref=work_ref, work_low=inv_work_low,do_spin=false)
   compose!(a0, a0, work_map, work_low=comp_work_low,keep_scalar=false)
   return
 end
@@ -959,8 +957,8 @@ function linear_a!(a1::DAMap, m0::DAMap; inverse=false)
   end
 
   # Make spin identity
-  if !isnothing(m0.Q)
-    a1.Q.q0[0] = 1
+  if !isnothing(m0.q)
+    a1.q.q0[0] = 1
   end
 
   return a1

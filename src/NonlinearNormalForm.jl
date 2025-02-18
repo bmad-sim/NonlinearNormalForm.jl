@@ -10,10 +10,10 @@ import Base: ∘,
              literal_pow,
              inv, 
              zero,
-             zeros,
              one,
              complex,
              real,
+             imag,
              log,
              exp,
              ==,
@@ -22,63 +22,30 @@ import Base: ∘,
              convert,
              show,
              rand,
-             promote_rule,
-             eltype,
-             unsafe_convert
+             promote_rule
 
-import LinearAlgebra: norm,
-                      dot,
-                      mul!
+import LinearAlgebra: norm, factorize
 
+import TPSAInterface as TI
+import TPSAInterface: AbstractTPSAInit, getinit, ndiffs, maxord, nmonos
 using LinearAlgebra,
       SkewLinearAlgebra,
       Printf,
-      Reexport,
+      StaticArrays,
       DelimitedFiles
       
-#using ReferenceFrameRotations: Quaternion
-#import ReferenceFrameRotations: show
-using StaticArrays
-
-@reexport using GTPSA
-
-# We want these guys in our workspace:
-import GTPSA: Desc, 
-              getdesc,
-              numvars,
-              numparams,
-              numnn, 
-              mad_compose!,
-
-              add!,
-              sub!,
-              div!,
-
-              jacobian,
-              jacobiant,
-              clear!,
-              cutord,
-              cutord!,
-              getord,
-              getord!,
-              compose!             
-
+using ReferenceFrameRotations: Quaternion
 
 export        TaylorMap, 
-              Quaternion, 
-              Probe,      
+              Quaternion,    
               TPSAMap, 
               DAMap, 
               VectorField,
               
               norm,
-              dot,
-              mul!,
-              inv!,
               to_SO3,
       
               compose,
-              inv!,
       
               checksymp,
               jacobian,
@@ -117,36 +84,61 @@ export        TaylorMap,
 
 
 
+const COAST = eps(Float64)
+
+macro _DEFAULT_X0(NV)
+  return :(MVector{$(esc(NV))})
+end
+
+macro _DEFAULT_X(NN)
+  return :(MVector{$(esc(NN))})
+end
+
+macro _DEFAULT_S(NV)
+  return :(MMatrix{$(esc(NV)),$(esc(NV))})
+end
+
+const DEFAULT_NVARS = 6
+
+#include("utils/quaternion.jl")
+
+include("map.jl")
+include("vectorfield.jl")
+include("quaternion.jl")
+include("utils.jl")
+include("matrix.jl")
+include("set.jl")
+include("sanity.jl")
+include("operators.jl")
+include("methods.jl")
+include("normal.jl")
 
 
-
-
-
-
-
-include("utils/quaternion.jl")
-include("types.jl")
+#include("staticarrays.jl")
+#=
 include("utils/matrix.jl")
 include("utils/symplectic_s.jl")
-include("utils/gtpsa.jl")
+include("sanity.jl")
 
-include("probe.jl")
-include("map/ctors.jl")
+include("methods.jl")
+include("operators.jl")
+
+
 include("map/compose.jl")
-include("map/compose_it.jl")
+include("map/inv.jl")
+include("map/map_methods.jl")
+include("map/map_operators.jl")
 
-include("map/methods.jl")
-include("map/operators.jl")
 
 include("vectorfield/ctors.jl")
-include("vectorfield/methods.jl")
-include("vectorfield/operators.jl")
-include("map/inv.jl")
+include("vectorfield/vf_methods.jl")
+
 include("work.jl")
 include("normal.jl")
 
 include("utils/misc.jl")
-include("show.jl")
+=#
+#include("show.jl")
 
 
 
