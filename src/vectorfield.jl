@@ -37,7 +37,7 @@ end
   Q == Nothing || eltype(Q) == eltype(X) || error("Quaternion number type $(eltype(Q)) must be $(eltype(X)) (equal to orbital ray)")
 
   # Runtime checks:
-  length(F.x) <= ndiffs(getinit(F.x)) || error("Orbital ray number of variables ($(length(F.x))) exceeds number of differentials in TPSA ($(ndiffs(getinit(F.x))))")
+  length(F.x) <= ndiffs(getinit(first(F.x))) || error("Orbital ray number of variables ($(length(F.x))) exceeds number of differentials in TPSA ($(ndiffs(getinit(F.x))))")
   Q == Nothing || getinit(first(F.q)) == getinit(first(F.x)) || error("Quaternion TPSA definition disagrees with orbital ray TPSA definition")
 end
 
@@ -117,11 +117,13 @@ function VectorField{X,Q}(F::VectorField) where {X,Q}
 end
 
 # zero but new type potentially
-function zero(::Type{VectorField{X,Q}}, F::VectorField) where {X,Q}
+function zero(::Type{VectorField{X,Q}}, F::Union{VectorField,TaylorMap}) where {X,Q}
   return _zero(VectorField{X,Q}, getinit(eltype(X)), nvars(F))
 end
 
-zero(::Type{VectorField}, F::Union{VectorField{X,Q},TaylorMap{X0,X,Q,S}}) where {X0,X,Q,S} = zero(VectorField{X,Q}, F)
+zero(::Type{VectorField}, F::VectorField{X,Q}) where {X,Q} = zero(VectorField{X,Q}, F)
+
+zero(::Type{VectorField}, m::TaylorMap{X0,X,Q,S}) where {X0,X,Q,S} = zero(VectorField{similar_eltype(X0,eltype(X)),Q}, m)
 
 # Copy ctor including optional TPSA init change
 function VectorField(F::VectorField; init::AbstractTPSAInit=getinit(F))
@@ -255,7 +257,7 @@ end
     mul!(m::DAMap, F::VectorField, m1::DAMap; work_Q::Union{Quaternion,Nothing}=isnothing(m.q) ? nothing : zero(m.q)) -> m
 
 Computes the Lie operator `F` acting on a `DAMap` `m1`, and stores the result in `m`.
-Explicity, that is `F * m = (F.x, F.Q) * (m.x, m.Q) = (F.x ⋅ ∇ m.x , F.x ⋅ ∇ m.Q + m.Q*F.Q)`
+Explicity, that is `F * m = (F.x, F.q) * (m.x, m.q) = (F.x ⋅ ∇ m.x , F.x ⋅ ∇ m.q + m.q*F.q)`
 """
 function mul!(
   m::DAMap, 
@@ -276,17 +278,17 @@ function mul!(
   end
 
   # Spin F⋅∇q + qf (quaternion part acts in reverse order):
-  if !isnothing(F.Q)
-    TI.mul!(work_Q, m1.Q, F.Q)
-    TI.fgrad!(m.Q.q0, F.x, m1.Q.q0)
-    TI.fgrad!(m.Q.q1, F.x, m1.Q.q1)
-    TI.fgrad!(m.Q.q2, F.x, m1.Q.q2)
-    TI.fgrad!(m.Q.q3, F.x, m1.Q.q3)
+  if !isnothing(F.q)
+    TI.mul!(work_Q, m1.q, F.q)
+    TI.fgrad!(m.q.q0, F.x, m1.q.q0)
+    TI.fgrad!(m.q.q1, F.x, m1.q.q1)
+    TI.fgrad!(m.q.q2, F.x, m1.q.q2)
+    TI.fgrad!(m.q.q3, F.x, m1.q.q3)
 
-    TI.add!(m.Q.q0, m.Q.q0, work_Q.q0)
-    TI.add!(m.Q.q1, m.Q.q1, work_Q.q1)
-    TI.add!(m.Q.q2, m.Q.q2, work_Q.q2)
-    TI.add!(m.Q.q3, m.Q.q3, work_Q.q3)
+    TI.add!(m.q.q0, m.q.q0, work_Q.q0)
+    TI.add!(m.q.q1, m.q.q1, work_Q.q1)
+    TI.add!(m.q.q2, m.q.q2, work_Q.q2)
+    TI.add!(m.q.q3, m.q.q3, work_Q.q3)
   end
 
   if !isnothing(m.s)
@@ -479,12 +481,22 @@ function exp(F::VectorField, m1::Union{UniformScaling,DAMap}=I)
   if m1 isa UniformScaling
     error("Not currently supported please provide a map")
     # TO-DO: How/should I store nparams in VectorField?
+    # It is just equal to nvars - ndiffs, though this will be slow...
     m1prom = one(DAMap{typeof(F.x),typeof(F.q)})
     Fprom = F
   else
-    zer = zero(TI.numtype(eltype(m1.x)))
-    Fprom = promote(F,zer)
-    m1prom = promote(m1,zer)
+    if TI.numtype(eltype(m1.x)) != TI.numtype(eltype(F.x))
+      if promote_type(typeof(F), TI.numtype(eltype(m1.x))) != typeof(F)
+        Fprom = zero(promote_type(typeof(F), TI.numtype(eltype(m1.x))), F)
+        copy!(Fprom, F)
+      else
+        m1prom = zero(promote_type(typeof(m1), TI.numtype(eltype(m1.x))), m1)
+        copy!(m1prom, m1)
+      end
+    else
+      Fprom = F
+      m1prom = m1
+    end
   end
   m = zero(m1prom)
   exp!(m, Fprom, m1prom)

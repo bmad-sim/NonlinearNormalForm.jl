@@ -67,13 +67,13 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
   # check if tune shift and kill
   R_inv = inv(getord(m1, 1, 0, do_spin=false), do_spin=false) # R is diagonal matrix
   if !isnothing(R_inv.q)
-    R_inv.q.q0[0] = 1
+    TI.seti!(R_inv.q.q0, 1, 0)
   end
 
   # Store the tunes
   eg = Vector{TI.numtype(eltype(R_inv.x))}(undef, nvars(m))
   for i=1:nhv
-    eg[i] = R_inv.x[i][i]
+    eg[i] = TI.geti(R_inv.x[i], i)
   end
 
   mo = maxord(m)
@@ -90,14 +90,14 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
     nonl = getord(nonl, i)  # Get only the leading order to stay in symplectic group
     # now nonl = ϵ²𝒞₂
 
-    F =  zero(VectorField{typeof(m1.x),typeof(m1.q)}, use=m1)  # temporary to later exponentiate
-    Fker =  zero(VectorField{typeof(m1.x),typeof(m1.q)}, use=m1)  # temporary to later exponentiate
+    F =  zero(VectorField, m1)  # temporary to later exponentiate
+    Fker =  zero(VectorField, m1)  # temporary to later exponentiate
 
     # For each variable in the nonlinear map
-    for j=1:numvars(m)
+    for j=1:nvars(m)
       v = Ref{ComplexF64}()
       ords = Vector{UInt8}(undef, nn)
-      idx = GTPSA.cycle!(nonl.x[j], 0, nn, ords, v)
+      idx = TI.cycle!(nonl.x[j], 0, mono=ords, val=v)
       while idx > 0
         # Tune shifts should be left in the map (kernel) because we cannot remove them
         # if there is damping, we technically could remove them
@@ -108,22 +108,21 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
           for k = 1:nhv # ignore coasting plane
             lam *= eg[k]^je[k]
           end
-          F.x[j] += mono(ords,use=getdesc(m1))*v[]/(1-lam)
+          TI.add!(F.x[j], F.x[j], TI.mono(init, ords)*v[]/(1-lam))
         else # cannot remove it - add to kernel (if close to res and res is specified it will nearly blow up)
           println("keeping monomial ", Vector{Int}(ords), ", v = ", v[])
-          Fker.x[j] += mono(ords,use=getdesc(m1))*v[]
+          TI.add!(Fker.x[j], Fker.x[j], TI.mono(init, ords)*v[])
         end
-
-        idx = GTPSA.cycle!(nonl.x[j], idx, nn, ords, v)
+        idx = TI.cycle!(nonl.x[j], idx, mono=ords, val=v)
       end
       println("================================")
     end
-
+    
     kert = exp(Fker,one(m)) #I + Fker
     ant = exp(F,one(m)) #I + F
     ker = kert ∘ ker
     an = an ∘ ant
-
+    #return ant, m1, kert, Fker, an
     m1 = inv(ant) ∘ m1 ∘ ant
   end
 
@@ -245,9 +244,9 @@ function factorize(a)
   # We get a0*a1*an
   ndpt = coastidx(a)
   if ndpt != -1 #!isnothing(a.idpt) # if coasting, set number of variables executing pseudo-harmonic oscillations
-    nhv = numvars(a)-2
-    #ndpt = numvars(a)-1+a.idpt # energy like variable index
-    sgn =  -(1+2*(ndpt-numvars(a)))
+    nhv = nvars(a)-2
+    #ndpt = nvars(a)-1+a.idpt # energy like variable index
+    sgn =  -(1+2*(ndpt-nvars(a)))
     nt = ndpt+sgn # timelike variable index
     zer = zero(a); zer.x[nt][nt]=1; zer.x[ndpt][ndpt] = 1
 
@@ -278,7 +277,7 @@ function factorize(a)
     ast.x[nt] = par(att.x[nt], zeros(Int, nhv))
     a0 = ast*a0
   else
-    nhv = numvars(a)
+    nhv = nvars(a)
     a0 = a∘zero(a)+I
   end
 
@@ -474,8 +473,8 @@ end
 
 
 function equilibrium_moments(m::DAMap, a::DAMap)
-  !isnothing(m.E) || error("Map does not have stochasticity")
-  !all(m.E .== 0) || error("No FD fluctuations in map (m.E .== 0)")
+  !isnothing(m.s) || error("Map does not have stochasticity")
+  !all(m.s .== 0) || error("No FD fluctuations in map (m.s .== 0)")
 
   # Moments Σ transform with map like MΣMᵀ + B 
   # This is only linear because this is very complex to higher order not necessary
@@ -506,22 +505,22 @@ function equilibrium_moments(m::DAMap, a::DAMap)
   c = to_phasor(m)
 
   R = inv(c)*inv(a)*m*a*c
-  b = R.E
-  Λ = GTPSA.jacobian(R)
+  b = R.s
+  Λ = jacobian(R)
 
   #return b
 
-  s = zeros(ComplexF64, numvars(m),numvars(m)) # beam envelope in phasors basis
-  emits = zeros(Float64, Int(numvars(m)/2)) # emittances
+  s = zeros(ComplexF64, nvars(m),nvars(m)) # beam envelope in phasors basis
+  emits = zeros(Float64, Int(nvars(m)/2)) # emittances
 
-  for i=1:numvars(m)
-    for j=1:numvars(m)
+  for i=1:nvars(m)
+    for j=1:nvars(m)
       s[i,j] = 1/(1-Λ[i,i]*Λ[j,j])*b[i,j]
     end
   end
 
-  R.E .= s
-  return (a*c*R*inv(c)*inv(a)).E
+  R.s .= s
+  return (a*c*R*inv(c)*inv(a)).s
 
 end
 
@@ -537,12 +536,12 @@ function fast_canonize(a::DAMap, damping::Bool=!isnothing(a.E))
 
   ndpt = coastidx(a)
   if ndpt != -1 #!isnothing(a.idpt) # if coasting, set number of variables executing pseudo-harmonic oscillations
-    nhv = numvars(a)-2
+    nhv = nvars(a)-2
   else
-    nhv = numvars(a)
+    nhv = nvars(a)
   end
 
-  phase = zeros(numvars(a))
+  phase = zeros(nvars(a))
 
   for i=1:Int(nhv/2) # for each harmonic oscillator
     t = sqrt(a_matrix[2*i-1,2*i-1]^2 + a_matrix[2*i-1,2*i]^2)
@@ -562,8 +561,8 @@ function fast_canonize(a::DAMap, damping::Bool=!isnothing(a.E))
   end
 
   if ndpt != -1
-    #ndpt = numvars(a)-1+a.idpt
-    sgn =  -(1+2*(ndpt-numvars(a)))
+    #ndpt = nvars(a)-1+a.idpt
+    sgn =  -(1+2*(ndpt-nvars(a)))
     nt = ndpt+sgn
     ri[nt,nt] = 1
     ri[ndpt,ndpt] = 1
@@ -587,11 +586,11 @@ function fast_canonize(a::DAMap, damping::Bool=!isnothing(a.E))
   # which correspond to the damping (same in each plane, Diagonal(lambda1, lambda1, lambda2, lambda2, etc)
 
   if damping
-    damp = zeros(Int(numvars(a)/2))
-    tmp = zeros(Int(numvars(a)/2), Int(numvars(a)/2))
-    for i=1:Int(numvars(a)/2)
+    damp = zeros(Int(nvars(a)/2))
+    tmp = zeros(Int(nvars(a)/2), Int(nvars(a)/2))
+    for i=1:Int(nvars(a)/2)
       tmp[i,i] = a_rot[2*i-1,2*i-1]*a_rot[2*i,2*i]-a_rot[2*i-1,2*i]*a_rot[2*i,2*i-1]
-      for j=1:Int(numvars(a)/2)
+      for j=1:Int(nvars(a)/2)
         if i != j
           tmp[i,j] = a_rot[2*i-1,2*j-1]*a_rot[2*i,2*j]-a_rot[2*i-1,2*j]*a_rot[2*i,2*j-1]
         end
@@ -833,7 +832,7 @@ function normal_fast(m::DAMap{S,T,U,V}) where {S,T,U,V}
   # Next step is to get only the nonlinear part of ctmp1
   # this can be done by inverting the linear part of ctmp1 and composing
   mo = getdesc(m).mo
-  nv = numvars(m)
+  nv = nvars(m)
   n = Vector{VectorField{T,U}}(undef, mo)  # For now, analog to c_factored_lie, likely will make separate type
   for i=2:mo
     # Get current order + identity
@@ -860,7 +859,7 @@ function gofix!(a0::DAMap, m::DAMap, order=1; work_map::DAMap=zero(m), comp_work
   @assert !(a0 === m) "Aliasing `a0 === m` is not allowed."
   
   desc = getdesc(m)
-  nv = numvars(desc)
+  nv = nvars(desc)
   clear!(a0)
 
   if isnothing(comp_work_low) && isnothing(inv_work_low)
@@ -930,10 +929,10 @@ function linear_a!(a1::DAMap, m0::DAMap; inverse=false)
   # functions so essentially we have [v̄₁, v̄₂] = [a c; b d]*[v₁, v₂] =  Mᵀ * [v₁, v₂] . See Etienne's yellow 
   # book Eq 2.39.
 
-  nhv = numvars(m0) # Number harmonic variables
+  nhv = nvars(m0) # Number harmonic variables
   nhpl = Int(nhv/2) # Number harmonic variables / 2 = number harmonic planes
 
-  work_matrix=zeros(eltype(m0), numvars(m0), numvars(m0))
+  work_matrix=zeros(eltype(m0), nvars(m0), nvars(m0))
 
   @views GTPSA.jacobiant!(work_matrix, m0.x[1:nhv])  # parameters never included
   F = mat_eigen!(work_matrix, phase_modes=false) # no need to phase modes. just a rotation

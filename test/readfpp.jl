@@ -1,4 +1,5 @@
 
+using DelimitedFiles
 function read_fpp_map(file; stochastic::Union{Nothing,Bool}=nothing,spin::Union{Nothing,Bool}=nothing) 
   data = readdlm(file, skipblanks=true)
   nv = data[findfirst(t->t=="Dimensional", data)- CartesianIndex(0,1)]

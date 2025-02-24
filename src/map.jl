@@ -426,7 +426,7 @@ function _compose!(
   # Stochastic (fast with StaticArrays)
   if !isnothing(m.s)
     if do_stochastic
-      M2 = jacobian(m2)   
+      M2 = jacobian(m2)
       m.s .= M2*m1.s*transpose(M2) + m2.s
     else
       m.s .= 0
@@ -554,7 +554,6 @@ function _pow!(
   work_q::Union{Nothing,Quaternion},
   keep_scalar::Union{Bool,Nothing}
 )
-  checkinplace(m, m1)
   !(m === m1) || error("Cannot pow!(m, m1) with m === m1")
   if n == 0
     clear!(m)

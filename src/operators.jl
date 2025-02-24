@@ -32,8 +32,8 @@ end
 for ops = (("add!", :+), ("sub!",:-))
 @eval begin
 
-function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, m1::Union{TaylorMap,VectorField}, m2::Union{TaylorMap,VectorField}; dospin::Bool=true)
-  checkinplace(m, m1, m2)
+function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, m1::Union{TaylorMap,VectorField}, m2::Union{TaylorMap,VectorField}; do_spin::Bool=true)
+  checkinplace(m, m1, m2, internal_promotion=true)
   
   nv = nvars(m)
 
@@ -41,7 +41,7 @@ function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, m1::Union{Taylor
     TI.$(Meta.parse(ops[1]))(m.x[i], m1.x[i], m2.x[i])
   end
 
-  if !isnothing(m.q) && dospin
+  if !isnothing(m.q) && do_spin
     TI.$(Meta.parse(ops[1]))(m.q.q0, m1.q.q0, m2.q.q0)
     TI.$(Meta.parse(ops[1]))(m.q.q1, m1.q.q1, m2.q.q1)
     TI.$(Meta.parse(ops[1]))(m.q.q2, m1.q.q2, m2.q.q2)
@@ -77,8 +77,8 @@ function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, m1::Union{Taylor
   return m
 end
 
-function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, J::UniformScaling, m1::Union{TaylorMap,VectorField}; dospin::Bool=true)
-  checkinplace(m, m1)
+function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, J::UniformScaling, m1::Union{TaylorMap,VectorField}; do_spin::Bool=true)
+  checkinplace(m, m1, internal_promotion=true)
   
   nv = nvars(m)
 
@@ -87,7 +87,7 @@ function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, J::UniformScalin
     TI.seti!(m.x[i], $(ops[2])(1, TI.geti(m.x[i], i)), i)
   end
 
-  if !isnothing(m.q) && dospin
+  if !isnothing(m.q) && do_spin
     copy!(m.q.q0, m1.q.q0)
     copy!(m.q.q1, m1.q.q1)
     copy!(m.q.q2, m1.q.q2)
@@ -116,8 +116,8 @@ function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, J::UniformScalin
   return m
 end
 
-function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, m1::Union{TaylorMap,VectorField}, J::UniformScaling; dospin::Bool=true)
-  checkinplace(m, m1)
+function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, m1::Union{TaylorMap,VectorField}, J::UniformScaling; do_spin::Bool=true)
+  checkinplace(m, m1, internal_promotion=true)
 
   nv = nvars(m)
 
@@ -126,7 +126,7 @@ function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, m1::Union{Taylor
     TI.seti!(m.x[i], $(ops[2])(TI.geti(m.x[i], i), 1), i)
   end
 
-  if !isnothing(m.q) && dospin
+  if !isnothing(m.q) && do_spin
     copy!(m.q.q0, m1.q.q0)
     copy!(m.q.q1, m1.q.q1)
     copy!(m.q.q2, m1.q.q2)
@@ -180,8 +180,8 @@ end
 # --- add, subtract, multiply, divide for scalars ---
 for ops = (("add!", :+), ("sub!",:-), ("mul!",:*), ("div!",:/))
 @eval begin
-function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, a::Number, m1::Union{TaylorMap,VectorField}; dospin::Bool=true)
-  checkinplace(m, a, m1)
+function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, a::Number, m1::Union{TaylorMap,VectorField}; do_spin::Bool=true)
+  checkinplace(m, a, m1, internal_promotion=true)
   
   nv = nvars(m)
 
@@ -189,7 +189,7 @@ function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, a::Number, m1::U
     TI.$(Meta.parse(ops[1]))(m.x[i], a, m1.x[i])
   end
 
-  if !isnothing(m.q) && dospin
+  if !isnothing(m.q) && do_spin
     TI.$(Meta.parse(ops[1]))(m.q.q0, a, m1.q.q0)
     TI.$(Meta.parse(ops[1]))(m.q.q1, a, m1.q.q1)
     TI.$(Meta.parse(ops[1]))(m.q.q2, a, m1.q.q2)
@@ -216,8 +216,8 @@ function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, a::Number, m1::U
   return m
 end
 
-function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, m1::Union{TaylorMap,VectorField}, a::Number; dospin::Bool=true)
-  checkinplace(m, a, m1)
+function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, m1::Union{TaylorMap,VectorField}, a::Number; do_spin::Bool=true)
+  checkinplace(m, a, m1, internal_promotion=true)
   
   nv = nvars(m)
 
@@ -225,7 +225,7 @@ function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, m1::Union{Taylor
     TI.$(Meta.parse(ops[1]))(m.x[i], m1.x[i], a)
   end
 
-  if !isnothing(m.q) && dospin
+  if !isnothing(m.q) && do_spin
     TI.$(Meta.parse(ops[1]))(m.q.q0, m1.q.q0, a)
     TI.$(Meta.parse(ops[1]))(m.q.q1, m1.q.q1, a)
     TI.$(Meta.parse(ops[1]))(m.q.q2, m1.q.q2, a)

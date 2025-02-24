@@ -122,7 +122,7 @@ end
 
 
 # --- cutord ---
-function cutord!(m::Union{TaylorMap,VectorField}, m1::Union{TaylorMap,VectorField}, order::Integer, spin_order::Integer=order; dospin::Bool=true)
+function cutord!(m::Union{TaylorMap,VectorField}, m1::Union{TaylorMap,VectorField}, order::Integer, spin_order::Integer=order; do_spin::Bool=true)
   checkinplace(m, m1)
 
   nv = nvars(m)
@@ -131,7 +131,7 @@ function cutord!(m::Union{TaylorMap,VectorField}, m1::Union{TaylorMap,VectorFiel
     TI.cutord!(m.x[i], m1.x[i], order)
   end
 
-  if !isnothing(m1.q) && dospin
+  if !isnothing(m1.q) && do_spin
     TI.cutord!(m.q.q0, m1.q.q0, spin_order)
     TI.cutord!(m.q.q1, m1.q.q1, spin_order)
     TI.cutord!(m.q.q2, m1.q.q2, spin_order)
@@ -155,14 +155,14 @@ function cutord!(m::Union{TaylorMap,VectorField}, m1::Union{TaylorMap,VectorFiel
   return
 end
 
-function cutord(m1::Union{TaylorMap,VectorField}, order::Integer, spin_order::Integer=order; dospin::Bool=true)
+function cutord(m1::Union{TaylorMap,VectorField}, order::Integer, spin_order::Integer=order; do_spin::Bool=true)
   m = zero(m1)
-  cutord!(m, m1, order, spin_order, dospin=dospin)
+  cutord!(m, m1, order, spin_order, do_spin=do_spin)
   return m
 end
 
 # --- getord ---
-function getord!(m::Union{TaylorMap,VectorField}, m1::Union{TaylorMap,VectorField}, order::Integer, spin_order::Integer=order; dospin::Bool=true)
+function getord!(m::Union{TaylorMap,VectorField}, m1::Union{TaylorMap,VectorField}, order::Integer, spin_order::Integer=order; do_spin::Bool=true)
   checkinplace(m, m1)
   
   nv = nvars(m)
@@ -171,7 +171,7 @@ function getord!(m::Union{TaylorMap,VectorField}, m1::Union{TaylorMap,VectorFiel
     TI.getord!(m.x[i], m1.x[i], order)
   end
 
-  if !isnothing(m1.q) && dospin
+  if !isnothing(m1.q) && do_spin
     TI.getord!(m.q.q0, m1.q.q0, spin_order)
     TI.getord!(m.q.q1, m1.q.q1, spin_order)
     TI.getord!(m.q.q2, m1.q.q2, spin_order)
@@ -195,8 +195,8 @@ function getord!(m::Union{TaylorMap,VectorField}, m1::Union{TaylorMap,VectorFiel
   return
 end
 
-function getord(m1::TaylorMap, order::Integer, spin_order::Integer=order; dospin::Bool=true)
+function getord(m1::TaylorMap, order::Integer, spin_order::Integer=order; do_spin::Bool=true)
   m = zero(m1)
-  getord!(m, m1, order, spin_order, dospin=dospin)
+  getord!(m, m1, order, spin_order, do_spin=do_spin)
   return m
 end

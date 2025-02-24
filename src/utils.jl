@@ -8,13 +8,15 @@ field array type promotion, checking if the last plane of a map is coasting.
 # =================================================================================== #
 # Helper functions
 getinit(m::Union{TaylorMap,VectorField}) = TI.getinit(first(m.x))
-ndiffs(m::Union{TaylorMap,VectorField}) = length(m.x)
+ndiffs(m::TaylorMap) = length(m.x)
+ndiffs(F::VectorField) = TI.ndiffs(first(F.x))
 nmonos(m::Union{TaylorMap,VectorField}) = TI.nmonos(first(m.x))
 maxord(m::Union{TaylorMap,VectorField}) = TI.maxord(first(m.x))
 
 # NNF-specific helpers:
-nvars(m::Union{TaylorMap,VectorField}) = length(m.x0)
-nparams(m::Union{TaylorMap,VectorField}) = length(m.x) - length(m.x0)
+nvars(m::TaylorMap) = length(m.x0)
+nvars(F::VectorField) = length(F.x)
+nparams(m::Union{TaylorMap,VectorField}) = ndiffs(m) - nvars(m)
 # =================================================================================== #
 # Jacobian/jacobiant
 
