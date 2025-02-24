@@ -117,7 +117,6 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
       end
       println("================================")
     end
-    
     kert = exp(Fker,one(m)) #I + Fker
     ant = exp(F,one(m)) #I + F
     ker = kert ∘ ker

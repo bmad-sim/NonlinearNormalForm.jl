@@ -301,7 +301,13 @@ end
 # =================================================================================== #
 # Exponentiation
 """
-    exp!(m::DAMap, F::VectorField, m1::DAMap; work_maps::Tuple{DAMap,DAMap}=(zero(m1),zero(m1)), work_q::Union{Quaternion,Nothing}=isnothing(m.q) ? nothing : zero(m.q)) -> m
+    exp!(
+      m::DAMap, 
+      F::VectorField, 
+      m1::DAMap; 
+      work_maps::NTuple{2, DAMap}=ntuple(t->zero(m1), Val{2}()), 
+      work_q::Union{Quaternion,Nothing}=isnothing(m.q) ? nothing : zero(m.q)
+    )
 
 Computes `exp(F)*m1`, and stores the result in `m`. Explicity, this is
 `exp(F)*m1 = m1 + F*m1 + 1/2*F*(F*m1) + 1/6*F*(F*(F*m1)) + ...`, where `*` is
@@ -313,7 +319,7 @@ function exp!(
   m::DAMap, 
   F::VectorField, 
   m1::DAMap; 
-  work_maps::Tuple{DAMap,DAMap}=ntuple(t->zero(m1), Val{2}()), 
+  work_maps::NTuple{2, DAMap}=ntuple(t->zero(m1), Val{2}()), 
   work_q::Union{Quaternion,Nothing}=isnothing(m.q) ? nothing : zero(m.q)
 )
   checkinplace(m, F, m1, work_maps...)
@@ -364,12 +370,12 @@ end
 
 """
     log!(
-          F::VectorField, 
-          m1::DAMap; 
-          work_maps::Tuple{DAMap,DAMap,DAMap}=ntuple(t->zero(m1), Val{3}()),
-          work_vfs::Tuple{VectorField,VectorField}=ntuple(t->zero(F), Val{2}()),
-          work_q::Union{Quaternion,Nothing}=isnothing(m1.q) ? nothing : zero(m1.q)
-        )
+      F::VectorField, 
+      m1::DAMap; 
+      work_maps::NTuple{3, DAMap}=ntuple(t->zero(m1), Val{3}()),
+      work_vfs::NTuple{2, VectorField}=ntuple(t->zero(F), Val{2}()),
+      work_q::Union{Quaternion,Nothing}=isnothing(m1.q) ? nothing : zero(m1.q)
+    )
 
 Computes the log of the map `m1` - that is, calculates the `VectorField` `F` that 
 would represent the map `m1` as a Lie exponent `exp(F)` - and stores the result in `F`.
@@ -378,13 +384,13 @@ The map `m1` should be close to the identity for this to converge quickly.
 function log!(
   F::VectorField, 
   m1::DAMap; 
-  work_maps::Tuple{DAMap,DAMap,DAMap}=ntuple(t->zero(m1), Val{3}()),
-  work_vfs::Tuple{VectorField,VectorField}=ntuple(t->zero(F), Val{2}()),
+  work_maps::NTuple{3, DAMap}=ntuple(t->zero(m1), Val{3}()),
+  work_vfs::NTuple{2, VectorField}=ntuple(t->zero(F), Val{2}()),
   work_q::Union{Quaternion,Nothing}=isnothing(m1.q) ? nothing : zero(m1.q)
 )
   checkinplace(F, m1, work_maps..., work_vfs...)
   
-  nv = numvars(m1)
+  nv = nvars(m1)
   nmax = 100
   nrm0 = norm(m1)
   nrm_min1 = 1e-9
@@ -405,7 +411,7 @@ function log!(
     end
     # First, rotate back our guess:
     mul!(F, -1, F)
-    exp!(work_maps[3], F, m1, work_maps=work_maps, work_q=work_q)
+    exp!(work_maps[3], F, m1, work_maps=work_maps[1:2], work_q=work_q)
     mul!(F, -1, F)
 
     # Now we have (I,1) + (t,u) where (t,u) is the leftover garbage we want to be 0
@@ -504,7 +510,7 @@ function exp(F::VectorField, m1::Union{UniformScaling,DAMap}=I)
 end
 
 function log(m1::DAMap)
-  F = _zero(VectorField{typeof(m1.x),typeof(m1.q)}, getinit(m1), nvars(m1))
+  F = zero(VectorField, m1)
   log!(F, m1)
   return F
 end
