@@ -71,7 +71,7 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
   end
 
   # Store the tunes
-  eg = Vector{GTPSA.numtype(eltype(R_inv.x))}(undef, numvars(m))
+  eg = Vector{TI.numtype(eltype(R_inv.x))}(undef, nvars(m))
   for i=1:nhv
     eg[i] = R_inv.x[i][i]
   end
@@ -693,33 +693,33 @@ end
 function from_phasor!(cinv::DAMap, m::DAMap)
   clear!(cinv)
 
-  nhv = numvars(m)
+  nhv = nvars(m)
   if coastidx(m) != -1
     nhv -= 2
-    cinv.x[nhv+1][nhv+1] = 1
-    cinv.x[nhv+2][nhv+2] = 1
+    TI.seti!(cinv.x[nhv+1], 1, nhv+1)
+    TI.seti!(cinv.x[nhv+2], 1, nhv+2)
   end
 
   for i=1:Int(nhv/2)
     # x_new = 1/sqrt(2)*(x+im*p)
-    cinv.x[2*i-1][2*i-1] = 1/sqrt(2)
-    cinv.x[2*i-1][2*i]   = complex(0,1/sqrt(2))
+    TI.seti!(cinv.x[2*i-1], 1/sqrt(2), 2*i-1)
+    TI.seti!(cinv.x[2*i-1], complex(0,1/sqrt(2)), 2*i)
 
     # p_new = 1/sqrt(2)*(x-im*p)
-    cinv.x[2*i][2*i-1] = 1/sqrt(2)
-    cinv.x[2*i][2*i]   = complex(0,-1/sqrt(2))
+    TI.seti!(cinv.x[2*i], 1/sqrt(2), 2*i-1)
+    TI.seti!(cinv.x[2*i], complex(0,-1/sqrt(2)), 2*i)
   end
 
   if !isnothing(cinv.q)
-    cinv.q.q0[0] = 1
+    TI.seti!(cinv.q, 1, 0)
   end
 
   return
 end
 
 function from_phasor(m::DAMap)
-  cinv=zero(complex(typeof(m)),use=m);
-  from_phasor!(cinv,m);
+  cinv=zero(complex(typeof(m)), m)
+  from_phasor!(cinv,m)
   return cinv
 end
 
@@ -730,8 +730,8 @@ function to_phasor!(c::DAMap, m::DAMap)
   nhv = nvars(m)
   if coastidx(m) != -1
     nhv -= 2
-    c.x[nhv+1][nhv+1] = 1
-    c.x[nhv+2][nhv+2] = 1
+    TI.seti!(c.x[nhv+1], 1, nhv+1)
+    TI.seti!(c.x[nhv+2], 1, nhv+2)
   end
 
 
@@ -751,8 +751,8 @@ function to_phasor!(c::DAMap, m::DAMap)
 end
 
 function to_phasor(m::DAMap)
-  c = zero(complex(typeof(m)), m);
-  to_phasor!(c,m);
+  c = zero(complex(typeof(m)), m)
+  to_phasor!(c,m)
   return c
 end
 
