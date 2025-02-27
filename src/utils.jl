@@ -17,6 +17,7 @@ maxord(m::Union{TaylorMap,VectorField}) = TI.maxord(first(m.x))
 nvars(m::TaylorMap) = length(m.x0)
 nvars(F::VectorField) = length(F.x)
 nparams(m::Union{TaylorMap,VectorField}) = ndiffs(m) - nvars(m)
+nhvars(m::Union{TaylorMap,VectorField}) = iseven(nvars(m)) ? nvars(m) : nvars(m)-1 # number of "harmonic" variables
 # =================================================================================== #
 # Jacobian/jacobiant
 
