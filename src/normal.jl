@@ -4,17 +4,56 @@ struct NormalForm
 end
 
 function normal(m::DAMap; res=nothing, spin_res=nothing)
-  nn = ndiffs(m)
   init = getinit(m)
-  
+  nn = ndiffs(m)
+  nhv = nhvars(m)
+  nv = nvars(m)
+  coast = iscoasting(m)
+
+  # 1: Go to parameter-dependent fixed point to first order ONLY!
+  # Higher orders will be taken care of in nonlinear part
+  #= Idea is following:
+
+  This may be useful: https://www.statlect.com/matrix-algebra/determinant-of-block-matrix
+
+  We have a linear map M = [Mz Mk; 0 I] where Mz corresponds to orbital part and Mk to parameters
+  Note that parameters always identity and do not depend on orbital (hence 0 and I)
+
+  Now we seek a transformation A = [A11 A12; 0 I] such that A^-1*M*A = [Mz 0; 0 I] (to make M no longer dependent on parameters)
+  We can rewrite this as M*A = A*[Mz 0; 0 I]  as
+
+  [Mz*A11, Mz*A12 + Mk;]   =    [A11*Mz,  A12;]
+  [0,      I          ;]        [0,       I  ;]      
+
+  The transformation must be symplectic with determinant 1 and so A11 = I
+  We are left with 
+
+  Mz*A12 + Mk = A12
+  ->
+  A12 = -(Mz-I)^-1*Mk
+
+  =#
+  A0_12 = -inv(jacobian(m)-I)*jacobian(m, PARAMS)
+  a0 = one(m)
+  setray!(a0.x, x_matrix=A0_12, x_matrix_offset=nv) # offset to parameters part
+
+  # if we are coasting, then we need to include the effect of the variables on the time-like coordinate
+  if coast
+
+  end
+
   # 1: Go to parameter-dependent fixed point to first order ONLY!
   # Higher orders will be taken care of in nonlinear part
   # zero(m) is zero in variables but identity in parameters
   ndpt = coastidx(m)
   if ndpt != -1 # if coasting, set number of variables executing pseudo-harmonic oscillations
     nhv = nvars(m)-2
-    eye = zero(m)
-    setray!(eye.x, x_matrix=I(nhv)) # identity only in harmonic variables
+    eye = one(m)
+    TI.seti!(eye.x[nhv+1], 0, nhv+1)
+    TI.seti!(eye.x[nhv+2], 0, nhv+2)
+    TI.seti!(eye.x[nhv+3], 1, nhv+3)
+    TI.seti!(eye.x[nhv+4], 1, nhv+4)
+    #setray!(eye.x, x_matrix=I(nhv)) # identity only in harmonic variables
     sgn =  -(1+2*(ndpt-nvars(m)))
     nt = ndpt+sgn # timelike variable index
     zer = zero(m); TI.seti!(zer.x[nt], 1, nt); TI.seti!(zer.x[ndpt], 1, ndpt)
@@ -24,11 +63,12 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
       pb = sgn*TI.geti(a0.x[2*i], ndpt)*TI.mono(init, 2*i-1) - sgn*TI.geti(a0.x[2*i-1], ndpt)*TI.mono(init, 2*i)
       TI.add!(a0.x[nt], a0.x[nt], pb)
     end
+    return a0
   else
     nhv = nvars(m)
     a0 = inv(cutord(m,2)-I, do_spin=false) ∘ zero(m) + I 
   end
-
+  return a0
   m0 = a0^-1 ∘ m ∘ a0
   # 2: Do the linear normal form exactly
   Mt = view(jacobiant(m0), 1:nhv, 1:nhv) # parameters (+ coast) never included

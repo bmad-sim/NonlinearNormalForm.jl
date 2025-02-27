@@ -5,6 +5,7 @@ function setray!(
   r::AbstractArray{<:T}; 
   x::Union{AbstractVector,Nothing}=nothing,
   x_matrix::Union{AbstractMatrix,UniformScaling,Nothing}=nothing,
+  x_matrix_offset::Integer=0,
 ) where {T}
   TI.is_tps_type(T) isa TI.IsTPSType || error("Orbital ray element type must be a truncated power series type supported by `TPSAInterface.jl`")
 
@@ -19,13 +20,14 @@ function setray!(
     if x_matrix isa AbstractMatrix # Map as a matrix:
       Base.require_one_based_indexing(x_matrix)
       size(x_matrix,1) <= length(r) || error("Number of rows of `x_matrix` cannot be greater than the length of output vector `r`!")
-      size(x_matrix,2) <= nmonos(first(r))-1 || error("Number of columns of `x_matrix` cannot be greater than the number of monomial coefficients in the TPSA!")
+      size(x_matrix,2) <= nmonos(first(r))-1-x_matrix_offset || error("Number of columns of `x_matrix` cannot be greater than the number of monomial coefficients in the TPSA - x_matrix_offset")
       for varidx in 1:size(x_matrix,1)
         for monoidx in 1:size(x_matrix,2)
-          TI.seti!(r[varidx], x_matrix[varidx,monoidx], monoidx)
+          TI.seti!(r[varidx], x_matrix[varidx,monoidx], monoidx+x_matrix_offset)
         end
       end
     else # Uniform scaling: Making identity map
+      x_matrix_offset == 0 || error("`x_matrix_offset` must be zero for `UniformScaling` `x_matrix`")
       for varidx in 1:length(r)
         TI.seti!(r[varidx], 1, varidx)
       end

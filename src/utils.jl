@@ -18,35 +18,84 @@ nvars(m::TaylorMap) = length(m.x0)
 nvars(F::VectorField) = length(F.x)
 nparams(m::Union{TaylorMap,VectorField}) = ndiffs(m) - nvars(m)
 nhvars(m::Union{TaylorMap,VectorField}) = iseven(nvars(m)) ? nvars(m) : nvars(m)-1 # number of "harmonic" variables
+
+iscoasting(m::Union{TaylorMap,VectorField}) = !iseven(nvars(m))
 # =================================================================================== #
 # Jacobian/jacobiant
+# Useful options should be 1) harmonic variables, 2) variables, and 3) variables + parameters
+abstract type OptionType end
+struct HarmonicVariables <: OptionType end  # e.g. 4x4 matrix
+struct Variables <: OptionType end # e.g. 4x4 or 5x5 (coasting beam) matrix
+struct HarmonicVariablesAndParameters <: OptionType end # e.g. 4 x np matrix
+struct VariablesAndParameters <: OptionType end # eg. 5 x np (coasting beam) matrix
+struct Parameters <: OptionType end # e.g. 5 x np matrix
+struct All <: OptionType end
 
-function jacobian(m::TaylorMap{X0,X,Q,S}) where {X0,X,Q,S}
-  nv = nvars(m)
-  M = similar(X0, (nv,nv))
-  for i in 1:nv^2
-    M[i] = TI.geti(m.x[mod1(i,nv)], floor(Int, (i-1)/nv)+1)
+const HVARS = HarmonicVariables()
+const VARS = Variables()
+const HVARS_PARAMS = HarmonicVariablesAndParameters()
+const VARS_PARAMS = VariablesAndParameters()
+const PARAMS = Parameters()
+const ALL = All()
+
+@inline function getjacsize(m::TaylorMap, ::T) where {T<:OptionType}
+  if T == HarmonicVariables
+    nrows = nhvars(m)
+    ncols = nhvars(m)
+  elseif T == Variables
+    nrows = nvars(m)
+    ncols = nvars(m)
+  elseif T == HarmonicVariablesAndParameters
+    nrows = nhvars(m)
+    ncols = ndiffs(m)
+  elseif T == VariablesAndParameters
+    nrows = nvars(m)
+    ncols = ndiffs(m)
+  elseif T == Parameters
+    nrows = nvars(m)
+    ncols = nparams(m)
+  elseif T == All
+    nrows = ndiffs(m)
+    ncols = ndiffs(m)
+  else
+    error("Invalid option type")
+  end
+  return nrows, ncols
+end
+
+function jacobian(m::TaylorMap{X0,X,Q,S}, which::T=VARS) where {X0,X,Q,S,T<:OptionType}
+  nrows, ncols = getjacsize(m, which)
+  col_start = T == Parameters ? nvars(m)+1 : 1
+  M = similar(X0, (nrows,ncols))
+  for col in col_start:col_start+ncols-1
+    for row in 1:nrows
+      M[row,col-col_start+1] = TI.geti(m.x[row], col)
+    end
   end
   return M
 end
 
-function jacobian(m::TaylorMap{X0,X,Q,S}) where {X0,X<:StaticArray,Q,S}
-  nv = nvars(m)
-  return StaticArrays.sacollect(SMatrix{nv,nv,eltype(X0)}, TI.geti(m.x[mod1(i,nv)], floor(Int, (i-1)/nv)+1) for i in 1:nv^2)
+function jacobian(m::TaylorMap{X0,X,Q,S}, which::T=VARS) where {X0,X<:StaticArray,Q,S,T<:OptionType}
+  nrows, ncols = getjacsize(m, which)
+  col_start = T == Parameters ? nvars(m)+1 : 1
+  return StaticArrays.sacollect(SMatrix{nrows,ncols,eltype(X0)}, 
+  TI.geti(m.x[row], col) for col in col_start:col_start+ncols-1 for row in 1:nrows)
 end
 
-function jacobiant(m::TaylorMap{X0,X,Q,S}) where {X0,X,Q,S}
-  nv = nvars(m)
-  M = similar(X0, (nv,nv))
-  for i in 1:nv^2
-    M[i] = TI.geti(m.x[floor(Int, (i-1)/nv)+1], mod1(i,nv))
+function jacobiant(m::TaylorMap{X0,X,Q,S}, which::T=VARS) where {X0,X,Q,S,T<:OptionType}
+  nrowst, ncolst = getjacsize(m, which)
+  colt_start = T == Parameters ? nvars(m)+1 : 1
+  M = similar(X0, (ncolst,nrowst))
+  for colt in colt_start:colt_start+ncolst-1
+    for rowt in 1:nrowst
+      M[colt-colt_start+1,rowt] = TI.geti(m.x[rowt], colt)
+    end
   end
   return M
 end
 
-function jacobiant(m::TaylorMap{X0,X,Q,S}) where {X0,X<:StaticArray,Q,S}
-  nv = nvars(m)
-  return StaticArrays.sacollect(SMatrix{nv,nv,eltype(X0)}, TI.geti(m.x[floor(Int, (i-1)/nv)+1], mod1(i,nv)) for i in 1:nv^2)
+function jacobiant(m::TaylorMap{X0,X,Q,S}, which::T=VARS) where {X0,X<:StaticArray,Q,S,T<:OptionType}
+  return transpose(jacobian(m, which))
 end
 
 
