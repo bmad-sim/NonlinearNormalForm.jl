@@ -1,6 +1,6 @@
 
 using DelimitedFiles
-function read_fpp_map(file; stochastic::Union{Nothing,Bool}=nothing,spin::Union{Nothing,Bool}=nothing) 
+function read_fpp_map(file; stochastic::Union{Nothing,Bool}=nothing,spin::Union{Nothing,Bool}=nothing,coast::Bool=false) 
   data = readdlm(file, skipblanks=true)
   nv = data[findfirst(t->t=="Dimensional", data)- CartesianIndex(0,1)]
   no = data[findfirst(t->t=="NO", data) + CartesianIndex(0,2)]
@@ -46,7 +46,14 @@ function read_fpp_map(file; stochastic::Union{Nothing,Bool}=nothing,spin::Union{
 
   # Make the TPSA
   d = InitGTPSA{Descriptor(nv, no, np, no),Nothing}()
-  m = complex(DAMap(init=d,nv=nv,np=np,stochastic=stochastic,spin=spin))
+  if coast
+    nvt = nv-1
+    npt = np+1
+  else
+    nvt = nv
+    npt = np
+  end
+  m = complex(DAMap(init=d,nv=nvt,np=npt,stochastic=stochastic,spin=spin))
 
   idx=3
   data=data[3:end,:]

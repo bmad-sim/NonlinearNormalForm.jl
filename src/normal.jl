@@ -32,15 +32,46 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
   ->
   A12 = -(Mz-I)^-1*Mk
 
+  For coasting beam, we have
+
+  M = [Mhz   0    Mhk ]
+      [Vthz' 1    Vtk']
+      [0     0    I   ]
+
+  We seek a transformation
+
+  A = [I     0   Ahk]
+      [Ath   1   Atk]
+      [0     0   I  ]
+
+  to put the map into the form
+
+  A^-1*M*A = [Mhz  0   0   ]
+             [0    1   Utk']
+             [0    0   I   ]
+
+  The reason for this is because there is no "time-like" fixed point with coasting beam. However 
+  we do transform to a space where the time-like coordinate does not depend on the variables at all.
+
   =#
-  A0_12 = -inv(jacobian(m)-I)*jacobian(m, PARAMS)
+
+#=
+  A0_12 = -inv(jacobian(m, HVARS)-I)*jacobian(m, HPARAMS)
   a0 = one(m)
   setray!(a0.x, x_matrix=A0_12, x_matrix_offset=nv) # offset to parameters part
 
   # if we are coasting, then we need to include the effect of the variables on the time-like coordinate
+  # to ensure Poisson bracket does not change
   if coast
-
+    nt = nv
+    ndpt = nv+1
+    for i=1:Int(nhv/2)
+      TI.seti!(a0.x[nt], TI.geti(a.x0[2*i-1], ndpt), 2*i)
+      TI.seti!(a0.x[nt], -TI.geti(a0.x[2*i], ndpt), 2*i-1)
+    end
   end
+  return a0
+  =#
 
   # 1: Go to parameter-dependent fixed point to first order ONLY!
   # Higher orders will be taken care of in nonlinear part
@@ -51,24 +82,24 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
     eye = one(m)
     TI.seti!(eye.x[nhv+1], 0, nhv+1)
     TI.seti!(eye.x[nhv+2], 0, nhv+2)
-    TI.seti!(eye.x[nhv+3], 1, nhv+3)
-    TI.seti!(eye.x[nhv+4], 1, nhv+4)
+    TI.seti!(eye.x[nhv+3], 1, nhv+3) # these do not do anything!!
+    TI.seti!(eye.x[nhv+4], 1, nhv+4) # these do not do anything!!
     #setray!(eye.x, x_matrix=I(nhv)) # identity only in harmonic variables
     sgn =  -(1+2*(ndpt-nvars(m)))
     nt = ndpt+sgn # timelike variable index
     zer = zero(m); TI.seti!(zer.x[nt], 1, nt); TI.seti!(zer.x[ndpt], 1, ndpt)
     a0 = (cutord(m,2)-eye)^-1 ∘ zer + eye
+    #return jacobian(a0, ALL)
     # ensure poisson bracket does not change
     for i=1:Int(nhv/2)
       pb = sgn*TI.geti(a0.x[2*i], ndpt)*TI.mono(init, 2*i-1) - sgn*TI.geti(a0.x[2*i-1], ndpt)*TI.mono(init, 2*i)
       TI.add!(a0.x[nt], a0.x[nt], pb)
     end
-    return a0
   else
     nhv = nvars(m)
     a0 = inv(cutord(m,2)-I, do_spin=false) ∘ zero(m) + I 
   end
-  return a0
+  return a0^-1 ∘ m ∘ a0
   m0 = a0^-1 ∘ m ∘ a0
   # 2: Do the linear normal form exactly
   Mt = view(jacobiant(m0), 1:nhv, 1:nhv) # parameters (+ coast) never included
