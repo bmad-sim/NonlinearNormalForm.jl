@@ -25,75 +25,107 @@ iscoasting(m::Union{TaylorMap,VectorField}) = !iseven(nvars(m))
 # Useful options should be 1) harmonic variables, 2) variables, and 3) variables + parameters
 abstract type OptionType end
 struct HarmonicVariables <: OptionType end  # e.g. 4x4 matrix
+struct CoastVariable <: OptionType end # e.g. 1x5 matrix
 struct Variables <: OptionType end # e.g. 4x4 or 5x5 (coasting beam) matrix
 struct HarmonicVariablesAndParameters <: OptionType end # e.g. 4 x (nv+np) matrix
+struct CoastVariableAndParameters <: OptionType end # e.g. 1 x (nv+np) matrix
 struct VariablesAndParameters <: OptionType end # eg. 5 x np (coasting beam) matrix
 struct Parameters <: OptionType end # e.g. 5 x np matrix
 struct HarmonicParameters <: OptionType end # e.g. 4 x np matrix
+struct CoastParameters <: OptionType end # e.g. 1 x np matrix
 struct All <: OptionType end
 
 const HVARS = HarmonicVariables()
+const CVAR = CoastVariable()
 const VARS = Variables()
 const HVARS_PARAMS = HarmonicVariablesAndParameters()
+const CVAR_PARAMS = CoastVariableAndParameters()
 const VARS_PARAMS = VariablesAndParameters()
 const PARAMS = Parameters()
 const HPARAMS = HarmonicParameters()
+const CPARAMS = CoastParameters()
 const ALL = All()
 
-@inline function getjacsize(m::TaylorMap, ::T) where {T<:OptionType}
+@inline function getjacinfo(m::TaylorMap, ::T) where {T<:OptionType}
   if T == HarmonicVariables
     nrows = nhvars(m)
     ncols = nhvars(m)
+    row_start = 1
+    col_start = 1
+  elseif T == CoastVariable
+    nrows = 1
+    ncols = nhvars(m)
+    row_start = nvars(m)
+    col_start = 1
   elseif T == Variables
     nrows = nvars(m)
     ncols = nvars(m)
+    row_start = 1
+    col_start = 1
   elseif T == HarmonicVariablesAndParameters
     nrows = nhvars(m)
     ncols = ndiffs(m)
+    row_start = 1
+    col_start = 1
+  elseif T == CoastVariableAndParameters
+    nrows = 1
+    ncols = ndiffs(m)
+    row_start = nvars(m)
+    col_start = 1
   elseif T == VariablesAndParameters
     nrows = nvars(m)
     ncols = ndiffs(m)
+    row_start = 1
+    col_start = 1
   elseif T == Parameters
     nrows = nvars(m)
     ncols = nparams(m)
+    row_start = 1
+    col_start = nvars(m)+1
   elseif T == HarmonicParameters
     nrows = nhvars(m)
     ncols = nparams(m)
+    row_start = 1
+    col_start = nvars(m)+1
+  elseif T == CoastParameters
+    nrows = 1
+    ncols = nparams(m)
+    row_start = nvars(m)
+    col_start = nvars(m)+1
   elseif T == All
     nrows = ndiffs(m)
     ncols = ndiffs(m)
+    row_start = 1
+    col_start = 1
   else
     error("Invalid option type")
   end
-  return nrows, ncols
+  return nrows, ncols, row_start, col_start
 end
 
 function jacobian(m::TaylorMap{X0,X,Q,S}, which::T=VARS) where {X0,X,Q,S,T<:OptionType}
-  nrows, ncols = getjacsize(m, which)
-  col_start = T == Parameters || T == HarmonicParameters ? nvars(m)+1 : 1
+  nrows, ncols, row_start, col_start = getjacinfo(m, which)
   M = similar(X0, (nrows,ncols))
   for col in col_start:col_start+ncols-1
-    for row in 1:nrows
-      M[row,col-col_start+1] = TI.geti(m.x[row], col)
+    for row in row_start:row_start+nrows-1
+      M[row-row_start+1,col-col_start+1] = TI.geti(m.x[row], col)
     end
   end
   return M
 end
 
 function jacobian(m::TaylorMap{X0,X,Q,S}, which::T=VARS) where {X0,X<:StaticArray,Q,S,T<:OptionType}
-  nrows, ncols = getjacsize(m, which)
-  col_start = T == Parameters || T == HarmonicParameters ? nvars(m)+1 : 1
+  nrows, ncols, row_start, col_start = getjacinfo(m, which)
   return StaticArrays.sacollect(SMatrix{nrows,ncols,eltype(X0)}, 
-  TI.geti(m.x[row], col) for col in col_start:col_start+ncols-1 for row in 1:nrows)
+  TI.geti(m.x[row], col) for col in col_start:col_start+ncols-1 for row in row_start:row_start+nrows-1)
 end
 
 function jacobiant(m::TaylorMap{X0,X,Q,S}, which::T=VARS) where {X0,X,Q,S,T<:OptionType}
-  nrowst, ncolst = getjacsize(m, which)
-  colt_start = T == Parameters || T == HarmonicParameters ? nvars(m)+1 : 1
+  nrowst, ncolst, rowt_start, colt_start = getjacinfo(m, which)
   M = similar(X0, (ncolst,nrowst))
   for colt in colt_start:colt_start+ncolst-1
-    for rowt in 1:nrowst
-      M[colt-colt_start+1,rowt] = TI.geti(m.x[rowt], colt)
+    for rowt in rowt_start:rowt_start+nrowst-1
+      M[colt-colt_start+1,rowt-rowt_start+1] = TI.geti(m.x[rowt], colt)
     end
   end
   return M

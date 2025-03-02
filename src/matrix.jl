@@ -20,6 +20,7 @@ For complex matrices, Julia's `eigen`, which is called by `mat_eigen`, is type-u
 """
 function mat_eigen(mat; sort=true, phase_modes=true)
   F = eigen(mat)
+  F = make_mutable(F)
   low_mat_eigen!(F, sort, phase_modes)
   return F
 end
@@ -32,8 +33,23 @@ for more details.
 """
 function mat_eigen!(mat; sort=true, phase_modes=true)
   F = eigen!(mat)
+  F = make_mutable(F)
   low_mat_eigen!(F, sort, phase_modes)
   return F
+end
+
+function make_mutable(F::Eigen{S,T,U,V}) where {S,T,U,V}
+  if U <: SArray
+    if V <: SArray
+      return Eigen(MVector(F.values), MMatrix(F.vectors))
+    else
+      return Eigen(MVector(F.values), F.vectors)
+    end
+  elseif V <: StaticArray
+    return Eigen(F.values, MMatrix(F.vectors))
+  else
+    return Eigen(F.values, F.vectors)
+  end
 end
 
 function low_mat_eigen!(F, sort, phase_modes)
@@ -46,7 +62,7 @@ function low_mat_eigen!(F, sort, phase_modes)
     # but to locate planes we want all eigenvectors to have equivalent norms.
     nv = length(F.values)
     n_modes = Int(nv/2)
-    modes = Vector{Int}(undef, n_modes)
+    modes = F.values isa StaticArray ? MVector{n_modes,Int}(undef) : Vector{Int}(undef, n_modes)
 
     # If more than 1 mode is unstable, there is no gaurantee the modes are in pairs, so sorting fails.
     if num_unstable <= 2 && locate_modes!(F.vectors, F.values, sort=false, modes=modes) # Plane locating is successful
@@ -159,7 +175,7 @@ function moveback_unstable!(F::Eigen)
   for i=1:nv
     if imag(evals[i]) == 0
       cnt += 1
-    else
+    elseif cnt != 0
       evals[i-cnt], evals[i] = evals[i], evals[i-cnt]
       for k=1:nv
         evecs[k,i-cnt], evecs[k,i] = evecs[k,i], evecs[k,i-cnt]

@@ -54,9 +54,9 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
   we do transform to a space where the time-like coordinate does not depend on the variables at all.
 
   =#
-
-#=
-  A0_12 = -inv(jacobian(m, HVARS)-I)*jacobian(m, HPARAMS)
+  M_hvars = jacobian(m, HVARS)  
+  M_hparams = jacobian(m, HPARAMS)
+  A0_12 = -inv(M_hvars-I)*M_hparams
   a0 = one(m)
   setray!(a0.x, x_matrix=A0_12, x_matrix_offset=nv) # offset to parameters part
 
@@ -65,14 +65,19 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
   if coast
     nt = nv
     ndpt = nv+1
+    #return M_
+    M_cvar = jacobian(m, CVAR)
+    M_cparams = jacobian(m, CPARAMS)
+    coastrow = M_cvar*A0_12 + M_cparams
+    setray!(view(a0.x, nt:nt), x_matrix=coastrow, x_matrix_offset=nv)
+
     for i=1:Int(nhv/2)
-      TI.seti!(a0.x[nt], TI.geti(a.x0[2*i-1], ndpt), 2*i)
+      TI.seti!(a0.x[nt], TI.geti(a0.x[2*i-1], ndpt), 2*i)
       TI.seti!(a0.x[nt], -TI.geti(a0.x[2*i], ndpt), 2*i-1)
     end
   end
-  return a0
-  =#
 
+#=
   # 1: Go to parameter-dependent fixed point to first order ONLY!
   # Higher orders will be taken care of in nonlinear part
   # zero(m) is zero in variables but identity in parameters
@@ -100,11 +105,17 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
     a0 = inv(cutord(m,2)-I, do_spin=false) ∘ zero(m) + I 
   end
   return a0^-1 ∘ m ∘ a0
+  =#
   m0 = a0^-1 ∘ m ∘ a0
+
+  c = to_phasor(m)
+  #return m0
   # 2: Do the linear normal form exactly
   Mt = view(jacobiant(m0), 1:nhv, 1:nhv) # parameters (+ coast) never included
   F = mat_eigen(Mt, phase_modes=false) # Returns eigenvectors with vⱼ'*S*vⱼ = +im for odd j, and -im for even j
-  a1_inv_matrix = zeros(nvars(m),nvars(m))
+  # reshape([isodd(mod1(i,4)) ? real(F.vectors[fld1(i,4),mod1(i,4)]) : -imag(F.vectors[fld1(i,4),mod1(i,4)]) for i in 1:16], 4,4)]
+  a1_inv_matrix = jacobian(c, HVARS)*transpose(F.vectors)
+  #=zeros(nvars(m),nvars(m))
   for i=1:nhv
     for j=1:Int(nhv/2)  # See Eqs. 2.48, 2.49 in EYB
       a1_inv_matrix[2*j-1,i] = sqrt(2)*real(F.vectors[i,2*j-1])  # See Eq. 3.74 in EBB for factor of 2
@@ -114,6 +125,7 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
   if ndpt != -1
     a1_inv_matrix[nhv+1,nhv+1] = 1; a1_inv_matrix[nhv+2,nhv+2] = 1;
   end
+  =#
 
   a1 = zero(promote_type(eltype(a1_inv_matrix),typeof(m0)), m0)
   setray!(a1.x, x_matrix=inv(a1_inv_matrix))
@@ -762,7 +774,7 @@ end
 function from_phasor!(cinv::DAMap, m::DAMap)
   clear!(cinv)
 
-  nhv = nvars(m)
+  nhv = nhvars(m)
   if coastidx(m) != -1
     nhv -= 2
     TI.seti!(cinv.x[nhv+1], 1, nhv+1)
@@ -796,7 +808,7 @@ end
 function to_phasor!(c::DAMap, m::DAMap)
   clear!(c)
 
-  nhv = nvars(m)
+  nhv = nhvars(m)
   if coastidx(m) != -1
     nhv -= 2
     TI.seti!(c.x[nhv+1], 1, nhv+1)
