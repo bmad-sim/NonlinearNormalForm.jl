@@ -25,10 +25,10 @@ iscoasting(m::Union{TaylorMap,VectorField}) = !iseven(nvars(m))
 # Useful options should be 1) harmonic variables, 2) variables, and 3) variables + parameters
 abstract type OptionType end
 struct HarmonicVariables <: OptionType end  # e.g. 4x4 matrix
-struct CoastVariable <: OptionType end # e.g. 1x5 matrix
+struct CoastVariables <: OptionType end # e.g. 1x5 matrix
 struct Variables <: OptionType end # e.g. 4x4 or 5x5 (coasting beam) matrix
 struct HarmonicVariablesAndParameters <: OptionType end # e.g. 4 x (nv+np) matrix
-struct CoastVariableAndParameters <: OptionType end # e.g. 1 x (nv+np) matrix
+struct CoastVariablesAndParameters <: OptionType end # e.g. 1 x (nv+np) matrix
 struct VariablesAndParameters <: OptionType end # eg. 5 x np (coasting beam) matrix
 struct Parameters <: OptionType end # e.g. 5 x np matrix
 struct HarmonicParameters <: OptionType end # e.g. 4 x np matrix
@@ -36,10 +36,10 @@ struct CoastParameters <: OptionType end # e.g. 1 x np matrix
 struct All <: OptionType end
 
 const HVARS = HarmonicVariables()
-const CVAR = CoastVariable()
+const CVARS = CoastVariables()
 const VARS = Variables()
 const HVARS_PARAMS = HarmonicVariablesAndParameters()
-const CVAR_PARAMS = CoastVariableAndParameters()
+const CVARS_PARAMS = CoastVariablesAndParameters()
 const VARS_PARAMS = VariablesAndParameters()
 const PARAMS = Parameters()
 const HPARAMS = HarmonicParameters()
@@ -52,7 +52,7 @@ const ALL = All()
     ncols = nhvars(m)
     row_start = 1
     col_start = 1
-  elseif T == CoastVariable
+  elseif T == CoastVariables
     nrows = 1
     ncols = nhvars(m)
     row_start = nvars(m)
@@ -67,7 +67,7 @@ const ALL = All()
     ncols = ndiffs(m)
     row_start = 1
     col_start = 1
-  elseif T == CoastVariableAndParameters
+  elseif T == CoastVariablesAndParameters
     nrows = 1
     ncols = ndiffs(m)
     row_start = nvars(m)
@@ -105,7 +105,7 @@ end
 
 function jacobian(m::TaylorMap{X0,X,Q,S}, which::T=VARS) where {X0,X,Q,S,T<:OptionType}
   nrows, ncols, row_start, col_start = getjacinfo(m, which)
-  M = similar(X0, (nrows,ncols))
+  M = similar(m.x0, nrows, ncols)
   for col in col_start:col_start+ncols-1
     for row in row_start:row_start+nrows-1
       M[row-row_start+1,col-col_start+1] = TI.geti(m.x[row], col)
@@ -122,7 +122,7 @@ end
 
 function jacobiant(m::TaylorMap{X0,X,Q,S}, which::T=VARS) where {X0,X,Q,S,T<:OptionType}
   nrowst, ncolst, rowt_start, colt_start = getjacinfo(m, which)
-  M = similar(X0, (ncolst,nrowst))
+  M = similar(m.x0, ncolst,nrowst)
   for colt in colt_start:colt_start+ncolst-1
     for rowt in rowt_start:rowt_start+nrowst-1
       M[colt-colt_start+1,rowt-rowt_start+1] = TI.geti(m.x[rowt], colt)

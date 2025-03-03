@@ -279,7 +279,7 @@ function mul!(
 
   # Spin F⋅∇q + qf (quaternion part acts in reverse order):
   if !isnothing(F.q)
-    TI.mul!(work_Q, m1.q, F.q)
+    TI.mul!(work_q, m1.q, F.q)
     TI.fgrad!(m.q.q0, F.x, m1.q.q0)
     TI.fgrad!(m.q.q1, F.x, m1.q.q1)
     TI.fgrad!(m.q.q2, F.x, m1.q.q2)

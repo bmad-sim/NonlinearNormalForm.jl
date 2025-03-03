@@ -4,10 +4,10 @@ struct NormalForm
 end
 
 function normal(m::DAMap; res=nothing, spin_res=nothing)
-  init = getinit(m)
   nn = ndiffs(m)
   nhv = nhvars(m)
   nv = nvars(m)
+  np = nparams(m)
   coast = iscoasting(m)
 
   # 1: Go to parameter-dependent fixed point to first order ONLY!
@@ -54,161 +54,124 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
   we do transform to a space where the time-like coordinate does not depend on the variables at all.
 
   =#
-  M_hvars = jacobian(m, HVARS)  
-  M_hparams = jacobian(m, HPARAMS)
-  A0_12 = -inv(M_hvars-I)*M_hparams
-  a0 = one(m)
-  setray!(a0.x, x_matrix=A0_12, x_matrix_offset=nv) # offset to parameters part
+  if np > 0
+    M_hvars = jacobian(m, HVARS)  
+    M_hparams = jacobian(m, HPARAMS)
+    A0_12 = -inv(M_hvars-I)*M_hparams
+    a0 = one(m)
+    setray!(a0.x, x_matrix=A0_12, x_matrix_offset=nv) # offset to parameters part
 
-  # if we are coasting, then we need to include the effect of the variables on the time-like coordinate
-  # to ensure Poisson bracket does not change
-  if coast
-    nt = nv
-    ndpt = nv+1
-    #return M_
-    M_cvar = jacobian(m, CVAR)
-    M_cparams = jacobian(m, CPARAMS)
-    coastrow = M_cvar*A0_12 + M_cparams
-    setray!(view(a0.x, nt:nt), x_matrix=coastrow, x_matrix_offset=nv)
+    # if we are coasting, then we need to include the effect of the variables on the time-like coordinate
+    # to ensure Poisson bracket does not change
+    if coast
+      nt = nv
+      ndpt = nv+1
+      M_cvars = jacobian(m, CVARS)
+      M_cparams = jacobian(m, CPARAMS)
+      coastrow = M_cvars*A0_12 + M_cparams
+      setray!(view(a0.x, nt:nt), x_matrix=coastrow, x_matrix_offset=nv)
 
-    for i=1:Int(nhv/2)
-      TI.seti!(a0.x[nt], TI.geti(a0.x[2*i-1], ndpt), 2*i)
-      TI.seti!(a0.x[nt], -TI.geti(a0.x[2*i], ndpt), 2*i-1)
-    end
-  end
-
-#=
-  # 1: Go to parameter-dependent fixed point to first order ONLY!
-  # Higher orders will be taken care of in nonlinear part
-  # zero(m) is zero in variables but identity in parameters
-  ndpt = coastidx(m)
-  if ndpt != -1 # if coasting, set number of variables executing pseudo-harmonic oscillations
-    nhv = nvars(m)-2
-    eye = one(m)
-    TI.seti!(eye.x[nhv+1], 0, nhv+1)
-    TI.seti!(eye.x[nhv+2], 0, nhv+2)
-    TI.seti!(eye.x[nhv+3], 1, nhv+3) # these do not do anything!!
-    TI.seti!(eye.x[nhv+4], 1, nhv+4) # these do not do anything!!
-    #setray!(eye.x, x_matrix=I(nhv)) # identity only in harmonic variables
-    sgn =  -(1+2*(ndpt-nvars(m)))
-    nt = ndpt+sgn # timelike variable index
-    zer = zero(m); TI.seti!(zer.x[nt], 1, nt); TI.seti!(zer.x[ndpt], 1, ndpt)
-    a0 = (cutord(m,2)-eye)^-1 ∘ zer + eye
-    #return jacobian(a0, ALL)
-    # ensure poisson bracket does not change
-    for i=1:Int(nhv/2)
-      pb = sgn*TI.geti(a0.x[2*i], ndpt)*TI.mono(init, 2*i-1) - sgn*TI.geti(a0.x[2*i-1], ndpt)*TI.mono(init, 2*i)
-      TI.add!(a0.x[nt], a0.x[nt], pb)
+      for i in 1:Int(nhv/2)
+        TI.seti!(a0.x[nt], TI.geti(a0.x[2*i-1], ndpt), 2*i)
+        TI.seti!(a0.x[nt], -TI.geti(a0.x[2*i], ndpt), 2*i-1)
+      end
     end
   else
-    nhv = nvars(m)
-    a0 = inv(cutord(m,2)-I, do_spin=false) ∘ zero(m) + I 
+    a0 = I
   end
-  return a0^-1 ∘ m ∘ a0
-  =#
-  m0 = a0^-1 ∘ m ∘ a0
 
-  c = to_phasor(m)
-  #return m0
+  m0 = inv(a0) ∘ m ∘ a0
+
   # 2: Do the linear normal form exactly
-  Mt = view(jacobiant(m0), 1:nhv, 1:nhv) # parameters (+ coast) never included
+  # We calculate the matrix A1 such that inv(A1)*M0*A1 is a rotation matrix
+  # of each oscillating plane
+  c = to_phasor(m)
+  ci = from_phasor(m)
+  Mt = jacobiant(m0, HVARS) # parameters (+ coast) never included
   F = mat_eigen(Mt, phase_modes=false) # Returns eigenvectors with vⱼ'*S*vⱼ = +im for odd j, and -im for even j
-  # reshape([isodd(mod1(i,4)) ? real(F.vectors[fld1(i,4),mod1(i,4)]) : -imag(F.vectors[fld1(i,4),mod1(i,4)]) for i in 1:16], 4,4)]
-  a1_inv_matrix = jacobian(c, HVARS)*transpose(F.vectors)
-  #=zeros(nvars(m),nvars(m))
-  for i=1:nhv
-    for j=1:Int(nhv/2)  # See Eqs. 2.48, 2.49 in EYB
-      a1_inv_matrix[2*j-1,i] = sqrt(2)*real(F.vectors[i,2*j-1])  # See Eq. 3.74 in EBB for factor of 2
-      a1_inv_matrix[2*j,i] = sqrt(2)*imag(F.vectors[i,2*j-1])  
-    end
-  end
-  if ndpt != -1
-    a1_inv_matrix[nhv+1,nhv+1] = 1; a1_inv_matrix[nhv+2,nhv+2] = 1;
-  end
-  =#
+  a1_inv_matrix = real(jacobian(c, HVARS)*transpose(F.vectors))
+  a1i = one(c)
+  a1 = one(c)
 
-  a1 = zero(promote_type(eltype(a1_inv_matrix),typeof(m0)), m0)
+  #a1_matrix = inv(a1_inv_matrix)*ComplexF64[-0.5318105599022731 + 0.0im -0.8468633469317207 + 0.0im -1.183649947867121e-18 + 0.0im 2.8433053706784177e-18 + 0.0im -9.551266702119126e-17 + 0.0im 2.713163236523348e-16 + 0.0im; 0.8468633469317458 + 0.0im -0.5318105599023004 - 0.0im 3.7806147519283997e-20 + 0.0im 3.9223878051257145e-19 + 0.0im 1.858216837865342e-17 + 0.0im -9.002386153477376e-17 - 0.0im; -1.7396841517514946e-18 + 0.0im 3.3005645240592203e-18 + 0.0im 0.9903928810191948 + 0.0im 0.13828210739824376 + 0.0im 5.644422594681993e-16 + 0.0im 1.106187831851298e-15 + 0.0im; -8.530946543394919e-19 + 0.0im 1.3488426213455933e-18 + 0.0im -0.1382821073982447 + 0.0im 0.9903928810191944 + 0.0im 1.5385762683964214e-15 + 0.0im -1.7264802371240254e-16 + 0.0im; -1.2583924976521015e-18 + 0.0im -3.528230480898434e-19 + 0.0im 6.195468032403339e-17 + 0.0im 6.680852397398448e-17 + 0.0im -0.9925893149487823 + 0.0im 0.12151729033148836 + 0.0im; 2.773572877858168e-19 + 0.0im -9.509392724085148e-19 + 0.0im 4.374320653079168e-17 + 0.0im -2.6721393554679266e-16 + 0.0im -0.12151729033148889 + 0.0im -0.9925893149487821 + 0.0im]
+  #a1_inv_matrix = inv(a1_matrix)
+  setray!(a1i.x, x_matrix=a1_inv_matrix)
   setray!(a1.x, x_matrix=inv(a1_inv_matrix))
-  
-  #a1_mat = fast_canonize(a1)
-  #clear!(a1)
-  #setray!(a1.x, x_matrix=a1_mat)
-  
-  if !isnothing(m.q)
-    setquat!(a1.q, q=I)
-  end
 
-  m1 = a1^-1 ∘ m0 ∘ a1
+  #a1_mat = fast_canonize(a1)
+
+  m1 = a1i ∘ m0 ∘ a1
 
   # 3: Go into phasor's basis
-  c = to_phasor(m1)
-  m1 = c^-1 ∘ m1 ∘ c
-  
+  m1 = ci ∘ m1 ∘ c
+
   # ---- Nonlinear -----
   # 4: Nonlinear algorithm
   # order by order
   # check if tune shift and kill
-  R_inv = inv(getord(m1, 1, 0, do_spin=false), do_spin=false) # R is diagonal matrix
-  if !isnothing(R_inv.q)
-    TI.seti!(R_inv.q.q0, 1, 0)
-  end
+  R_inv = inv(jacobian(m1, HVARS)) # R is diagonal matrix
+  ri = one(m1)
+  setray!(ri.x, x_matrix=R_inv)
 
-  # Store the tunes
-  eg = Vector{TI.numtype(eltype(R_inv.x))}(undef, nvars(m))
-  for i=1:nhv
-    eg[i] = TI.geti(R_inv.x[i], i)
-  end
+  # eg = tunes POTENTIALLY INCLUDING DAMPING!!
+  # Cannot just use eigenvalues here, need to get from linear normalized map
+  eg = diag(jacobian(ri, HVARS))
 
   mo = maxord(m)
 
   an = one(m1)
-  ker = one(m1)
-  # Kernel - these are tune shifts we leave in the map
-  for i = 2:mo
+  ker = one(m1) # current kernel (containing only tune shifts and maybe resonance)
+  F =  zero(VectorField, m1)  # VectorField of monomials to remove for this particular order 
+  Fker =  zero(VectorField, m1)  # VectorField of tune shifts to keep for this particular order
+
+  ords = similar(m1.x, Int) # monomial orders
+  tmpmono = Vector{UInt8}(undef, nn) # same as ords but GTPSA v1..0 only compatible with this (UInt8 and Vector type) right now
+
+  v = Ref{TI.numtype(eltype(m1.x))}() # monomial value 
+  for i in 2:mo
+    clear!(F)
+    clear!(Fker)
+
     # Here, we have 
     # m1 = ℛexp(K)(ℐ+ϵ²𝒞₂) 
     # get rid of ℛ:
-    nonl = m1 ∘ R_inv
+    nonl = m1 ∘ ri
     nonl = nonl ∘ inv(ker) # get rid of kernel
+    
     nonl = getord(nonl, i)  # Get only the leading order to stay in symplectic group
     # now nonl = ϵ²𝒞₂
 
-    F =  zero(VectorField, m1)  # temporary to later exponentiate
-    Fker =  zero(VectorField, m1)  # temporary to later exponentiate
-
     # For each variable in the nonlinear map
-    for j=1:nvars(m)
-      v = Ref{ComplexF64}()
-      ords = Vector{UInt8}(undef, nn)
-      idx = TI.cycle!(nonl.x[j], 0, mono=ords, val=v)
+    for j in 1:nv
+      idx = TI.cycle!(nonl.x[j], 0, mono=tmpmono, val=v)
       while idx > 0
+        ords .= tmpmono
         # Tune shifts should be left in the map (kernel) because we cannot remove them
         # if there is damping, we technically could remove them
         if !is_tune_shift(j, ords, nhv) && !is_orbital_resonance(j, ords, nhv, res, spin_res) # then remove it
-          je = convert(Vector{Int}, ords)
-          je[j] -= 1
+          ords[j] -= 1
           lam = 1
-          for k = 1:nhv # ignore coasting plane
-            lam *= eg[k]^je[k]
+          for k in 1:nhv # ignore coasting plane
+            lam *= eg[k]^ords[k]
           end
-          TI.add!(F.x[j], F.x[j], TI.mono(init, ords)*v[]/(1-lam))
+          ords[j] += 1
+          TI.setm!(F.x[j], v[]/(1-lam), tmpmono)
         else # cannot remove it - add to kernel (if close to res and res is specified it will nearly blow up)
-          println("keeping monomial ", Vector{Int}(ords), ", v = ", v[])
-          TI.add!(Fker.x[j], Fker.x[j], TI.mono(init, ords)*v[])
+          TI.setm!(Fker.x[j], v[], tmpmono)
         end
-        idx = TI.cycle!(nonl.x[j], idx, mono=ords, val=v)
+        idx = TI.cycle!(nonl.x[j], idx, mono=tmpmono, val=v)
       end
-      println("================================")
     end
-    kert = exp(Fker,one(m)) #I + Fker
-    ant = exp(F,one(m)) #I + F
+    kert = exp(Fker,one(m)) # I + Fker 
+    ant = exp(F,one(m)) # I + F
     ker = kert ∘ ker
     an = an ∘ ant
-    #return ant, m1, kert, Fker, an
     m1 = inv(ant) ∘ m1 ∘ ant
   end
 
-  a = a0 ∘ a1 ∘ c*an*c^-1
+  a = a0 ∘ a1 ∘ c ∘ an ∘ ci
+
+  #return a
 
   #return m1
 
@@ -274,7 +237,7 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
           if !is_spin_resonance(j, ords, nhv, res, spin_res) && (j != 2 || !is_tune_shift(j, ords, nhv, true)) # then remove it, note spin components are like hamiltonian
             lam = egspin[j]
             for k = 1:nhv # ignore coasting plane
-              lam *= eg[k]^ords[k]
+              lam *= conj(eg[k])^ords[k]
             end
             na[j] += mono(ords,use=getdesc(m1))*v[]/(1-lam)
           else
@@ -416,8 +379,6 @@ function factorize(a)
 end
 
 
-
-
 """
     is_tune_shift(varidx, ords, nhv)
 
@@ -430,16 +391,19 @@ Checks if the monomial corresponds to a tune shift.
 - `hamiltonian` -- Default is false, if the monomial is in a vector field and not a hamitlonian then this should be false.
 """
 function is_tune_shift(varidx, ords, nhv, hamiltonian=false)
-  je = convert(Vector{Int}, ords)
   if !hamiltonian
-    je[varidx] -= 1 # have to subtract because using vectorfield and not hamiltonian
+    ords[varidx] -= 1 # have to subtract because using vectorfield and not hamiltonian
   end
   t = 0
  
   # remove it if there are equal powers of hhbar = J
 
-  for k = 1:2:nhv # ignore coasting plane
-    t += abs(je[k]-je[k+1]) 
+  for k in 1:2:nhv # ignore coasting plane
+    t += abs(ords[k]-ords[k+1]) 
+  end
+
+  if !hamiltonian
+    ords[varidx] += 1 
   end
 
   if t != 0
@@ -476,24 +440,25 @@ function is_orbital_resonance(varidx, ords, nhv, res, spin_res)
     return false
   end
 
-  je = convert(Vector{Int}, ords)
-  je[varidx] -= 1
+  ords[varidx] -= 1
 
-  for curresidx=1:size(res, 2) # for each res in the family
+  for curresidx in 1:size(res, 2) # for each res in the family
     if !isnothing(spin_res) && spin_res[curresidx] != 0
       return false # spin res not orbital res
     end
     t1 = 0
     t2 = 0
     
-    for k = 1:2:nhv # ignore coasting plane
-      t1 += abs(je[k]-je[k+1]+res[Int((k+1)/2),curresidx]) 
-      t2 += abs(je[k]-je[k+1]-res[Int((k+1)/2),curresidx]) 
+    for k in 1:2:nhv # ignore coasting plane
+      t1 += abs(ords[k]-ords[k+1]+res[Int((k+1)/2),curresidx]) 
+      t2 += abs(ords[k]-ords[k+1]-res[Int((k+1)/2),curresidx]) 
     end
     if t1 == 0 || t2 == 0
+      ords[varidx] += 1
       return true # keep it in!
     end
   end
+  ords[varidx] += 1
   return false
 end
 
@@ -559,6 +524,7 @@ function equilibrium_moments(m::DAMap, a::DAMap)
   !all(m.s .== 0) || error("No FD fluctuations in map (m.s .== 0)")
 
   # Moments Σ transform with map like MΣMᵀ + B 
+  # e.g. for m2 ∘ m1:  m.s .= M2*m1.s*transpose(M2) + m2.s
   # This is only linear because this is very complex to higher order not necessary
   # For now we do not include parameters but I'd like to add this later
   # To include parameters later, we would:
@@ -566,14 +532,14 @@ function equilibrium_moments(m::DAMap, a::DAMap)
   # normal form) and then can get the a1 matrix around there
   # tracking code would have to give FD matrix as a function of the parameters
 
-  # Let B = m.E (FD part)
+  # Let B = m.s (FD part)
   # We want to find Σ such that Σ = MΣMᵀ + B  (fixed point)
   # very easy to do in phasors basis
-  # fixed point transformation does nothing (note a0.E = Bₐ₀ = 0 of course and a0.x is identity in variable but not in parameters)
+  # fixed point transformation does nothing (note a0.s = Bₐ₀ = 0 of course and a0.x is identity in variable but not in parameters)
   # When including parameters, fixed point transformation would have to be fully 
   # nonlinear, probably obtained from factorized `a`
   
-  # For now because excluding parameters I do not need a fixed point transformatio
+  # For now because excluding parameters I do not need a fixed point transformation
 
   # MΣMᵀ + B  = Σ
   # A₁MA₁⁻¹ A₁Σ A₁ᵀ A₁⁻¹ᵀMᵀA₁ᵀ  + A₁BA₁ᵀ = A₁ΣA₁ᵀ
@@ -584,26 +550,26 @@ function equilibrium_moments(m::DAMap, a::DAMap)
   # ΛsΛ + b = s
   # solve simply
 
+  nhv = nhvars(m)
   c = to_phasor(m)
-
-  R = inv(c)*inv(a)*m*a*c
+  ci = from_phasor(m)
+  ai = inv(a)
+  R = ci ∘ ai ∘ m ∘ a ∘ c
   b = R.s
-  Λ = jacobian(R)
+  Λ = jacobian(R, HVARS)
+  s = similar(R.s, complex(eltype(R.s))) # beam envelope in phasors basis
 
-  #return b
-
-  s = zeros(ComplexF64, nvars(m),nvars(m)) # beam envelope in phasors basis
-  emits = zeros(Float64, Int(nvars(m)/2)) # emittances
-
-  for i=1:nvars(m)
-    for j=1:nvars(m)
+  
+  for i in 1:nhv
+    for j in 1:nhv
       s[i,j] = 1/(1-Λ[i,i]*Λ[j,j])*b[i,j]
     end
   end
 
   R.s .= s
-  return (a*c*R*inv(c)*inv(a)).s
 
+  # Now take it out of phasor basis
+  return (a ∘ c ∘ R ∘ ci ∘ ai).s
 end
 
 # making the 12, 34, 56 elements 0 in the normalizing map
@@ -775,13 +741,7 @@ function from_phasor!(cinv::DAMap, m::DAMap)
   clear!(cinv)
 
   nhv = nhvars(m)
-  if coastidx(m) != -1
-    nhv -= 2
-    TI.seti!(cinv.x[nhv+1], 1, nhv+1)
-    TI.seti!(cinv.x[nhv+2], 1, nhv+2)
-  end
-
-  for i=1:Int(nhv/2)
+  for i in 1:Int(nhv/2)
     # x_new = 1/sqrt(2)*(x+im*p)
     TI.seti!(cinv.x[2*i-1], 1/sqrt(2), 2*i-1)
     TI.seti!(cinv.x[2*i-1], complex(0,1/sqrt(2)), 2*i)
@@ -789,6 +749,10 @@ function from_phasor!(cinv::DAMap, m::DAMap)
     # p_new = 1/sqrt(2)*(x-im*p)
     TI.seti!(cinv.x[2*i], 1/sqrt(2), 2*i-1)
     TI.seti!(cinv.x[2*i], complex(0,-1/sqrt(2)), 2*i)
+  end
+
+  if iscoasting(m)
+    TI.seti!(cinv.x[nhv+1], 1, nhv+1)
   end
 
   if !isnothing(cinv.q)
@@ -809,23 +773,21 @@ function to_phasor!(c::DAMap, m::DAMap)
   clear!(c)
 
   nhv = nhvars(m)
-  if coastidx(m) != -1
-    nhv -= 2
-    TI.seti!(c.x[nhv+1], 1, nhv+1)
-    TI.seti!(c.x[nhv+2], 1, nhv+2)
+
+  for i in 1:Int(nhv/2)
+    TI.seti!(c.x[2*i-1], 1/sqrt(2), 2*i-1)
+    TI.seti!(c.x[2*i-1], 1/sqrt(2), 2*i)
+
+    TI.seti!(c.x[2*i], complex(0,-1/sqrt(2)), 2*i-1)
+    TI.seti!(c.x[2*i], complex(0,1/sqrt(2)), 2*i)
   end
 
-
-  for i=1:Int(nhv/2)
-    c.x[2*i-1][2*i-1] = 1/sqrt(2)
-    c.x[2*i-1][2*i]   = 1/sqrt(2)
-
-    c.x[2*i][2*i-1] = complex(0,-1/sqrt(2))
-    c.x[2*i][2*i]   = complex(0,1/sqrt(2))
+  if iscoasting(m)
+    TI.seti!(c.x[nhv+1], 1, nhv+1)
   end
 
   if !isnothing(c.q)
-    c.q.q0[0] = 1
+    TI.seti!(c.q.q0, 1, 0)
   end
 
   return

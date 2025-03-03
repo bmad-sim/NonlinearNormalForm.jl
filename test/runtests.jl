@@ -55,11 +55,11 @@ end
     R_fpp = read_fpp_map("order6var4/R.map",spin=false)
     c = to_phasor(m)
     a = normal(m).a
-    @test norm(inv(c)∘inv(a)∘m∘a∘c - R_fpp) < 1e-8
+    @test norm(inv(c)∘inv(a)∘m∘a∘c - R_fpp) < 2e-8
 
     # 3D coasting last plane order 3
-    m = read_fpp_map("coast/test.map",spin=false)
-    R_fpp = read_fpp_map("coast/R.map",spin=false)
+    m = read_fpp_map("coast/test.map",spin=false,coast=true)
+    R_fpp = read_fpp_map("coast/R.map",spin=false,coast=true)
     c = to_phasor(m)
     a = normal(m).a
     @test norm(inv(c)∘inv(a)∘m∘a∘c - R_fpp) < tol

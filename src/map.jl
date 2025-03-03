@@ -55,7 +55,7 @@ abstract type TaylorMap{X0<:AbstractVector,X<:AbstractVector,Q<:Union{Quaternion
   ndiffs(first(m.x)) == length(m.x) || error("Orbital ray length disagrees with number of differentials in TPSA")
   iseven(length(m.x0)) || ndiffs(first(m.x)) > length(m.x0) || error("Coasting plane requires at least one differential (as a parameter) which corresponds to the energy-like canonical variable")
   Q == Nothing || getinit(first(m.q)) == getinit(first(m.x)) || error("Quaternion TPSA definition disagrees with orbital ray TPSA definition")
-  S == Nothing || size(S) == (length(m.x0), length(m.x0)) || error("Size of stochastic matrix disagrees with number of variables in map")
+  S == Nothing || size(m.s) == (length(m.x0), length(m.x0)) || error("Size of stochastic matrix disagrees with number of variables in map")
 end
 
 struct DAMap{X0,X,Q,S} <: TaylorMap{X0,X,Q,S}
