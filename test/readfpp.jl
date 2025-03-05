@@ -53,7 +53,7 @@ function read_fpp_map(file; stochastic::Union{Nothing,Bool}=nothing,spin::Union{
     nvt = nv
     npt = np
   end
-  d = InitGTPSA{Descriptor(nv, no, np, no),Nothing}()
+  d = InitGTPSA{Descriptor(nvt, no, npt, no),Nothing}()
   # for old GTPSA compatibility with TI:
   #d = InitGTPSA{Nothing,Descriptor}(dynamic_descriptor=Descriptor(nvt, no, npt, no))
   m = complex(DAMap(init=d,nv=nvt,np=npt,stochastic=stochastic,spin=spin))

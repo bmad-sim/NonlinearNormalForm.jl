@@ -92,7 +92,7 @@ function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, J::UniformScalin
     copy!(m.q.q1, m1.q.q1)
     copy!(m.q.q2, m1.q.q2)
     copy!(m.q.q3, m1.q.q3)
-    TI.seti!(m.q.q0[0], $(ops[2])(1, TI.geti(m.q.q0, 0)), 0)
+    TI.seti!(m.q.q0, $(ops[2])(1, TI.geti(m.q.q0, 0)), 0)
   end
 
 
@@ -131,7 +131,7 @@ function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, m1::Union{Taylor
     copy!(m.q.q1, m1.q.q1)
     copy!(m.q.q2, m1.q.q2)
     copy!(m.q.q3, m1.q.q3)
-    TI.seti!(m.q.q0[0], $(ops[2])(TI.geti(m.q.q0, 0), 1), 0)
+    TI.seti!(m.q.q0, $(ops[2])(TI.geti(m.q.q0, 0), 1), 0)
   end
 
   if m isa TaylorMap

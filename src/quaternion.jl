@@ -4,6 +4,15 @@ Special quaternion routines for NonlinearNormalForm
 
 =#
 
+# TO-DO: use MQuaternion (mutable quaternion) so only 1 vectorized compose! call
+function TI.compose!(q::Quaternion, q1::Quaternion, m1::AbstractArray)
+  TI.compose!(q.q0, q1.q0, m1)
+  TI.compose!(q.q1, q1.q1, m1)
+  TI.compose!(q.q2, q1.q2, m1)
+  TI.compose!(q.q3, q1.q3, m1)
+  return q
+end
+
 function mul!(q::Quaternion, q1::Quaternion, q2::Quaternion)
   @assert !(q === q1) && !(q === q2) "Aliasing q with q1 or q2 not allowed!"
   all(qi->TI.IsTPSType(eltype(qi)) isa TI.IsTPSType) || error("mul! only works on TPS types supported by TPSAInterface.jl!")
@@ -17,11 +26,11 @@ end
 function inv!(q::Quaternion, q1::Quaternion)
   @assert !(q === q1) "Aliasing q with q1 not allowed!"
   all(qi->TI.IsTPSType(eltype(qi)) isa TI.IsTPSType) || error("inv! only works on TPS types supported by TPSAInterface.jl!")
-  q.q0 = q1.q0 * q1.q0 + q1.q1 * q1.q1 + q1.q2 * q1.q2 + q1.q3 * q1.q3
-  q.q1 = -q1.q1/q.q0
-  q.q2 = -q1.q2/q.q0
-  q.q3 = -q1.q3/q.q0
-  q.q0 = q1.q0/q.q0
+  TI.copy!(q.q0, q1.q0 * q1.q0 + q1.q1 * q1.q1 + q1.q2 * q1.q2 + q1.q3 * q1.q3)
+  TI.copy!(q.q1, -q1.q1/q.q0)
+  TI.copy!(q.q2, -q1.q2/q.q0)
+  TI.copy!(q.q3, -q1.q3/q.q0)
+  TI.copy!(q.q0, q1.q0/q.q0)
   return
 end
 

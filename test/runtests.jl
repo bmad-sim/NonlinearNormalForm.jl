@@ -4,7 +4,7 @@ using Test, GTPSA
 include("readfpp.jl")
 
 @testset "Composition and inversion" begin
-    d = Descriptor(1,2)
+    d = Descriptor(1,2,1,2) 
     x1 = @vars(d)[1]
     m1 = DAMap(x=[1+2*x1+2*x1^2], x0=[4])
     m2 = DAMap(x=[1+2*x1+2*x1^2], x0=[3])
@@ -39,29 +39,29 @@ end
     # 1D all pseudo-harmonic oscillators order 3
     m = read_fpp_map("order2/test.map",spin=false)
     R_fpp = read_fpp_map("order2/R.map",spin=false)
-    c = to_phasor(m)
-    a = normal(m).a
+    c = c_map(m)
+    a = normal(m)
     @test norm(inv(c)∘inv(a)∘m∘a∘c - R_fpp) < tol
 
     # 1D all pseudo-harmonic oscillators order 10
     m = read_fpp_map("order10/test.map",spin=false)
     R_fpp = read_fpp_map("order10/R.map",spin=false)
-    c = to_phasor(m)
-    a = normal(m).a
+    c = c_map(m)
+    a = normal(m)
     @test norm(inv(c)∘inv(a)∘m∘a∘c - R_fpp) < tol
 
     # 2D all pseudo-harmonic oscillators order 6
     m = read_fpp_map("order6var4/test.map",spin=false)
     R_fpp = read_fpp_map("order6var4/R.map",spin=false)
-    c = to_phasor(m)
-    a = normal(m).a
+    c = c_map(m)
+    a = normal(m)
     @test norm(inv(c)∘inv(a)∘m∘a∘c - R_fpp) < 2e-8
 
     # 3D coasting last plane order 3
     m = read_fpp_map("coast/test.map",spin=false,coast=true)
     R_fpp = read_fpp_map("coast/R.map",spin=false,coast=true)
-    c = to_phasor(m)
-    a = normal(m).a
+    c = c_map(m)
+    a = normal(m)
     @test norm(inv(c)∘inv(a)∘m∘a∘c - R_fpp) < tol
 
     # Equilibrium moments -----------------------------
@@ -73,13 +73,12 @@ end
          0.2787256761813363E-04  -0.5279019399759087E-05   0.1627981838787403E-03  -0.8485345202908038E-05   0.9345624000572919E-04   0.2503415143184575E-03]
     m = read_fpp_map("radiation/test.map",spin=false)
     R_fpp = read_fpp_map("radiation/R.map",spin=false)
-    c = to_phasor(m)
-    a = normal(m).a
+    c = c_map(m)
+    a = normal(m)
     @test norm(inv(c)*inv(a)*m*a*c - R_fpp) < 1e-9
     Σ = equilibrium_moments(m,a)
     @test norm(Σ - Σ_fpp) < tol
 
-    
     # Factorize -----------------------------
     # 3D all pseudo harmonic oscillators
     a = read_fpp_map("factorize1/a.map")
@@ -111,7 +110,7 @@ end
     # form is important!
     m = read_fpp_map("spin_res/test.map")
     R_fpp = read_fpp_map("spin_res/R.map")
-    a = normal(m,res=[0; 1], spin_res=[-1]).a  # Q_y - Q_s resonance
+    a = normal(m,res=[0; 1], spin_res=[-1])  # Q_y - Q_s resonance
     
 
 

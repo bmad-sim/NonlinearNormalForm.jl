@@ -135,6 +135,153 @@ function jacobiant(m::TaylorMap{X0,X,Q,S}, which::T=VARS) where {X0,X<:StaticArr
   return transpose(jacobian(m, which))
 end
 
+# =================================================================================== #
+# Phasor basis transformations
+# inv(c) is from_phasor
+function ci_jacobian(m::TaylorMap{X0,X,Q,S}, ::T=VARS) where {X0,X,Q,S,T<:Union{HarmonicVariables,Variables}}
+  nv = nvars(m)
+  nhv = nhvars(m)
+  n = T == HarmonicVariables ? nhv : nv
+  CI = similar(m.x0, complex(eltype(m.x0)), n, n)
+  CI .= 0
+  for i in 1:Int(nhv/2)
+    # x_new = 1/sqrt(2)*(x+im*p)
+    CI[2*i-1,2*i-1] = 1/sqrt(2)
+    CI[2*i-1,2*i] = complex(0,1/sqrt(2))
+
+    # p_new = 1/sqrt(2)*(x-im*p)
+    CI[2*i,2*i-1] = 1/sqrt(2)
+    CI[2*i,2*i] = complex(0,-1/sqrt(2))
+  end
+
+  if T == Variables && iscoasting(m)
+    CI[nv,nv] = 1
+  end
+  return CI
+end
+
+function ci_jacobian(m::TaylorMap{X0,X,Q,S}, ::T=VARS) where {X0<:StaticArray,X,Q,S,T<:Union{HarmonicVariables,Variables}}
+  if T == Variables && iscoasting(m)
+    nv = nvars(m)
+    return StaticArrays.sacollect(SMatrix{nv,nv,eltype(X0)}, 
+    begin
+      if fld1(col,2) != fld1(row,2) 
+        0
+      elseif row == nv && col == nv
+        1
+      else # then we are in the block
+        if mod1(col,2) == 1 # First column of ci is just 1/sqrt(2)
+            1/sqrt(2)
+        else # second column of ci is either im/sqrt(2) or -im/sqrt(2)
+          if mod1(row,2) == 1
+            complex(0,1/sqrt(2))
+          else
+            complex(0,-1/sqrt(2))
+          end
+        end
+      end
+    end for col in 1:nv for row in 1:nv)
+  else
+    nhv = nhvars(m)
+    return StaticArrays.sacollect(SMatrix{nhv,nhv,eltype(X0)}, 
+    begin
+      if fld1(col,2) != fld1(row,2) 
+        0
+      else # then we are in the block
+        if mod1(col,2) == 1 # First column of ci is just 1/sqrt(2)
+            1/sqrt(2)
+        else # second column of ci is either im/sqrt(2) or -im/sqrt(2)
+          if mod1(row,2) == 1
+            complex(0,1/sqrt(2))
+          else
+            complex(0,-1/sqrt(2))
+          end
+        end
+      end
+    end for col in 1:nhv for row in 1:nhv)
+  end
+end
+
+# c is to_phasor
+function c_jacobian(m::TaylorMap{X0,X,Q,S}, ::T=VARS) where {X0<:StaticArray,X,Q,S,T<:Union{HarmonicVariables,Variables}}
+  nv = nvars(m)
+  nhv = nhvars(m)
+  n = T == HarmonicVariables ? nhv : nv
+  C = similar(m.x0, complex(eltype(m.x0)), n, n)
+  C .= 0
+  for i in 1:Int(nhv/2)
+    C[2*i-1,2*i-1] = 1/sqrt(2)
+    C[2*i-1,2*i] = 1/sqrt(2)
+
+    C[2*i,2*i-1] = complex(0,-1/sqrt(2))
+    C[2*i,2*i] = complex(0,1/sqrt(2))
+  end
+
+  if iscoasting(m) && T == Variables
+    C[nv,nv] = 1
+  end
+  return C
+end
+
+function c_jacobian(m::TaylorMap{X0,X,Q,S}, ::T=VARS) where {X0<:StaticArray,X,Q,S,T<:Union{HarmonicVariables,Variables}}
+  if T == Variables && iscoasting(m)
+    nv = nvars(m)
+    return StaticArrays.sacollect(SMatrix{nv,nv,eltype(X0)}, 
+    begin
+      if fld1(col,2) != fld1(row,2) 
+        0
+      elseif row == nv && col == nv
+        1
+      else # then we are in the block
+        if mod1(row,2) == 1 # First row of c is just 1/sqrt(2)
+            1/sqrt(2)
+        else # second row of c is either -im/sqrt(2) or im/sqrt(2)
+          if mod1(col,2) == 1
+            complex(0,-1/sqrt(2))
+          else
+            complex(0,1/sqrt(2))
+          end
+        end
+      end
+    end for col in 1:nv for row in 1:nv)
+  else
+    nhv = nhvars(m)
+    return StaticArrays.sacollect(SMatrix{nhv,nhv,eltype(X0)}, 
+    begin
+      if fld1(col,2) != fld1(row,2) 
+        0
+      else # then we are in the block
+        if mod1(row,2) == 1 # First row of c is just 1/sqrt(2)
+          1/sqrt(2)
+        else # second row of c is either -im/sqrt(2) or im/sqrt(2)
+          if mod1(col,2) == 1
+            complex(0,-1/sqrt(2))
+          else
+            complex(0,1/sqrt(2))
+          end
+        end
+      end
+    end for col in 1:nhv for row in 1:nhv)
+  end
+end
+
+function c_map(m::DAMap)
+  c=zero(complex(typeof(m)), m)
+  setray!(c.x, x_matrix=c_jacobian(m))
+  if !isnothing(c.q)
+    setquat!(c.q, q=I)
+  end
+  return c
+end
+
+function ci_map(m::DAMap)
+  cinv=zero(complex(typeof(m)), m)
+  setray!(cinv.x, x_matrix=ci_jacobian(m))
+  if !isnothing(cinv.q)
+    setquat!(cinv.q, q=I)
+  end
+  return cinv
+end
 
 # =================================================================================== #
 # Get/set scalar part of orbital ray

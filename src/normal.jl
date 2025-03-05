@@ -1,13 +1,9 @@
-struct NormalForm
-  a
-  evals
-end
-
 function normal(m::DAMap; res=nothing, spin_res=nothing)
   nn = ndiffs(m)
   nhv = nhvars(m)
   nv = nvars(m)
   np = nparams(m)
+  mo = maxord(m)
   coast = iscoasting(m)
 
   # 1: Go to parameter-dependent fixed point to first order ONLY!
@@ -85,21 +81,22 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
   # 2: Do the linear normal form exactly
   # We calculate the matrix A1 such that inv(A1)*M0*A1 is a rotation matrix
   # of each oscillating plane
-  c = to_phasor(m)
-  ci = from_phasor(m)
   Mt = jacobiant(m0, HVARS) # parameters (+ coast) never included
   F = mat_eigen(Mt, phase_modes=false) # Returns eigenvectors with vⱼ'*S*vⱼ = +im for odd j, and -im for even j
-  a1_inv_matrix = real(jacobian(c, HVARS)*transpose(F.vectors))
-  a1i = one(c)
-  a1 = one(c)
+  a1_inv_matrix = real(c_jacobian(m, HVARS)*transpose(F.vectors))
 
-  #a1_matrix = inv(a1_inv_matrix)*ComplexF64[-0.5318105599022731 + 0.0im -0.8468633469317207 + 0.0im -1.183649947867121e-18 + 0.0im 2.8433053706784177e-18 + 0.0im -9.551266702119126e-17 + 0.0im 2.713163236523348e-16 + 0.0im; 0.8468633469317458 + 0.0im -0.5318105599023004 - 0.0im 3.7806147519283997e-20 + 0.0im 3.9223878051257145e-19 + 0.0im 1.858216837865342e-17 + 0.0im -9.002386153477376e-17 - 0.0im; -1.7396841517514946e-18 + 0.0im 3.3005645240592203e-18 + 0.0im 0.9903928810191948 + 0.0im 0.13828210739824376 + 0.0im 5.644422594681993e-16 + 0.0im 1.106187831851298e-15 + 0.0im; -8.530946543394919e-19 + 0.0im 1.3488426213455933e-18 + 0.0im -0.1382821073982447 + 0.0im 0.9903928810191944 + 0.0im 1.5385762683964214e-15 + 0.0im -1.7264802371240254e-16 + 0.0im; -1.2583924976521015e-18 + 0.0im -3.528230480898434e-19 + 0.0im 6.195468032403339e-17 + 0.0im 6.680852397398448e-17 + 0.0im -0.9925893149487823 + 0.0im 0.12151729033148836 + 0.0im; 2.773572877858168e-19 + 0.0im -9.509392724085148e-19 + 0.0im 4.374320653079168e-17 + 0.0im -2.6721393554679266e-16 + 0.0im -0.12151729033148889 + 0.0im -0.9925893149487821 + 0.0im]
-  #a1_inv_matrix = inv(a1_matrix)
-  setray!(a1i.x, x_matrix=a1_inv_matrix)
+  a1 = one(m)
   setray!(a1.x, x_matrix=inv(a1_inv_matrix))
 
-  #a1_mat = fast_canonize(a1)
+  if mo == 1 # end here then
+    return a0 ∘ a1
+  end
 
+  a1i = one(m)
+  setray!(a1i.x, x_matrix=a1_inv_matrix)
+
+  c = c_map(m)
+  ci = ci_map(m)
   m1 = a1i ∘ m0 ∘ a1
 
   # 3: Go into phasor's basis
@@ -117,15 +114,13 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
   # Cannot just use eigenvalues here, need to get from linear normalized map
   eg = diag(jacobian(ri, HVARS))
 
-  mo = maxord(m)
-
   an = one(m1)
   ker = one(m1) # current kernel (containing only tune shifts and maybe resonance)
   F =  zero(VectorField, m1)  # VectorField of monomials to remove for this particular order 
   Fker =  zero(VectorField, m1)  # VectorField of tune shifts to keep for this particular order
 
   ords = similar(m1.x, Int) # monomial orders
-  tmpmono = Vector{UInt8}(undef, nn) # same as ords but GTPSA v1..0 only compatible with this (UInt8 and Vector type) right now
+  tmpmono = zeros(UInt8, nn) # same as ords but GTPSA v1.4.0 only compatible with this (UInt8 and Vector type) right now
 
   v = Ref{TI.numtype(eltype(m1.x))}() # monomial value 
   for i in 2:mo
@@ -169,7 +164,7 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
     m1 = inv(ant) ∘ m1 ∘ ant
   end
 
-  a = a0 ∘ a1 ∘ c ∘ an ∘ ci
+  a = real(a0 ∘ a1 ∘ c ∘ an ∘ ci)
 
   #return a
 
@@ -260,14 +255,15 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
     a = a*c*as*c^-1
   end
 
+  return a
   #return as
-  return NormalForm(a,eg)
+  #return NormalForm(a,eg)
   
    
 
 
-  return an
-  return NormalForm(a0 ∘ a1 ∘ an, eg)
+  #return an
+  #return NormalForm(a0 ∘ a1 ∘ an, eg)
 end
 
 
@@ -279,14 +275,17 @@ function factorize(a)
   if !isnothing(a.q)
     as = one(a)
     tmp = inv(a)
-    tmp.q.q0 = 1
-    tmp.q.q1 = 0
-    tmp.q.q2 = 0
-    tmp.q.q3 = 0
-    as.q .= a.q∘tmp
+    setquat!(tmp.q, q=I)
+    # as.q = a.q(inv(a.x)) 
+    TI.compose!(as.q, a.q, tmp.x)
   end
 
   # We get a0*a1*an
+
+  if iscoasting(m)
+
+  end
+
   ndpt = coastidx(a)
   if ndpt != -1 #!isnothing(a.idpt) # if coasting, set number of variables executing pseudo-harmonic oscillations
     nhv = nvars(a)-2
@@ -551,8 +550,8 @@ function equilibrium_moments(m::DAMap, a::DAMap)
   # solve simply
 
   nhv = nhvars(m)
-  c = to_phasor(m)
-  ci = from_phasor(m)
+  c = c_map(m)
+  ci = ci_map(m)
   ai = inv(a)
   R = ci ∘ ai ∘ m ∘ a ∘ c
   b = R.s
@@ -657,7 +656,7 @@ end
 # This can help give you the fixed point
 function calc_Hr(m, n, res)
   a = n.a
-  c = to_phasor(m)
+  c = c_map(m)
   R = inv(c)*inv(a)*m*a*c
   
   # This could be old ----------------- 
@@ -734,303 +733,3 @@ function calc_Hr(m, n, res)
 end
 
 
-
-
-# computes c^-1
-function from_phasor!(cinv::DAMap, m::DAMap)
-  clear!(cinv)
-
-  nhv = nhvars(m)
-  for i in 1:Int(nhv/2)
-    # x_new = 1/sqrt(2)*(x+im*p)
-    TI.seti!(cinv.x[2*i-1], 1/sqrt(2), 2*i-1)
-    TI.seti!(cinv.x[2*i-1], complex(0,1/sqrt(2)), 2*i)
-
-    # p_new = 1/sqrt(2)*(x-im*p)
-    TI.seti!(cinv.x[2*i], 1/sqrt(2), 2*i-1)
-    TI.seti!(cinv.x[2*i], complex(0,-1/sqrt(2)), 2*i)
-  end
-
-  if iscoasting(m)
-    TI.seti!(cinv.x[nhv+1], 1, nhv+1)
-  end
-
-  if !isnothing(cinv.q)
-    TI.seti!(cinv.q, 1, 0)
-  end
-
-  return
-end
-
-function from_phasor(m::DAMap)
-  cinv=zero(complex(typeof(m)), m)
-  from_phasor!(cinv,m)
-  return cinv
-end
-
-# computes c
-function to_phasor!(c::DAMap, m::DAMap)
-  clear!(c)
-
-  nhv = nhvars(m)
-
-  for i in 1:Int(nhv/2)
-    TI.seti!(c.x[2*i-1], 1/sqrt(2), 2*i-1)
-    TI.seti!(c.x[2*i-1], 1/sqrt(2), 2*i)
-
-    TI.seti!(c.x[2*i], complex(0,-1/sqrt(2)), 2*i-1)
-    TI.seti!(c.x[2*i], complex(0,1/sqrt(2)), 2*i)
-  end
-
-  if iscoasting(m)
-    TI.seti!(c.x[nhv+1], 1, nhv+1)
-  end
-
-  if !isnothing(c.q)
-    TI.seti!(c.q.q0, 1, 0)
-  end
-
-  return
-end
-
-function to_phasor(m::DAMap)
-  c = zero(complex(typeof(m)), m)
-  to_phasor!(c,m)
-  return c
-end
-
-
-
-
-
-
-
-
-
-
-#=
-# 2x faster but not as pretty
-function normal_fast(m::DAMap{S,T,U,V}) where {S,T,U,V}
-  tmp1 = zero(m)
-  tmp2 = zero(m)
-  tmp3 = zero(m)
-  comp_work_low, inv_work_low = prep_comp_inv_work_low(m)
-
-  if numparams(m) > 0
-    # 1: Go to the parameter dependent fixed point ------------------------------------------
-    gofix!(tmp1, m, 1, work_map=tmp2, comp_work_low=comp_work_low, inv_work_low=inv_work_low)
-
-    # tmp1 is a0 (linear transformation to parameter-dependent fixed point)
-
-    # Similarity transformation to make parameter part of jacobian = 0 (m0 = inv(a0)∘m∘a0)
-    compose!(tmp2, m, tmp1, work_low=comp_work_low,keep_scalar=false)
-    inv!(tmp3, tmp1, work_low=inv_work_low,do_spin=false)
-    compose!(tmp1, tmp3, tmp2, work_low=comp_work_low,keep_scalar=false)
-
-    # tmp1 is m0 (at parameter-dependent fixed point)
-  else
-    copy!(tmp1, m)
-  end
-  
-  # 2: do the linear normal form exactly --------------------------------------------------
-  linear_a!(tmp2, tmp1, inverse=true)
-
-  # tmp1 is still m0
-  # tmp2 is inv(a1)
-  # Now normalize linear map inv(a1)*m0*a1
-  compose!(tmp3, tmp2, tmp1, work_low=comp_work_low,keep_scalar=false)
-  inv!(tmp1, tmp2, work_low=inv_work_low,do_spin=false)
-  compose!(tmp2, tmp3, tmp1, work_low=comp_work_low,keep_scalar=false)
-
-  # tmp2 is m1 , if m is complex then w
-  m1 = tmp2
-  
-  # 3: Go into phasors' basis = c*m1*inv(c) ------------------------------------------------
-  # The nonlinear part of the normal form should be in the phasor's basis (see Eq. 3.88 in 
-  # Etienne's blue book)
-  # We now need complex stuff if we don't already have it
-  if eltype(m.x) != ComplexTPS
-    ctmp1 = zero(complex(typeof(m)),use=m)
-    ctmp2 = zero(ctmp1)
-    comp_work_low, inv_work_low = prep_comp_inv_work_low(ctmp1)
-  else
-    ctmp1 = tmp1
-    ctmp2 = tmp3
-  end
-  
-  work_prom = prep_comp_work_prom(ctmp2, ctmp1, m1) # will be nothing if there is no promotion
-
-  to_phasor!(ctmp1,m1) # ctmp1 = c
-  compose!(ctmp2, ctmp1, m1, work_low=comp_work_low,keep_scalar=false,work_prom=work_prom)
-  from_phasor!(ctmp1, m1) # ctmp1 = inv(c)
-  compose!(ctmp2, ctmp2, ctmp1, work_low=comp_work_low,keep_scalar=false)
-
-  # ctmp2 is map in phasors basis
-  return ctmp2
-  # 4: Nonlinear algorithm --------------------------------------------------------------------
-  # Now we have m1, in the phasor's basis. Therefore the nonlinear part of the canonical 
-  # transformation a will have a factored Lie representation:
-  #
-  #         a₂∘a₃∘... = ...exp(F₃)exp(F₂)I
-  # 
-  # Next step is to get only the nonlinear part of ctmp1
-  # this can be done by inverting the linear part of ctmp1 and composing
-  mo = getdesc(m).mo
-  nv = nvars(m)
-  n = Vector{VectorField{T,U}}(undef, mo)  # For now, analog to c_factored_lie, likely will make separate type
-  for i=2:mo
-    # Get current order + identity
-    getord!(ctmp1, ctmp2, i)
-    add!(ctmp1,ctmp1,I)
-
-    # get vector field
-    G = log(ctmp1)
-    n[i] = zero(G)
-
-    # Now kill the terms if not a tune shift!!
-    for j=1:nv
-
-
-    end
-
-  end
-
-  return ctmp2
-end
-
-function gofix!(a0::DAMap, m::DAMap, order=1; work_map::DAMap=zero(m), comp_work_low::Union{Nothing,Tuple{Vararg{Vector{<:Union{TPS{Float64},TPS{ComplexF64}}}}}}=nothing, inv_work_low::Union{Nothing,Tuple{Vararg{Vector{<:Union{TPS{Float64},TPS{ComplexF64}}}}}}=nothing)
-  checkidpt(a0,m,work_map)
-  @assert !(a0 === m) "Aliasing `a0 === m` is not allowed."
-  
-  desc = getdesc(m)
-  nv = nvars(desc)
-  clear!(a0)
-
-  if isnothing(comp_work_low) && isnothing(inv_work_low)
-    comp_work_low, inv_work_low = prep_comp_inv_work_low(m)
-  elseif isnothing(comp_work_low)
-    comp_work_low = prep_comp_work_low(m)
-  elseif isnothing(inv_work_low)
-    inv_work_low = prep_inv_work(m)
-  end
-
-  # 1: v = map-identity in harmonic planes, identity in spin
-  sub!(a0, m, I, do_spin=false)
-  if !isnothing(a0.q)
-    a0.q.q0[0] = 0
-  end
-
-  # 2: map is cut to order 2 or above
-  cutord!(work_map,a0,order+1,do_spin=false)
-
-  # 3: map is inverted at least to order 1:
-  inv!(a0,work_map,work_low=inv_work_low,do_spin=false)
-
-  # 4: a map x is created with dimension nv
-  clear!(work_map)
-  # x is zero except for the parameters and delta if coasting
-  compose!(a0,a0,work_map,work_low=comp_work_low,do_spin=false,keep_scalar=false)
-
-  # 5: add back in identity
-  add!(a0, a0, I, do_spin=false)
-
-  a0.x0 .= m.x0
-
-  if !isnothing(m.q)
-    a0.q.q0[0] = 1
-  end
-
-  return a0
-end
-
-function testallocs!(m, tmp1, tmp2, comp_work_low, inv_work_low, work_ref)
-  a0 = tmp1
-  work_map = tmp2
-
-  # 1: Go to the parameter dependent fixed point
-  gofix!(a0, m, 1, work_map=work_map, comp_work_low=comp_work_low, inv_work_low=inv_work_low)
-  # Similarity transformation to make parameter part of jacobian = 0 (inv(a0)∘m∘a0)
-  compose!(work_map, m, a0, work_low=comp_work_low,keep_scalar=false)
-  inv!(a0, a0, work_ref=work_ref, work_low=inv_work_low,do_spin=false)
-  compose!(a0, a0, work_map, work_low=comp_work_low,keep_scalar=false)
-  return
-end
-
-function gofix(m::DAMap, order=1; work_map::DAMap=zero(m), comp_work_low::Union{Nothing,Tuple{Vararg{Vector{<:Union{TPS{Float64},TPS{ComplexF64}}}}}}=nothing, inv_work_low::Union{Nothing,Tuple{Vararg{Vector{<:Union{TPS{Float64},TPS{ComplexF64}}}}}}=nothing)
-  a0 = zero(m)
-  gofix!(a0, m, 1, work_map=work_map, comp_work_low=comp_work_low, inv_work_low=inv_work_low)
-  return a0
-end
-
-function linear_a!(a1::DAMap, m0::DAMap; inverse=false)
-  checkidpt(a1,m0)
-  @assert !(a1 === m0) "Aliasing `a1 === m0` is not allowed."
-  
-  # We now get the eigenvectors of the compositional map ℳ (which acts on functions of phase space instead 
-  # of phase space) in the linear regime. basically f∘ζ = ℳf where ζ is the linear map (vector). f=f(x,p) could 
-  # be a vector or scalar function. Assuming f(x,p) = v₁x + v₂p we see that if (written as a transfer matrix) 
-  # ζ = [a b; c d] then ℳf = v₁(ax + bp) + v₂(cx + dp) =  (v₁a+v₂c)x + (v₁b+v₂d)p = v̄₁x + v̄₂p . ℳ acts on 
-  # functions so essentially we have [v̄₁, v̄₂] = [a c; b d]*[v₁, v₂] =  Mᵀ * [v₁, v₂] . See Etienne's yellow 
-  # book Eq 2.39.
-
-  nhv = nvars(m0) # Number harmonic variables
-  nhpl = Int(nhv/2) # Number harmonic variables / 2 = number harmonic planes
-
-  work_matrix=zeros(eltype(m0), nvars(m0), nvars(m0))
-
-  @views GTPSA.jacobiant!(work_matrix, m0.x[1:nhv])  # parameters never included
-  F = mat_eigen!(work_matrix, phase_modes=false) # no need to phase modes. just a rotation
-  
-  for i=1:nhv
-    for j=1:nhpl
-      work_matrix[2*j-1,i] = sqrt(2)*real(F.vectors[i,2*j-1])  # See Eq. 3.74 in EBB for factor of 2
-      work_matrix[2*j,i] = sqrt(2)*imag(F.vectors[i,2*j-1])
-    end
-  end
-
-  if !inverse # yes this is intentional... the inverse normalizing linear map requires NO inverse step here, where the non-inverse DOES
-    work_matrix = inv(work_matrix) # no in-place inverter in Julia, and using this vs. GTPSA is easier + same speed
-  end
-
-  clear!(a1)
-  for i=1:nhv
-    for j=1:nhv
-      @inbounds a1.x[i][j] = work_matrix[i,j]
-    end
-  end
-
-  # Make spin identity
-  if !isnothing(m0.q)
-    a1.q.q0[0] = 1
-  end
-
-  return a1
-end
-
-function linear_a(m0::DAMap; inverse=false)
-  a1 = zero(m0)
-  linear_a!(a1, m0, inverse=inverse)
-  return a1
-end
-
-
-
-
-#=
-# Forward is inv(p)*m*p
-# Reverse is p*m*inv(p)
-# Default is forward
-function simil!(out::DAMap, p::DAMap, m::DAMap; reverse::Bool=false, work_map::DAMap=zero(m), comp_work_low=nothing, inv_work_low=nothing, keep_scalar=true)
-  compose!(work_map, m, p, work_low=comp_work_low,keep_scalar=keep_scalar)
-  inv!(p, p, work_low=inv_work_low)
-  compose!(p, p, work_map, work_low=comp_work_low,keep_scalar=keep_scalar)
-  
-  if reverse
-    compose!(work_map, p, m, work_low=comp_work_low,keep_scalar=false)
-    #inv!()
-  else
-
-  end
-end
-=#
-=#

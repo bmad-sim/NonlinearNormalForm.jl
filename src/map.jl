@@ -222,25 +222,6 @@ function _zero(::Type{$t{X0,X,Q,S}}, init::AbstractTPSAInit, nv::Integer, reuse:
   return out_m
 end
 
-#=
-function zero(::Type{$t{X0,X,Q,S}}) where {X0,X,Q,S}
-  return _zero($t{X0,X,Q,S}, getinit(eltype(X)), nothing)
-end
-
-function one(::Type{$t{X0,X,Q,S}}) where {X0,X,Q,S}
-  out_m = _zero($t{X0,X,Q,S}, getinit(eltype(X)), nothing)
-  nv = nvars(out_m)
-
-  for i in 1:nv
-    TI.seti!(out_m.x[i], 1, i)
-  end
-
-  if !isnothing(m.q)
-    TI.seti!(out_m.q.q0, 1, 0)
-  end
-  return out_m
-end
-=#
 # Explicit type specification
 # Init change would be static (in type)
 function $t{X0,X,Q,S}(m::TaylorMap) where {X0,X,Q,S}
@@ -314,6 +295,7 @@ function $t(;
     end
   end
   
+  println(np)
   nn = nv+np
   # Check if nv+np agrees with ndiffs in init
   nn == ndiffs(init) || error("Number of variables + parameters does not agree with the number of differentials in the TPSA")
@@ -414,11 +396,8 @@ function _compose!(
   # Spin:
   if !isnothing(m.q)
     if do_spin
-      # TO-DO: use MQuaternion (mutable quaternion) so only 1 vectorized compose! call
-      TI.compose!(work_q.q0, m2.q.q0, m1.x)
-      TI.compose!(work_q.q1, m2.q.q1, m1.x)
-      TI.compose!(work_q.q2, m2.q.q2, m1.x)
-      TI.compose!(work_q.q3, m2.q.q3, m1.x)
+      # m.q = m2.q(m1.x)*m1.q
+      TI.compose!(work_q, m2.q, m1.x)
       mul!(m.q, work_q, m1.q) 
     else
       TI.clear!(m.q.q0)
@@ -526,12 +505,7 @@ function inv!(
   if !isnothing(m.q)
     if do_spin
       inv!(work_q, m1.q)
-      compose!(m.q, work_q, m.x)
-      # TO-DO: use MQuaternion (mutable quaternion) so only 1 vectorized compose! call
-      TI.compose!(m.q.q0, work_q.q.q0, m.x)
-      TI.compose!(m.q.q1, work_q.q.q1, m.x)
-      TI.compose!(m.q.q2, work_q.q.q2, m.x)
-      TI.compose!(m.q.q3, work_q.q.q3, m.x)
+      TI.compose!(m.q, work_q, m.x)
     else
       TI.clear!(m.q.q0)
       TI.clear!(m.q.q1)

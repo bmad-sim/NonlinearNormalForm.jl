@@ -29,7 +29,13 @@ function setray!(
     else # Uniform scaling: Making identity map
       x_matrix_offset == 0 || error("`x_matrix_offset` must be zero for `UniformScaling` `x_matrix`")
       for varidx in 1:length(r)
-        TI.seti!(r[varidx], 1, varidx)
+        for monoidx in 1:length(r)
+          if varidx == monoidx
+            TI.seti!(r[varidx], 1, varidx)
+          else
+            TI.seti!(r[varidx], 0, monoidx)
+          end
+        end
       end
     end
   end
