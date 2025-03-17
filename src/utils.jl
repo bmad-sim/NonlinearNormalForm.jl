@@ -203,7 +203,7 @@ function ci_jacobian(m::TaylorMap{X0,X,Q,S}, ::T=VARS) where {X0<:StaticArray,X,
 end
 
 # c is to_phasor
-function c_jacobian(m::TaylorMap{X0,X,Q,S}, ::T=VARS) where {X0<:StaticArray,X,Q,S,T<:Union{HarmonicVariables,Variables}}
+function c_jacobian(m::TaylorMap{X0,X,Q,S}, ::T=VARS) where {X0,X,Q,S,T<:Union{HarmonicVariables,Variables}}
   nv = nvars(m)
   nhv = nhvars(m)
   n = T == HarmonicVariables ? nhv : nv

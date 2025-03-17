@@ -16,12 +16,12 @@ end
 
 function NNF.:*(q1::Quaternion{<:TPS}, q2::Quaternion{<:TPS})
   @FastGTPSA begin
-  q0 = q1.q0 * q2.q0 - q1.q1 * q2.q1 - q1.q2 * q2.q2 - q1.q3 * q2.q3
-  q1 = q1.q0 * q2.q1 + q1.q1 * q2.q0 + q1.q2 * q2.q3 - q1.q3 * q2.q2
-  q2 = q1.q0 * q2.q2 - q1.q1 * q2.q3 + q1.q2 * q2.q0 + q1.q3 * q2.q1
-  q3 = q1.q0 * q2.q3 + q1.q1 * q2.q2 - q1.q2 * q2.q1 + q1.q3 * q2.q0
+  qf0 = q1.q0 * q2.q0 - q1.q1 * q2.q1 - q1.q2 * q2.q2 - q1.q3 * q2.q3
+  qf1 = q1.q0 * q2.q1 + q1.q1 * q2.q0 + q1.q2 * q2.q3 - q1.q3 * q2.q2
+  qf2 = q1.q0 * q2.q2 - q1.q1 * q2.q3 + q1.q2 * q2.q0 + q1.q3 * q2.q1
+  qf3 = q1.q0 * q2.q3 + q1.q1 * q2.q2 - q1.q2 * q2.q1 + q1.q3 * q2.q0
   end
-  return Quaternion(q0,q1,q2,q3)
+  return Quaternion(qf0,qf1,qf2,qf3)
 end
 
 NNF.norm(q1::Quaternion{<:TPS}) = @FastGTPSA sqrt(q1.q0^2 + q1.q1^2 + q1.q2^2 + q1.q3^2)
@@ -40,13 +40,13 @@ end
 
 function NNF.inv(q1::Quaternion{<:TPS})
   @FastGTPSA begin
-    q0 = q1.q0 * q1.q0 + q1.q1 * q1.q1 + q1.q2 * q1.q2 + q1.q3 * q1.q3
-    q1 = -q1.q1/q0
-    q2 = -q1.q2/q0
-    q3 = -q1.q3/q0
+    qf0 = q1.q0 * q1.q0 + q1.q1 * q1.q1 + q1.q2 * q1.q2 + q1.q3 * q1.q3
+    qf1 = -q1.q1/qf0
+    qf2 = -q1.q2/qf0
+    qf3 = -q1.q3/qf0
   end
-  @FastGTPSA! q0 = q1.q0/q0
-  return Quaternion(q0,q1,q2,q3)
+  @FastGTPSA! qf0 = q1.q0/qf0
+  return Quaternion(qf0,qf1,qf2,qf3)
 end
 
 function NNF.show(io::IO, q::Quaternion{<:TPS})

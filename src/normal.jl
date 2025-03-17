@@ -1,9 +1,16 @@
-function normal(m::DAMap; res=nothing, spin_res=nothing)
+#=
+struct NormalForm{A,V,S}
+  a::A    # Normalizing transformation
+  eg::V   # 
+  Σ::S
+end
+=#
+function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothing)
   nn = ndiffs(m)
   nhv = nhvars(m)
   nv = nvars(m)
   np = nparams(m)
-  mo = maxord(m)
+  mo = order
   coast = iscoasting(m)
 
   # 1: Go to parameter-dependent fixed point to first order ONLY!
@@ -62,11 +69,18 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
     if coast
       nt = nv
       ndpt = nv+1
+
+      # Parameters part:
       M_cvars = jacobian(m, CVARS)
       M_cparams = jacobian(m, CPARAMS)
       coastrow = M_cvars*A0_12 + M_cparams
       setray!(view(a0.x, nt:nt), x_matrix=coastrow, x_matrix_offset=nv)
 
+      # Variables part:
+      # Note that here, because we are only doing first-order, we have exp(F) = I + F
+      # And so we can capture this just by adding the Poisson bracket. 
+      # But in the nonlinear part (where we "factorize" we have to actually exponentiate
+      # the Poisson bracket captured in F to handle this properly.)
       for i in 1:Int(nhv/2)
         TI.seti!(a0.x[nt], TI.geti(a0.x[2*i-1], ndpt), 2*i)
         TI.seti!(a0.x[nt], -TI.geti(a0.x[2*i], ndpt), 2*i-1)
@@ -76,27 +90,31 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
     a0 = I
   end
 
-  m0 = inv(a0) ∘ m ∘ a0
+  if mo == 0
+    return a0
+  end
 
   # 2: Do the linear normal form exactly
   # We calculate the matrix A1 such that inv(A1)*M0*A1 is a rotation matrix
   # of each oscillating plane
-  Mt = jacobiant(m0, HVARS) # parameters (+ coast) never included
+  Mt = jacobiant(m, HVARS) # parameters (+ coast) never included
   F = mat_eigen(Mt, phase_modes=false) # Returns eigenvectors with vⱼ'*S*vⱼ = +im for odd j, and -im for even j
   a1_inv_matrix = real(c_jacobian(m, HVARS)*transpose(F.vectors))
 
   a1 = one(m)
   setray!(a1.x, x_matrix=inv(a1_inv_matrix))
-
-  if mo == 1 # end here then
+  
+  if mo == 1 
     return a0 ∘ a1
   end
 
+  # Continue:
   a1i = one(m)
   setray!(a1i.x, x_matrix=a1_inv_matrix)
 
   c = c_map(m)
   ci = ci_map(m)
+  m0 = inv(a0) ∘ m ∘ a0
   m1 = a1i ∘ m0 ∘ a1
 
   # 3: Go into phasor's basis
@@ -122,6 +140,8 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
   ords = similar(m1.x, Int) # monomial orders
   tmpmono = zeros(UInt8, nn) # same as ords but GTPSA v1.4.0 only compatible with this (UInt8 and Vector type) right now
 
+  identity = one(m1)
+
   v = Ref{TI.numtype(eltype(m1.x))}() # monomial value 
   for i in 2:mo
     clear!(F)
@@ -129,11 +149,16 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
 
     # Here, we have 
     # m1 = ℛexp(K)(ℐ+ϵ²𝒞₂) 
-    # get rid of ℛ:
+    # get rid of ℛ: below does:
     nonl = m1 ∘ ri
     nonl = nonl ∘ inv(ker) # get rid of kernel
-    
-    nonl = getord(nonl, i)  # Get only the leading order to stay in symplectic group
+    # compose!(tmps[1], m1, ri, do_stochastic=false)
+    # inv!(tmps[2], ker)
+    # compose!(tmps[3], tmps[1], tmps[2], do_stochastic=false) # get rid of kernel
+
+    nonl = getord(nonl, i)
+    #getord!(tmps[3], tmps[3], i) # Get only the leading order to stay in symplectic group 
+    # nonl = tmps[3]
     # now nonl = ϵ²𝒞₂
 
     # For each variable in the nonlinear map
@@ -149,7 +174,6 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
           for k in 1:nhv # ignore coasting plane
             lam *= eg[k]^ords[k]
           end
-          ords[j] += 1
           TI.setm!(F.x[j], v[]/(1-lam), tmpmono)
         else # cannot remove it - add to kernel (if close to res and res is specified it will nearly blow up)
           TI.setm!(Fker.x[j], v[], tmpmono)
@@ -157,14 +181,30 @@ function normal(m::DAMap; res=nothing, spin_res=nothing)
         idx = TI.cycle!(nonl.x[j], idx, mono=tmpmono, val=v)
       end
     end
-    kert = exp(Fker,one(m)) # I + Fker 
-    ant = exp(F,one(m)) # I + F
+    
+    kert = exp(Fker,identity) # I + Fker 
     ker = kert ∘ ker
+
+
+    ant = exp(F,identity) # I + F
     an = an ∘ ant
     m1 = inv(ant) ∘ m1 ∘ ant
+    
+#=
+    exp!(tmps[3], Fker, identity, work_maps=(tmps[1],tmps[2]))
+    compose!(tmps[2], tmps[3], ker, do_stochastic=false)
+    copy!(ker, tmps[2])
+
+    exp!(tmps[3], F, identity, work_maps=(tmps[1],tmps[2]))
+    compose!(tmps[2], an, tmps[3], do_stochastic=false)
+    copy!(an, tmps[2])
+    inv!(tmps[2], tmps[3])
+    compose!(tmps[1], tmps[2], m1, do_stochastic=false)
+    compose!(m1, tmps[1], tmps[3], do_stochastic=false)
+  =#
   end
 
-  a = real(a0 ∘ a1 ∘ c ∘ an ∘ ci)
+  a = a0 ∘ a1 ∘ c ∘ an ∘ ci
 
   #return a
 
@@ -271,18 +311,46 @@ end
 # then calculate lattice functions. Lattice functions will be TPSA and then you 
 # can extract dbeta/ddelta
 function factorize(a)
-
+  nv = nvars(m)
+  nhv = nhvars(m)
+  init = getinit(m)
+#=  
   if !isnothing(a.q)
     as = one(a)
     tmp = inv(a)
     setquat!(tmp.q, q=I)
-    # as.q = a.q(inv(a.x)) 
+    # as.q = a.q(inv(a.x)) # let's not do this and instead factorize wiht as at the end 
     TI.compose!(as.q, a.q, tmp.x)
   end
+=#
 
   # We get a0*a1*an
 
+  # Simply get parameter dependent part
+  a0 = a ∘ zero(a) + I
+
+#=
+  if coast
+    nt = nv
+    ndpt = nv+1
+    M_cvars = jacobian(m, CVARS)
+    M_cparams = jacobian(m, CPARAMS)
+    coastrow = M_cvars*A0_12 + M_cparams
+    setray!(view(a0.x, nt:nt), x_matrix=coastrow, x_matrix_offset=nv)
+
+    for i in 1:Int(nhv/2)
+      TI.seti!(a0.x[nt], TI.geti(a0.x[2*i-1], ndpt), 2*i)
+      TI.seti!(a0.x[nt], -TI.geti(a0.x[2*i], ndpt), 2*i-1)
+    end
+  end
+=#
+
+  # If we are coasting then we do still need to take care of the coasting variable
+  # Poisson bracket, but this time to all orders (unlike in normal form which was just 
+  # order 1)
   if iscoasting(m)
+    nt = nv
+    ndpt = nv+1
 
   end
 
@@ -295,22 +363,39 @@ function factorize(a)
     zer = zero(a); zer.x[nt][nt]=1; zer.x[ndpt][ndpt] = 1
 
     eye = zero(a)
-    setmatrix!(eye, I(nhv))
+    setray!(eye.x, x_matrix=I(nhv))
     if !isnothing(eye.q)
       eye.q.q0[0] = 1
     end
 
-    vf = VectorField(a∘zer)
-    vf.x[nt] = 0
-    vf.x[ndpt] = 0
+    vf = zero(VectorField, a)
+    setray!(vf.x, x = (a∘zer).x[1:5])
+    #vf = VectorField(a∘zer) # this part is just parameter dependent part
+    # Literally just map(t->t[[0,0,0,0,0,:]], a.x) 
+    TI.copy!(vf.x[nt], 0)
+    #TI.copy!(vf.x[ndpt], 0)
     # set the timelike variable so poisson bracket does not change
     for i=1:Int(nhv/2)
-      vf.x[nt] += -sgn*deriv((a∘zer).x[2*i-1], ndpt)*mono(2*i, use=getdesc(a))
-      vf.x[nt] += sgn*deriv((a∘zer).x[2*i], ndpt)*mono(2*i-1, use=getdesc(a))
+      TI.add!(vf.x[nt], vf.x[nt], -sgn*deriv((a∘zer).x[2*i-1], ndpt)*TI.mono(init, 2*i))
+      TI.add!(vf.x[nt], vf.x[nt], sgn*deriv((a∘zer).x[2*i], ndpt)*TI.mono(init, 2*i-1))
     end
+#=
+    for i in 1:Int(nhv/2)
+      t = zero(a.x[nt])
+      TI.deriv!(t, a0.x[2*i-1], ndpt)
+      t = t*TI.mono(getinit(t), 2*i)
 
+      TI.add!()
+      t = t*TI.mono(init, 2*i)
+
+      TI.mul!(t, t, TI.mono(init, 2*i))
+      TI.deriv!(a0.x[nt], a0.x[2*i-1], ndpt)
+      TI.mul!(a0.x[nt], )
+      TI.seti!(a0.x[nt], -TI.geti(a0.x[2*i], ndpt), 2*i-1)
+    end
+=#
     #return vf
-
+    #return vf
     a0 = exp(vf)
     a0 = DAMap(a0)
 
@@ -319,6 +404,10 @@ function factorize(a)
     # Extra iteration for parameters to vanish from time-like variable
     ast = one(att)
     ast.x[nt] = par(att.x[nt], zeros(Int, nhv))
+
+    ast = inv(a0) ∘ a ∘ zer
+    setray!(view(ast.x, 1:nhv), x_matrix=I)
+    setquat!(ast.q, q=I)
     a0 = ast*a0
   else
     nhv = nvars(a)
@@ -518,7 +607,7 @@ function is_spin_resonance(spinidx, ords, nhv, res, spin_res)
 end
 
 
-function equilibrium_moments(m::DAMap, a::DAMap)
+function equilibrium_moments(m::DAMap, a::DAMap=normal(m,1))
   !isnothing(m.s) || error("Map does not have stochasticity")
   !all(m.s .== 0) || error("No FD fluctuations in map (m.s .== 0)")
 
@@ -549,26 +638,18 @@ function equilibrium_moments(m::DAMap, a::DAMap)
   # ΛsΛ + b = s
   # solve simply
 
-  nhv = nhvars(m)
-  c = c_map(m)
-  ci = ci_map(m)
-  ai = inv(a)
-  R = ci ∘ ai ∘ m ∘ a ∘ c
-  b = R.s
-  Λ = jacobian(R, HVARS)
-  s = similar(R.s, complex(eltype(R.s))) # beam envelope in phasors basis
+  # for m2 ∘ m1:  m.s .= M2*m1.s*transpose(M2) + m2.s
+  C = c_jacobian(m, HVARS)
+  CI = ci_jacobian(m, HVARS)
+  A = jacobian(a, HVARS)
+  AI = inv(A)
+  Λ = CI * AI * jacobian(m, HVARS) * A * C
+  b = (CI*AI)*m.s*transpose(CI*AI)
 
-  
-  for i in 1:nhv
-    for j in 1:nhv
-      s[i,j] = 1/(1-Λ[i,i]*Λ[j,j])*b[i,j]
-    end
-  end
-
-  R.s .= s
+  Σc = (1 ./(1 .- diag(Λ)*transpose(diag(Λ)))) .* b
 
   # Now take it out of phasor basis
-  return (a ∘ c ∘ R ∘ ci ∘ ai).s
+  return real((A*C)*Σc*transpose(A*C))
 end
 
 # making the 12, 34, 56 elements 0 in the normalizing map

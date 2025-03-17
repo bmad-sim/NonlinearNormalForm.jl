@@ -37,7 +37,7 @@ end
   Q == Nothing || eltype(Q) == eltype(X) || error("Quaternion number type $(eltype(Q)) must be $(eltype(X)) (equal to orbital ray)")
 
   # Runtime checks:
-  length(F.x) <= ndiffs(getinit(first(F.x))) || error("Orbital ray number of variables ($(length(F.x))) exceeds number of differentials in TPSA ($(ndiffs(getinit(F.x))))")
+  length(F.x) <= ndiffs(getinit(first(F.x))) || error("Orbital ray number of variables ($(length(F.x))) exceeds number of differentials in TPSA ($(ndiffs(getinit(first(F.x)))))")
   Q == Nothing || getinit(first(F.q)) == getinit(first(F.x)) || error("Quaternion TPSA definition disagrees with orbital ray TPSA definition")
 end
 
@@ -254,7 +254,7 @@ end
 # =================================================================================== #
 # "Multiplication" (Lie operator acting on a DAMap)
 """
-    mul!(m::DAMap, F::VectorField, m1::DAMap; work_Q::Union{Quaternion,Nothing}=isnothing(m.q) ? nothing : zero(m.q)) -> m
+    mul!(m::DAMap, F::VectorField, m1::DAMap; work_q::Union{Quaternion,Nothing}=isnothing(m.q) ? nothing : zero(m.q)) -> m
 
 Computes the Lie operator `F` acting on a `DAMap` `m1`, and stores the result in `m`.
 Explicity, that is `F * m = (F.x, F.q) * (m.x, m.q) = (F.x ⋅ ∇ m.x , F.x ⋅ ∇ m.q + m.q*F.q)`
@@ -279,16 +279,16 @@ function mul!(
 
   # Spin F⋅∇q + qf (quaternion part acts in reverse order):
   if !isnothing(F.q)
-    TI.mul!(work_q, m1.q, F.q)
+    mul!(work_q, m1.q, F.q)
     TI.fgrad!(m.q.q0, F.x, m1.q.q0)
     TI.fgrad!(m.q.q1, F.x, m1.q.q1)
     TI.fgrad!(m.q.q2, F.x, m1.q.q2)
     TI.fgrad!(m.q.q3, F.x, m1.q.q3)
 
-    TI.add!(m.q.q0, m.q.q0, work_Q.q0)
-    TI.add!(m.q.q1, m.q.q1, work_Q.q1)
-    TI.add!(m.q.q2, m.q.q2, work_Q.q2)
-    TI.add!(m.q.q3, m.q.q3, work_Q.q3)
+    TI.add!(m.q.q0, m.q.q0, work_q.q0)
+    TI.add!(m.q.q1, m.q.q1, work_q.q1)
+    TI.add!(m.q.q2, m.q.q2, work_q.q2)
+    TI.add!(m.q.q3, m.q.q3, work_q.q3)
   end
 
   if !isnothing(m.s)
@@ -318,8 +318,8 @@ number of iterations is equal to the number of higher orders left.
 function exp!(
   m::DAMap, 
   F::VectorField, 
-  m1::DAMap; 
-  work_maps::NTuple{2, DAMap}=ntuple(t->zero(m1), Val{2}()), 
+  m1::Union{DAMap,UniformScaling}; 
+  work_maps::NTuple{2, DAMap}=ntuple(t->zero(m), Val{2}()), 
   work_q::Union{Quaternion,Nothing}=isnothing(m.q) ? nothing : zero(m.q)
 )
   checkinplace(m, F, m1, work_maps...)
