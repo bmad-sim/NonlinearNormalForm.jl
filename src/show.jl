@@ -1,13 +1,13 @@
 function show(io::IO, m::TaylorMap)
   println(io, typeof(m),":")
   #lines_used=Ref{Int}(2)
-  println(io, "Reference Orbit ", typeof(m.x0),":")
-  println(io, m.x0)
+  println(io, "Reference Orbit ", typeof(m.v0),":")
+  println(io, m.v0)
   #lines_used += 1m 
   #=
-  for i =1:length(m.x0)
+  for i in 1:length(m.v0)
     !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || (println(io, "\t⋮"); return)
-    @printf(io, "%-3s  ", "$(i):"); println(io, m.x0[i])
+    @printf(io, "%-3s  ", "$(i):"); println(io, m.v0[i])
     lines_used[] += 1
   end
   =#
@@ -21,33 +21,33 @@ function show(io::IO, m::TaylorMap)
     #lines_used[] += 1
   end
   #!get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || (println(io, "\t⋮"); return)
-  println(io, "Orbital Ray ", typeof(m.x),":")
+  println(io, "Orbital Ray ", typeof(m.v),":")
   #lines_used[] += 1
-  println(io, m.x)
+  println(io, m.v)
 #=
-  if eltype(m.x) <: TPS
+  if eltype(m.v) <: TPS
     !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || (println(io, "\t⋮"); return)
     def = true
-    for i in eachindex(m.x)
-      if !isassigned(m.x, i)
+    for i in eachindex(m.v)
+      if !isassigned(m.v, i)
         def = false
       end
     end
     if def
-      GTPSA.show_map!(io, m.x, lines_used, true, 1:numvars(m))
+      GTPSA.show_map!(io, m.v, lines_used, true, 1:numvars(m))
       !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || return
     else
       !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || (println(io, "\t⋮"); return)
       println(io)
       lines_used[] += 1
       !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || (println(io, "\t⋮"); return)
-      println(io, "\tAtleast one $(eltype(m.x)) is undefined!")
+      println(io, "\tAtleast one $(eltype(m.v)) is undefined!")
       lines_used[]+=1
     end
   else
-    for i =1:length(m.x0)
+    for i in 1:length(m.v0)
       !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 || (println(io, "\t⋮"); return)
-      @printf(io, "%-3s  ", "$(i):"); println(io, m.x[i])
+      @printf(io, "%-3s  ", "$(i):"); println(io, m.v[i])
       lines_used[] += 1
     end
     !get(io, :limit, false) || lines_used[] < displaysize(io)[1]-5 ||  (println(io, "\t⋮"); return)

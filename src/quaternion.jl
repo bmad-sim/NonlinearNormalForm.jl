@@ -6,10 +6,9 @@ Special quaternion routines for NonlinearNormalForm
 
 # TO-DO: use MQuaternion (mutable quaternion) so only 1 vectorized compose! call
 function TI.compose!(q::Quaternion, q1::Quaternion, m1::AbstractArray)
-  TI.compose!(q.q0, q1.q0, m1)
-  TI.compose!(q.q1, q1.q1, m1)
-  TI.compose!(q.q2, q1.q2, m1)
-  TI.compose!(q.q3, q1.q3, m1)
+  qt = SA[q.q0, q.q1, q.q2, q.q3]
+  q1 = SA[q1.q0, q1.q1, q1.q2, q1.q3]
+  TI.compose!(qt, q1, m1)
   return q
 end
 
@@ -45,7 +44,7 @@ function exp(q1::Quaternion{T}) where {T}
 
   q_out = Quaternion{T}(1,0,0,0)
   q = Quaternion{T}(1,0,0,0)
-  for j=1:nmax
+  for j in 1:nmax
     q = q*q1/j
     q_out .+= q
 

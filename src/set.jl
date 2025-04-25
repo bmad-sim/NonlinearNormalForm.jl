@@ -3,7 +3,7 @@
 
 function setray!(
   r::AbstractArray{<:T}; 
-  x::Union{AbstractVector,Nothing}=nothing,
+  v::Union{AbstractVector,Nothing}=nothing,
   x_matrix::Union{AbstractMatrix,UniformScaling,Nothing}=nothing,
   x_matrix_offset::Integer=0,
 ) where {T}
@@ -11,9 +11,9 @@ function setray!(
 
   length(r) <= ndiffs(first(r)) || error("Length of output orbital ray `r` cannot be greater than the number of differentials in the TPSA!")
 
-  if !isnothing(x)
-    length(x) <= length(r) || error("Length of input vector `x` cannot be greater than the length of output vector `r`!")
-    foreach((out_xi, xi)->copy!(out_xi, xi), view(r, 1:length(x)), x)
+  if !isnothing(v)
+    length(v) <= length(r) || error("Length of input vector `v` cannot be greater than the length of output vector `r`!")
+    foreach((out_xi, xi)->copy!(out_xi, xi), view(r, 1:length(v)), v)
   end
 
   if !isnothing(x_matrix)

@@ -38,7 +38,7 @@ function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, m1::Union{Taylor
   nv = nvars(m)
 
   for i in 1:nv
-    TI.$(Meta.parse(ops[1]))(m.x[i], m1.x[i], m2.x[i])
+    TI.$(Meta.parse(ops[1]))(m.v[i], m1.v[i], m2.v[i])
   end
 
   if !isnothing(m.q) && do_spin
@@ -50,11 +50,11 @@ function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, m1::Union{Taylor
 
   if m isa TaylorMap
     if m1 isa TaylorMap
-      m.x0 .= m1.x0
+      m.v0 .= m1.v0
     elseif m2 isa TaylorMap
-      m.x0 .= m2.x0
+      m.v0 .= m2.v0
     else
-      m.x0 .= 0
+      m.v0 .= 0
     end
 
     #=
@@ -83,8 +83,8 @@ function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, J::UniformScalin
   nv = nvars(m)
 
   for i in 1:nv
-    copy!(m.x[i], m1.x[i])
-    TI.seti!(m.x[i], $(ops[2])(1, TI.geti(m.x[i], i)), i)
+    copy!(m.v[i], m1.v[i])
+    TI.seti!(m.v[i], $(ops[2])(1, TI.geti(m.v[i], i)), i)
   end
 
   if !isnothing(m.q) && do_spin
@@ -98,9 +98,9 @@ function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, J::UniformScalin
 
   if m isa TaylorMap
     if m1 isa TaylorMap
-      m.x0 .= m1.x0
+      m.v0 .= m1.v0
     else
-      m.x0 .= 0
+      m.v0 .= 0
     end
     #=
     if !isnothing(m.E)
@@ -122,8 +122,8 @@ function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, m1::Union{Taylor
   nv = nvars(m)
 
   for i in 1:nv
-    copy!(m.x[i], m1.x[i])
-    TI.seti!(m.x[i], $(ops[2])(TI.geti(m.x[i], i), 1), i)
+    copy!(m.v[i], m1.v[i])
+    TI.seti!(m.v[i], $(ops[2])(TI.geti(m.v[i], i), 1), i)
   end
 
   if !isnothing(m.q) && do_spin
@@ -136,9 +136,9 @@ function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, m1::Union{Taylor
 
   if m isa TaylorMap
     if m1 isa TaylorMap
-      m.x0 .= m1.x0
+      m.v0 .= m1.v0
     else
-      m.x0 .= 0
+      m.v0 .= 0
     end
     #=
     if !isnothing(m.E)
@@ -185,8 +185,8 @@ function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, a::Number, m1::U
   
   nv = nvars(m)
 
-  for i=1:nv
-    TI.$(Meta.parse(ops[1]))(m.x[i], a, m1.x[i])
+  for i in 1:nv
+    TI.$(Meta.parse(ops[1]))(m.v[i], a, m1.v[i])
   end
 
   if !isnothing(m.q) && do_spin
@@ -198,9 +198,9 @@ function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, a::Number, m1::U
 
   if m isa TaylorMap
     if m1 isa TaylorMap
-      m.x0 .= m1.x0
+      m.v0 .= m1.v0
     else
-      m.x0 .= 0
+      m.v0 .= 0
     end
     #=
     if !isnothing(m.E)
@@ -221,8 +221,8 @@ function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, m1::Union{Taylor
   
   nv = nvars(m)
 
-  for i=1:nv
-    TI.$(Meta.parse(ops[1]))(m.x[i], m1.x[i], a)
+  for i in 1:nv
+    TI.$(Meta.parse(ops[1]))(m.v[i], m1.v[i], a)
   end
 
   if !isnothing(m.q) && do_spin
@@ -234,9 +234,9 @@ function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, m1::Union{Taylor
 
   if m isa TaylorMap
     if m1 isa TaylorMap
-      m.x0 .= m1.x0
+      m.v0 .= m1.v0
     else
-      m.x0 .= 0
+      m.v0 .= 0
     end
     #=
     if !isnothing(m.E)

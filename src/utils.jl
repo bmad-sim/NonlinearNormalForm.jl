@@ -7,15 +7,15 @@ field array type promotion, checking if the last plane of a map is coasting.
 =#
 # =================================================================================== #
 # Helper functions
-getinit(m::Union{TaylorMap,VectorField}) = TI.getinit(first(m.x))
-ndiffs(m::TaylorMap) = length(m.x)
-ndiffs(F::VectorField) = TI.ndiffs(first(F.x))
-nmonos(m::Union{TaylorMap,VectorField}) = TI.nmonos(first(m.x))
-maxord(m::Union{TaylorMap,VectorField}) = TI.maxord(first(m.x))
+getinit(m::Union{TaylorMap,VectorField}) = TI.getinit(first(m.v))
+ndiffs(m::TaylorMap) = length(m.v)
+ndiffs(F::VectorField) = TI.ndiffs(first(F.v))
+nmonos(m::Union{TaylorMap,VectorField}) = TI.nmonos(first(m.v))
+maxord(m::Union{TaylorMap,VectorField}) = TI.maxord(first(m.v))
 
 # NNF-specific helpers:
-nvars(m::TaylorMap) = length(m.x0)
-nvars(F::VectorField) = length(F.x)
+nvars(m::TaylorMap) = length(m.v0)
+nvars(F::VectorField) = length(F.v)
 nparams(m::Union{TaylorMap,VectorField}) = ndiffs(m) - nvars(m)
 nhvars(m::Union{TaylorMap,VectorField}) = iseven(nvars(m)) ? nvars(m) : nvars(m)-1 # number of "harmonic" variables
 
@@ -27,12 +27,12 @@ abstract type OptionType end
 struct HarmonicVariables <: OptionType end  # e.g. 4x4 matrix
 struct CoastVariables <: OptionType end # e.g. 1x5 matrix
 struct Variables <: OptionType end # e.g. 4x4 or 5x5 (coasting beam) matrix
-struct HarmonicVariablesAndParameters <: OptionType end # e.g. 4 x (nv+np) matrix
-struct CoastVariablesAndParameters <: OptionType end # e.g. 1 x (nv+np) matrix
-struct VariablesAndParameters <: OptionType end # eg. 5 x np (coasting beam) matrix
-struct Parameters <: OptionType end # e.g. 5 x np matrix
-struct HarmonicParameters <: OptionType end # e.g. 4 x np matrix
-struct CoastParameters <: OptionType end # e.g. 1 x np matrix
+struct HarmonicVariablesAndParameters <: OptionType end # e.g. 4 v (nv+np) matrix
+struct CoastVariablesAndParameters <: OptionType end # e.g. 1 v (nv+np) matrix
+struct VariablesAndParameters <: OptionType end # eg. 5 v np (coasting beam) matrix
+struct Parameters <: OptionType end # e.g. 5 v np matrix
+struct HarmonicParameters <: OptionType end # e.g. 4 v np matrix
+struct CoastParameters <: OptionType end # e.g. 1 v np matrix
 struct All <: OptionType end
 
 const HVARS = HarmonicVariables()
@@ -103,53 +103,53 @@ const ALL = All()
   return nrows, ncols, row_start, col_start
 end
 
-function jacobian(m::TaylorMap{X0,X,Q,S}, which::T=VARS) where {X0,X,Q,S,T<:OptionType}
+function jacobian(m::TaylorMap{V0,V,Q,S}, which::T=VARS) where {V0,V,Q,S,T<:OptionType}
   nrows, ncols, row_start, col_start = getjacinfo(m, which)
-  M = similar(m.x0, nrows, ncols)
+  M = similar(m.v0, nrows, ncols)
   for col in col_start:col_start+ncols-1
     for row in row_start:row_start+nrows-1
-      M[row-row_start+1,col-col_start+1] = TI.geti(m.x[row], col)
+      M[row-row_start+1,col-col_start+1] = TI.geti(m.v[row], col)
     end
   end
   return M
 end
 
-function jacobian(m::TaylorMap{X0,X,Q,S}, which::T=VARS) where {X0,X<:StaticArray,Q,S,T<:OptionType}
+function jacobian(m::TaylorMap{V0,V,Q,S}, which::T=VARS) where {V0,V<:StaticArray,Q,S,T<:OptionType}
   nrows, ncols, row_start, col_start = getjacinfo(m, which)
-  return StaticArrays.sacollect(SMatrix{nrows,ncols,eltype(X0)}, 
-  TI.geti(m.x[row], col) for col in col_start:col_start+ncols-1 for row in row_start:row_start+nrows-1)
+  return StaticArrays.sacollect(SMatrix{nrows,ncols,eltype(V0)}, 
+  TI.geti(m.v[row], col) for col in col_start:col_start+ncols-1 for row in row_start:row_start+nrows-1)
 end
 
-function jacobiant(m::TaylorMap{X0,X,Q,S}, which::T=VARS) where {X0,X,Q,S,T<:OptionType}
+function jacobiant(m::TaylorMap{V0,V,Q,S}, which::T=VARS) where {V0,V,Q,S,T<:OptionType}
   nrowst, ncolst, rowt_start, colt_start = getjacinfo(m, which)
-  M = similar(m.x0, ncolst,nrowst)
+  M = similar(m.v0, ncolst,nrowst)
   for colt in colt_start:colt_start+ncolst-1
     for rowt in rowt_start:rowt_start+nrowst-1
-      M[colt-colt_start+1,rowt-rowt_start+1] = TI.geti(m.x[rowt], colt)
+      M[colt-colt_start+1,rowt-rowt_start+1] = TI.geti(m.v[rowt], colt)
     end
   end
   return M
 end
 
-function jacobiant(m::TaylorMap{X0,X,Q,S}, which::T=VARS) where {X0,X<:StaticArray,Q,S,T<:OptionType}
+function jacobiant(m::TaylorMap{V0,V,Q,S}, which::T=VARS) where {V0,V<:StaticArray,Q,S,T<:OptionType}
   return transpose(jacobian(m, which))
 end
 
 # =================================================================================== #
 # Phasor basis transformations
 # inv(c) is from_phasor
-function ci_jacobian(m::TaylorMap{X0,X,Q,S}, ::T=VARS) where {X0,X,Q,S,T<:Union{HarmonicVariables,Variables}}
+function ci_jacobian(m::TaylorMap{V0,V,Q,S}, ::T=VARS) where {V0,V,Q,S,T<:Union{HarmonicVariables,Variables}}
   nv = nvars(m)
   nhv = nhvars(m)
   n = T == HarmonicVariables ? nhv : nv
-  CI = similar(m.x0, complex(eltype(m.x0)), n, n)
+  CI = similar(m.v0, complex(eltype(m.v0)), n, n)
   CI .= 0
   for i in 1:Int(nhv/2)
-    # x_new = 1/sqrt(2)*(x+im*p)
+    # x_new = 1/sqrt(2)*(v+im*p)
     CI[2*i-1,2*i-1] = 1/sqrt(2)
     CI[2*i-1,2*i] = complex(0,1/sqrt(2))
 
-    # p_new = 1/sqrt(2)*(x-im*p)
+    # p_new = 1/sqrt(2)*(v-im*p)
     CI[2*i,2*i-1] = 1/sqrt(2)
     CI[2*i,2*i] = complex(0,-1/sqrt(2))
   end
@@ -160,10 +160,10 @@ function ci_jacobian(m::TaylorMap{X0,X,Q,S}, ::T=VARS) where {X0,X,Q,S,T<:Union{
   return CI
 end
 
-function ci_jacobian(m::TaylorMap{X0,X,Q,S}, ::T=VARS) where {X0<:StaticArray,X,Q,S,T<:Union{HarmonicVariables,Variables}}
+function ci_jacobian(m::TaylorMap{V0,V,Q,S}, ::T=VARS) where {V0<:StaticArray,V,Q,S,T<:Union{HarmonicVariables,Variables}}
   if T == Variables && iscoasting(m)
     nv = nvars(m)
-    return StaticArrays.sacollect(SMatrix{nv,nv,eltype(X0)}, 
+    return StaticArrays.sacollect(SMatrix{nv,nv,complex(eltype(V0))}, 
     begin
       if fld1(col,2) != fld1(row,2) 
         0
@@ -183,7 +183,7 @@ function ci_jacobian(m::TaylorMap{X0,X,Q,S}, ::T=VARS) where {X0<:StaticArray,X,
     end for col in 1:nv for row in 1:nv)
   else
     nhv = nhvars(m)
-    return StaticArrays.sacollect(SMatrix{nhv,nhv,eltype(X0)}, 
+    return StaticArrays.sacollect(SMatrix{nhv,nhv,complex(eltype(V0))}, 
     begin
       if fld1(col,2) != fld1(row,2) 
         0
@@ -203,11 +203,11 @@ function ci_jacobian(m::TaylorMap{X0,X,Q,S}, ::T=VARS) where {X0<:StaticArray,X,
 end
 
 # c is to_phasor
-function c_jacobian(m::TaylorMap{X0,X,Q,S}, ::T=VARS) where {X0,X,Q,S,T<:Union{HarmonicVariables,Variables}}
+function c_jacobian(m::TaylorMap{V0,V,Q,S}, ::T=VARS) where {V0,V,Q,S,T<:Union{HarmonicVariables,Variables}}
   nv = nvars(m)
   nhv = nhvars(m)
   n = T == HarmonicVariables ? nhv : nv
-  C = similar(m.x0, complex(eltype(m.x0)), n, n)
+  C = similar(m.v0, complex(eltype(m.v0)), n, n)
   C .= 0
   for i in 1:Int(nhv/2)
     C[2*i-1,2*i-1] = 1/sqrt(2)
@@ -223,10 +223,10 @@ function c_jacobian(m::TaylorMap{X0,X,Q,S}, ::T=VARS) where {X0,X,Q,S,T<:Union{H
   return C
 end
 
-function c_jacobian(m::TaylorMap{X0,X,Q,S}, ::T=VARS) where {X0<:StaticArray,X,Q,S,T<:Union{HarmonicVariables,Variables}}
+function c_jacobian(m::TaylorMap{V0,V,Q,S}, ::T=VARS) where {V0<:StaticArray,V,Q,S,T<:Union{HarmonicVariables,Variables}}
   if T == Variables && iscoasting(m)
     nv = nvars(m)
-    return StaticArrays.sacollect(SMatrix{nv,nv,eltype(X0)}, 
+    return StaticArrays.sacollect(SMatrix{nv,nv,complex(eltype(V0))}, 
     begin
       if fld1(col,2) != fld1(row,2) 
         0
@@ -246,7 +246,7 @@ function c_jacobian(m::TaylorMap{X0,X,Q,S}, ::T=VARS) where {X0<:StaticArray,X,Q
     end for col in 1:nv for row in 1:nv)
   else
     nhv = nhvars(m)
-    return StaticArrays.sacollect(SMatrix{nhv,nhv,eltype(X0)}, 
+    return StaticArrays.sacollect(SMatrix{nhv,nhv,complex(eltype(V0))}, 
     begin
       if fld1(col,2) != fld1(row,2) 
         0
@@ -267,7 +267,7 @@ end
 
 function c_map(m::DAMap)
   c=zero(complex(typeof(m)), m)
-  setray!(c.x, x_matrix=c_jacobian(m))
+  setray!(c.v, x_matrix=c_jacobian(m))
   if !isnothing(c.q)
     setquat!(c.q, q=I)
   end
@@ -276,7 +276,7 @@ end
 
 function ci_map(m::DAMap)
   cinv=zero(complex(typeof(m)), m)
-  setray!(cinv.x, x_matrix=ci_jacobian(m))
+  setray!(cinv.v, x_matrix=ci_jacobian(m))
   if !isnothing(cinv.q)
     setquat!(cinv.q, q=I)
   end
@@ -285,49 +285,49 @@ end
 
 # =================================================================================== #
 # Get/set scalar part of orbital ray
-function getscalar(m::TaylorMap{X0,X,Q,S}) where {X0,X,Q,S}
+function getscalar(m::TaylorMap{V0,V,Q,S}) where {V0,V,Q,S}
   nv = nvars(m)
-  return map(t->TI.geti(t, 0), view(m.x, 1:nv))
+  return map(t->TI.geti(t, 0), view(m.v, 1:nv))
 end
 
-function getscalar(m::TaylorMap{X0,X,Q,S}) where {X0,X<:StaticArray,Q,S}
+function getscalar(m::TaylorMap{V0,V,Q,S}) where {V0,V<:StaticArray,Q,S}
   nv = nvars(m)
-  return StaticArrays.sacollect(SVector{nv,eltype(X0)}, TI.geti(m.x[i], 0) for i in 1:nv)
+  return StaticArrays.sacollect(SVector{nv,eltype(V0)}, TI.geti(m.v[i], 0) for i in 1:nv)
 end
 
 function setscalar!(
-  m::TaylorMap{X0,X,Q,S}, 
+  m::TaylorMap{V0,V,Q,S}, 
   xs::Number; 
   scl0::Union{Nothing,Number}=nothing,
   scl1::Number=1
-) where {X0,X,Q,S}
+) where {V0,V,Q,S}
   nv = nvars(m)
   if isnothing(scl0)
     for i in 1:nv
-      TI.seti!(m.x[i], scl1*xs, 0)
+      TI.seti!(m.v[i], scl1*xs, 0)
     end
   else
     for i in 1:nv
-      TI.seti!(m.x[i], TI.geti(m.x[i], 0)*scl0 + scl1*xs, 0)
+      TI.seti!(m.v[i], TI.geti(m.v[i], 0)*scl0 + scl1*xs, 0)
     end
   end
 end
 
 function setscalar!(
-  m::TaylorMap{X0,X,Q,S}, 
+  m::TaylorMap{V0,V,Q,S}, 
   xs::AbstractArray; 
   scl0::Union{Nothing,Number}=nothing,
   scl1::Number=1
-) where {X0,X,Q,S}
+) where {V0,V,Q,S}
 
   nv = nvars(m)
   if isnothing(scl0)
     for i in 1:nv
-      TI.seti!(m.x[i], xs[i], 0)
+      TI.seti!(m.v[i], xs[i], 0)
     end
   else
     for i in 1:nv
-      TI.seti!(m.x[i], TI.geti(m.x[i], 0)*scl0 + scl1*xs[i], 0)
+      TI.seti!(m.v[i], TI.geti(m.v[i], 0)*scl0 + scl1*xs[i], 0)
     end
   end
 end
@@ -353,24 +353,20 @@ end
 # Quaternion
 function similar_eltype(::Type{A}, ::Type{G}, ::Type{Val{M}}=Val{1}) where {M,A<:Quaternion,G}
   M == 1 || error("Quaternion type can only have dimension 1")
-  return Quaternion{promote_type(eltype(A),G)}
+  return Quaternion{G}
 end
 
 # =================================================================================== #
 # Coast check
 
-function coastidx(m)
-  nv = nvars(m)
-  for i in nv-1:nv # check only the last two planes
-    if abs(TI.geti(m.x[i], 0)) < COAST # if scalar part is 0
-      cycleidx = TI.cycle!(m.x[i], 0)
-      if cycleidx == i && abs(TI.geti(m.x[i], i) - 1) < COAST
-        return i
-      end
+function check_coast(v)
+  if abs(TI.geti(last(v), 0)) ≈ 0 # if scalar part is 0
+    cycleidx = TI.cycle!(last(v), 0)
+    if cycleidx == length(v) && abs(TI.geti(last(v), length(v)) - 1) ≈ 0
+      return true
     end
   end
-
-  return -1
+  return false
 end
 
 # =================================================================================== #

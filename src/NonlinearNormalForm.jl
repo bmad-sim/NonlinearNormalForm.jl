@@ -82,9 +82,10 @@ export        TaylorMap,
               factorize
 
 
-
-
-const COAST = eps(Float64)
+# After experimenting I have found MVector
+# to be the fastest for the entire NNF workflow,
+# even though the cost of constructing a map 
+# initially (before nv and np are known) is higher
 
 macro _DEFAULT_X0(NV)
   return :(MVector{$(esc(NV))})

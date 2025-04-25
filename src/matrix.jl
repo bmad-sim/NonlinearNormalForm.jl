@@ -12,7 +12,7 @@ will automatically fail if more than 1 mode is unstable. Default is true.
 If `phase_modes` is true, then each stable mode will be multiplied by a phase factor to make 
 the first component of that mode (e.g. the x, y, or z component, NOT the px, py, or pz component) 
 be fully real. This both makes the eigenvector "pretty", and in this case of weak coupling, ensures 
-that `vⱼ'*vⱼ₊₁` for j=(1, 3, 5) has a positive imaginary part so that the eigenvectors/eigenvalues 
+that `vⱼ'*vⱼ₊₁` for j in (1, 3, 5) has a positive imaginary part so that the eigenvectors/eigenvalues 
 for odd `j` are associated with the positive tune and even `j` the negative tune. This 
 phase factor is harmless/useless to include in a highly-coupled matrix.
 
@@ -68,7 +68,7 @@ function low_mat_eigen!(F, sort, phase_modes)
     if num_unstable <= 2 && locate_modes!(F.vectors, F.values, sort=false, modes=modes) # Plane locating is successful
 
       # Normalize stable modes
-      @views for i=1:Int((nv-num_unstable)/2)
+      @views for i in 1:Int((nv-num_unstable)/2)
         normalize_eigenmode!(F.vectors[:,2*i-1:2*i], F.values[2*i-1:2*i], phase_modes ? modes[i] : -1)
       end
 
@@ -82,7 +82,7 @@ function low_mat_eigen!(F, sort, phase_modes)
       @warn "Mode sorting of eigenvectors failed; eigenvectors in arbitrary order. Stable modes will be normalized, but no phase factor will be included."
       
       # Normalize stable modes
-      @views for i=1:Int((nv-num_unstable)/2)
+      @views for i in 1:Int((nv-num_unstable)/2)
         normalize_eigenmode!(F.vectors[:,2*i-1:2*i], F.values[2*i-1:2*i], -1)
       end
 
@@ -91,7 +91,7 @@ function low_mat_eigen!(F, sort, phase_modes)
 
     # Normalize the stable modes:
     nv = length(F.values)
-    @views for i=1:Int((nv-num_unstable)/2)
+    @views for i in 1:Int((nv-num_unstable)/2)
       normalize_eigenmode!(F.vectors[:,2*i-1:2*i], F.values[2*i-1:2*i], phase_modes ? i : -1)
     end
 
@@ -125,7 +125,7 @@ function normalize_eigenmode!(evec_pair, eval_pair, phase_mode::Integer=-1)
   length(eval_pair) == 2 || error("Eigenvalue pair not provided")
 
   fnorm = 0
-  for i=1:n_modes # For each mode
+  for i in 1:n_modes # For each mode
     fnorm += 2*imag(conj(evec_pair[2*i-1,1])*evec_pair[2*i,1])
   end
   sgn = sign(fnorm)
@@ -146,7 +146,7 @@ function normalize_eigenmode!(evec_pair, eval_pair, phase_mode::Integer=-1)
   else
     phase = 1
   end
-  for i=1:nv
+  for i in 1:nv
     evec_pair[i,1] = phase*Complex(real(evec_pair[i,1]), sgn*imag(evec_pair[i,1]))*fnorm
     evec_pair[i,2] = conj(phase)*Complex(real(evec_pair[i,2]), sgn*imag(evec_pair[i,2]))*fnorm
   end
@@ -172,12 +172,12 @@ function moveback_unstable!(F::Eigen)
   cnt = 0
   nv = size(evals,1)
 
-  for i=1:nv
+  for i in 1:nv
     if imag(evals[i]) == 0
       cnt += 1
     elseif cnt != 0
       evals[i-cnt], evals[i] = evals[i], evals[i-cnt]
-      for k=1:nv
+      for k in 1:nv
         evecs[k,i-cnt], evecs[k,i] = evecs[k,i], evecs[k,i-cnt]
       end
     end
@@ -236,11 +236,11 @@ function locate_modes!(evecs, evals=nothing; sort=true, modes=nothing)
   modes .= -1
 
   # For each mode
-  for i=1:n_modes
+  for i in 1:n_modes
     maxamp = @views norm(evecs[2*i-1:2*i,1])
     maxidx = 1
     # For each eigenvector
-    for j=2:n_modes
+    for j in 2:n_modes
       amp = @views norm(evecs[2*i-1:2*i,2*j-1])
       if amp > maxamp
         maxamp = amp
@@ -256,7 +256,7 @@ function locate_modes!(evecs, evals=nothing; sort=true, modes=nothing)
             evals[2*i-1], evals[2*maxidx-1] = evals[2*maxidx-1], evals[2*i-1]
             evals[2*i], evals[2*maxidx] = evals[2*maxidx], evals[2*i]
           end
-          for j=1:nv
+          for j in 1:nv
             evecs[j,2*i-1], evecs[j,2*maxidx-1] = evecs[j, 2*maxidx-1], evecs[j,2*i-1]
             evecs[j,2*i], evecs[j,2*maxidx] = evecs[j, 2*maxidx], evecs[j,2*i]
           end

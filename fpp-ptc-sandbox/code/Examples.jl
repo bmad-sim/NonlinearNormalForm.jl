@@ -247,7 +247,7 @@ function track_fodo(z0, k1, k2l, kick)
 end
 
 function track_ring(z0, k1=0.36, k2l=1.2, kick=zeros(50))
-  for i=1:50
+  for i in 1:50
     z0 = track_fodo(z0, k1, k2l, kick[i])
   end
   return z0

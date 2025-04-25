@@ -15,8 +15,8 @@ become way too verbose when using "where". All sanity checks are type stable,
 and the checks should be optimized away in the JIT compilation if valid.
 
 =#
-@inline checkspin(stuff...) = all(x->isnothing(x.q), stuff) || all(x->!isnothing(x.q), stuff) || error("Atleast one map/vector field includes spin while others do not")
-@inline checkstochastic(maps::TaylorMap...) = all(x->isnothing(x.s), maps) || all(x->!isnothing(x.s), maps) || error("Atleast one map includes stochasticity while others do not")
+@inline checkspin(stuff...) = all(v->isnothing(v.q), stuff) || all(v->!isnothing(v.q), stuff) || error("Atleast one map/vector field includes spin while others do not")
+@inline checkstochastic(maps::TaylorMap...) = all(v->isnothing(v.s), maps) || all(v->!isnothing(v.s), maps) || error("Atleast one map includes stochasticity while others do not")
 @inline function checkvarsparams(stuff...)
   NV = nvars(first(stuff))
   NN = ndiffs(first(stuff))
@@ -26,7 +26,7 @@ and the checks should be optimized away in the JIT compilation if valid.
   end
 end
 
-@inline checkstates(stuff...) = checkvarsparams(filter(x->(x isa Union{TaylorMap,VectorField}), stuff)...) && checkspin(filter(x->(x isa Union{TaylorMap,VectorField}), stuff)...) && checkstochastic(filter(x->(x isa TaylorMap), stuff)...)
+@inline checkstates(stuff...) = checkvarsparams(filter(v->(v isa Union{TaylorMap,VectorField}), stuff)...) && checkspin(filter(v->(v isa Union{TaylorMap,VectorField}), stuff)...) && checkstochastic(filter(v->(v isa TaylorMap), stuff)...)
 
 # checkinplace is preferred to using the "where {S,..}.." syntax as this 
 # gives descriptive errors rather than just "function not found"
@@ -34,33 +34,33 @@ end
   checkstates(m, stuff...)
   # Checks that the output map has all types properly promoted
   # or NOT promoted if unneccessary
-  maps = filter(x->(x isa TaylorMap), stuff)
-  mapsvfs = filter(x->(x isa Union{TaylorMap,VectorField}), stuff)
-  nums = filter(x->(x isa Number), stuff)
-  eltypes = map(x->typeof(x), nums) # scalars only affect x and Q, not x0 or E in FPP
+  maps = filter(v->(v isa TaylorMap), stuff)
+  mapsvfs = filter(v->(v isa Union{TaylorMap,VectorField}), stuff)
+  nums = filter(v->(v isa Number), stuff)
+  eltypes = map(v->typeof(v), nums) # scalars only affect v and Q, not v0 or E in FPP
 
-  xtypes = map(x->eltype(x.x), mapsvfs)
-  xnumtypes = map(x->TI.numtype(x),xtypes)
+  xtypes = map(v->eltype(v.v), mapsvfs)
+  xnumtypes = map(v->TI.numtype(v),xtypes)
 
   if m isa TaylorMap
-    x0types = map(x->eltype(x.x0), maps)
+    x0types = map(v->eltype(v.v0), maps)
     if internal_promotion
       outx0type = promote_type(x0types..., xnumtypes...) # reference orbit in composition is affected by orbital part
-      eltype(m.x0) == outx0type || error("Output $(typeof(m)) reference orbit type $(eltype(m.x0)) must be $outx0type")
+      eltype(m.v0) == outx0type || error("Output $(typeof(m)) reference orbit type $(eltype(m.v0)) must be $outx0type")
     else
-      all(t->t==eltype(m.x0), x0types) || error("All reference orbit eltypes must be the same (output eltype is $(eltype(m.x0)))")
+      all(t->t==eltype(m.v0), x0types) || error("All reference orbit eltypes must be the same (output eltype is $(eltype(m.v0)))")
     end
   end
 
   if internal_promotion
     outxtype = promote_type(xtypes..., eltypes...)
-    eltype(m.x) == outxtype || error("Output $(typeof(m)) orbital ray type $(eltype(m.x)) must be $xtype")
+    eltype(m.v) == outxtype || error("Output $(typeof(m)) orbital ray type $(eltype(m.v)) must be $xtype")
   else
-    all(t->t==eltype(m.x), xtypes) || error("All orbital ray eltypes must be the same (output eltype is $(eltype(m.x)))")
+    all(t->t==eltype(m.v), xtypes) || error("All orbital ray eltypes must be the same (output eltype is $(eltype(m.v)))")
   end
 
   if !isnothing(m.q)
-    qtypes = map(x->eltype(x.q), mapsvfs)
+    qtypes = map(v->eltype(v.q), mapsvfs)
     if internal_promotion
       outqtype = promote_type(qtypes..., eltypes...)
       eltype(m.q) == outqtype || error("Output $(typeof(m)) quaternion type $(eltype(m.q)) must be $outqtype")
@@ -72,7 +72,7 @@ end
   # Part of the promotion is stochasticity:
   # the output map must include stochasticity if any input includes stochasticity:
   if m isa TaylorMap && !isnothing(m.s)
-    stypes = map(x->eltype(x.s), maps)
+    stypes = map(v->eltype(v.s), maps)
     if internal_promotion
       outtype = promote_type(xnumtypes..., stypes...)
       eltype(m.s) == outtype || error("Output $(typeof(m)) stochastic matrix type $(eltype(m.s)) must be $outtype")

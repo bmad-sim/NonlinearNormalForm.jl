@@ -61,15 +61,15 @@ function read_fpp_map(file; stochastic::Union{Nothing,Bool}=nothing,spin::Union{
   idx=3
   data=data[3:end,:]
   # Now fill
-  for i=1:nv
-    idx = findfirst(x->(x isa Integer), data[:,1])
+  for i in 1:nv
+    idx = findfirst(v->(v isa Integer), data[:,1])
     count = 0
     while data[idx,1] >= 0
       a = data[idx,2]
       b = data[idx,3]
       ords = data[idx,4:4+nn-1]
       #println(ords)
-      TI.setm!(m.x[i], a + im*b, collect(Int, ords))
+      TI.setm!(m.v[i], a + im*b, collect(Int, ords))
       idx += 1
       count += 1
     end
@@ -83,7 +83,7 @@ function read_fpp_map(file; stochastic::Union{Nothing,Bool}=nothing,spin::Union{
     data=data[idx:end,:]
   end
   # dont forget params
-  #m.x[nv+1:nn] .= complexparams(d)
+  #m.v[nv+1:nn] .= complexparams(d)
 
 
   if !isnothing(spin)
@@ -95,7 +95,7 @@ function read_fpp_map(file; stochastic::Union{Nothing,Bool}=nothing,spin::Union{
       TI.copy!(m.q.q3, 0)
     else
       for qi in m.q
-        idx = findfirst(x->(x isa Integer), data[:,1])
+        idx = findfirst(v->(v isa Integer), data[:,1])
         count = 0
         while data[idx,1] >= 0
           a = data[idx,2]
@@ -122,7 +122,7 @@ function read_fpp_map(file; stochastic::Union{Nothing,Bool}=nothing,spin::Union{
   if !isnothing(stochastic)
     idx = findfirst(t->t=="Stochastic", data)[1]
     data = data[idx+1:end,:]
-    for i=1:size(data, 1)
+    for i in 1:size(data, 1)
       row = data[i,1]
       col = data[i,2]
       numstr = data[i,3]

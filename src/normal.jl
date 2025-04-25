@@ -62,7 +62,7 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
     M_hparams = jacobian(m, HPARAMS)
     A0_12 = -inv(M_hvars-I)*M_hparams
     a0 = one(m)
-    setray!(a0.x, x_matrix=A0_12, x_matrix_offset=nv) # offset to parameters part
+    setray!(a0.v, x_matrix=A0_12, x_matrix_offset=nv) # offset to parameters part
 
     # if we are coasting, then we need to include the effect of the variables on the time-like coordinate
     # to ensure Poisson bracket does not change
@@ -74,7 +74,7 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
       M_cvars = jacobian(m, CVARS)
       M_cparams = jacobian(m, CPARAMS)
       coastrow = M_cvars*A0_12 + M_cparams
-      setray!(view(a0.x, nt:nt), x_matrix=coastrow, x_matrix_offset=nv)
+      setray!(view(a0.v, nt:nt), x_matrix=coastrow, x_matrix_offset=nv)
 
       # Variables part:
       # Note that here, because we are only doing first-order, we have exp(F) = I + F
@@ -82,8 +82,8 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
       # But in the nonlinear part (where we "factorize" we have to actually exponentiate
       # the Poisson bracket captured in F to handle this properly.)
       for i in 1:Int(nhv/2)
-        TI.seti!(a0.x[nt], TI.geti(a0.x[2*i-1], ndpt), 2*i)
-        TI.seti!(a0.x[nt], -TI.geti(a0.x[2*i], ndpt), 2*i-1)
+        TI.seti!(a0.v[nt], TI.geti(a0.v[2*i-1], ndpt), 2*i)
+        TI.seti!(a0.v[nt], -TI.geti(a0.v[2*i], ndpt), 2*i-1)
       end
     end
   else
@@ -102,15 +102,16 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
   a1_inv_matrix = real(c_jacobian(m, HVARS)*transpose(F.vectors))
 
   a1 = one(m)
-  setray!(a1.x, x_matrix=inv(a1_inv_matrix))
+  setray!(a1.v, x_matrix=inv(a1_inv_matrix))
   
   if mo == 1 
     return a0 ∘ a1
   end
 
+
   # Continue:
   a1i = one(m)
-  setray!(a1i.x, x_matrix=a1_inv_matrix)
+  setray!(a1i.v, x_matrix=a1_inv_matrix)
 
   c = c_map(m)
   ci = ci_map(m)
@@ -126,7 +127,7 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
   # check if tune shift and kill
   R_inv = inv(jacobian(m1, HVARS)) # R is diagonal matrix
   ri = one(m1)
-  setray!(ri.x, x_matrix=R_inv)
+  setray!(ri.v, x_matrix=R_inv)
 
   # eg = tunes POTENTIALLY INCLUDING DAMPING!!
   # Cannot just use eigenvalues here, need to get from linear normalized map
@@ -137,12 +138,12 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
   F =  zero(VectorField, m1)  # VectorField of monomials to remove for this particular order 
   Fker =  zero(VectorField, m1)  # VectorField of tune shifts to keep for this particular order
 
-  ords = similar(m1.x, Int) # monomial orders
+  ords = similar(m1.v, Int) # monomial orders
   tmpmono = zeros(UInt8, nn) # same as ords but GTPSA v1.4.0 only compatible with this (UInt8 and Vector type) right now
 
-  identity = one(m1)
+  id = one(m1)
 
-  v = Ref{TI.numtype(eltype(m1.x))}() # monomial value 
+  v = Ref{TI.numtype(eltype(m1.v))}() # monomial value 
   for i in 2:mo
     clear!(F)
     clear!(Fker)
@@ -163,7 +164,7 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
 
     # For each variable in the nonlinear map
     for j in 1:nv
-      idx = TI.cycle!(nonl.x[j], 0, mono=tmpmono, val=v)
+      idx = TI.cycle!(nonl.v[j], 0, mono=tmpmono, val=v)
       while idx > 0
         ords .= tmpmono
         # Tune shifts should be left in the map (kernel) because we cannot remove them
@@ -174,28 +175,28 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
           for k in 1:nhv # ignore coasting plane
             lam *= eg[k]^ords[k]
           end
-          TI.setm!(F.x[j], v[]/(1-lam), tmpmono)
+          TI.setm!(F.v[j], v[]/(1-lam), tmpmono)
         else # cannot remove it - add to kernel (if close to res and res is specified it will nearly blow up)
-          TI.setm!(Fker.x[j], v[], tmpmono)
+          TI.setm!(Fker.v[j], v[], tmpmono)
         end
-        idx = TI.cycle!(nonl.x[j], idx, mono=tmpmono, val=v)
+        idx = TI.cycle!(nonl.v[j], idx, mono=tmpmono, val=v)
       end
     end
     
-    kert = exp(Fker,identity) # I + Fker 
+    kert = exp(Fker,id) # I + Fker 
     ker = kert ∘ ker
 
 
-    ant = exp(F,identity) # I + F
+    ant = exp(F,id) # I + F
     an = an ∘ ant
     m1 = inv(ant) ∘ m1 ∘ ant
     
 #=
-    exp!(tmps[3], Fker, identity, work_maps=(tmps[1],tmps[2]))
+    exp!(tmps[3], Fker, id, work_maps=(tmps[1],tmps[2]))
     compose!(tmps[2], tmps[3], ker, do_stochastic=false)
     copy!(ker, tmps[2])
 
-    exp!(tmps[3], F, identity, work_maps=(tmps[1],tmps[2]))
+    exp!(tmps[3], F, id, work_maps=(tmps[1],tmps[2]))
     compose!(tmps[2], an, tmps[3], do_stochastic=false)
     copy!(an, tmps[2])
     inv!(tmps[2], tmps[3])
@@ -237,7 +238,7 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
     # Now store analogous to eg -> egspin
     egspin = SVector(cos(nu0)+im*sin(nu0), 1, cos(nu0)-im*sin(nu0))
 
-    for i =1:mo
+    for i in 1:mo
       # get rid of ℛ:
       linandnonl = m1 ∘ Qr_inv
       
@@ -257,21 +258,21 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
       # Now we go into eigen-operators of spin 
       # so we can identify the terms to kill much more easily
       nr_s = [n_s[1]-im*n_s[3], n_s[2], n_s[1]+im*n_s[3]]
-      nr_s = GTPSA.compose(nr_s,R_inv.x)
+      nr_s = GTPSA.compose(nr_s,R_inv.v)
       na = ComplexTPS64[0,0,0]
 
       # now kill the terms
-      for j=1:3
+      for j in 1:3
         v = Ref{ComplexF64}()
         ords = Vector{UInt8}(undef, nn)
         idx = GTPSA.cycle!(nr_s[j], 0, nn, ords, v) 
         while idx > 0
-          # We remove every term in x and z, tune shifts will only be left in y component
+          # We remove every term in v and z, tune shifts will only be left in y component
           # because of how we defined everything
           # NOTE SPIN RESONANCES WILL HAPPEN WHEN j != 2 SO WE CHECK THAT FIRST!!
           if !is_spin_resonance(j, ords, nhv, res, spin_res) && (j != 2 || !is_tune_shift(j, ords, nhv, true)) # then remove it, note spin components are like hamiltonian
             lam = egspin[j]
-            for k = 1:nhv # ignore coasting plane
+            for k in  1:nhv # ignore coasting plane
               lam *= conj(eg[k])^ords[k]
             end
             na[j] += mono(ords,use=getdesc(m1))*v[]/(1-lam)
@@ -295,7 +296,7 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
     a = a*c*as*c^-1
   end
 
-  return a
+  return real(a)
   #return as
   #return NormalForm(a,eg)
   
@@ -311,159 +312,108 @@ end
 # then calculate lattice functions. Lattice functions will be TPSA and then you 
 # can extract dbeta/ddelta
 function factorize(a)
-  nv = nvars(m)
-  nhv = nhvars(m)
-  init = getinit(m)
-#=  
+  nv = nvars(a)
+  nhv = nhvars(a)
+  nn = ndiffs(a)
+  mo = maxord(a)
+  coast = iscoasting(a)
+
   if !isnothing(a.q)
     as = one(a)
     tmp = inv(a)
     setquat!(tmp.q, q=I)
-    # as.q = a.q(inv(a.x)) # let's not do this and instead factorize wiht as at the end 
-    TI.compose!(as.q, a.q, tmp.x)
+    TI.compose!(as.q, a.q, tmp.v)
   end
-=#
-
-  # We get a0*a1*an
 
   # Simply get parameter dependent part
-  a0 = a ∘ zero(a) + I
+  a0 = a ∘ zero(a)
+  if !isnothing(a.q)
+    setquat!(a0.q, q=I)
+  end
 
-#=
   if coast
+    # At the moment, modulations are NOT implemented  in this package.
+    # If modulations AND coasting plane is used, then this computation may disagree with FPP
+    # I am not sure which is correct nor if it has been tested in FPP... so if someone wants 
+    # to implement modulations make sure there is no coasting
     nt = nv
     ndpt = nv+1
-    M_cvars = jacobian(m, CVARS)
-    M_cparams = jacobian(m, CPARAMS)
-    coastrow = M_cvars*A0_12 + M_cparams
-    setray!(view(a0.x, nt:nt), x_matrix=coastrow, x_matrix_offset=nv)
-
-    for i in 1:Int(nhv/2)
-      TI.seti!(a0.x[nt], TI.geti(a0.x[2*i-1], ndpt), 2*i)
-      TI.seti!(a0.x[nt], -TI.geti(a0.x[2*i], ndpt), 2*i-1)
-    end
-  end
-=#
-
-  # If we are coasting then we do still need to take care of the coasting variable
-  # Poisson bracket, but this time to all orders (unlike in normal form which was just 
-  # order 1)
-  if iscoasting(m)
-    nt = nv
-    ndpt = nv+1
-
-  end
-
-  ndpt = coastidx(a)
-  if ndpt != -1 #!isnothing(a.idpt) # if coasting, set number of variables executing pseudo-harmonic oscillations
-    nhv = nvars(a)-2
-    #ndpt = nvars(a)-1+a.idpt # energy like variable index
-    sgn =  -(1+2*(ndpt-nvars(a)))
-    nt = ndpt+sgn # timelike variable index
-    zer = zero(a); zer.x[nt][nt]=1; zer.x[ndpt][ndpt] = 1
-
-    eye = zero(a)
-    setray!(eye.x, x_matrix=I(nhv))
-    if !isnothing(eye.q)
-      eye.q.q0[0] = 1
-    end
-
-    vf = zero(VectorField, a)
-    setray!(vf.x, x = (a∘zer).x[1:5])
-    #vf = VectorField(a∘zer) # this part is just parameter dependent part
-    # Literally just map(t->t[[0,0,0,0,0,:]], a.x) 
-    TI.copy!(vf.x[nt], 0)
-    #TI.copy!(vf.x[ndpt], 0)
+    id = one(a)
+    #if mo == 1 # Then we can do it super quickly using the matrices
+    #else # we need to fully exponentiate
+    vf = VectorField(v=view(a0.v, 1:nv), q=a0.q)
+    TI.clear!(vf.v[nt])
+    t1 = zero(vf.v[nt])
+    t2 = zero(t1)
+    tm = zero(t1)
     # set the timelike variable so poisson bracket does not change
-    for i=1:Int(nhv/2)
-      TI.add!(vf.x[nt], vf.x[nt], -sgn*deriv((a∘zer).x[2*i-1], ndpt)*TI.mono(init, 2*i))
-      TI.add!(vf.x[nt], vf.x[nt], sgn*deriv((a∘zer).x[2*i], ndpt)*TI.mono(init, 2*i-1))
-    end
-#=
     for i in 1:Int(nhv/2)
-      t = zero(a.x[nt])
-      TI.deriv!(t, a0.x[2*i-1], ndpt)
-      t = t*TI.mono(getinit(t), 2*i)
+      TI.clear!(tm)
+      TI.deriv!(t1, vf.v[2*i-1], ndpt)
+      TI.seti!(tm, 1, 2*i)
+      TI.mul!(t2, t1, tm)
+      TI.add!(vf.v[nt], vf.v[nt], t2)
 
-      TI.add!()
-      t = t*TI.mono(init, 2*i)
-
-      TI.mul!(t, t, TI.mono(init, 2*i))
-      TI.deriv!(a0.x[nt], a0.x[2*i-1], ndpt)
-      TI.mul!(a0.x[nt], )
-      TI.seti!(a0.x[nt], -TI.geti(a0.x[2*i], ndpt), 2*i-1)
+      TI.deriv!(t1, vf.v[2*i], ndpt)
+      TI.clear!(tm)
+      TI.seti!(tm, -1, 2*i-1)
+      TI.mul!(t2, t1, tm)
+      TI.add!(vf.v[nt], vf.v[nt], t2)
     end
-=#
-    #return vf
-    #return vf
-    a0 = exp(vf)
-    a0 = DAMap(a0)
-
-    att = inv(a0)*a
-
-    # Extra iteration for parameters to vanish from time-like variable
-    ast = one(att)
-    ast.x[nt] = par(att.x[nt], zeros(Int, nhv))
-
-    ast = inv(a0) ∘ a ∘ zer
-    setray!(view(ast.x, 1:nhv), x_matrix=I)
-    setquat!(ast.q, q=I)
-    a0 = ast*a0
+    a0 = exp(vf,exp(-vf,id) ∘ a0 + I)
   else
-    nhv = nvars(a)
-    a0 = a∘zero(a)+I
+    add!(a0, a0, I)
   end
-
   a1 = inv(a0)*a 
-  for i=1:nhv
-    tmp = zero(a1.x[i])
-    ords = zeros(Int, nhv)
-    for j=1:nhv
-      ords[j] += 1
-      tmp += a1.x[i][(ords..., :)]
-      ords[j] -= 1
-    end
-    a1.x[i] = tmp
-  end
+  ords = zeros(UInt8, nn)
+  tmp = zero(a1.v[1])
 
-  if ndpt != -1
-    tmp = zero(a1.x[nt])
-    nn = numnn(a)
-    m = Vector{UInt8}(undef, nn)
-    v = Ref{eltype(a1.x[nt])}()
-    idx = GTPSA.cycle!(a1.x[nt], nn, nn, m, v)
+  # Gets the linear part but retains nonlinear parameter dependence
+  v = Ref{TI.numtype(eltype(a1.v))}() # monomial value 
+  for i in 1:nhv
+    TI.clear!(tmp)
+    ords .= 0
+    idx = TI.cycle!(a1.v[i], 0, mono=ords, val=v)
     while idx > -1
-      if sum(view(m, 1:nhv)) <= 2
-        tmp += v[]*mono(m, use=getdesc(a1))
+      if sum(view(ords, 1:nhv)) == 1
+        TI.setm!(tmp, v[], ords)
       end
-      idx = GTPSA.cycle!(a1.x[nt], idx, nn, m, v)
+      idx = TI.cycle!(a1.v[i], idx, mono=ords, val=v)
     end
-    a1.x[nt] = tmp
-    a1.x[nt][nt] = 1
+    TI.copy!(a1.v[i], tmp)
+  end
+
+  # for the coasting part need to remove quadratic orbital part:
+  if coast
+    TI.clear!(tmp)
+    ords .= 0
+    nt = nv
+    idx = TI.cycle!(a1.v[nt], 0, mono=ords, val=v)
+    while idx > -1
+      if sum(view(ords, 1:nhv)) <= 2
+        TI.setm!(tmp, v[], ords)
+      end
+      idx = TI.cycle!(a1.v[nt], idx, mono=ords, val=v)
+    end
+    TI.seti!(tmp, 1, nt)
+    TI.copy!(a1.v[nt], tmp)
   end
 
   if !isnothing(a.q)
-    a1.q.q0 = 1
-    a1.q.q1 = 0
-    a1.q.q2 = 0
-    a1.q.q3 = 0
+    setquat!(a1.q, q=I)
   end
 
-  a2 = inv(a1)*inv(a0)*a
+  a2 = inv(a1) ∘ inv(a0) ∘ a
 
   if !isnothing(a.q)
-    a2.q.q0 = 1
-    a2.q.q1 = 0
-    a2.q.q2 = 0
-    a2.q.q3 = 0
+    setquat!(a2.q, q=I)
   end
 
   if !isnothing(a.q)
-    return as, a0, a1, a2
+    return (; as=as, a0=a0, a1=a1, a2=a1)
   else
-    return a0, a1, a2
+    return (; a0=a0, a1=a1, a2=a1)
   end
-
 end
 
 
@@ -473,7 +423,7 @@ end
 Checks if the monomial corresponds to a tune shift.
 
 ### Input
-- `varidx`      -- Current variable index (e.g. 1 is x, 2 is px, etc)
+- `varidx`      -- Current variable index (e.g. 1 is v, 2 is px, etc)
 - `ords`        -- Array of monomial index as orders
 - `nhv`         -- Number harmonic variables
 - `hamiltonian` -- Default is false, if the monomial is in a vector field and not a hamitlonian then this should be false.
@@ -575,11 +525,11 @@ function is_spin_resonance(spinidx, ords, nhv, res, spin_res)
 
   @assert size(res, 2) == length(spin_res) "Number of resonances in spin_res != number of resonances in res"
 
-  for curresidx=1:size(res, 2) # for each res in the family
+  for curresidx in 1:size(res, 2) # for each res in the family
     t1 = 0
     t2 = 0
     
-    for k = 1:2:nhv # ignore coasting plane
+    for k in  1:2:nhv # ignore coasting plane
       t1 += abs(je[k]-je[k+1]+res[Int((k+1)/2),curresidx]) 
       t2 += abs(je[k]-je[k+1]-res[Int((k+1)/2),curresidx]) 
     end
@@ -623,7 +573,7 @@ function equilibrium_moments(m::DAMap, a::DAMap=normal(m,1))
   # Let B = m.s (FD part)
   # We want to find Σ such that Σ = MΣMᵀ + B  (fixed point)
   # very easy to do in phasors basis
-  # fixed point transformation does nothing (note a0.s = Bₐ₀ = 0 of course and a0.x is identity in variable but not in parameters)
+  # fixed point transformation does nothing (note a0.s = Bₐ₀ = 0 of course and a0.v is identity in variable but not in parameters)
   # When including parameters, fixed point transformation would have to be fully 
   # nonlinear, probably obtained from factorized `a`
   
@@ -671,7 +621,7 @@ function fast_canonize(a::DAMap, damping::Bool=!isnothing(a.E))
 
   phase = zeros(nvars(a))
 
-  for i=1:Int(nhv/2) # for each harmonic oscillator
+  for i in 1:Int(nhv/2) # for each harmonic oscillator
     t = sqrt(a_matrix[2*i-1,2*i-1]^2 + a_matrix[2*i-1,2*i]^2)
     cphi = a_matrix[2*i-1,2*i-1]/t
     sphi = a_matrix[2*i-1,2*i]/t
@@ -716,9 +666,9 @@ function fast_canonize(a::DAMap, damping::Bool=!isnothing(a.E))
   if damping
     damp = zeros(Int(nvars(a)/2))
     tmp = zeros(Int(nvars(a)/2), Int(nvars(a)/2))
-    for i=1:Int(nvars(a)/2)
+    for i in 1:Int(nvars(a)/2)
       tmp[i,i] = a_rot[2*i-1,2*i-1]*a_rot[2*i,2*i]-a_rot[2*i-1,2*i]*a_rot[2*i,2*i-1]
-      for j=1:Int(nvars(a)/2)
+      for j in 1:Int(nvars(a)/2)
         if i != j
           tmp[i,j] = a_rot[2*i-1,2*j-1]*a_rot[2*i,2*j]-a_rot[2*i-1,2*j]*a_rot[2*i,2*j-1]
         end
@@ -777,7 +727,7 @@ function calc_Hr(m, n, res)
   # Note 3.51 and 3.51 in EBB are incorrect
   # going from vectorfield to hamiltonian etc are NEGATIVE hamilton's equations
   # but some extra stuff because phasors
-  # Usually we have dx/dt = -[H,x] = -dH/dp   and dp/dt = -[H,p] = dH/dx 
+  # Usually we have dx/dt = -[H,v] = -dH/dp   and dp/dt = -[H,p] = dH/dx 
   # Now with phasors we have dh/dt = -*H,h* = -i*dH/dhbar  and dhbar/dt = -*H,hbar* = i*dH/dh
   # ( eq 44.65 in special Bmad manual)
   # So per eq 44.67 in special Bmad manual we see the vector field needs a factor of i
@@ -785,10 +735,10 @@ function calc_Hr(m, n, res)
 
   coef = dot(mr, mu)/norm(mr)^2
 
-  F =  zero(VectorField{typeof(m.x),typeof(m.q)}, use=m) 
+  F =  zero(VectorField{typeof(m.v),typeof(m.q)}, use=m) 
   for i in eachindex(mu)
-    F.x[2*i-1][2*i-1] =  im*mu[i] - (im*coef*mr[i]) 
-    F.x[2*i][2*i] =  -im*mu[i] - (-im*coef*mr[i]) 
+    F.v[2*i-1][2*i-1] =  im*mu[i] - (im*coef*mr[i]) 
+    F.v[2*i][2*i] =  -im*mu[i] - (-im*coef*mr[i]) 
   end
 
   # exp(:F:) is now NEGATIVE the perpendicular part
@@ -801,8 +751,8 @@ function calc_Hr(m, n, res)
   # negative the second term in Eq. 5.18 in EYB
   clear!(F)
   for i in eachindex(mr)
-    F.x[2*i-1][2*i-1] = im*p*mr[i]*2*pi/norm(mr)^2
-    F.x[2*i][2*i] = -im*p*mr[i]*2*pi/norm(mr)^2
+    F.v[2*i-1][2*i-1] = im*p*mr[i]*2*pi/norm(mr)^2
+    F.v[2*i][2*i] = -im*p*mr[i]*2*pi/norm(mr)^2
   end
   #return exp(F,N_c)
 

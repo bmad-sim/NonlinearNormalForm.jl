@@ -8,8 +8,8 @@ Non-arithmetic functions acting on both maps and vector fields.
 function clear!(m::Union{TaylorMap,VectorField})
   nv = nvars(m)
   
-  for i=1:nv
-    TI.clear!(m.x[i])
+  for i in 1:nv
+    TI.clear!(m.v[i])
   end
   if !isnothing(m.q)
     TI.clear!(m.q.q0)
@@ -19,7 +19,7 @@ function clear!(m::Union{TaylorMap,VectorField})
   end
 
   if m isa TaylorMap
-    m.x0 .= 0
+    m.v0 .= 0
     if !isnothing(m.s)
       m.s .= 0
     end
@@ -31,10 +31,10 @@ end
 function copy!(m::Union{TaylorMap,VectorField}, m1::Union{TaylorMap,VectorField})
   checkstates(m, m1)
   if m1 isa TaylorMap && m isa TaylorMap
-    m.x0 .= m1.x0
+    m.v0 .= m1.v0
   end
   nv = nvars(m)
-  foreach((xi, x1i)->TI.copy!(xi, x1i), view(m.x, 1:nv), m1.x)
+  foreach((xi, x1i)->TI.copy!(xi, x1i), view(m.v, 1:nv), m1.v)
   if m isa TaylorMap && !isnothing(m.q)
     foreach((qi, q1i)->TI.copy!(qi, q1i), m.q, m1.q)
   end
@@ -55,8 +55,8 @@ function norm(m::Union{TaylorMap,VectorField})
   nrm = 0.
 
   nv = nvars(m)
-  for i=1:nv
-    nrm += TI.norm_tps(m.x[i])
+  for i in 1:nv
+    nrm += TI.norm_tps(m.v[i])
   end
   
   if !isnothing(m.q)
@@ -73,10 +73,10 @@ end
 function real!(m::Union{TaylorMap,VectorField}, m1::Union{TaylorMap,VectorField})
   checkstates(m, m1) # No checkinplace because m can be real
   if m1 isa TaylorMap && m isa TaylorMap
-    @. m.x0 = real(m1.x0)
+    @. m.v0 = real(m1.v0)
   end
   nv = nvars(m)
-  foreach((xi, x1i)->TI.real!(xi, x1i), view(m.x, 1:nv), m1.x)
+  foreach((xi, x1i)->TI.real!(xi, x1i), view(m.v, 1:nv), m1.v)
   if m isa TaylorMap && !isnothing(m.q)
     foreach((qi, q1i)->TI.real!(qi, q1i), m.q, m1.q)
   end
@@ -89,10 +89,10 @@ end
 function imag!(m::Union{TaylorMap,VectorField}, m1::Union{TaylorMap,VectorField})
   checkstates(m, m1) # No checkinplace because m can be real
   if m1 isa TaylorMap && m isa TaylorMap
-    @. m.x0 = imag(m1.x0)
+    @. m.v0 = imag(m1.v0)
   end
   nv = nvars(m)
-  foreach((xi, x1i)->TI.imag!(xi, x1i), view(m.x, 1:nv), m1.x)
+  foreach((xi, x1i)->TI.imag!(xi, x1i), view(m.v, 1:nv), m1.v)
   if m isa TaylorMap && !isnothing(m.q)
     foreach((qi, q1i)->TI.imag!(qi, q1i), m.q, m1.q)
   end
@@ -127,8 +127,8 @@ function cutord!(m::Union{TaylorMap,VectorField}, m1::Union{TaylorMap,VectorFiel
 
   nv = nvars(m)
   
-  for i=1:nv
-    TI.cutord!(m.x[i], m1.x[i], order)
+  for i in 1:nv
+    TI.cutord!(m.v[i], m1.v[i], order)
   end
 
   if !isnothing(m1.q) && do_spin
@@ -140,12 +140,12 @@ function cutord!(m::Union{TaylorMap,VectorField}, m1::Union{TaylorMap,VectorFiel
 
   if m isa TaylorMap 
     if m1 isa TaylorMap
-      m.x0 .= m1.x0
+      m.v0 .= m1.v0
       if !isnothing(m1.s)
         m.s .= m1.s
       end
     else
-      m.x0 .= 0
+      m.v0 .= 0
       if !isnothing(m1.s)
         m.s .= 0
       end
@@ -167,8 +167,8 @@ function getord!(m::Union{TaylorMap,VectorField}, m1::Union{TaylorMap,VectorFiel
   
   nv = nvars(m)
 
-  for i=1:nv
-    TI.getord!(m.x[i], m1.x[i], order)
+  for i in 1:nv
+    TI.getord!(m.v[i], m1.v[i], order)
   end
 
   if !isnothing(m1.q) && do_spin
@@ -180,12 +180,12 @@ function getord!(m::Union{TaylorMap,VectorField}, m1::Union{TaylorMap,VectorFiel
 
   if m isa TaylorMap 
     if m1 isa TaylorMap
-      m.x0 .= m1.x0
+      m.v0 .= m1.v0
       if !isnothing(m1.s)
         m.s .= m1.s
       end
     else
-      m.x0 .= 0
+      m.v0 .= 0
       if !isnothing(m1.s)
         m.s .= 0
       end
