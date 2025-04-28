@@ -62,7 +62,7 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
     M_hparams = jacobian(m, HPARAMS)
     A0_12 = -inv(M_hvars-I)*M_hparams
     a0 = one(m)
-    setray!(a0.v, x_matrix=A0_12, x_matrix_offset=nv) # offset to parameters part
+    setray!(a0.v, v_matrix=A0_12, v_matrix_offset=nv) # offset to parameters part
 
     # if we are coasting, then we need to include the effect of the variables on the time-like coordinate
     # to ensure Poisson bracket does not change
@@ -74,7 +74,7 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
       M_cvars = jacobian(m, CVARS)
       M_cparams = jacobian(m, CPARAMS)
       coastrow = M_cvars*A0_12 + M_cparams
-      setray!(view(a0.v, nt:nt), x_matrix=coastrow, x_matrix_offset=nv)
+      setray!(view(a0.v, nt:nt), v_matrix=coastrow, v_matrix_offset=nv)
 
       # Variables part:
       # Note that here, because we are only doing first-order, we have exp(F) = I + F
@@ -102,7 +102,7 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
   a1_inv_matrix = real(c_jacobian(m, HVARS)*transpose(F.vectors))
 
   a1 = one(m)
-  setray!(a1.v, x_matrix=inv(a1_inv_matrix))
+  setray!(a1.v, v_matrix=inv(a1_inv_matrix))
   
   if mo == 1 
     return a0 ∘ a1
@@ -111,7 +111,7 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
 
   # Continue:
   a1i = one(m)
-  setray!(a1i.v, x_matrix=a1_inv_matrix)
+  setray!(a1i.v, v_matrix=a1_inv_matrix)
 
   c = c_map(m)
   ci = ci_map(m)
@@ -127,7 +127,7 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
   # check if tune shift and kill
   R_inv = inv(jacobian(m1, HVARS)) # R is diagonal matrix
   ri = one(m1)
-  setray!(ri.v, x_matrix=R_inv)
+  setray!(ri.v, v_matrix=R_inv)
 
   # eg = tunes POTENTIALLY INCLUDING DAMPING!!
   # Cannot just use eigenvalues here, need to get from linear normalized map
@@ -327,9 +327,6 @@ function factorize(a)
 
   # Simply get parameter dependent part
   a0 = a ∘ zero(a)
-  if !isnothing(a.q)
-    setquat!(a0.q, q=I)
-  end
 
   if coast
     # At the moment, modulations are NOT implemented  in this package.
@@ -364,21 +361,22 @@ function factorize(a)
   else
     add!(a0, a0, I)
   end
-  a1 = inv(a0)*a 
+  a1t = inv(a0)*a 
+  a1 = zero(a1t)
   ords = zeros(UInt8, nn)
   tmp = zero(a1.v[1])
 
   # Gets the linear part but retains nonlinear parameter dependence
-  v = Ref{TI.numtype(eltype(a1.v))}() # monomial value 
+  v = Ref{TI.numtype(eltype(a1t.v))}() # monomial value 
   for i in 1:nhv
     TI.clear!(tmp)
     ords .= 0
-    idx = TI.cycle!(a1.v[i], 0, mono=ords, val=v)
+    idx = TI.cycle!(a1t.v[i], 0, mono=ords, val=v)
     while idx > -1
       if sum(view(ords, 1:nhv)) == 1
         TI.setm!(tmp, v[], ords)
       end
-      idx = TI.cycle!(a1.v[i], idx, mono=ords, val=v)
+      idx = TI.cycle!(a1t.v[i], idx, mono=ords, val=v)
     end
     TI.copy!(a1.v[i], tmp)
   end
@@ -388,12 +386,12 @@ function factorize(a)
     TI.clear!(tmp)
     ords .= 0
     nt = nv
-    idx = TI.cycle!(a1.v[nt], 0, mono=ords, val=v)
+    idx = TI.cycle!(a1t.v[nt], 0, mono=ords, val=v)
     while idx > -1
       if sum(view(ords, 1:nhv)) <= 2
         TI.setm!(tmp, v[], ords)
       end
-      idx = TI.cycle!(a1.v[nt], idx, mono=ords, val=v)
+      idx = TI.cycle!(a1t.v[nt], idx, mono=ords, val=v)
     end
     TI.seti!(tmp, 1, nt)
     TI.copy!(a1.v[nt], tmp)
@@ -403,16 +401,16 @@ function factorize(a)
     setquat!(a1.q, q=I)
   end
 
-  a2 = inv(a1) ∘ inv(a0) ∘ a
+  a2 = inv(a1) ∘ a1t
 
   if !isnothing(a.q)
     setquat!(a2.q, q=I)
   end
 
   if !isnothing(a.q)
-    return (; as=as, a0=a0, a1=a1, a2=a1)
+    return (; as=as, a0=a0, a1=a1, a2=a2)
   else
-    return (; a0=a0, a1=a1, a2=a1)
+    return (; a0=a0, a1=a1, a2=a2)
   end
 end
 
@@ -605,21 +603,21 @@ end
 # making the 12, 34, 56 elements 0 in the normalizing map
 # and returns the phase added to do so
 # only canonizes linear part, see c_full_canonise for nonlinear
-function fast_canonize(a::DAMap, damping::Bool=!isnothing(a.E))
-  # Basically rotates a so that we are in Courant-Snyder form of a
+# modify this to return canonizing map
 
-  a_matrix = real.(GTPSA.jacobian(a))
-  ri = zero(a_matrix)
-  #ri .= 0
+# Returns the rotation map to put a in Courant Snyder form 
+# The phase advance can be acquired from this map by atan(r11,r22), etc etc
+function fast_canonize(a::DAMap, damping::Bool=!isnothing(a.s))
+  nv = nvars(a)
+  nhv = nhvars(a)
+  coast = iscoasting(a)
 
-  ndpt = coastidx(a)
-  if ndpt != -1 #!isnothing(a.idpt) # if coasting, set number of variables executing pseudo-harmonic oscillations
-    nhv = nvars(a)-2
-  else
-    nhv = nvars(a)
-  end
+  canonizer = zero(a)
 
-  phase = zeros(nvars(a))
+  a_matrix = real.(jacobian(a, VARS))
+  
+
+  #phase = zeros(nvars(a))
 
   for i in 1:Int(nhv/2) # for each harmonic oscillator
     t = sqrt(a_matrix[2*i-1,2*i-1]^2 + a_matrix[2*i-1,2*i]^2)
@@ -630,25 +628,23 @@ function fast_canonize(a::DAMap, damping::Bool=!isnothing(a.E))
       sphi = -sphi
     end
 
-    ri[2*i-1,2*i-1] =  cphi 
-    ri[2*i,2*i]     =  cphi 
-    ri[2*i-1,2*i]   = -sphi  
-    ri[2*i,2*i-1]   =  sphi  
+    TI.seti!(canonizer.v[2*i-1],  cphi, 2*i-1)
+    TI.seti!(canonizer.v[2*i],    cphi, 2*i)
+    TI.seti!(canonizer.v[2*i-1], -sphi, 2*i)
+    TI.seti!(canonizer.v[2*i],    sphi, 2*i-1)
 
-    phase[i] += atan(sphi,cphi)/(2*pi)
+    #phase[i] += atan(sphi,cphi)/(2*pi)
   end
 
-  if ndpt != -1
-    #ndpt = nvars(a)-1+a.idpt
-    sgn =  -(1+2*(ndpt-nvars(a)))
-    nt = ndpt+sgn
-    ri[nt,nt] = 1
-    ri[ndpt,ndpt] = 1
-    ri[nt,ndpt] = -a_matrix[nt,ndpt]
-    phase[end] += a_matrix[nt,ndpt]
+  if coast
+    nt = nv
+    ndpt = nv + 1
+    TI.seti!(canonizer.v[nt], 1, nt)
+    TI.seti!(canonizer.v[ndpt], 1, ndpt)
+    TI.seti!(canonizer.v[nt], -a_matrix[nt,ndpt], ndpt)
+    #phase[end] += a_matrix[nt,ndpt]
   end
-  println(ri)
-  a_rot = a_matrix*ri
+  #a_rot = a_matrix*ri
   #return a_rot
 
   # Now we have rotated a so that a_12, a_34, a_56, etc are 0 (Courant Snyder)
@@ -664,6 +660,7 @@ function fast_canonize(a::DAMap, damping::Bool=!isnothing(a.E))
   # which correspond to the damping (same in each plane, Diagonal(lambda1, lambda1, lambda2, lambda2, etc)
 
   if damping
+    error("need to finish")
     damp = zeros(Int(nvars(a)/2))
     tmp = zeros(Int(nvars(a)/2), Int(nvars(a)/2))
     for i in 1:Int(nvars(a)/2)
@@ -681,7 +678,7 @@ function fast_canonize(a::DAMap, damping::Bool=!isnothing(a.E))
   end
 
 
-  return a_rot
+  return canonizer #a_rot
 end
 
 # This can help give you the fixed point

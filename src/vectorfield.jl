@@ -138,7 +138,7 @@ end
 function VectorField(;
   init::Union{AbstractTPSAInit,Nothing}=nothing,
   v::Union{AbstractVector,Nothing}=nothing,
-  x_matrix::Union{AbstractMatrix,UniformScaling,Nothing}=nothing,
+  v_matrix::Union{AbstractMatrix,UniformScaling,Nothing}=nothing,
   q::Union{Quaternion,AbstractVector,UniformScaling,Nothing}=nothing,
   q_map::Union{AbstractMatrix,Nothing}=nothing,
   spin::Union{Bool,Nothing}=nothing,
@@ -172,7 +172,7 @@ function VectorField(;
   # Construct vector field:
   out_F = _zero(VectorField{V,Q}, init, nv)
 
-  setray!(out_F.v, v=v, x_matrix=x_matrix)
+  setray!(out_F.v, v=v, v_matrix=v_matrix)
   if !isnothing(out_F.q) && !isnothing(q)
     setquat!(out_F.q, q=q, q_map=q_map)
   end

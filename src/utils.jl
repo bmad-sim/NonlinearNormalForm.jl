@@ -267,7 +267,7 @@ end
 
 function c_map(m::DAMap)
   c=zero(complex(typeof(m)), m)
-  setray!(c.v, x_matrix=c_jacobian(m))
+  setray!(c.v, v_matrix=c_jacobian(m))
   if !isnothing(c.q)
     setquat!(c.q, q=I)
   end
@@ -276,7 +276,7 @@ end
 
 function ci_map(m::DAMap)
   cinv=zero(complex(typeof(m)), m)
-  setray!(cinv.v, x_matrix=ci_jacobian(m))
+  setray!(cinv.v, v_matrix=ci_jacobian(m))
   if !isnothing(cinv.q)
     setquat!(cinv.q, q=I)
   end

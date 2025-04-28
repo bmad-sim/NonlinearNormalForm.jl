@@ -255,7 +255,7 @@ function $t(;
   np::Union{Integer,Nothing}=nothing,
   v0::Union{AbstractVector,Nothing}=nothing,
   v::Union{AbstractVector,Nothing}=nothing,
-  x_matrix::Union{AbstractMatrix,UniformScaling,Nothing}=nothing,
+  v_matrix::Union{AbstractMatrix,UniformScaling,Nothing}=nothing,
   q::Union{Quaternion,AbstractVector,UniformScaling,Nothing}=nothing,
   q_map::Union{AbstractMatrix,Nothing}=nothing,
   s::Union{AbstractMatrix,Nothing}=nothing,
@@ -280,9 +280,9 @@ function $t(;
     elseif !isnothing(v)
       # Coast check
       coast = check_coast(v)
-    elseif x_matrix isa AbstractMatrix
-      nv = size(x_matrix, 1)
-      if all(t->t ≈ 0, view(x_matrix, nv, 1:nv-1)) && x_matrix[nv,nv] ≈ 1
+    elseif v_matrix isa AbstractMatrix
+      nv = size(v_matrix, 1)
+      if all(t->t ≈ 0, view(v_matrix, nv, 1:nv-1)) && v_matrix[nv,nv] ≈ 1
         coast = true
       end
     elseif !isnothing(s)
@@ -301,10 +301,9 @@ function $t(;
 
 
   if isnothing(np)
+    np = ndiffs(init) - nv
     if coast
-      np = 1
-    else
-      np = 0
+      np += 1
     end
   end
 
@@ -348,7 +347,7 @@ function $t(;
     out_m.v0 .= v0
   end
 
-  setray!(out_m.v, v=v, x_matrix=x_matrix)
+  setray!(out_m.v, v=v, v_matrix=v_matrix)
   if !isnothing(out_m.q) && !isnothing(q)
     setquat!(out_m.q, q=q, q_map=q_map)
   end
@@ -556,7 +555,7 @@ function _pow!(
   if n == 0
     clear!(m)
     m.v0 .= m1.v0
-    setray!(m, x_matrix=I)
+    setray!(m, v_matrix=I)
     if !isnothing(m.q)
       setquat!(m, q=I)
     end

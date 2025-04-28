@@ -114,6 +114,7 @@ include("sanity.jl")
 include("operators.jl")
 include("methods.jl")
 include("normal.jl")
+include("lattice_functions.jl")
 
 
 #include("staticarrays.jl")

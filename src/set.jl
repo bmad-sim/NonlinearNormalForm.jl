@@ -4,8 +4,8 @@
 function setray!(
   r::AbstractArray{<:T}; 
   v::Union{AbstractVector,Nothing}=nothing,
-  x_matrix::Union{AbstractMatrix,UniformScaling,Nothing}=nothing,
-  x_matrix_offset::Integer=0,
+  v_matrix::Union{AbstractMatrix,UniformScaling,Nothing}=nothing,
+  v_matrix_offset::Integer=0,
 ) where {T}
   TI.is_tps_type(T) isa TI.IsTPSType || error("Orbital ray element type must be a truncated power series type supported by `TPSAInterface.jl`")
 
@@ -16,18 +16,18 @@ function setray!(
     foreach((out_xi, xi)->copy!(out_xi, xi), view(r, 1:length(v)), v)
   end
 
-  if !isnothing(x_matrix)
-    if x_matrix isa AbstractMatrix # Map as a matrix:
-      Base.require_one_based_indexing(x_matrix)
-      size(x_matrix,1) <= length(r) || error("Number of rows of `x_matrix` cannot be greater than the length of output vector `r`!")
-      size(x_matrix,2) <= nmonos(first(r))-1-x_matrix_offset || error("Number of columns of `x_matrix` cannot be greater than the number of monomial coefficients in the TPSA - x_matrix_offset")
-      for varidx in 1:size(x_matrix,1)
-        for monoidx in 1:size(x_matrix,2)
-          TI.seti!(r[varidx], x_matrix[varidx,monoidx], monoidx+x_matrix_offset)
+  if !isnothing(v_matrix)
+    if v_matrix isa AbstractMatrix # Map as a matrix:
+      Base.require_one_based_indexing(v_matrix)
+      size(v_matrix,1) <= length(r) || error("Number of rows of `v_matrix` cannot be greater than the length of output vector `r`!")
+      size(v_matrix,2) <= nmonos(first(r))-1-v_matrix_offset || error("Number of columns of `v_matrix` cannot be greater than the number of monomial coefficients in the TPSA - v_matrix_offset")
+      for varidx in 1:size(v_matrix,1)
+        for monoidx in 1:size(v_matrix,2)
+          TI.seti!(r[varidx], v_matrix[varidx,monoidx], monoidx+v_matrix_offset)
         end
       end
     else # Uniform scaling: Making identity map
-      x_matrix_offset == 0 || error("`x_matrix_offset` must be zero for `UniformScaling` `x_matrix`")
+      v_matrix_offset == 0 || error("`v_matrix_offset` must be zero for `UniformScaling` `v_matrix`")
       for varidx in 1:length(r)
         for monoidx in 1:length(r)
           if varidx == monoidx

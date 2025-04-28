@@ -95,10 +95,10 @@ end
 
     # 3D coasting beam
     a = read_fpp_map("factorize2/a.map",coast=true,spin=true)
-    as_fpp = read_fpp_map("factorize2/as.map")
+    as_fpp = read_fpp_map("factorize2/as.map",coast=true,spin=true)
     a0_fpp = read_fpp_map("factorize2/a0.map",coast=true,spin=true)
-    a1_fpp = read_fpp_map("factorize2/a1.map")
-    a2_fpp = read_fpp_map("factorize2/a2.map")
+    a1_fpp = read_fpp_map("factorize2/a1.map",coast=true,spin=true)
+    a2_fpp = read_fpp_map("factorize2/a2.map",coast=true,spin=true)
     
     as, a0, a1, a2 = factorize(a)
     @test norm(a0-a0_fpp) < tol
