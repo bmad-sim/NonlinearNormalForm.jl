@@ -11,20 +11,14 @@ function compute_lattice_functions(a1::DAMap{V0}) where {V0<:StaticArray}
   # ip_mat[i] in FPP is identity matrix restricted to i-th plane
   # jt_mat in FPP is symplectic s matrix
 
-  a1_mat = parametric_jacobian(a1)
-
-  #a1i_mat::(typeof(a1_mat)) = zero(a1_mat)
-  #if iseven(length(V0))
-  #  a1i_mat = inv(a1_mat)
-  #else
-    a1i_mat = parametric_jacobian(inv(a1))
-  #end
-  nv = isodd(length(V0)) ? length(V0)+1 : length(V0)
-  B = StaticArrays.sacollect(SVector{Int(nv/2)}, 
-  begin
-    a1_mat*jp_mat(a1, i)*a1i_mat
-  end for i in 1:Int(nv/2))
-    return B
+  let a1_mat = parametric_jacobian(a1), a1i_mat = iseven(length(V0)) ? inv(a1_mat) : parametric_jacobian(inv(a1))
+    nhv = nhvars(a1) 
+    B = StaticArrays.sacollect(SVector{Int(nhv/2),typeof(a1_mat)}, a1_mat*jp_mat(a1, i)*a1i_mat for i in 1:Int(nhv/2))
+    K = StaticArrays.sacollect(SVector{Int(nhv/2),typeof(a1_mat)}, -j_mat(a1)*B[i] for i in 1:Int(nhv/2))
+    E = StaticArrays.sacollect(SVector{Int(nhv/2),typeof(a1_mat)}, -B[i]*j_mat(a1) for i in 1:Int(nhv/2))
+    H = StaticArrays.sacollect(SVector{Int(nhv/2),typeof(a1_mat)}, a1_mat*ip_mat(a1, i)*a1i_mat for i in 1:Int(nhv/2))
+    return LatticeFunctions(H,B,E,K)
+  end
   
 #=
   if V0 <: StaticArray
@@ -64,29 +58,26 @@ end
 
 function parametric_jacobian(a1::DAMap{V0,V}) where {V0<:StaticArray,V}
   if nparams(a1) == 0
-    return jacobian(a1, VARS) # scalar part
+    return jacobian(a1, HVARS) # scalar part
   else
-    nv = isodd(length(V0)) ? length(V0)+1 : length(V0)
-    return StaticArrays.sacollect(SMatrix{nv,nv,eltype(V)}, 
+    nhv = nhvars(a1) #isodd(length(V0)) ? length(V0)+1 : length(V0)
+    return StaticArrays.sacollect(SMatrix{nhv,nhv,eltype(V)}, 
     begin
       t = zero(a1.v[row])
       TI.deriv!(t, a1.v[row], col)  
       t
-    end for col in 1:nv for row in 1:nv)
+    end for col in 1:nhv for row in 1:nhv)
   end
 end
 
 function parametric_jacobian(a1::DAMap) 
   if nparams(a1) == 0
-    return jacobian(a1, VARS) # scalar part
+    return jacobian(a1, HVARS) # scalar part
   else
-    nv = nvars(a1)
-    if isodd(nv)
-      nv += 1
-    end
-    M = zeros(eltype(a1.v), nv, nv)
-    for col in 1:nv
-      for row in 1:nv
+    nhv = nhvars(a1)
+    M = zeros(eltype(a1.v), nhv, nhv)
+    for col in 1:nhv
+      for row in 1:nhv
         t = zero(a1.v[row])
         TI.deriv!(t, a1.v[row], col)  
         M[row, col] = t
@@ -99,8 +90,8 @@ end
 # =================================================================================== #
 # Construct special matrices for lattice functions
 function ip_mat(m::DAMap{V0}, i) where {V0<:StaticArray}
-  nv = isodd(length(V0)) ? length(V0)+1 : length(V0)
-  return StaticArrays.sacollect(SMatrix{nv,nv,real(eltype(V0))}, 
+  nhv = nhvars(m)
+  return StaticArrays.sacollect(SMatrix{nhv,nhv,real(eltype(V0))}, 
   begin
     if col == 2*i-1 && row == 2*i-1
       1
@@ -109,52 +100,42 @@ function ip_mat(m::DAMap{V0}, i) where {V0<:StaticArray}
     else
       0
     end
-  end for col in 1:nv for row in 1:nv)
+  end for col in 1:nhv for row in 1:nhv)
 end
 
 function ip_mat(m::DAMap, i)
-  nv = nvars(m)
-  if isodd(nv)
-    nv += 1
-  end
-  ip = zeros(real(eltype(m.v0)), nv, nv)
+  nhv = nhvars(m)
+  ip = zeros(real(eltype(m.v0)), nhv, nhv)
   ip[2*i-1, 2*i-1] = 1
   ip[2*i, 2*i] = 1
   return ip
 end
 
 function jp_mat(m::DAMap{V0}, i) where {V0<:StaticArray}
-  nv = isodd(length(V0)) ? length(V0)+1 : length(V0)
-  coast = isodd(length(V0))
-  coast_plane = coast && i == Int(nv/2)
-  return StaticArrays.sacollect(SMatrix{nv,nv,real(eltype(V0))}, 
+  nhv = nhvars(m)
+  return StaticArrays.sacollect(SMatrix{nhv,nhv,real(eltype(V0))}, 
   begin
     if col == 2*i && row == 2*i-1
       1
-    elseif col == 2*i-1 && row == 2*i && !coast_plane
+    elseif col == 2*i-1 && row == 2*i 
       -1
     else
       0
     end
-  end for col in 1:nv for row in 1:nv)
+  end for col in 1:nhv for row in 1:nhv)
 end
 
 function jp_mat(m::DAMap, i)
-  nv = nvars(m)
-  if isodd(nv)
-    nv += 1
-  end
-  jp = zeros(real(eltype(m.v0)), nv, nv)
+  nhv = nhvars(m)
+  jp = zeros(real(eltype(m.v0)), nhv, nhv)
   jp[2*i-1, 2*i] = 1
-  if !iscoasting(m) || i != Int(nv/2)
-    jp[2*i, 2*i-1] = -1
-  end
+  jp[2*i, 2*i-1] = -1
   return jp
 end
 
 function j_mat(m::DAMap{V0}) where {V0<:StaticArray}
-  nv = isodd(length(V0)) ? length(V0)+1 : length(V0)
-  return StaticArrays.sacollect(SMatrix{nv,nv,real(eltype(V0))}, 
+  nhv = nhvars(m)
+  return StaticArrays.sacollect(SMatrix{nhv,nhv,real(eltype(V0))}, 
   begin
     if fld1(col,2) != fld1(row,2) 
       0
@@ -167,16 +148,16 @@ function j_mat(m::DAMap{V0}) where {V0<:StaticArray}
         0
       end
     end
-  end for col in 1:nv for row in 1:nv)
+  end for col in 1:nhv for row in 1:nhv)
 end
 
 function j_mat(m::DAMap)
-  nv = nvars(m)
-  if isodd(nv)
-    nv += 1
+  nhv = nhvars(m)
+  if isodd(nhv)
+    nhv += 1
   end
-  j = zeros(real(eltype(m.v0)), nv, nv)
-  for i in 1:Int(nv/2)
+  j = zeros(real(eltype(m.v0)), nhv, nhv)
+  for i in 1:Int(nhv/2)
     j[2*i-1, 2*i] = 1
     j[2*i, 2*i-1] = -1
   end
