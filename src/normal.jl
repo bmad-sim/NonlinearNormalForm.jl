@@ -607,7 +607,7 @@ end
 
 # Returns the rotation map to put a in Courant Snyder form 
 # The phase advance can be acquired from this map by atan(r11,r22), etc etc
-function fast_canonize(a::DAMap, damping::Bool=!isnothing(a.s))
+function fast_canonize(a::DAMap, damping::Bool=!isnothing(a.s); phase=nothing)
   nv = nvars(a)
   nhv = nhvars(a)
   coast = iscoasting(a)
@@ -633,7 +633,9 @@ function fast_canonize(a::DAMap, damping::Bool=!isnothing(a.s))
     TI.seti!(canonizer.v[2*i-1], -sphi, 2*i)
     TI.seti!(canonizer.v[2*i],    sphi, 2*i-1)
 
-    #phase[i] += atan(sphi,cphi)/(2*pi)
+    if !isnothing(phase)
+      phase[i] += atan(sphi,cphi)/(2*pi)
+    end
   end
 
   if coast
@@ -641,8 +643,10 @@ function fast_canonize(a::DAMap, damping::Bool=!isnothing(a.s))
     ndpt = nv + 1
     TI.seti!(canonizer.v[nt], 1, nt)
     TI.seti!(canonizer.v[ndpt], 1, ndpt)
-    TI.seti!(canonizer.v[nt], -a_matrix[nt,ndpt], ndpt)
-    #phase[end] += a_matrix[nt,ndpt]
+    TI.seti!(canonizer.v[nt], -TI.geti(a.v[nt], ndpt), ndpt)
+    if !isnothing(phase)
+      phase[end] += -TI.geti(a.v[nt], ndpt)
+    end
   end
   #a_rot = a_matrix*ri
   #return a_rot

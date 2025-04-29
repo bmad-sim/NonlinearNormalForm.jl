@@ -79,7 +79,9 @@ export        TaylorMap,
 
               inv_with_log,
               equilibrium_moments,
-              factorize
+              factorize,
+              fast_canonize,
+              compute_lattice_functions
 
 
 # After experimenting I have found MVector

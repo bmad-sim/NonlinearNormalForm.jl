@@ -302,13 +302,10 @@ function $t(;
 
   if isnothing(np)
     np = ndiffs(init) - nv
-    if coast
-      np += 1
-    end
   end
 
 
-  #sprintln(nv)
+  #println(nv)
   #println(np)
   
   #println(np)

@@ -6,58 +6,99 @@ struct LatticeFunctions{S}
 end
 
 
-function compute_lattice_functions(a1::DAMap{V0}) where {V0<:StaticArray}
+function compute_lattice_functions(a1::DAMap{V0}, ::Val{linear}=Val{false}()) where {V0<:StaticArray,linear}
   # jp_mat[i] in FPP is J matrix restricted to i-th plane
   # ip_mat[i] in FPP is identity matrix restricted to i-th plane
   # jt_mat in FPP is symplectic s matrix
-
-  let a1_mat = parametric_jacobian(a1), a1i_mat = iseven(length(V0)) ? inv(a1_mat) : parametric_jacobian(inv(a1))
-    nhv = nhvars(a1) 
-    B = StaticArrays.sacollect(SVector{Int(nhv/2),typeof(a1_mat)}, a1_mat*jp_mat(a1, i)*a1i_mat for i in 1:Int(nhv/2))
-    K = StaticArrays.sacollect(SVector{Int(nhv/2),typeof(a1_mat)}, -j_mat(a1)*B[i] for i in 1:Int(nhv/2))
-    E = StaticArrays.sacollect(SVector{Int(nhv/2),typeof(a1_mat)}, -B[i]*j_mat(a1) for i in 1:Int(nhv/2))
-    H = StaticArrays.sacollect(SVector{Int(nhv/2),typeof(a1_mat)}, a1_mat*ip_mat(a1, i)*a1i_mat for i in 1:Int(nhv/2))
-    return LatticeFunctions(H,B,E,K)
-  end
-  
-#=
-  if V0 <: StaticArray
-
+  nhv = nhvars(a1) 
+  if linear
+    let a1_mat = parametric_jacobian(a1, Val{linear}()), a1i_mat = inv(a1_mat)
+      B = StaticArrays.sacollect(SVector{Int(nhv/2),typeof(a1_mat)}, a1_mat*jp_mat(a1, i)*a1i_mat for i in 1:Int(nhv/2))
+      K = StaticArrays.sacollect(SVector{Int(nhv/2),typeof(a1_mat)}, -j_mat(a1)*B[i] for i in 1:Int(nhv/2))
+      E = StaticArrays.sacollect(SVector{Int(nhv/2),typeof(a1_mat)}, -B[i]*j_mat(a1) for i in 1:Int(nhv/2))
+      H = StaticArrays.sacollect(SVector{Int(nhv/2),typeof(a1_mat)}, a1_mat*ip_mat(a1, i)*a1i_mat for i in 1:Int(nhv/2))
+      return LatticeFunctions(H,B,E,K)
+    end
   else
-
+    # For TPSA it is faster to first compose the maps then extract the parametric lattice functions
+    let
+      tmp = zero(a1)
+      a1i = inv(a1)
+      B = StaticArrays.sacollect(SVector{Int(nhv/2)}, begin
+        setray!(tmp.v, v_matrix=jp_mat(a1, i))
+        a1∘tmp∘a1i
+      end for i in 1:Int(nhv/2)
+      )
+      setray!(tmp.v, v_matrix=-j_mat(a1))
+      K = StaticArrays.sacollect(SVector{Int(nhv/2)}, begin
+        tmp∘B[i]
+      end for i in 1:Int(nhv/2)
+      )
+      E = StaticArrays.sacollect(SVector{Int(nhv/2)}, begin
+        B[i]∘tmp
+      end for i in 1:Int(nhv/2)
+      )
+      H = StaticArrays.sacollect(SVector{Int(nhv/2)}, begin
+        setray!(tmp.v, v_matrix=ip_mat(a1, i))
+        a1∘tmp∘a1i
+      end for i in 1:Int(nhv/2)
+      )
+      return LatticeFunctions(parametric_jacobian.(H), 
+                              parametric_jacobian.(B),
+                              parametric_jacobian.(E),
+                              parametric_jacobian.(K))
+    end
   end
-
-
-  
-  # Computing the de Moivre Lattice Functions
-  # equivalent to Ripken ones
-  # Coefficients of vector field matrices  B**2=-H
-  #=
-     do i = 1,3 ! jp_mat is symplectic J matrix (I call S matrix)
-      f%B(i,:,:)=matmul(matmul(m%mat,jp_mat(i,:,:)),mi%mat)
-     enddo
-
-!!!! Coefficients of invariants
-      do i = 1,3
-      f%K(i,:,:)= -matmul(jt_mat,f%B(i,:,:))
-     enddo
-!!!! Coefficient of moments as functions of emittances
-     do i = 1,3
-      f%E(i,:,:)= -matmul(f%B(i,:,:),jt_mat)
-     enddo
-!!!!  Dispersive quantities containing zeta and eta for example
-!!!!  as well as \gamma C of Teng-Edwards
-     do i = 1,3
-      f%H(i,:,:)=matmul(matmul(m%mat,ip_mat(i,:,:)),mi%mat)
-     enddo
-     =#
-
-
-=#
 end
 
-function parametric_jacobian(a1::DAMap{V0,V}) where {V0<:StaticArray,V}
-  if nparams(a1) == 0
+function compute_lattice_functions(a1::DAMap, ::Val{linear}=Val{false}()) where {linear}
+  # jp_mat[i] in FPP is J matrix restricted to i-th plane
+  # ip_mat[i] in FPP is identity matrix restricted to i-th plane
+  # jt_mat in FPP is symplectic s matrix
+  nhv = nhvars(a1) 
+  if linear
+    let a1_mat = parametric_jacobian(a1, Val{linear}()), a1i_mat = inv(a1_mat)
+      B = [a1_mat*jp_mat(a1, i)*a1i_mat for i in 1:Int(nhv/2)]
+      K = [-j_mat(a1)*B[i] for i in 1:Int(nhv/2)]
+      E = [-B[i]*j_mat(a1) for i in 1:Int(nhv/2)]
+      H = [a1_mat*ip_mat(a1, i)*a1i_mat for i in 1:Int(nhv/2)]
+      return LatticeFunctions(H,B,E,K)
+    end
+  else
+    # For TPSA it is faster to first compose the maps then extract the parametric lattice functions
+    let
+      tmp = zero(a1)
+      a1i = inv(a1)
+      B = [begin
+        setray!(tmp.v, v_matrix=jp_mat(a1, i))
+        a1∘tmp∘a1i
+      end for i in 1:Int(nhv/2)
+      ]
+      setray!(tmp.v, v_matrix=-j_mat(a1))
+      K = [begin
+        tmp∘B[i]
+      end for i in 1:Int(nhv/2)
+      ]
+      E = [begin
+        B[i]∘tmp
+      end for i in 1:Int(nhv/2)
+      ]
+      H = [begin
+        setray!(tmp.v, v_matrix=ip_mat(a1, i))
+        a1∘tmp∘a1i
+      end for i in 1:Int(nhv/2)
+      ]
+      return LatticeFunctions(parametric_jacobian.(H), 
+                              parametric_jacobian.(B),
+                              parametric_jacobian.(E),
+                              parametric_jacobian.(K))
+    end
+  end
+end
+
+
+function parametric_jacobian(a1::DAMap{V0,V}, ::Val{linear}=Val{false}()) where {V0<:StaticArray,V,linear}
+  if linear || nparams(a1) == 0
     return jacobian(a1, HVARS) # scalar part
   else
     nhv = nhvars(a1) #isodd(length(V0)) ? length(V0)+1 : length(V0)
@@ -70,8 +111,8 @@ function parametric_jacobian(a1::DAMap{V0,V}) where {V0<:StaticArray,V}
   end
 end
 
-function parametric_jacobian(a1::DAMap) 
-  if nparams(a1) == 0
+function parametric_jacobian(a1::DAMap, ::Val{linear}=Val{false}()) where {linear}
+  if linear || nparams(a1) == 0
     return jacobian(a1, HVARS) # scalar part
   else
     nhv = nhvars(a1)

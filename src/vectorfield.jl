@@ -203,7 +203,7 @@ function lb!(
   H::VectorField; 
   work_q::Union{Nothing,Quaternion}= isnothing(G.q) ? nothing : zero(G.q)
 )
-  checkinplace(G, F, H)
+  #checkinplace(G, F, H)
   @assert !(G === F) && !(G === H) "Aliasing any source arguments with the destination in lb! is not allowed"
 
   # Orbital part (Eq. 44.51 in Bmad manual, handled by GTPSA):

@@ -27,18 +27,20 @@ abstract type OptionType end
 struct HarmonicVariables <: OptionType end  # e.g. 4x4 matrix
 struct CoastVariables <: OptionType end # e.g. 1x5 matrix
 struct Variables <: OptionType end # e.g. 4x4 or 5x5 (coasting beam) matrix
-struct HarmonicVariablesAndParameters <: OptionType end # e.g. 4 v (nv+np) matrix
-struct CoastVariablesAndParameters <: OptionType end # e.g. 1 v (nv+np) matrix
-struct VariablesAndParameters <: OptionType end # eg. 5 v np (coasting beam) matrix
-struct Parameters <: OptionType end # e.g. 5 v np matrix
-struct HarmonicParameters <: OptionType end # e.g. 4 v np matrix
-struct CoastParameters <: OptionType end # e.g. 1 v np matrix
+struct HarmonicVariablesAndParameters <: OptionType end # e.g. 4 x (nv+np) matrix
+struct VariablesAndCoastParameter <: OptionType end # e.g. 5 x 6 matrix 
+struct CoastVariablesAndParameters <: OptionType end # e.g. 1 x (nv+np) matrix
+struct VariablesAndParameters <: OptionType end # eg. 5 x np (coasting beam) matrix
+struct Parameters <: OptionType end # e.g. 5 x np matrix
+struct HarmonicParameters <: OptionType end # e.g. 4 x np matrix
+struct CoastParameters <: OptionType end # e.g. 1 x np matrix
 struct All <: OptionType end
 
 const HVARS = HarmonicVariables()
 const CVARS = CoastVariables()
 const VARS = Variables()
 const HVARS_PARAMS = HarmonicVariablesAndParameters()
+const VARS_CPARAM  = VariablesAndCoastParameter()
 const CVARS_PARAMS = CoastVariablesAndParameters()
 const VARS_PARAMS = VariablesAndParameters()
 const PARAMS = Parameters()
@@ -65,6 +67,11 @@ const ALL = All()
   elseif T == HarmonicVariablesAndParameters
     nrows = nhvars(m)
     ncols = ndiffs(m)
+    row_start = 1
+    col_start = 1
+  elseif T == VariablesAndCoastParameter
+    nrows = nvars(m) + (isodd(nvars(m)) ? 1 : 0)
+    ncols = nvars(m) + (isodd(nrows) ? 1 : 0)
     row_start = 1
     col_start = 1
   elseif T == CoastVariablesAndParameters
