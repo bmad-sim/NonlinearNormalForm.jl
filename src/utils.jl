@@ -71,7 +71,7 @@ const ALL = All()
     col_start = 1
   elseif T == VariablesAndCoastParameter
     nrows = nvars(m) + (isodd(nvars(m)) ? 1 : 0)
-    ncols = nvars(m) + (isodd(nrows) ? 1 : 0)
+    ncols = nrows
     row_start = 1
     col_start = 1
   elseif T == CoastVariablesAndParameters
