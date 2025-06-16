@@ -4,7 +4,7 @@ Special quaternion routines for NonlinearNormalForm
 
 =#
 
-# TO-DO: use MQuaternion (mutable quaternion) so only 1 vectorized compose! call
+# TO-DO: use MQuaternion (mutable quaternion) when ready
 function TI.compose!(q::Quaternion, q1::Quaternion, m1::AbstractArray)
   qt = SA[q.q0, q.q1, q.q2, q.q3]
   q1 = SA[q1.q0, q1.q1, q1.q2, q1.q3]
@@ -46,7 +46,7 @@ function exp(q1::Quaternion{T}) where {T}
   q = Quaternion{T}(1,0,0,0)
   for j in 1:nmax
     q = q*q1/j
-    q_out .+= q
+    q_out += q
 
     nrm = norm(TI.norm_tps(q.q0) + TI.norm_tps(q.q1) + TI.norm_tps(q.q2) + TI.norm_tps(q.q3))
     if nrm <= nrm_min2 || conv && nrm >= nrm_ # done

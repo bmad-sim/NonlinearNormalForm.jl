@@ -207,10 +207,6 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
 
   a = a0 ∘ a1 ∘ c ∘ an ∘ ci
 
-  #return a
-
-  #return m1
-
   # Fully nonlinear map in regular basis
 
   if !isnothing(m.q)
@@ -221,26 +217,29 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
 
     # The choice here is 
     # We do a cross product of n0 and yhat:
-    Q0 = Quaternion(scalar.(m1.q))
-    n0 = [Q0.q1, Q0.q2, Q0.q3]/sqrt(Q0.q1^2 + Q0.q2^2 + Q0.q3^2)
-    alpha = acos(n0[2]) #atan(real(sqrt(n0[1]^2 + n0[3]^2)), real(n0[2]))
+    n0 = TI.scalar.(vect(m1.q))
+    n0 = n0/norm(n0) # normalize to 1
+    alpha = acos(n0[2])
 
     nrm = sqrt(n0[1]^2+n0[3]^2)
-    Qr = Quaternion(cos(alpha/2), sin(alpha/2)*n0[3]/nrm, 0, -sin(alpha/2)*n0[1]/nrm)
+    qr = Quaternion(cos(alpha/2), sin(alpha/2)*n0[3]/nrm, 0, -sin(alpha/2)*n0[1]/nrm)
     # now concatenate m1:
-    as = DAMap(Q=Qr)
-    m1 = inv(as)*m1*as # == Quaternion(scalar.(Qr*m.q*inv(Qr)))
-    nu0 = 2*acos(scalar(m1.q.q0))  # closed orbit spin tune ( i guess we could have gotten this earlier?)
+    aspin = one(m)
+    setquat!(aspin.q, q=qr)
+    m1 = inv(aspin) ∘ m1 ∘ aspin # == Quaternion(scalar.(Qr*m.q*inv(Qr)))
+    nu0 = 2*acos(TI.scalar(m1.q.q0))  # closed orbit spin tune ( i guess we could have gotten this earlier?)
     # it is equal to  2*acos(Quaternion(scalar.(m.q)).q0) (i.e. before transforming)
     # Now we start killing the spin. The first step is to start with a map 
     # (identity in orbital because we are done with orbital) that does this zero order rotation
-    Qr_inv = DAMap(Q=inv(Quaternion(scalar.(m1.q))))
+    qr_inv = one(m)
+    setquat!(qr_inv.q, q=inv(Quaternion(TI.scalar.(m1.q))))
     # Now store analogous to eg -> egspin
-    egspin = SVector(cos(nu0)+im*sin(nu0), 1, cos(nu0)-im*sin(nu0))
+    egspin = SA[cos(nu0)+im*sin(nu0), 1, cos(nu0)-im*sin(nu0)]
 
     for i in 1:mo
       # get rid of ℛ:
-      linandnonl = m1 ∘ Qr_inv
+      # linandnonl = m1.q(I)*qr_inv.q
+      linandnonl = m1 ∘ qr_inv
       
       # leaves 1st, 2nd, 3rd, etc terms
       
@@ -253,58 +252,46 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
       
       # vector part:
       # _s = _something bc I'm only partially understanding this 
-      n_s = linandnonl.q[2:4]
+      n_s = vect(linandnonl.q)
 
       # Now we go into eigen-operators of spin 
       # so we can identify the terms to kill much more easily
-      nr_s = [n_s[1]-im*n_s[3], n_s[2], n_s[1]+im*n_s[3]]
-      nr_s = GTPSA.compose(nr_s,R_inv.v)
-      na = ComplexTPS64[0,0,0]
+      nr0_s = MVector(n_s[1]-im*n_s[3], n_s[2], n_s[1]+im*n_s[3])
+      nr_s = zero.(nr0_s)
+      nr_s = TI.compose!(nr_s, nr0_s, ri.v)
+      na = nr0_s
+      TI.clear!.(na)
 
       # now kill the terms
       for j in 1:3
-        v = Ref{ComplexF64}()
-        ords = Vector{UInt8}(undef, nn)
-        idx = GTPSA.cycle!(nr_s[j], 0, nn, ords, v) 
+        idx = TI.cycle!(nr_s[j], 0, mono=tmpmono, val=v)
+        ords .= tmpmono
         while idx > 0
           # We remove every term in v and z, tune shifts will only be left in y component
           # because of how we defined everything
           # NOTE SPIN RESONANCES WILL HAPPEN WHEN j != 2 SO WE CHECK THAT FIRST!!
           if !is_spin_resonance(j, ords, nhv, res, spin_res) && (j != 2 || !is_tune_shift(j, ords, nhv, true)) # then remove it, note spin components are like hamiltonian
             lam = egspin[j]
-            for k in  1:nhv # ignore coasting plane
-              lam *= conj(eg[k])^ords[k]
+            for k in 1:nhv # ignore coasting plane
+              lam *= eg[k]^ords[k]
             end
-            na[j] += mono(ords,use=getdesc(m1))*v[]/(1-lam)
-          else
-            println("keeping monomial ", Vector{Int}(ords), ", v = ", v[])
+            TI.setm!(na[j], v[]/(1-lam), tmpmono)
           end
-  
-          idx = GTPSA.cycle!(nr_s[j], idx, nn, ords, v)
+          idx = TI.cycle!(nr_s[j], idx, mono=tmpmono, val=v)
         end
-        println("==================================")
       end
-      # Now exit the basis
-      na = [(na[1]+na[3])/2, na[2], im*(na[1]-na[3])/2]
+      # Now exit the basis and exponentiate
+      na = SA[(na[1]+na[3])/2, na[2], im*(na[1]-na[3])/2]
+      qnr = one(m)
+      setquat!(qnr.q, q=exp(Quaternion(0,na)))
 
-      
-      # Exponentiate this part now
-      Qnr = DAMap(Q=exp(Quaternion(0,na...)))
-      as = as*Qnr # put in normalizing map
-      m1 = inv(Qnr)*m1*Qnr # kill the terms in m1
+      aspin = aspin ∘ qnr # put in normalizing map
+      m1 = inv(qnr) ∘ m1 ∘ qnr # kill the terms in m1
     end
-    a = a*c*as*c^-1
+    a = a ∘ c ∘ aspin ∘ ci
   end
 
   return real(a)
-  #return as
-  #return NormalForm(a,eg)
-  
-   
-
-
-  #return an
-  #return NormalForm(a0 ∘ a1 ∘ an, eg)
 end
 
 
@@ -336,8 +323,6 @@ function factorize(a)
     nt = nv
     ndpt = nv+1
     id = one(a)
-    #if mo == 1 # Then we can do it super quickly using the matrices
-    #else # we need to fully exponentiate
     vf = VectorField(v=view(a0.v, 1:nv), q=a0.q)
     TI.clear!(vf.v[nt])
     t1 = zero(vf.v[nt])
@@ -521,7 +506,7 @@ function is_spin_resonance(spinidx, ords, nhv, res, spin_res)
   end
   je = convert(Vector{Int}, ords)
 
-  @assert size(res, 2) == length(spin_res) "Number of resonances in spin_res != number of resonances in res"
+  size(res, 2) == length(spin_res) || error("Number of resonances in spin_res != number of resonances in res")
 
   for curresidx in 1:size(res, 2) # for each res in the family
     t1 = 0

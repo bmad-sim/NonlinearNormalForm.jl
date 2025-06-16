@@ -106,6 +106,13 @@ end
     @test norm(a2-a2_fpp) < tol
     @test norm(as-as_fpp) < tol
 
+    # spin
+    m = read_fpp_map("spin1/test.map",spin=true)
+    R_fpp = read_fpp_map("spin1/R.map",spin=true)
+    c = c_map(m)
+    a = normal(m)
+    @test norm(inv(c)*inv(a)*m*a*c - R_fpp) < 1e-9
+
 #=
     # Spin resonance
     # WHEN LEAVING RESONANCES IN THE MAP, the PHASE of the normal 

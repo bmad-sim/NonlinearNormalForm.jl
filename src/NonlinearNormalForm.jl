@@ -34,7 +34,7 @@ using LinearAlgebra,
       StaticArrays,
       DelimitedFiles
       
-using ReferenceFrameRotations: Quaternion
+using ReferenceFrameRotations: Quaternion, vect
 
 export        TaylorMap, 
               Quaternion,    
@@ -117,37 +117,5 @@ include("operators.jl")
 include("methods.jl")
 include("normal.jl")
 include("lattice_functions.jl")
-
-
-#include("staticarrays.jl")
-#=
-include("utils/matrix.jl")
-include("utils/symplectic_s.jl")
-include("sanity.jl")
-
-include("methods.jl")
-include("operators.jl")
-
-
-include("map/compose.jl")
-include("map/inv.jl")
-include("map/map_methods.jl")
-include("map/map_operators.jl")
-
-
-include("vectorfield/ctors.jl")
-include("vectorfield/vf_methods.jl")
-
-include("work.jl")
-include("normal.jl")
-
-include("utils/misc.jl")
-=#
-#include("show.jl")
-
-
-
-
-
 
 end
