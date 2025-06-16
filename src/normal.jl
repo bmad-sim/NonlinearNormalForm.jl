@@ -258,15 +258,15 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
       # so we can identify the terms to kill much more easily
       nr0_s = MVector(n_s[1]-im*n_s[3], n_s[2], n_s[1]+im*n_s[3])
       nr_s = zero.(nr0_s)
-      nr_s = TI.compose!(nr_s, nr0_s, ri.v)
+      TI.compose!(nr_s, nr0_s, ri.v)
       na = nr0_s
       TI.clear!.(na)
 
       # now kill the terms
       for j in 1:3
         idx = TI.cycle!(nr_s[j], 0, mono=tmpmono, val=v)
-        ords .= tmpmono
         while idx > 0
+          ords .= tmpmono
           # We remove every term in v and z, tune shifts will only be left in y component
           # because of how we defined everything
           # NOTE SPIN RESONANCES WILL HAPPEN WHEN j != 2 SO WE CHECK THAT FIRST!!
@@ -291,7 +291,7 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
     a = a ∘ c ∘ aspin ∘ ci
   end
 
-  return real(a)
+  return  a #real(a)
 end
 
 
@@ -504,7 +504,6 @@ function is_spin_resonance(spinidx, ords, nhv, res, spin_res)
   if isnothing(res) && isnothing(spin_res)
     return false
   end
-  je = convert(Vector{Int}, ords)
 
   size(res, 2) == length(spin_res) || error("Number of resonances in spin_res != number of resonances in res")
 
@@ -513,8 +512,8 @@ function is_spin_resonance(spinidx, ords, nhv, res, spin_res)
     t2 = 0
     
     for k in  1:2:nhv # ignore coasting plane
-      t1 += abs(je[k]-je[k+1]+res[Int((k+1)/2),curresidx]) 
-      t2 += abs(je[k]-je[k+1]-res[Int((k+1)/2),curresidx]) 
+      t1 += abs(ords[k]-ords[k+1]+res[Int((k+1)/2),curresidx]) 
+      t2 += abs(ords[k]-ords[k+1]-res[Int((k+1)/2),curresidx]) 
     end
 
     m = spin_res[curresidx]
