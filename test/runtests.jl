@@ -40,31 +40,31 @@ end
     # Normal form -------------------------------------
     # 1D all pseudo-harmonic oscillators order 3
     m = read_fpp_map("order2/test.map",spin=false)
-    R_fpp = read_fpp_map("order2/R.map",spin=false)
+    r_fpp = read_fpp_map("order2/R.map",spin=false)
     c = c_map(m)
     a = normal(m)
-    @test norm(inv(c)∘inv(a)∘m∘a∘c - R_fpp) < tol
+    @test norm(inv(c)∘inv(a)∘m∘a∘c - r_fpp) < tol
 
     # 1D all pseudo-harmonic oscillators order 10
     m = read_fpp_map("order10/test.map",spin=false)
-    R_fpp = read_fpp_map("order10/R.map",spin=false)
+    r_fpp = read_fpp_map("order10/R.map",spin=false)
     c = c_map(m)
     a = normal(m)
-    @test norm(inv(c)∘inv(a)∘m∘a∘c - R_fpp) < tol
+    @test norm(inv(c)∘inv(a)∘m∘a∘c - r_fpp) < tol
 
     # 2D all pseudo-harmonic oscillators order 6
     m = read_fpp_map("order6var4/test.map",spin=false)
-    R_fpp = read_fpp_map("order6var4/R.map",spin=false)
+    r_fpp = read_fpp_map("order6var4/R.map",spin=false)
     c = c_map(m)
     a = normal(m)
-    @test norm(inv(c)∘inv(a)∘m∘a∘c - R_fpp) < 2e-8
+    @test norm(inv(c)∘inv(a)∘m∘a∘c - r_fpp) < 2e-8
 
     # 3D coasting last plane order 3
     m = read_fpp_map("coast/test.map",spin=false,coast=true)
-    R_fpp = read_fpp_map("coast/R.map",spin=false,coast=true)
+    r_fpp = read_fpp_map("coast/R.map",spin=false,coast=true)
     c = c_map(m)
     a = normal(m)
-    @test norm(inv(c)∘inv(a)∘m∘a∘c - R_fpp) < tol
+    @test norm(inv(c)∘inv(a)∘m∘a∘c - r_fpp) < tol
 
     # Equilibrium moments -----------------------------
     Σ_fpp = [ 0.3799021729309453E-03   0.6751391708793735E-04   0.5210559309521585E-04   0.5356022290151431E-04   0.7855831912608747E-04   0.2787256761813361E-04;
@@ -74,10 +74,10 @@ end
               0.7855831912608744E-04   0.4495800939032603E-04   0.1212047267833649E-03   0.8460461412432579E-04   0.1116532341434929E-03   0.9345624000572918E-04;
               0.2787256761813363E-04  -0.5279019399759087E-05   0.1627981838787403E-03  -0.8485345202908038E-05   0.9345624000572919E-04   0.2503415143184575E-03]
     m = read_fpp_map("radiation/test.map",spin=false)
-    R_fpp = read_fpp_map("radiation/R.map",spin=false)
+    r_fpp = read_fpp_map("radiation/R.map",spin=false)
     c = c_map(m)
     a = normal(m)
-    @test norm(inv(c)*inv(a)*m*a*c - R_fpp) < 1e-9
+    @test norm(inv(c)*inv(a)*m*a*c - r_fpp) < 1e-9
     Σ = equilibrium_moments(m,a)
     @test norm(Σ - Σ_fpp) < tol
 
@@ -106,22 +106,22 @@ end
     @test norm(a2-a2_fpp) < tol
     @test norm(as-as_fpp) < tol
 
-    # spin
-    m = read_fpp_map("spin1/test.map",spin=true)
-    R_fpp = read_fpp_map("spin1/R.map",spin=true)
-    c = c_map(m)
-    a = normal(m)
-    @test norm(inv(c)*inv(a)*m*a*c - R_fpp) < 1e-9
-
-#=
-    # Spin resonance
+    # Spin resonance  (Q_y - Q_s resonance)
     # WHEN LEAVING RESONANCES IN THE MAP, the PHASE of the normal 
-    # form is important!
-    m = read_fpp_map("spin_res/test.map")
-    R_fpp = read_fpp_map("spin_res/R.map")
-    a = normal(m,res=[0; 1], spin_res=[-1])  # Q_y - Q_s resonance
-    =#
+    # form will affect things with the spin. Therefore we need to 
+    # make sure a and a_fpp are in the same phase
+    m = read_fpp_map("spin1/test.map")
+    a_fpp = include("spin1/a.jl")
+    r_fpp = read_fpp_map("spin1/R.map")
+    c = c_map(m)
+    a = normal(m,res=[0; 1], spin_res=[-1])
+    @test norm(TI.norm_tps.((inv(c)*inv(a)*m*a*c).v .- r_fpp.v)) < 4e-9
 
+    R_rot = jacobian(a, NonlinearNormalForm.HVARS)\jacobian(a_fpp, NonlinearNormalForm.HVARS)    
+    r_rot = one(a_fpp)
+    NonlinearNormalForm.setray!(r_rot.v, v_matrix=R_rot)
+    a = a ∘ r_rot
+    @test norm(a - a_fpp) < 2e-7
 
 end
 

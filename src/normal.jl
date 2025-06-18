@@ -102,6 +102,12 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
   a1_inv_matrix = real(c_jacobian(m, HVARS)*transpose(F.vectors))
 
   a1 = one(m)
+  # When you are done fixing, just delete this ==============
+  #a1_inv_matrix = inv([-3.196307243812964 -0.6306736277759015  0.2200172755633192 -0.1686190516324497;
+  #  0.4630451119775905E-01  -0.3003249237341294       0.7304685563736355E-02   0.4378986847577133E-01 ;
+  #  0.6238936300960983E-01  -0.1179852731186713      -0.1119709740149514E-01   -1.884290513233789     ;
+  #  0.6983304712711068E-01   0.4210598484776620E-01   0.5249914852569776       0.9173083532486010E-02 ])
+  ## ============
   setray!(a1.v, v_matrix=inv(a1_inv_matrix))
   
   if mo == 1 
@@ -158,6 +164,7 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
     # compose!(tmps[3], tmps[1], tmps[2], do_stochastic=false) # get rid of kernel
 
     nonl = getord(nonl, i)
+    #setquat!(nonl.q, q=I)
     #getord!(tmps[3], tmps[3], i) # Get only the leading order to stay in symplectic group 
     # nonl = tmps[3]
     # now nonl = ϵ²𝒞₂
@@ -236,11 +243,13 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
     # Now store analogous to eg -> egspin
     egspin = SA[cos(nu0)+im*sin(nu0), 1, cos(nu0)-im*sin(nu0)]
 
+
+
+
     for i in 1:mo
       # get rid of ℛ:
       # linandnonl = m1.q(I)*qr_inv.q
       linandnonl = m1 ∘ qr_inv
-      
       # leaves 1st, 2nd, 3rd, etc terms
       
       # linandnonl contains identity quaternion + delta
@@ -253,7 +262,6 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
       # vector part:
       # _s = _something bc I'm only partially understanding this 
       n_s = vect(linandnonl.q)
-
       # Now we go into eigen-operators of spin 
       # so we can identify the terms to kill much more easily
       nr_s = MVector(n_s[1]-im*n_s[3], n_s[2], n_s[1]+im*n_s[3])
@@ -280,7 +288,6 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
       end
       # Now exit the basis and exponentiate
       na = SA[(na[1]+na[3])/2, na[2], im*(na[1]-na[3])/2]
-      println(na[1])
       qnr = one(m)
       setquat!(qnr.q, q=exp(Quaternion(0,na...)))
 
@@ -290,7 +297,7 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
     a = a ∘ c ∘ aspin ∘ ci
   end
 
-  return  a #real(a)
+  return real(a)
 end
 
 

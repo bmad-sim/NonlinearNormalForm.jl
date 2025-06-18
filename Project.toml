@@ -1,7 +1,7 @@
 name = "NonlinearNormalForm"
 uuid = "05e19671-dec8-4f15-984f-54eaa6ca64be"
 authors = ["Matt Signorelli"]
-version = "1.0.0-DEV"
+version = "0.2.0"
 
 [deps]
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
@@ -26,7 +26,7 @@ Reexport = "1"
 ReferenceFrameRotations = "3"
 SkewLinearAlgebra = "1"
 StaticArrays = "1"
-TPSAInterface = "0.1.0"
+TPSAInterface = "0.2.0"
 julia = "1.9"
 
 [extras]

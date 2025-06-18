@@ -72,13 +72,13 @@ function read_fpp_map(file; stochastic::Union{Nothing,Bool}=nothing,spin::Union{
       TI.setm!(m.v[i], a + im*b, collect(Int, ords))
       idx += 1
       count += 1
-    end
+    end#=
     if count != 0 && -data[idx,1] != count
       println(m)
       println(data[idx,1])
       println(count)
       error("This should not have been reached! Incorrect number of monomials read for variable $(i)")
-    end
+    end=#
     idx += 1
     data=data[idx:end,:]
   end
