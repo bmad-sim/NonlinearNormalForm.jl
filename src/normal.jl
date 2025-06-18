@@ -102,12 +102,6 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
   a1_inv_matrix = real(c_jacobian(m, HVARS)*transpose(F.vectors))
 
   a1 = one(m)
-  # When you are done fixing, just delete this ==============
-  #a1_inv_matrix = inv([-3.196307243812964 -0.6306736277759015  0.2200172755633192 -0.1686190516324497;
-  #  0.4630451119775905E-01  -0.3003249237341294       0.7304685563736355E-02   0.4378986847577133E-01 ;
-  #  0.6238936300960983E-01  -0.1179852731186713      -0.1119709740149514E-01   -1.884290513233789     ;
-  #  0.6983304712711068E-01   0.4210598484776620E-01   0.5249914852569776       0.9173083532486010E-02 ])
-  ## ============
   setray!(a1.v, v_matrix=inv(a1_inv_matrix))
   
   if mo == 1 
