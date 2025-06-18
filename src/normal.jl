@@ -256,11 +256,9 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
 
       # Now we go into eigen-operators of spin 
       # so we can identify the terms to kill much more easily
-      nr0_s = MVector(n_s[1]-im*n_s[3], n_s[2], n_s[1]+im*n_s[3])
-      nr_s = zero.(nr0_s)
-      TI.compose!(nr_s, nr0_s, ri.v)
-      na = nr0_s
-      TI.clear!.(na)
+      nr_s = MVector(n_s[1]-im*n_s[3], n_s[2], n_s[1]+im*n_s[3])
+      nr_s = nr_s ∘ ri
+      na = zero.(nr_s)
 
       # now kill the terms
       for j in 1:3
@@ -282,8 +280,9 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
       end
       # Now exit the basis and exponentiate
       na = SA[(na[1]+na[3])/2, na[2], im*(na[1]-na[3])/2]
+      println(na[1])
       qnr = one(m)
-      setquat!(qnr.q, q=exp(Quaternion(0,na)))
+      setquat!(qnr.q, q=exp(Quaternion(0,na...)))
 
       aspin = aspin ∘ qnr # put in normalizing map
       m1 = inv(qnr) ∘ m1 ∘ qnr # kill the terms in m1
@@ -465,6 +464,7 @@ function is_orbital_resonance(varidx, ords, nhv, res, spin_res)
 
   for curresidx in 1:size(res, 2) # for each res in the family
     if !isnothing(spin_res) && spin_res[curresidx] != 0
+      ords[varidx] += 1
       return false # spin res not orbital res
     end
     t1 = 0

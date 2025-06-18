@@ -6,8 +6,8 @@ Special quaternion routines for NonlinearNormalForm
 
 # TO-DO: use MQuaternion (mutable quaternion) when ready
 function TI.compose!(q::Quaternion, q1::Quaternion, m1::AbstractArray)
-  qt = SA[q.q0, q.q1, q.q2, q.q3]
-  q1 = SA[q1.q0, q1.q1, q1.q2, q1.q3]
+  qt = MVector(q.q0, q.q1, q.q2, q.q3)
+  q1 = MVector(q1.q0, q1.q1, q1.q2, q1.q3)
   TI.compose!(qt, q1, m1)
   return q
 end
