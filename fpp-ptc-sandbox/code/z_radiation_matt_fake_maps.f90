@@ -153,7 +153,8 @@ program example
 !enddo
 !stop
 
-  
+ ! call print(m%v(1))
+  !stop
   call c_normal(m,normal,dospin=putspin,phase=phase,nu_spin=nu_spin)
   !m1 =ci_phasor()*normal%atot**(-1)*m*normal%atot*c_phasor()
      
