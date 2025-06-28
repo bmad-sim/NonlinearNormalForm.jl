@@ -401,7 +401,7 @@ end
 
 
 """
-    is_tune_shift(varidx, ords, nhv)
+    is_tune_shift(varidx, ords, nhv, hamiltonian=false)
 
 Checks if the monomial corresponds to a tune shift.
 
@@ -435,7 +435,7 @@ function is_tune_shift(varidx, ords, nhv, hamiltonian=false)
 end
 
 """
-    is_orbital_resonance(varidx, ords, nhv, res)
+    is_orbital_resonance(varidx, ords, nhv, res, spin_res)
 
 Checks if the monomial corresponds to a particular resonance 
 (and resonance in the same family)
