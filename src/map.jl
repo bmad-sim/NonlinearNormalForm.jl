@@ -10,7 +10,7 @@ promotion rules, constructors, and map-specific operators.
 # Types
 
 """
-    TaylorMap{V0,V,Q,S}
+    abstract type TaylorMap{V0,V,Q,S}
 
 Abstract type for `TPSAMap` and `DAMap` used for normal form analysis. `DAMap`s have a coordinate 
 system chosen so that the expansion point is always around zero, e.g. Δv = v, while `TPSAMap`s 
@@ -21,13 +21,13 @@ periodic maps, using a `DAMap` ensures no truncation error up to the chosen trun
 Any truncated power series (TPS) type supported by `TPSAInterface.jl` is allowed for use in 
 a `TaylorMap`. Henceforth we will generically refer to this type as a `TPS`
 
-# Fields
+## Fields
 - `v0::V0` -- Reference orbit. The entrance coordinates of the map as scalars, or equivalently the Taylor map expansion point.
 - `v::V`   -- Orbital ray as truncated power series, expansion around `v0`, with scalar part equal to EXIT coordinates of map
 - `q::Q`   -- `Quaternion` as truncated power series if spin is included, else `nothing`
 - `s::S`   -- Matrix of the envelope for stochastic kicks as scalars if included, else `nothing`
 
-# Type Requirements
+## Type Requirements
 - `V0 <: AbstractVector{<:Number}` where `ismutabletype(V0) == true` 
 - `V <: AbstractVector{<:TPS}` where `TPSAInterface.numtype(V) == eltype(V0)`
 - `Q <: Union{Quaternion{<:TPS},Nothing}` and if `Q != Nothing` then `eltype(Q) == eltype(V)`
@@ -58,6 +58,22 @@ abstract type TaylorMap{V0<:AbstractVector,V<:AbstractVector,Q<:Union{Quaternion
   S == Nothing || size(m.s) == (length(m.v0), length(m.v0)) || error("Size of stochastic matrix disagrees with number of variables in map")
 end
 
+# =================================================================================== #
+# DAMap
+
+"""
+    struct DAMap{V0,V,Q,S} <: TaylorMap{V0,V,Q,S}
+
+Map such that the expansion point is around zero. 
+See the `TaylorMap` documentation for details.
+
+## Fields
+- `v0::V0` -- Reference orbit. The entrance coordinates of the map as scalars, or equivalently the Taylor map expansion point.
+- `v::V`   -- Orbital ray as truncated power series, expansion around `v0`, with scalar part equal to EXIT coordinates of map
+- `q::Q`   -- `Quaternion` as truncated power series if spin is included, else `nothing`
+- `s::S`   -- Matrix of the envelope for stochastic kicks as scalars if included, else `nothing`
+
+"""
 struct DAMap{V0,V,Q,S} <: TaylorMap{V0,V,Q,S}
   v0::V0    # Entrance value of map
   v::V      # Expansion around v0, with scalar part equal to EXIT value of map
@@ -71,6 +87,23 @@ struct DAMap{V0,V,Q,S} <: TaylorMap{V0,V,Q,S}
   end
 end
 
+# =================================================================================== #
+# TPSAMap
+
+"""
+    struct TPSAMap{V0,V,Q,S} <: TaylorMap{V0,V,Q,S}
+
+Map where the expansion point does not have to be around zero. 
+Includes feed down error if composing maps with different expansion points.
+See the `TaylorMap` documentation for details.
+
+## Fields
+- `v0::V0` -- Reference orbit. The entrance coordinates of the map as scalars, or equivalently the Taylor map expansion point.
+- `v::V`   -- Orbital ray as truncated power series, expansion around `v0`, with scalar part equal to EXIT coordinates of map
+- `q::Q`   -- `Quaternion` as truncated power series if spin is included, else `nothing`
+- `s::S`   -- Matrix of the envelope for stochastic kicks as scalars if included, else `nothing`
+
+"""
 struct TPSAMap{V0,V,Q,S} <: TaylorMap{V0,V,Q,S}
   v0::V0    # Entrance value of map
   v::V      # Expansion around v0, with scalar part equal to EXIT value of map

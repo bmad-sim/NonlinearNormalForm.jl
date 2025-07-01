@@ -11,6 +11,14 @@ Some notes on how to use Documenter at:
 
 ## Building the Documentation Locally
 
+First download `NonlinearNormalForm` to the `~/.julia/dev/` area and setup in the repo for development:
+```
+import Pkg; Pkg.develop("NonlinearNormalForm")
+```
+For details see: [https://pkgdocs.julialang.org/v1/managing-packages/#Adding-a-local-package](https://pkgdocs.julialang.org/v1/managing-packages/#Adding-a-local-package).
+This is important since you want to have local changes reflected in the documentation build so
+that you can visualize your changes locally.
+
 Run the following command from the docs/ directory
 ```
 $ julia --project make.jl
@@ -33,13 +41,27 @@ The output you see should be something like:
 ```
 The warning is fine since you are just building the docs locally.
 
+Note: You do not need to build the documentation if you use the server (see the next section)
+as the server will automatically do this.
+
 ## Visualize the Docs locally:
 
-Do the following:
+Do the following in the `NonlinearNormalForm` directory:
 ```
-julia> ] activate docs    # Do this in the NonlinearNormalForm directory
+julia> ] activate docs
 julia> using LiveServer 
 julia> servedocs()
 ```
 and the docs will be rendered and hosted locally at the URL provided in the output.
 Generally the URL will be something like [http://localhost:8000/](http://localhost:8000/)
+
+Note: If you use the server, the server will build documentation as needed. That is, the documentation
+is rebuilt whenever there are changes to the markdown files. Also, when using the server, you
+do not have to build the docs as outlined in the last section.
+
+If you suspect there are detached server processes that are not closing, use the following command to list them:
+```
+$ lsof | grep julia
+```
+And then use `kill -9 <process-number>` to kill them where `<process-number>` is given in the
+second column of the `lsof` output.
