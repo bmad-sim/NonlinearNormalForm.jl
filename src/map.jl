@@ -94,6 +94,7 @@ end
     struct TPSAMap{V0,V,Q,S} <: TaylorMap{V0,V,Q,S}
 
 Map where the expansion point does not have to be around zero. 
+Includes feed down error if composing maps with different expansion points.
 See the `TaylorMap` documentation for details.
 
 ## Fields

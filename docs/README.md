@@ -11,9 +11,11 @@ Some notes on how to use Documenter at:
 
 ## Building the Documentation Locally
 
-First download `NonlinearNormalForm` to the `~/.julia/dev/` area. Then make sure that you are
-running julia with `NonlinearNormalForm` in `development` mode 
-[https://pkgdocs.julialang.org/v1/managing-packages/#Adding-a-local-package](https://pkgdocs.julialang.org/v1/managing-packages/#Adding-a-local-package).
+First download `NonlinearNormalForm` to the `~/.julia/dev/` area and setup in the repo for development:
+```
+import Pkg; Pkg.develop("NonlinearNormalForm")
+```
+For details see: [https://pkgdocs.julialang.org/v1/managing-packages/#Adding-a-local-package](https://pkgdocs.julialang.org/v1/managing-packages/#Adding-a-local-package).
 This is important since you want to have local changes reflected in the documentation build so
 that you can visualize your changes locally.
 
