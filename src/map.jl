@@ -139,6 +139,7 @@ end
    init_map_x0(::Type{V0}, nv::Integer) where {V0<:StaticVector}
 
 Returns an array of type `V0` where each element of the array is initialized to zero. 
+
 For the static case, the `nv` argument is ignored and the length of the returned array is the same as `V0`. 
 For the general case (since the length of the vector is unknown), the length is `nv`.
 """ init_map_x0
@@ -157,16 +158,18 @@ end
 # =================================================================================== #
 # init_map_x
 
-
 """
     init_map_x(::Type{V}, init::AbstractTPSAInit, nv::Integer, reuse::Union{Nothing,TaylorMap}=nothing) where {V<:AbstractVector}
     init_map_x(::Type{V}, init::AbstractTPSAInit, nv::Integer, reuse::Union{Nothing,TaylorMap}=nothing) where {V<:StaticVector}
 
-Returns
+Returns an array of of type `V` with each element of the array initialized by `init`.
+
+For the static case, the `nv` argument is ignored and the length of the returned array is the same as `V0`. 
+For the general case (since the length of the vector is unknown), the length is `nv`.
 """ init_map_x
 
 function init_map_x(::Type{V}, init::AbstractTPSAInit, nv::Integer, reuse::Union{Nothing,TaylorMap}=nothing) where {V<:AbstractVector}
-  nn = ndiffs(init)
+  nn = ndiffs(init)     # Number of variables+parameters in TPSA
   v = similar(V, nn)
   for i in 1:nv
     v[i] = TI.init_tps(TI.numtype(eltype(V)), init) 
@@ -665,12 +668,12 @@ end
 
 
 function pow!(
-  m::DAMap, 
-  m1::DAMap, 
-  n::Integer; 
-  work_m::Union{DAMap,Nothing}=zero(m), 
-  work_q::Union{Nothing,Quaternion}=isnothing(m.q) ? nothing : zero(m.q)
-)
+       m::DAMap, 
+       m1::DAMap, 
+       n::Integer; 
+       work_m::Union{DAMap,Nothing}=zero(m), 
+       work_q::Union{Nothing,Quaternion}=isnothing(m.q) ? nothing : zero(m.q)
+     )
   checkinplace(m, m1, work_m)
   !(m === m1) || error("Cannot pow!(m, m1) with m === m1")
   !(m === work_m) || error("Cannot pow!(m, m1; work_m=work_m) with m === work_m")
@@ -681,12 +684,11 @@ function pow!(
 end
 
 function pow!(  
-  m::TPSAMap, 
-  m1::TPSAMap, 
-  n::Integer; 
-  work_m::Union{TPSAMap,Nothing}=zero(m), 
-  work_q::Union{Nothing,Quaternion}=isnothing(m.q) ? nothing : zero(m.q)
-)
+       m::TPSAMap, 
+       m1::TPSAMap, 
+       n::Integer; 
+       work_m::Union{TPSAMap,Nothing}=zero(m), 
+       work_q::Union{Nothing,Quaternion}=isnothing(m.q) ? nothing : zero(m.q))
   checkinplace(m, m1, work_m)
   !(m === m1) || error("Cannot pow!(m, m1) with m === m1")
   !(m === work_m) || error("Cannot pow!(m, m1; work_m=work_m) with m === work_m")
@@ -696,53 +698,54 @@ end
 
 # =================================================================================== #
 # Composition and inversion out-of-place operators
+
 for t = (:DAMap, :TPSAMap)
-@eval begin
+  @eval begin
 
-function ∘(m2::$t, m1::$t)
-  m2prom, m1prom = promote(m2, m1)
-  m = zero(m2prom)
-  compose!(m, m2prom, m1prom)
-  return m
-end
+  function ∘(m2::$t, m1::$t)
+    m2prom, m1prom = promote(m2, m1)
+    m = zero(m2prom)
+    compose!(m, m2prom, m1prom)
+    return m
+  end
 
-# When composing a TPS scalar/vector function w a map, use orbital part of map:
-function ∘(m2, m1::$t)
-  TI.is_tps_type(eltype(m2)) isa TI.IsTPSType || error("Cannot compose: $(eltype(m2)) is not a TPS type supported by TPSAInterface.jl")
-  T = promote_type(eltype(m1.v), eltype(m2))
-  T == eltype(m1.v) ? m1xprom = m1.v : m1xprom = T.(m1.v)
-  T == eltype(m2) ? m2prom = m2 : m2prom = T.(m2)
-  m = zero(m2prom)
-  TI.compose!(m, m2prom, m1xprom)
-  return m
-end
+  # When composing a TPS scalar/vector function w a map, use orbital part of map:
+  function ∘(m2, m1::$t)
+    TI.is_tps_type(eltype(m2)) isa TI.IsTPSType || error("Cannot compose: $(eltype(m2)) is not a TPS type supported by TPSAInterface.jl")
+    T = promote_type(eltype(m1.v), eltype(m2))
+    T == eltype(m1.v) ? m1xprom = m1.v : m1xprom = T.(m1.v)
+    T == eltype(m2) ? m2prom = m2 : m2prom = T.(m2)
+    m = zero(m2prom)
+    TI.compose!(m, m2prom, m1xprom)
+    return m
+  end
 
-# necessary because inv(m)^n != inv(m^n) but Julia defaults to the first
-literal_pow(::typeof(^), m::$t{V0,V,Q,S}, vn::Val{n}) where {V0,V,Q,S,n} = ^(m, n) 
+  # necessary because inv(m)^n != inv(m^n) but Julia defaults to the first
+  literal_pow(::typeof(^), m::$t{V0,V,Q,S}, vn::Val{n}) where {V0,V,Q,S,n} = ^(m, n) 
 
-literal_pow(::typeof(^), m::$t{V0,V,Q,S}, vn::Val{1}) where {V0,V,Q,S} = copy(m)
-literal_pow(::typeof(^), m::$t{V0,V,Q,S}, vn::Val{0}) where {V0,V,Q,S} = one(m)
-literal_pow(::typeof(^), m::$t{V0,V,Q,S}, vn::Val{-1}) where {V0,V,Q,S} = inv(m)
-inv(m::$t; do_spin::Bool=true) = (out_m = zero(m); inv!(out_m, m, do_spin=do_spin); return out_m)
-^(m::$t, n::Integer) = (out_m = zero(m); pow!(out_m, m, n); return out_m)
+  literal_pow(::typeof(^), m::$t{V0,V,Q,S}, vn::Val{1}) where {V0,V,Q,S} = copy(m)
+  literal_pow(::typeof(^), m::$t{V0,V,Q,S}, vn::Val{0}) where {V0,V,Q,S} = one(m)
+  literal_pow(::typeof(^), m::$t{V0,V,Q,S}, vn::Val{-1}) where {V0,V,Q,S} = inv(m)
+  inv(m::$t; do_spin::Bool=true) = (out_m = zero(m); inv!(out_m, m, do_spin=do_spin); return out_m)
+  ^(m::$t, n::Integer) = (out_m = zero(m); pow!(out_m, m, n); return out_m)
 
-# Also allow * for simplicity and \ and / 
-*(m2, m1::$t) = ∘(m2, m1)
-/(m2::$t, m1::$t) = m2 ∘ inv(m1) 
-\(m2::$t, m1::$t) = inv(m2) ∘ m1
+  # Also allow * for simplicity and \ and / 
+  *(m2, m1::$t) = ∘(m2, m1)
+  /(m2::$t, m1::$t) = m2 ∘ inv(m1) 
+  \(m2::$t, m1::$t) = inv(m2) ∘ m1
 
-# Uniform scaling for * (∘) and /, \
-∘(m::$t, J::UniformScaling) = $t(m)
-∘(J::UniformScaling, m::$t) = $t(m)
-*(m::$t, J::UniformScaling) = $t(m)
-*(J::UniformScaling, m::$t) = $t(m)
-/(m::$t, J::UniformScaling) = $t(m)
-/(J::UniformScaling, m::$t) = inv(m)
-\(m::$t, J::UniformScaling) = inv(m)
-\(J::UniformScaling, m::$t) = $t(m)
+  # Uniform scaling for * (∘) and /, \
+  ∘(m::$t, J::UniformScaling) = $t(m)
+  ∘(J::UniformScaling, m::$t) = $t(m)
+  *(m::$t, J::UniformScaling) = $t(m)
+  *(J::UniformScaling, m::$t) = $t(m)
+  /(m::$t, J::UniformScaling) = $t(m)
+  /(J::UniformScaling, m::$t) = inv(m)
+  \(m::$t, J::UniformScaling) = inv(m)
+  \(J::UniformScaling, m::$t) = $t(m)
 
-#compose!(m::$t, m1::$t, J::UniformScaling; kwargs...) = copy!(m, m1)
-#compose!(m::$t, J::UniformScaling, m1::$t; kwargs...) = copy!(m, m1)
+  #compose!(m::$t, m1::$t, J::UniformScaling; kwargs...) = copy!(m, m1)
+  #compose!(m::$t, J::UniformScaling, m1::$t; kwargs...) = copy!(m, m1)
 
-end
+  end
 end
