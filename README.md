@@ -4,6 +4,8 @@
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://bmad-sim.github.io/NonlinearNormalForm.jl/dev/)
 [![Build Status](https://github.com/bmad-sim/NonlinearNormalForm.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/bmad-sim/NonlinearNormalForm.jl/actions/workflows/CI.yml?query=branch%3Amain)
 
+<img width="946" height="438" alt="image" src="https://github.com/user-attachments/assets/7c60b95c-4ef1-4a76-b60f-1fcbca588cc8" />
+
 ## Overview
 
 This package can be used for doing perturbation theory with nonlinear, parametric Hamiltonian maps using Lie algebraic methods. Maps with large damping can be handled. Given a map expressed as a truncated power series in small deviations of the variables and parameters, this package can be used to calculate and analyze the canonical transformation to the normal form – coordinates where the motion lies on action-dependent circles in phase space or contains a single resonance. This allows for easy calculation of all important (parameter-dependent) properties of the map. Furthermore, by extending the Lie algebra to include a quaternion operator in the vector field, the spin normal form analysis can be performed in the same way as the orbital. This fully unifies spin and orbital one-resonance normal form calculations, without needing to learn two different theories, and allows for analysis of time-dependent Hamiltonians via Deprit-like algorithms. The package is used in the SciBmad accelerator physics ecosystem for all analysis, and may also be of interest in fields such as celestial mechanics, electronic circuits, electron microscopy, geometrical optics, and plasma physics.
