@@ -81,7 +81,8 @@ export        TaylorMap,
               equilibrium_moments,
               factorize,
               fast_canonize,
-              compute_lattice_functions
+              compute_de_moivre,
+              compute_sagan_rubin
 
 
 # After experimenting I have found MVector
@@ -116,6 +117,7 @@ include("sanity.jl")
 include("operators.jl")
 include("methods.jl")
 include("normal.jl")
-include("lattice_functions.jl")
+include("de_moivre.jl")
+include("sagan_rubin.jl")
 
 end
