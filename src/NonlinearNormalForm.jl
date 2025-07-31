@@ -82,7 +82,9 @@ export        TaylorMap,
               factorize,
               fast_canonize,
               compute_de_moivre,
-              compute_sagan_rubin
+              compute_sagan_rubin,
+
+              LinearDAMap
 
 
 # After experimenting I have found MVector
@@ -117,7 +119,9 @@ include("sanity.jl")
 include("operators.jl")
 include("methods.jl")
 include("normal.jl")
+include("linear.jl")
 include("de_moivre.jl")
 include("sagan_rubin.jl")
+
 
 end

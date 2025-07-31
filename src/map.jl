@@ -40,7 +40,7 @@ the `v` and `q` arrays which contain TPSs may be `immutable`, e.g. the orbital r
 `ReferenceFrameRotations.jl` is already `immutable`. The default for the orbital ray is `SVector`.
 The `v0` and `s` arrays contain `immutable` number types, and so these arrays MUST be `mutable`.
 """
-abstract type TaylorMap{V0<:AbstractVector,V<:AbstractVector,Q<:Union{Quaternion,Nothing},S<:Union{AbstractMatrix,Nothing}} end 
+abstract type TaylorMap{V0<:AbstractVector,V<:Union{AbstractVector,AbstractMatrix},Q<:Union{Quaternion,Nothing},S<:Union{AbstractMatrix,Nothing}} end 
 
 @inline function checkmapsanity(m::TaylorMap{V0,V,Q,S}) where {V0,V,Q,S}
   # Static checks:
