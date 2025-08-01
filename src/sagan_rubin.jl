@@ -1,12 +1,3 @@
-struct Twiss{S,T,C}
-  beta::S    # Array of betas in each plane
-  alpha::S   # Array of alphas in each plane
-  eta::S     # Arrays of dispersions in each plane
-  eta_p::S   # Array of dispersion 
-  gamma_c::T # Coupling "coefficient"
-  C::C       # Coupling matrix 
-end
-
 function compute_sagan_rubin(a1::DAMap{V0}, ::Val{linear}=Val{false}()) where {V0<:StaticArray,linear}
   # jp_mat[i] in FPP is J matrix restricted to i-th plane
   # ip_mat[i] in FPP is identity matrix restricted to i-th plane
@@ -22,12 +13,12 @@ function compute_sagan_rubin(a1::DAMap{V0}, ::Val{linear}=Val{false}()) where {V
       Ct = nv > 2 ? SA[C[2,2] -C[1,2]; -C[2,1] C[1,1]] : 0
       eta_full = StaticArrays.sacollect(SVector{nhv,eltype(H[1])}, H[end][i,nv] for i in 1:nhv)
       eta = StaticArrays.sacollect(SVector{Int(nhv/2),eltype(eta_full)}, eta_full[i] for i in 1:2:nhv) 
-      eta_p = StaticArrays.sacollect(SVector{Int(nhv/2),eltype(eta_full)}, eta_full[i] for i in 2:2:nhv)
+      etap = StaticArrays.sacollect(SVector{Int(nhv/2),eltype(eta_full)}, eta_full[i] for i in 2:2:nhv)
       Vi = gamma_c*I + vcat(hcat(zero(C), -C), hcat(Ct, zero(Ct))) #transpose(SDiagonal(Ct,-C)) #[gamma_c*I -C; Ct gamma_c*I]
       N = Vi*a1_mat_hv
       beta = StaticArrays.sacollect(SVector{Int(nhv/2),eltype(N)}, N[i,i]^2 for i in 1:2:Int(nv/2))
       alpha = StaticArrays.sacollect(SVector{Int(nhv/2),eltype(N)}, -N[i+1,i]*N[i,i] for i in 1:2:Int(nv/2))
-      return Twiss(beta, alpha, eta, eta_p, gamma_c, C)
+      return (; beta=beta, alpha=alpha, eta=eta, etap=etap, gamma_c=gamma_c, C=C)
     end
   else
     let
