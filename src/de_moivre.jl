@@ -1,26 +1,17 @@
-struct LatticeFunctions{S}
-  H::S
-  B::S
-  E::S
-  K::S
-end
-
-
-function compute_lattice_functions(a1::DAMap{V0}, ::Val{linear}=Val{false}()) where {V0<:StaticArray,linear}
+function compute_de_moivre(a1::DAMap{V0}, ::Val{linear}=Val{false}()) where {V0<:StaticArray,linear}
   # jp_mat[i] in FPP is J matrix restricted to i-th plane
   # ip_mat[i] in FPP is identity matrix restricted to i-th plane
   # jt_mat in FPP is symplectic s matrix
   nv = isodd(length(V0)) ? length(V0)+1 : length(V0)
   if linear
-    let a1_mat = parametric_jacobian(a1, Val{linear}()), a1i_mat = inv(a1_mat)
+    let a1_mat = jacobian(a1, VARS_CPARAM), a1i_mat = inv(a1_mat)
       B = StaticArrays.sacollect(SVector{Int(nv/2),typeof(a1_mat)}, a1_mat*jp_mat(a1, i)*a1i_mat for i in 1:Int(nv/2))
       K = StaticArrays.sacollect(SVector{Int(nv/2),typeof(a1_mat)}, -j_mat(a1)*B[i] for i in 1:Int(nv/2))
       E = StaticArrays.sacollect(SVector{Int(nv/2),typeof(a1_mat)}, -B[i]*j_mat(a1) for i in 1:Int(nv/2))
       H = StaticArrays.sacollect(SVector{Int(nv/2),typeof(a1_mat)}, a1_mat*ip_mat(a1, i)*a1i_mat for i in 1:Int(nv/2))
-      return LatticeFunctions(H,B,E,K)
+      return (; H=H, B=B, E=E, K=K)
     end
   else
-    # For TPSA it is faster to first compose the maps then extract the parametric lattice functions
     let
       tmp = zero(a1)
       a1i = inv(a1)
@@ -43,29 +34,25 @@ function compute_lattice_functions(a1::DAMap{V0}, ::Val{linear}=Val{false}()) wh
         a1∘tmp∘a1i
       end for i in 1:Int(nv/2)
       )
-      return LatticeFunctions(parametric_jacobian.(H), 
-                              parametric_jacobian.(B),
-                              parametric_jacobian.(E),
-                              parametric_jacobian.(K))
+      return (; H=H, B=B, E=E, K=K)
     end
   end
 end
 
-function compute_lattice_functions(a1::DAMap, ::Val{linear}=Val{false}()) where {linear}
+function compute_de_moivre(a1::DAMap, ::Val{linear}=Val{false}()) where {linear}
   # jp_mat[i] in FPP is J matrix restricted to i-th plane
   # ip_mat[i] in FPP is identity matrix restricted to i-th plane
   # jt_mat in FPP is symplectic s matrix
   nhv = nhvars(a1) 
   if linear
-    let a1_mat = parametric_jacobian(a1, Val{linear}()), a1i_mat = inv(a1_mat)
+    let a1_mat = jacobian(a1, VARS_CPARAM), a1i_mat = inv(a1_mat)
       B = [a1_mat*jp_mat(a1, i)*a1i_mat for i in 1:Int(nhv/2)]
       K = [-j_mat(a1)*B[i] for i in 1:Int(nhv/2)]
       E = [-B[i]*j_mat(a1) for i in 1:Int(nhv/2)]
       H = [a1_mat*ip_mat(a1, i)*a1i_mat for i in 1:Int(nhv/2)]
-      return LatticeFunctions(H,B,E,K)
+      return (; H=H, B=B, E=E, K=K)
     end
   else
-    # For TPSA it is faster to first compose the maps then extract the parametric lattice functions
     let
       tmp = zero(a1)
       a1i = inv(a1)
@@ -88,46 +75,8 @@ function compute_lattice_functions(a1::DAMap, ::Val{linear}=Val{false}()) where 
         a1∘tmp∘a1i
       end for i in 1:Int(nhv/2)
       ]
-      return LatticeFunctions(parametric_jacobian.(H), 
-                              parametric_jacobian.(B),
-                              parametric_jacobian.(E),
-                              parametric_jacobian.(K))
+      return (; H=H, B=B, E=E, K=K)
     end
-  end
-end
-
-
-function parametric_jacobian(a1::DAMap{V0,V}, ::Val{linear}=Val{false}()) where {V0<:StaticArray,V,linear}
-  if linear
-    return jacobian(a1, VARS_CPARAM) # scalar part
-  else
-    nv = isodd(length(V0)) ? length(V0)+1 : length(V0)
-    return StaticArrays.sacollect(SMatrix{nv,nv,eltype(V)}, 
-    begin
-      t = zero(a1.v[row])
-      TI.deriv!(t, a1.v[row], col)  
-      t
-    end for col in 1:nv for row in 1:nv)
-  end
-end
-
-function parametric_jacobian(a1::DAMap, ::Val{linear}=Val{false}()) where {linear}
-  if linear 
-    return jacobian(a1, VARS_CPARAM) # scalar part
-  else
-    nv = nvars(a1)
-    if isodd(nv) 
-      nv += 1
-    end
-    M = zeros(eltype(a1.v), nv, nv)
-    for col in 1:nv
-      for row in 1:nv
-        t = zero(a1.v[row])
-        TI.deriv!(t, a1.v[row], col)  
-        M[row, col] = t
-      end
-    end
-    return M
   end
 end
 
