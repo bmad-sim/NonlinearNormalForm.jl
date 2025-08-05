@@ -5,6 +5,8 @@ Given a matrix `mat` with an even number of rows/cols, calculates the eigenvecto
 and eigenvalues. For stable eigenmodes (complex conjugate eigenvector/eigenvalue pairs), 
 the eigenvectors are normalized so that `vⱼ'*S*vⱼ = +im` for odd `j`, and `-im` for even `j`.
 
+If `error_unstable` is `true` (default), then an error will be thrown if any mode is unstable.
+
 If `sort` is true, then each eigenvector/eigenvalue pair will be sorted according to the mode 
 it best identifies with. A warning will be printed if the mode sorting fails. Mode sorting 
 will automatically fail if more than 1 mode is unstable. Default is true.
@@ -18,10 +20,10 @@ phase factor is harmless/useless to include in a highly-coupled matrix.
 
 For complex matrices, Julia's `eigen`, which is called by `mat_eigen`, is type-unstable.
 """
-function mat_eigen(mat; sort=true, phase_modes=true)
+function mat_eigen(mat; sort=true, phase_modes=true, error_unstable=true)
   F = eigen(mat)
   F = make_mutable(F)
-  low_mat_eigen!(F, sort, phase_modes)
+  low_mat_eigen!(F, sort, phase_modes, error_unstable)
   return F
 end
 
@@ -31,10 +33,10 @@ end
 Same as `mat_eigen`, but mutates `mat` for speed. See the documentation for `mat_eigen` 
 for more details.
 """
-function mat_eigen!(mat; sort=true, phase_modes=true)
+function mat_eigen!(mat; sort=true, phase_modes=true, error_unstable=true)
   F = eigen!(mat)
   F = make_mutable(F)
-  low_mat_eigen!(F, sort, phase_modes)
+  low_mat_eigen!(F, sort, phase_modes, error_unstable)
   return F
 end
 
@@ -52,9 +54,13 @@ function make_mutable(F::Eigen{S,T,U,V}) where {S,T,U,V}
   end
 end
 
-function low_mat_eigen!(F, sort, phase_modes)
+function low_mat_eigen!(F, sort, phase_modes, error_unstable)
   # Move unstable modes to the end:
   num_unstable = moveback_unstable!(F)
+
+  if num_unstable > 0 && error_unstable
+    error("At least one orbital eigenmode is linearly unstable!")
+  end
 
   if sort
     # Attempt to locate modes, but do not sort yet!
