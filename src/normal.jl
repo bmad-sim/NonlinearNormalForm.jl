@@ -91,9 +91,6 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
   end
 
   if mo == 0
-    if a0 isa DAMap
-      setray!(a0.v; scalar=m.v)
-    end
     return a0
   end
 
@@ -108,9 +105,7 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
   setray!(a1.v, v_matrix=inv(a1_inv_matrix))
   
   if mo == 1 
-    a_out = a0 ∘ a1
-    setray!(a_out.v; scalar=m.v)
-    return a_out
+    return a0 ∘ a1
   end
 
 
@@ -295,9 +290,8 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
     end
     a = a ∘ c ∘ aspin ∘ ci
   end
-  a_out = real(a)
-  setray!(a_out.v; scalar=m.v)
-  return a_out
+
+  return real(a)
 end
 
 
