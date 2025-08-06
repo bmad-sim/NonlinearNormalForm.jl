@@ -301,7 +301,7 @@ function $t(;
   if !isnothing(v) && !(v isa AbstractVector)
     v = reshape(v, (length(v)))
   end
-  if !isnothing(q) && !(q isa AbstractVector)
+  if !isnothing(q) && q isa AbstractArray && !(q isa AbstractVector)
     q = reshape(q, (4))
   end
 
