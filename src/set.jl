@@ -3,6 +3,7 @@
 
 function setray!(
   r::AbstractArray{<:T}; 
+  scalar::Union{AbstractVector,Nothing}=nothing,
   v::Union{AbstractVector,Nothing}=nothing,
   v_matrix::Union{AbstractMatrix,UniformScaling,Nothing}=nothing,
   v_matrix_offset::Integer=0,
@@ -10,6 +11,15 @@ function setray!(
   TI.is_tps_type(T) isa TI.IsTPSType || error("Orbital ray element type must be a truncated power series type supported by `TPSAInterface.jl`")
 
   length(r) <= ndiffs(first(r)) || error("Length of output orbital ray `r` cannot be greater than the number of differentials in the TPSA!")
+
+  if !isnothing(scalar)
+    length(r) <= length(scalar) || error("Length of input vector `scalar` cannot be greater than the length of output vector `r`!")
+    if TI.is_tps_type(eltype(scalar)) isa TI.IsTPSType # TPS input
+      foreach((out_xi, xi)->TI.seti!(out_xi, TI.geti(xi, 0), 0), view(r, 1:length(scalar)), scalar)
+    else
+      foreach((out_xi, xi)->TI.seti!(out_xi, xi, 0), view(r, 1:length(scalar)), scalar)
+    end
+  end
 
   if !isnothing(v)
     length(v) <= length(r) || error("Length of input vector `v` cannot be greater than the length of output vector `r`!")

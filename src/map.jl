@@ -286,15 +286,25 @@ function $t(;
   init::Union{AbstractTPSAInit,Nothing}=nothing,
   nv::Union{Integer,Nothing}=nothing,
   np::Union{Integer,Nothing}=nothing,
-  v0::Union{AbstractVector,Nothing}=nothing,
-  v::Union{AbstractVector,Nothing}=nothing,
+  v0::Union{AbstractArray,Nothing}=nothing,
+  v::Union{AbstractArray,Nothing}=nothing,
   v_matrix::Union{AbstractMatrix,UniformScaling,Nothing}=nothing,
-  q::Union{Quaternion,AbstractVector,UniformScaling,Nothing}=nothing,
+  q::Union{Quaternion,AbstractArray,UniformScaling,Nothing}=nothing,
   q_map::Union{AbstractMatrix,Nothing}=nothing,
   s::Union{AbstractMatrix,Nothing}=nothing,
   spin::Union{Bool,Nothing}=nothing,
   stochastic::Union{Bool,Nothing}=nothing,
 ) 
+  if !isnothing(v0) && !(v0 isa AbstractVector)
+    v0 = reshape(v0, (length(v0)))
+  end
+  if !isnothing(v) && !(v isa AbstractVector)
+    v = reshape(v, (length(v)))
+  end
+  if !isnothing(q) && q isa AbstractArray && !(q isa AbstractVector)
+    q = reshape(q, (4))
+  end
+
   if isnothing(init)
     if !isnothing(v) && TI.is_tps_type(eltype(v)) isa TI.IsTPSType
       init = getinit(first(v))

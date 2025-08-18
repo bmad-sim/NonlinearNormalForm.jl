@@ -1,10 +1,3 @@
-struct DeMoivre{S}
-  H::S
-  B::S
-  E::S
-  K::S
-end
-
 function compute_de_moivre(a1::DAMap{V0}, ::Val{linear}=Val{false}()) where {V0<:StaticArray,linear}
   # jp_mat[i] in FPP is J matrix restricted to i-th plane
   # ip_mat[i] in FPP is identity matrix restricted to i-th plane
@@ -16,7 +9,7 @@ function compute_de_moivre(a1::DAMap{V0}, ::Val{linear}=Val{false}()) where {V0<
       K = StaticArrays.sacollect(SVector{Int(nv/2),typeof(a1_mat)}, -j_mat(a1)*B[i] for i in 1:Int(nv/2))
       E = StaticArrays.sacollect(SVector{Int(nv/2),typeof(a1_mat)}, -B[i]*j_mat(a1) for i in 1:Int(nv/2))
       H = StaticArrays.sacollect(SVector{Int(nv/2),typeof(a1_mat)}, a1_mat*ip_mat(a1, i)*a1i_mat for i in 1:Int(nv/2))
-      return DeMoivre(H, B, E, K)
+      return (; H=H, B=B, E=E, K=K)
     end
   else
     let
@@ -41,7 +34,7 @@ function compute_de_moivre(a1::DAMap{V0}, ::Val{linear}=Val{false}()) where {V0<
         a1∘tmp∘a1i
       end for i in 1:Int(nv/2)
       )
-      return DeMoivre(H, B, E, K)
+      return (; H=H, B=B, E=E, K=K)
     end
   end
 end
@@ -57,7 +50,7 @@ function compute_de_moivre(a1::DAMap, ::Val{linear}=Val{false}()) where {linear}
       K = [-j_mat(a1)*B[i] for i in 1:Int(nhv/2)]
       E = [-B[i]*j_mat(a1) for i in 1:Int(nhv/2)]
       H = [a1_mat*ip_mat(a1, i)*a1i_mat for i in 1:Int(nhv/2)]
-      return DeMoivre(H, B, E, K)
+      return (; H=H, B=B, E=E, K=K)
     end
   else
     let
@@ -82,7 +75,7 @@ function compute_de_moivre(a1::DAMap, ::Val{linear}=Val{false}()) where {linear}
         a1∘tmp∘a1i
       end for i in 1:Int(nhv/2)
       ]
-      return DeMoivre(H, B, E, K)
+      return (; H=H, B=B, E=E, K=K)
     end
   end
 end
