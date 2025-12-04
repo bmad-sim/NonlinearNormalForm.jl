@@ -21,6 +21,51 @@ nhvars(m::Union{TaylorMap,VectorField}) = iseven(nvars(m)) ? nvars(m) : nvars(m)
 
 iscoasting(m::Union{TaylorMap,VectorField}) = !iseven(nvars(m))
 # =================================================================================== #
+# Tool to "factor" out a first order dependence on a particular variable
+# e.g. for a TPSA with monomial [1,2,3,4], for 1 will return same TPSA but 
+# that monomial is now [0,2,3,4]
+# This is useful for lattice functions (first order) with nonlinear parameter dependence
+
+factor_out(t, var::Int) = (out = zero(t); factor_out!(out, t, var))
+
+function factor_out!(out, t, var::Int)
+  TI.is_tps_type(typeof(t)) isa TI.IsTPSType || error("Function only accepts TPS types")
+  nn = ndiffs(t)
+  v = Ref{TI.numtype(t)}()
+  tmpmono = zeros(UInt8, nn) 
+
+  idx = TI.cycle!(t, 0, mono=tmpmono, val=v)
+  while idx > 0
+    if tmpmono[var] != 0
+      tmpmono[var] -= 1
+      TI.setm!(out, v[], tmpmono)
+    end
+    idx = TI.cycle!(t, idx, mono=tmpmono, val=v)
+  end
+  return out
+end
+
+factor_in(t, var::Int) = (out = zero(t); factor_in!(out, t, var))
+
+function factor_in!(out, t, var::Int)
+  TI.is_tps_type(typeof(t)) isa TI.IsTPSType || error("Function only accepts TPS types")
+  nn = ndiffs(t)
+  v = Ref{TI.numtype(t)}()
+  tmpmono = zeros(UInt8, nn) 
+
+  # First do scalar part
+  TI.seti!(out, TI.geti(t, 0), var)
+
+  idx = TI.cycle!(t, 0, mono=tmpmono, val=v)
+  while idx > 0
+    tmpmono[var] += 1
+    TI.setm!(out, v[], tmpmono)
+    idx = TI.cycle!(t, idx, mono=tmpmono, val=v)
+  end
+  return out
+end
+
+# =================================================================================== #
 # Jacobian/jacobiant
 # Useful options should be 1) harmonic variables, 2) variables, and 3) variables + parameters
 abstract type OptionType end

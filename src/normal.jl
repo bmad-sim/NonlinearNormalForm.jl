@@ -592,81 +592,139 @@ end
 
 # Returns the rotation map to put a in Courant Snyder form 
 # The phase advance can be acquired from this map by atan(r11,r22), etc etc
-function fast_canonize(a::DAMap, damping::Bool=!isnothing(a.s); phase=nothing)
+function canonize(
+  a::DAMap,
+  ::Val{linear}=Val{true}();
+   phase=nothing, 
+  damping::Bool=!isnothing(a.s)
+) where {linear}
   nv = nvars(a)
   nhv = nhvars(a)
   coast = iscoasting(a)
 
   canonizer = zero(a)
 
-  a_matrix = real.(jacobian(a, VARS))
-  
+  # tries to be fast for linear calc
+  if linear
+    a_matrix = real.(jacobian(a, VARS))
 
-  #phase = zeros(nvars(a))
+    for i in 1:Int(nhv/2) # for each harmonic oscillator
+      t = sqrt(a_matrix[2*i-1,2*i-1]^2 + a_matrix[2*i-1,2*i]^2)
+      cphi = a_matrix[2*i-1,2*i-1]/t
+      sphi = a_matrix[2*i-1,2*i]/t
+      if sphi*a_matrix[2*i-1,2*i] + cphi*a_matrix[2*i-1,2*i-1] < 0
+        cphi = -cphi
+        sphi = -sphi
+      end
 
-  for i in 1:Int(nhv/2) # for each harmonic oscillator
-    t = sqrt(a_matrix[2*i-1,2*i-1]^2 + a_matrix[2*i-1,2*i]^2)
-    cphi = a_matrix[2*i-1,2*i-1]/t
-    sphi = a_matrix[2*i-1,2*i]/t
-    if sphi*a_matrix[2*i-1,2*i] + cphi*a_matrix[2*i-1,2*i-1] < 0
-      cphi = -cphi
-      sphi = -sphi
-    end
-
-    TI.seti!(canonizer.v[2*i-1],  cphi, 2*i-1)
-    TI.seti!(canonizer.v[2*i],    cphi, 2*i)
-    TI.seti!(canonizer.v[2*i-1], -sphi, 2*i)
-    TI.seti!(canonizer.v[2*i],    sphi, 2*i-1)
-
-    if !isnothing(phase)
-      phase[i] += atan(sphi,cphi)/(2*pi)
-    end
-  end
-
-  if coast
-    nt = nv
-    ndpt = nv + 1
-    TI.seti!(canonizer.v[nt], 1, nt)
-    TI.seti!(canonizer.v[ndpt], 1, ndpt)
-    TI.seti!(canonizer.v[nt], -TI.geti(a.v[nt], ndpt), ndpt)
-    if !isnothing(phase)
-      phase[end] += -TI.geti(a.v[nt], ndpt)
-    end
-  end
-  #a_rot = a_matrix*ri
-  #return a_rot
-
-  # Now we have rotated a so that a_12, a_34, a_56, etc are 0 (Courant Snyder)
-  # But if we have damping, we also have
-  # A*S*transpose(A) != S
-  # We can multiply the normalizing map A by some dilation to make it so that, 
-  # even though we don't have exactly A*S*transpose(A) == S, that 
-  # we atleast have (A*S*transpose(A))[1,2] == 1, (A*S*transpose(A))[2,1] == -1, etc 
-
-  # note that with damping we have M as
-  # A*Λ*R*A^-1  where R is the amplitude dependent rotation (diagonal matrix with 
-  # complex values on unit circle) and Λ is a diagonal matrix with real values 
-  # which correspond to the damping (same in each plane, Diagonal(lambda1, lambda1, lambda2, lambda2, etc)
-
-  if damping
-    error("need to finish")
-    damp = zeros(Int(nvars(a)/2))
-    tmp = zeros(Int(nvars(a)/2), Int(nvars(a)/2))
-    for i in 1:Int(nvars(a)/2)
-      tmp[i,i] = a_rot[2*i-1,2*i-1]*a_rot[2*i,2*i]-a_rot[2*i-1,2*i]*a_rot[2*i,2*i-1]
-      for j in 1:Int(nvars(a)/2)
-        if i != j
-          tmp[i,j] = a_rot[2*i-1,2*j-1]*a_rot[2*i,2*j]-a_rot[2*i-1,2*j]*a_rot[2*i,2*j-1]
-        end
+      TI.seti!(canonizer.v[2*i-1],  cphi, 2*i-1)
+      TI.seti!(canonizer.v[2*i],    cphi, 2*i)
+      TI.seti!(canonizer.v[2*i-1], -sphi, 2*i)
+      TI.seti!(canonizer.v[2*i],    sphi, 2*i-1)
+      
+      if !isnothing(phase)
+        phase[i] += atan(sphi,cphi)/(2*pi)
       end
     end
-    tmp = inv(tmp)
-    damp .= sqrt.(sum(tmp, dims=2))
-    a_rot = a_rot*Diagonal(repeat(damp,inner=2))
-    damp .= log.(damp)
+
+    if coast
+      nt = nv
+      ndpt = nv + 1
+      TI.seti!(canonizer.v[nt], 1, nt)
+      TI.seti!(canonizer.v[ndpt], 1, ndpt)
+      TI.seti!(canonizer.v[nt], -TI.geti(a.v[nt], ndpt), ndpt)
+      if !isnothing(phase)
+        phase[end] += -TI.geti(a.v[nt], ndpt)
+      end
+    end
+    #a_rot = a_matrix*ri
+    #return a_rot
+
+    # Now we have rotated a so that a_12, a_34, a_56, etc are 0 (Courant Snyder)
+    # But if we have damping, we also have
+    # A*S*transpose(A) != S
+    # We can multiply the normalizing map A by some dilation to make it so that, 
+    # even though we don't have exactly A*S*transpose(A) == S, that 
+    # we atleast have (A*S*transpose(A))[1,2] == 1, (A*S*transpose(A))[2,1] == -1, etc 
+
+    # note that with damping we have M as
+    # A*Λ*R*A^-1  where R is the amplitude dependent rotation (diagonal matrix with 
+    # complex values on unit circle) and Λ is a diagonal matrix with real values 
+    # which correspond to the damping (same in each plane, Diagonal(lambda1, lambda1, lambda2, lambda2, etc)
+
+    if damping
+      error("need to finish")
+      damp = zeros(Int(nvars(a)/2))
+      tmp = zeros(Int(nvars(a)/2), Int(nvars(a)/2))
+      for i in 1:Int(nvars(a)/2)
+        tmp[i,i] = a_rot[2*i-1,2*i-1]*a_rot[2*i,2*i]-a_rot[2*i-1,2*i]*a_rot[2*i,2*i-1]
+        for j in 1:Int(nvars(a)/2)
+          if i != j
+            tmp[i,j] = a_rot[2*i-1,2*j-1]*a_rot[2*i,2*j]-a_rot[2*i-1,2*j]*a_rot[2*i,2*j-1]
+          end
+        end
+      end
+      tmp = inv(tmp)
+      damp .= sqrt.(sum(tmp, dims=2))
+      a_rot = a_rot*Diagonal(repeat(damp,inner=2))
+      damp .= log.(damp)
+    end
+  else
+    mo = maxord(a)
+    # Need to include parameter dependence if nonlinear
+    for i in 1:Int(nhv/2) # for each harmonic oscillator
+      t1 = factor_out(a.v[2*i-1], 2*i-1)
+      t2 = factor_out(a.v[2*i-1], 2*i)
+
+      t = sqrt(t1^2+t2^2)
+      cphi = TI.cutord(t1/t, mo)
+      sphi = TI.cutord(t2/t, mo)
+      if sphi*t2 + cphi*t1 < 0 # scalar part only
+        cphi = -cphi
+        sphi = -sphi
+      end
+
+      factor_in!(canonizer.v[2*i-1],  cphi, 2*i-1)
+      factor_in!(canonizer.v[2*i],    cphi, 2*i)
+      factor_in!(canonizer.v[2*i-1], -sphi, 2*i)
+      factor_in!(canonizer.v[2*i],    sphi, 2*i-1)
+
+      if !isnothing(phase)
+        phase[i] += atan(sphi,cphi)/(2*pi)
+      end
+    end
+
+    if coast
+      nt = nv
+      ndpt = nv + 1
+      TI.seti!(canonizer.v[nt], 1, nt)
+      TI.seti!(canonizer.v[ndpt], 1, ndpt)
+      
+      slip = -factor_out(a.v[nt], ndpt)
+      factor_in!(canonizer.v[nt], slip, ndpt)
+      if !isnothing(phase)
+        phase[end] += slip
+      end
+    end
+
+    if damping
+      error("need to finish")
+      damp = zeros(Int(nvars(a)/2))
+      tmp = zeros(Int(nvars(a)/2), Int(nvars(a)/2))
+      for i in 1:Int(nvars(a)/2)
+        tmp[i,i] = a_rot[2*i-1,2*i-1]*a_rot[2*i,2*i]-a_rot[2*i-1,2*i]*a_rot[2*i,2*i-1]
+        for j in 1:Int(nvars(a)/2)
+          if i != j
+            tmp[i,j] = a_rot[2*i-1,2*j-1]*a_rot[2*i,2*j]-a_rot[2*i-1,2*j]*a_rot[2*i,2*j-1]
+          end
+        end
+      end
+      tmp = inv(tmp)
+      damp .= sqrt.(sum(tmp, dims=2))
+      a_rot = a_rot*Diagonal(repeat(damp,inner=2))
+      damp .= log.(damp)
+    end
   end
-
-
   return canonizer #a_rot
 end
 

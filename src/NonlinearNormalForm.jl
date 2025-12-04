@@ -80,7 +80,7 @@ export        TaylorMap,
               inv_with_log,
               equilibrium_moments,
               factorize,
-              fast_canonize,
+              canonize,
               compute_de_moivre,
               compute_sagan_rubin
 
