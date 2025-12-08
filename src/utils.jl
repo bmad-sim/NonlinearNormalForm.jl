@@ -459,4 +459,24 @@ function checksymp(M)
   res = transpose(M)*S*M-S
   return res
 end
+
+function checksymp(m::TaylorMap)
+  nv = nvars(m)
+  if iscoasting(m)
+    nv += 1
+  end
+  Sij = S(nv)
+  mo = maxord(m)
+  out = zeros(eltype(m.v), nv, nv)
+  for i in 1:nv
+    for j in 1:nv
+      grad1 = [TI.deriv(m.v[j], ell) for ell in 1:nv]
+      grad2 = [TI.deriv(m.v[i], k) for k in 1:nv]
+      # per thesis, for given k (index) we sum
+      s1 = [sum([TI.cutord(Sij[k,ell]*grad1[ell],mo) for ell in 1:nv]) for k in 1:nv]
+      out[i,j] = sum([TI.cutord(grad2[k]*s1[k],mo) for k in 1:nv])
+    end
+  end
+  return out
+end
 # =================================================================================== #

@@ -616,7 +616,7 @@ function canonize(
         cphi = -cphi
         sphi = -sphi
       end
-
+      println(atan(sphi,cphi))
       TI.seti!(canonizer.v[2*i-1],  cphi, 2*i-1)
       TI.seti!(canonizer.v[2*i],    cphi, 2*i)
       TI.seti!(canonizer.v[2*i-1], -sphi, 2*i)
@@ -671,29 +671,38 @@ function canonize(
     end
   else
     mo = maxord(a)
-    # Need to include parameter dependence if nonlinear
-    for i in 1:Int(nhv/2) # for each harmonic oscillator
-      t1 = factor_out(a.v[2*i-1], 2*i-1)
-      t2 = factor_out(a.v[2*i-1], 2*i)
+    
 
-      t = sqrt(t1^2+t2^2)
+    # In this case we have to exponentiate
+    c = c_map(a)
+    ci = ci_map(a)
+    id = one(a)
+    canonizerf = zero(VectorField, c)
+    mono = [zero(MVector{nv,Int})..., :]
+    # Need to construct exp
+    for i in 1:Int(nhv/2) # for each harmonic oscillator
+      # Need to include parameter dependence if nonlinear
+      mono[2*i-1] = 1
+      t1 = factor_out(TI.getm(a.v[2*i-1], mono), 2*i-1) #factor_out(a.v[2*i-1], 2*i-1)
+      mono[2*i-1] = 0
+      mono[2*i] = 1
+      t2 = factor_out(TI.getm(a.v[2*i-1], mono), 2*i)
+      mono[2*i] = 0
+      t = TI.cutord(sqrt(TI.cutord(t1^2, mo)+TI.cutord(t2^2, mo)), mo)
       cphi = TI.cutord(t1/t, mo)
       sphi = TI.cutord(t2/t, mo)
-      if sphi*t2 + cphi*t1 < 0 # scalar part only
-        cphi = -cphi
-        sphi = -sphi
-      end
-
-      factor_in!(canonizer.v[2*i-1],  cphi, 2*i-1)
-      factor_in!(canonizer.v[2*i],    cphi, 2*i)
-      factor_in!(canonizer.v[2*i-1], -sphi, 2*i)
-      factor_in!(canonizer.v[2*i],    sphi, 2*i-1)
+      phi = TI.cutord(atan(sphi,cphi), mo)
+      mu = TI.cutord(phi, mo)
+      #TI.copy!(canonizerf.v[2*i-1], mu)
+      #TI.copy!(canonizerf.v[2*i], conj(mu))
+      factor_in!(canonizerf.v[2*i-1], im*mu, 2*i-1)
+      factor_in!(canonizerf.v[2*i],  -im*mu, 2*i)
 
       if !isnothing(phase)
-        phase[i] += atan(sphi,cphi)/(2*pi)
+        phase[i] += TI.cutord(atan(sphi,cphi)/(2*pi), mo)
       end
     end
-
+#=
     if coast
       nt = nv
       ndpt = nv + 1
@@ -706,6 +715,10 @@ function canonize(
         phase[end] += slip
       end
     end
+    =#
+
+    canonizer = real(c ∘ exp(canonizerf, id) ∘ ci)
+
 
     if damping
       error("need to finish")
