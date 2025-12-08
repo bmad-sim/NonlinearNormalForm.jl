@@ -9,13 +9,16 @@ field array type promotion, checking if the last plane of a map is coasting.
 # Helper functions
 getinit(m::Union{TaylorMap,VectorField}) = TI.getinit(first(m.v))
 ndiffs(m::TaylorMap) = length(m.v)
+ndiffs(m::TaylorMap{<:Any,V}) where {V} = length(V)
 ndiffs(F::VectorField) = TI.ndiffs(first(F.v))
 nmonos(m::Union{TaylorMap,VectorField}) = TI.nmonos(first(m.v))
 maxord(m::Union{TaylorMap,VectorField}) = TI.maxord(first(m.v))
 
 # NNF-specific helpers:
 nvars(m::TaylorMap) = length(m.v0)
+nvars(m::TaylorMap{V0}) where {V0<:StaticArray} = length(V0)
 nvars(F::VectorField) = length(F.v)
+nvars(F::VectorField{V0}) where {V0<:StaticArray} = length(V0)
 nparams(m::Union{TaylorMap,VectorField}) = ndiffs(m) - nvars(m)
 nhvars(m::Union{TaylorMap,VectorField}) = iseven(nvars(m)) ? nvars(m) : nvars(m)-1 # number of "harmonic" variables
 
