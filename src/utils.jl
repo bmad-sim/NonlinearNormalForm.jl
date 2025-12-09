@@ -71,12 +71,12 @@ function factor_in!(out, t, var::Int, n::Int=1)
   return out
 end
 
-fast_var_par(t, var::Int, nv::Int) = (out = zero(t); fast_var_par!(out, t, var, nv); return out)
+fast_var_slice(t, var::Int, nv::Int; par::Bool=false, all_ords::Bool=false) = (out = zero(t); fast_var_slice!(out, t, var, nv; par=par, all_ords=all_ords); return out)
 
 # This will par out the polynomial with only 
 # 1st order dependence on variable, nonlinear 
 # parameter dependence
-function fast_var_par!(out, t, var::Int,  nv::Int)
+function fast_var_slice!(out, t, var::Int, nv::Int; par::Bool=false, all_ords::Bool=false)
   TI.is_tps_type(typeof(t)) isa TI.IsTPSType || error("Function only accepts TPS types")
   TI.is_tps_type(typeof(out)) isa TI.IsTPSType || error("Function only accepts TPS types")
   nn = ndiffs(t)
@@ -86,9 +86,13 @@ function fast_var_par!(out, t, var::Int,  nv::Int)
 
   idx = TI.cycle!(t, 0, mono=tmpmono, val=v)
   while idx > 0
-    if tmpmono[var] == 1 && all(t->t==0, view(tmpmono, 1:(var-1))) && all(t->t==0, view(tmpmono, (var+1):nv))
-      tmpmono[var] -= 1
-      TI.setm!(out, v[], tmpmono)
+    if all_ords || tmpmono[var] == 1
+      if all(t->t==0, view(tmpmono, 1:(var-1))) && all(t->t==0, view(tmpmono, (var+1):nv))
+        if par
+          tmpmono[var] -= 1
+        end
+        TI.setm!(out, v[], tmpmono)
+      end
     end
     idx = TI.cycle!(t, idx, mono=tmpmono, val=v)
   end

@@ -630,7 +630,6 @@ function canonize(
       ndpt = nv + 1
       TI.seti!(canonizer.v[nt], 1, nt)
       TI.seti!(canonizer.v[ndpt], 1, ndpt)
-      println("hi")
       TI.seti!(canonizer.v[nt], -TI.geti(a.v[nt], ndpt), ndpt)
       if !isnothing(phase)
         phase[end] += -TI.geti(a.v[nt], ndpt)
@@ -676,8 +675,8 @@ function canonize(
     canonizerf = zero(VectorField, a)
     for i in 1:Int(nhv/2) # for each harmonic oscillator
       # Need to include parameter dependence if nonlinear, so "var-par"
-      t1 = fast_var_par(a.v[2*i-1], 2*i-1, nv)
-      t2 = fast_var_par(a.v[2*i-1], 2*i,   nv)
+      t1 = fast_var_slice(a.v[2*i-1], 2*i-1, nv; par=true)
+      t2 = fast_var_slice(a.v[2*i-1], 2*i,   nv; par=true)
       t = TI.cutord(sqrt(TI.cutord(t1^2, mo)+TI.cutord(t2^2, mo)), mo)
       cphi = TI.cutord(t1/t, mo)
       sphi = TI.cutord(t2/t, mo)
@@ -719,11 +718,22 @@ function canonize(
         TI.mul!(tmp2, tmp1, tmp3)
         TI.add!(canonizerf.v[nt], canonizerf.v[nt], tmp2/2)
       end
-      #TI.copy!(canonizerf.v[nt], -canonizerf.v[nt])
-      return canonizerf
+              
+      # get delta dependent part only
+      slip = fast_var_slice(a.v[nt], ndpt, nv; all_ords=true)
+      TI.add!(canonizerf.v[nt], canonizerf.v[nt], -slip)
+      if !isnothing(phase)
+        phase[end] -= slip
+      end
+      #=
+        TI.seti!(canonizer.v[nt], 1, nt)
+        TI.seti!(canonizer.v[ndpt], 1, ndpt)
+        TI.seti!(canonizer.v[nt], -TI.geti(a.v[nt], ndpt), ndpt)
+        if !isnothing(phase)
+          phase[end] += -TI.geti(a.v[nt], ndpt)
+        end
+      =#
     end
-       
-    #return c ∘ exp(canonizerf, id) ∘ ci
 
     if damping
       error("need to finish")
@@ -742,6 +752,7 @@ function canonize(
       a_rot = a_rot*Diagonal(repeat(damp,inner=2))
       damp .= log.(damp)
     end
+    return exp(canonizerf, id)
   end
   #return canonizer #a_rot
 end
