@@ -601,13 +601,11 @@ function canonize(
   nv = nvars(a)
   nhv = nhvars(a)
   coast = iscoasting(a)
-
+  a_matrix = real.(jacobian(a, VARS))
   canonizer = zero(a)
 
   # tries to be fast for linear calc
   if linear
-    a_matrix = real.(jacobian(a, VARS))
-
     for i in 1:Int(nhv/2) # for each harmonic oscillator
       t = sqrt(a_matrix[2*i-1,2*i-1]^2 + a_matrix[2*i-1,2*i]^2)
       cphi = a_matrix[2*i-1,2*i-1]/t
@@ -616,7 +614,6 @@ function canonize(
         cphi = -cphi
         sphi = -sphi
       end
-      println(atan(sphi,cphi))
       TI.seti!(canonizer.v[2*i-1],  cphi, 2*i-1)
       TI.seti!(canonizer.v[2*i],    cphi, 2*i)
       TI.seti!(canonizer.v[2*i-1], -sphi, 2*i)
@@ -627,11 +624,13 @@ function canonize(
       end
     end
 
+
     if coast
       nt = nv
       ndpt = nv + 1
       TI.seti!(canonizer.v[nt], 1, nt)
       TI.seti!(canonizer.v[ndpt], 1, ndpt)
+      println("hi")
       TI.seti!(canonizer.v[nt], -TI.geti(a.v[nt], ndpt), ndpt)
       if !isnothing(phase)
         phase[end] += -TI.geti(a.v[nt], ndpt)
@@ -669,56 +668,62 @@ function canonize(
       a_rot = a_rot*Diagonal(repeat(damp,inner=2))
       damp .= log.(damp)
     end
+    return canonizer
   else
     mo = maxord(a)
-    
-
-    # In this case we have to exponentiate
-    c = c_map(a)
-    ci = ci_map(a)
+    # For nonlinear case we have to exponentiate to ensure symplecticity
     id = one(a)
-    canonizerf = zero(VectorField, c)
-    mono = [zero(MVector{nv,Int})..., :]
-    # Need to construct exp
+    canonizerf = zero(VectorField, a)
     for i in 1:Int(nhv/2) # for each harmonic oscillator
-      # Need to include parameter dependence if nonlinear
-      mono[2*i-1] = 1
-      t1 = factor_out(TI.getm(a.v[2*i-1], mono), 2*i-1) #factor_out(a.v[2*i-1], 2*i-1)
-      mono[2*i-1] = 0
-      mono[2*i] = 1
-      t2 = factor_out(TI.getm(a.v[2*i-1], mono), 2*i)
-      mono[2*i] = 0
+      # Need to include parameter dependence if nonlinear, so "var-par"
+      t1 = fast_var_par(a.v[2*i-1], 2*i-1, nv)
+      t2 = fast_var_par(a.v[2*i-1], 2*i,   nv)
       t = TI.cutord(sqrt(TI.cutord(t1^2, mo)+TI.cutord(t2^2, mo)), mo)
       cphi = TI.cutord(t1/t, mo)
       sphi = TI.cutord(t2/t, mo)
+      if TI.scalar(sphi)*TI.scalar(t2) + TI.scalar(cphi)*TI.scalar(t1) < 0
+        cphi = -cphi
+        sphi = -sphi
+      end
       phi = TI.cutord(atan(sphi,cphi), mo)
-      mu = TI.cutord(phi, mo)
-      #TI.copy!(canonizerf.v[2*i-1], mu)
-      #TI.copy!(canonizerf.v[2*i], conj(mu))
-      factor_in!(canonizerf.v[2*i-1], im*mu, 2*i-1)
-      factor_in!(canonizerf.v[2*i],  -im*mu, 2*i)
+      factor_in!(canonizerf.v[2*i-1], -phi, 2*i)
+      factor_in!(canonizerf.v[2*i],  phi, 2*i-1)
 
       if !isnothing(phase)
-        phase[i] += TI.cutord(atan(sphi,cphi)/(2*pi), mo)
+        phase[i] += TI.cutord(phi/(2*pi), mo)
       end
     end
-#=
     if coast
       nt = nv
       ndpt = nv + 1
-      TI.seti!(canonizer.v[nt], 1, nt)
-      TI.seti!(canonizer.v[ndpt], 1, ndpt)
-      
-      slip = -factor_out(a.v[nt], ndpt)
-      factor_in!(canonizer.v[nt], slip, ndpt)
-      if !isnothing(phase)
-        phase[end] += slip
+      TI.clear!(canonizerf.v[nt])
+      tmp1 = zero(canonizerf.v[nt])
+      tmp2 = zero(canonizerf.v[nt])
+      tmp3 = zero(canonizerf.v[nt])
+      # set the timelike variable so poisson bracket does not change
+      # have :mu_x(delta)(x^2+px^2) + mu_y(delta)(y^2+py^2):
+      # so for time like variable we have 
+      # -\partial_\delta  (mu_x(delta)(x^2+px^2) + mu_y(delta)(y^2+py^2))
+      # = -dmu_x/ddelta*(x^2+px^2) - dmu_y/ddelta(y^2+py^2)
+      for i in 1:Int(nhv/2)
+        #TI.add!(canonizerf.v[nt], canonizerf.v[nt], tm)
+        TI.clear!(tmp3)
+        TI.deriv!(tmp1, canonizerf.v[2*i-1], ndpt)
+        TI.seti!(tmp3, 1, 2*i)
+        TI.mul!(tmp2, tmp1, tmp3)
+        TI.add!(canonizerf.v[nt], canonizerf.v[nt], tmp2/2)
+
+        TI.deriv!(tmp1, canonizerf.v[2*i], ndpt)
+        TI.clear!(tmp3)
+        TI.seti!(tmp3, -1, 2*i-1)
+        TI.mul!(tmp2, tmp1, tmp3)
+        TI.add!(canonizerf.v[nt], canonizerf.v[nt], tmp2/2)
       end
+      #TI.copy!(canonizerf.v[nt], -canonizerf.v[nt])
+      return canonizerf
     end
-    =#
-
-    canonizer = real(c ∘ exp(canonizerf, id) ∘ ci)
-
+       
+    #return c ∘ exp(canonizerf, id) ∘ ci
 
     if damping
       error("need to finish")
@@ -738,7 +743,7 @@ function canonize(
       damp .= log.(damp)
     end
   end
-  return canonizer #a_rot
+  #return canonizer #a_rot
 end
 
 # This can help give you the fixed point

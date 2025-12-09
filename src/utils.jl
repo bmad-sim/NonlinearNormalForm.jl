@@ -33,6 +33,7 @@ factor_out(t, var::Int) = (out = zero(t); factor_out!(out, t, var))
 
 function factor_out!(out, t, var::Int)
   TI.is_tps_type(typeof(t)) isa TI.IsTPSType || error("Function only accepts TPS types")
+  TI.is_tps_type(typeof(out)) isa TI.IsTPSType || error("Function only accepts TPS types")
   nn = ndiffs(t)
   v = Ref{TI.numtype(t)}()
   tmpmono = zeros(UInt8, nn) 
@@ -48,21 +49,47 @@ function factor_out!(out, t, var::Int)
   return out
 end
 
-factor_in(t, var::Int) = (out = zero(t); factor_in!(out, t, var))
+factor_in(t, var::Int, n::Int=1) = (out = zero(t); factor_in!(out, t, var, n))
 
-function factor_in!(out, t, var::Int)
+function factor_in!(out, t, var::Int, n::Int=1)
   TI.is_tps_type(typeof(t)) isa TI.IsTPSType || error("Function only accepts TPS types")
+  TI.is_tps_type(typeof(out)) isa TI.IsTPSType || error("Function only accepts TPS types")
   nn = ndiffs(t)
   v = Ref{TI.numtype(t)}()
   tmpmono = zeros(UInt8, nn) 
 
   # First do scalar part
-  TI.seti!(out, TI.geti(t, 0), var)
+  tmpmono[var] += n
+  TI.setm!(out, TI.geti(t, 0), tmpmono)
 
   idx = TI.cycle!(t, 0, mono=tmpmono, val=v)
   while idx > 0
-    tmpmono[var] += 1
+    tmpmono[var] += n
     TI.setm!(out, v[], tmpmono)
+    idx = TI.cycle!(t, idx, mono=tmpmono, val=v)
+  end
+  return out
+end
+
+fast_var_par(t, var::Int, nv::Int) = (out = zero(t); fast_var_par!(out, t, var, nv); return out)
+
+# This will par out the polynomial with only 
+# 1st order dependence on variable, nonlinear 
+# parameter dependence
+function fast_var_par!(out, t, var::Int,  nv::Int)
+  TI.is_tps_type(typeof(t)) isa TI.IsTPSType || error("Function only accepts TPS types")
+  TI.is_tps_type(typeof(out)) isa TI.IsTPSType || error("Function only accepts TPS types")
+  nn = ndiffs(t)
+  np = nn-nv
+  v = Ref{TI.numtype(t)}()
+  tmpmono = zeros(UInt8, nn) 
+
+  idx = TI.cycle!(t, 0, mono=tmpmono, val=v)
+  while idx > 0
+    if tmpmono[var] == 1 && all(t->t==0, view(tmpmono, 1:(var-1))) && all(t->t==0, view(tmpmono, (var+1):nv))
+      tmpmono[var] -= 1
+      TI.setm!(out, v[], tmpmono)
+    end
     idx = TI.cycle!(t, idx, mono=tmpmono, val=v)
   end
   return out
@@ -477,6 +504,6 @@ function checksymp(m::TaylorMap)
       out[i,j] = sum([TI.cutord(grad2[k]*s1[k],mo) for k in 1:nv])
     end
   end
-  return out
+  return out-S
 end
 # =================================================================================== #
