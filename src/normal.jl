@@ -720,6 +720,7 @@ function canonize(
       end
               
       # get delta dependent part only
+      # this makes sure doesn't blow up, have to remove
       slip = fast_var_slice(a.v[nt], ndpt, nv; all_ords=true)
       TI.add!(canonizerf.v[nt], canonizerf.v[nt], -slip)
       if !isnothing(phase)
