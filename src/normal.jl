@@ -601,11 +601,12 @@ function canonize(
   nv = nvars(a)
   nhv = nhvars(a)
   coast = iscoasting(a)
-  a_matrix = real.(jacobian(a, VARS))
-  canonizer = zero(a)
+
 
   # tries to be fast for linear calc
   if linear
+    a_matrix = real.(jacobian(a, VARS))
+    canonizer = zero(a)
     for i in 1:Int(nhv/2) # for each harmonic oscillator
       t = sqrt(a_matrix[2*i-1,2*i-1]^2 + a_matrix[2*i-1,2*i]^2)
       cphi = a_matrix[2*i-1,2*i-1]/t
@@ -672,6 +673,7 @@ function canonize(
     mo = maxord(a)
     # For nonlinear case we have to exponentiate to ensure symplecticity
     id = one(a)
+    lin_canonizer = zero(a) # linear part separately to speed up exponent
     canonizerf = zero(VectorField, a)
     for i in 1:Int(nhv/2) # for each harmonic oscillator
       # Need to include parameter dependence if nonlinear, so "var-par"
@@ -685,16 +687,25 @@ function canonize(
         sphi = -sphi
       end
       phi = TI.cutord(atan(sphi,cphi), mo)
-      factor_in!(canonizerf.v[2*i-1], -phi, 2*i)
-      factor_in!(canonizerf.v[2*i],  phi, 2*i-1)
+
+      TI.seti!(lin_canonizer.v[2*i-1], TI.scalar( cphi), 2*i-1)
+      TI.seti!(lin_canonizer.v[2*i],   TI.scalar( cphi), 2*i)
+      TI.seti!(lin_canonizer.v[2*i-1], TI.scalar(-sphi), 2*i)
+      TI.seti!(lin_canonizer.v[2*i],   TI.scalar( sphi), 2*i-1)
 
       if !isnothing(phase)
         phase[i] += TI.cutord(phi/(2*pi), mo)
       end
+
+      TI.seti!(phi, 0, 0) # set scalar part to zero bc linear canonization separate
+      factor_in!(canonizerf.v[2*i-1], -phi, 2*i)
+      factor_in!(canonizerf.v[2*i],  phi, 2*i-1)
     end
+
     if coast
       nt = nv
       ndpt = nv + 1
+      
       TI.clear!(canonizerf.v[nt])
       tmp1 = zero(canonizerf.v[nt])
       tmp2 = zero(canonizerf.v[nt])
@@ -710,22 +721,31 @@ function canonize(
         TI.deriv!(tmp1, canonizerf.v[2*i-1], ndpt)
         TI.seti!(tmp3, 1, 2*i)
         TI.mul!(tmp2, tmp1, tmp3)
-        TI.add!(canonizerf.v[nt], canonizerf.v[nt], tmp2/2)
+        TI.div!(tmp3, tmp2, 2)
+        TI.add!(canonizerf.v[nt], canonizerf.v[nt], tmp3)
 
         TI.deriv!(tmp1, canonizerf.v[2*i], ndpt)
         TI.clear!(tmp3)
         TI.seti!(tmp3, -1, 2*i-1)
         TI.mul!(tmp2, tmp1, tmp3)
-        TI.add!(canonizerf.v[nt], canonizerf.v[nt], tmp2/2)
+        TI.div!(tmp3, tmp2, 2)
+        TI.add!(canonizerf.v[nt], canonizerf.v[nt], tmp3)
       end
               
       # get delta dependent part only
       # this makes sure doesn't blow up, have to remove
       slip = fast_var_slice(a.v[nt], ndpt, nv; all_ords=true)
-      TI.add!(canonizerf.v[nt], canonizerf.v[nt], -slip)
       if !isnothing(phase)
         phase[end] -= slip
       end
+      TI.seti!(lin_canonizer.v[nt], 1, nt)
+      TI.seti!(lin_canonizer.v[ndpt], 1, ndpt)
+      TI.seti!(lin_canonizer.v[nt], -TI.geti(slip, ndpt), ndpt)
+      
+      # set linear part to zero for nonlinear part
+      TI.seti!(slip, 0, ndpt)
+      TI.add!(canonizerf.v[nt], canonizerf.v[nt], -slip)
+
       #=
         TI.seti!(canonizer.v[nt], 1, nt)
         TI.seti!(canonizer.v[ndpt], 1, ndpt)
@@ -753,9 +773,8 @@ function canonize(
       a_rot = a_rot*Diagonal(repeat(damp,inner=2))
       damp .= log.(damp)
     end
-    return exp(canonizerf, id)
+    return lin_canonizer ∘ exp(canonizerf, id)
   end
-  #return canonizer #a_rot
 end
 
 # This can help give you the fixed point
