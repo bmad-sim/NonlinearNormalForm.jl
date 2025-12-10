@@ -652,7 +652,7 @@ function canonize(
     # which correspond to the damping (same in each plane, Diagonal(lambda1, lambda1, lambda2, lambda2, etc)
 
     if damping
-      error("need to finish")
+      error("Canonization including damping is not implemented yet")
       damp = zeros(Int(nvars(a)/2))
       tmp = zeros(Int(nvars(a)/2), Int(nvars(a)/2))
       for i in 1:Int(nvars(a)/2)
@@ -757,7 +757,7 @@ function canonize(
     end
 
     if damping
-      error("need to finish")
+      error("Canonization including damping is not implemented yet")
       damp = zeros(Int(nvars(a)/2))
       tmp = zeros(Int(nvars(a)/2), Int(nvars(a)/2))
       for i in 1:Int(nvars(a)/2)
