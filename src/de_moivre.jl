@@ -2,7 +2,7 @@ function compute_de_moivre(a1::DAMap{V0}, ::Val{linear}=Val{true}()) where {V0<:
   # jp_mat[i] in FPP is J matrix restricted to i-th plane
   # ip_mat[i] in FPP is identity matrix restricted to i-th plane
   # jt_mat in FPP is symplectic s matrix
-  nhv = nhvars(a1) #)isodd(length(V0)) ? length(V0)+1 : length(V0)
+  nhv = nhvars(a1)
   if linear
     let a1_mat = jacobian(a1, HVARS), a1i_mat = inv(a1_mat)
       B = StaticArrays.sacollect(SVector{Int(nhv/2),typeof(a1_mat)}, a1_mat*jp_mat(a1, i)*a1i_mat for i in 1:Int(nhv/2))
