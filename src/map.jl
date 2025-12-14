@@ -265,10 +265,11 @@ end
 
 # zero but new type potentially
 function zero(::Type{$t{V0,V,Q,S}}, m::TaylorMap) where {V0,V,Q,S}
-  return _zero($t{V0,V,Q,S}, getinit(eltype(V)), nvars(m), m)
+  return _zero($t{V0,V,Q,S}, getinit(m), nvars(m), m)
 end
 
-zero(::Type{$t}, m::TaylorMap{V0,V,Q,S}) where {V0,V,Q,S} = zero($t{V0,V,Q,S}, m)
+# Keep same initializer if not specified
+zero(::Type{$t}, m::TaylorMap{V0,V,Q,S}) where {V0,V,Q,S} = _zero($t{V0,V,Q,S}, getinit(m), nvars(m), m)
 
 # Copy ctor including optional TPSA init change
 function $t(m::TaylorMap; init::AbstractTPSAInit=getinit(m))
@@ -347,11 +348,6 @@ function $t(;
     np = ndiffs(init) - nv
   end
 
-
-  #println(nv)
-  #println(np)
-  
-  #println(np)
   nn = nv+np
   # Check if nv+np agrees with ndiffs in init
   nn == ndiffs(init) || error("Number of variables + parameters does not agree with the number of differentials in the TPSA")

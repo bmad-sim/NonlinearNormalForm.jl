@@ -29,9 +29,12 @@ function compute_sagan_rubin(a1::DAMap{V0}, ::Val{linear}=Val{false}()) where {V
         # Note that eta and zeta here are in x,px,y,py, not in a,pa,b,pb
         eta = StaticArrays.sacollect(SVector{nvm,eltype(H[1])}, H[end][i,nv] for i in 1:(nvm))
         zeta = StaticArrays.sacollect(SVector{nvm,eltype(H[1])}, H[end][i,nv-1] for i in 1:(nvm))
+        # we also return B[3][5,6], which can then be multiplied by sin(mu_3) to approximate the
+        # phase slip
+        approx_slip = (a1_mat*jp_mat(a1, Int(nv/2))*a1i_mat)[5,6]
         # I don't really understand the utility of this, but for consistency with Sagan-Rubin
         # multiply by Vi to put in "normalized" coordinates
-        return (; beta=beta, alpha=alpha, eta=Vi*eta, zeta=Vi*zeta, gamma_c=gamma_c, C=C)
+        return (; beta=beta, alpha=alpha, gamma_c=gamma_c, C=C, eta=Vi*eta, zeta=Vi*zeta, approx_slip=approx_slip)
       end
     else
       let a1_mat = jacobian(a1, HVARS), a1i_mat = inv(a1_mat)
@@ -68,8 +71,16 @@ function compute_sagan_rubin(a1::DAMap{V0}, ::Val{linear}=Val{false}()) where {V
         eta = StaticArrays.sacollect(SVector{nvm,eltype(H[1].v)}, factor_out(H[end].v[i], nv) for i in 1:(nvm))
         zeta = StaticArrays.sacollect(SVector{nvm,eltype(H[1].v)}, factor_out(H[end].v[i], nv-1) for i in 1:(nvm))
         # I don't really understand the utility of this, but for consistency with Sagan-Rubin
-        # multiply by Vi to put in "normalized" coordinates
-        return (; beta=beta, alpha=alpha, eta=Vi*eta, zeta=Vi*zeta, gamma_c=gamma_c, C=C)
+        # multiply dispersions by Vi to put in "normalized" coordinates
+
+        # we also return B[3][5,6], which can then be multiplied by sin(mu_3) to approximate the
+        # phase slip
+        setray!(tmp.v, v_matrix=jp_mat(a1, 3))
+        B = a1∘tmp∘a1i
+        approx_slip = factor_out(B.v[nv-1], nv)
+        # In the non-coasting case, we return quantities which are coasting-like (now 
+        # contained in a1 and not a0). Of course in coasting case everything is in a0
+        return (; beta=beta, alpha=alpha, gamma_c=gamma_c, C=C,  eta=Vi*eta, zeta=Vi*zeta, approx_slip=approx_slip)
       end
     else
       let

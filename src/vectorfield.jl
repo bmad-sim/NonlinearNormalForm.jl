@@ -118,12 +118,12 @@ end
 
 # zero but new type potentially
 function zero(::Type{VectorField{V,Q}}, F::Union{VectorField,TaylorMap}) where {V,Q}
-  return _zero(VectorField{V,Q}, getinit(eltype(V)), nvars(F))
+  return _zero(VectorField{V,Q}, getinit(F), nvars(F))
 end
 
-zero(::Type{VectorField}, F::VectorField{V,Q}) where {V,Q} = zero(VectorField{V,Q}, F)
-
-zero(::Type{VectorField}, m::TaylorMap{V0,V,Q,S}) where {V0,V,Q,S} = zero(VectorField{similar_eltype(V0,eltype(V)),Q}, m)
+# Keep same initializer if not specified
+zero(::Type{VectorField}, F::VectorField{V,Q}) where {V,Q} = _zero(VectorField{V,Q}, getinit(F), nvars(F))
+zero(::Type{VectorField}, m::TaylorMap{V0,V,Q,S}) where {V0,V,Q,S} = _zero(VectorField{similar_eltype(V0,eltype(V)),Q}, getinit(m), nvars(m))
 
 # Copy ctor including optional TPSA init change
 function VectorField(F::VectorField; init::AbstractTPSAInit=getinit(F))
@@ -483,27 +483,19 @@ function *(F::VectorField, m1::Union{DAMap,UniformScaling})
   return m
 end
 
-function exp(F::VectorField, m1::Union{UniformScaling,DAMap}=I)
+function exp(F::VectorField, m1::DAMap)
   Fprom = F
-  if m1 isa UniformScaling
-    error("Not currently supported please provide a map")
-    # TO-DO: How/should I store nparams in VectorField?
-    # It is just equal to nvars - ndiffs, though this will be slow...
-    m1prom = one(DAMap{typeof(F.v),typeof(F.q)})
-    Fprom = F
-  else
-    if TI.numtype(eltype(m1.v)) != TI.numtype(eltype(F.v))
-      if promote_type(typeof(F), TI.numtype(eltype(m1.v))) != typeof(F)
-        Fprom = zero(promote_type(typeof(F), TI.numtype(eltype(m1.v))), F)
-        copy!(Fprom, F)
-      else
-        m1prom = zero(promote_type(typeof(m1), TI.numtype(eltype(F.v))), m1)
-        copy!(m1prom, m1)
-      end
+  if TI.numtype(eltype(m1.v)) != TI.numtype(eltype(F.v))
+    if promote_type(typeof(F), TI.numtype(eltype(m1.v))) != typeof(F)
+      Fprom = zero(promote_type(typeof(F), TI.numtype(eltype(m1.v))), F)
+      copy!(Fprom, F)
     else
-      Fprom = F
-      m1prom = m1
+      m1prom = zero(promote_type(typeof(m1), TI.numtype(eltype(F.v))), m1)
+      copy!(m1prom, m1)
     end
+  else
+    Fprom = F
+    m1prom = m1
   end
   m = zero(m1prom)
   exp!(m, Fprom, m1prom)

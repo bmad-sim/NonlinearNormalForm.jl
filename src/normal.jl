@@ -323,7 +323,12 @@ function factorize(a)
     nt = nv
     ndpt = nv+1
     id = one(a)
-    vf = VectorField(v=view(a0.v, 1:nv), q=a0.q)
+    vf = zero(VectorField, a)
+    setray!(vf.v; v=view(a0.v, 1:nv))
+    if !isnothing(a0.q)
+      setquat!(vf; q=a0.q)
+    end
+    #vf = VectorField(v=view(a0.v, 1:nv), q=a0.q)
     TI.clear!(vf.v[nt])
     t1 = zero(vf.v[nt])
     t2 = zero(t1)
@@ -625,7 +630,6 @@ function canonize(
       end
     end
 
-
     if coast
       nt = nv
       ndpt = nv + 1
@@ -694,7 +698,7 @@ function canonize(
       TI.seti!(lin_canonizer.v[2*i],   TI.scalar( sphi), 2*i-1)
 
       if !isnothing(phase)
-        phase[i] += TI.cutord(phi/(2*pi), mo)
+        TI.add!(phase[i], phase[i], TI.cutord(phi/(2*pi), mo))
       end
 
       TI.seti!(phi, 0, 0) # set scalar part to zero bc linear canonization separate
@@ -736,7 +740,7 @@ function canonize(
       # this makes sure doesn't blow up, have to remove
       slip = fast_var_slice(a.v[nt], ndpt, nv; all_ords=true)
       if !isnothing(phase)
-        phase[end] -= slip
+        TI.sub!(phase[end], phase[end], slip)
       end
       TI.seti!(lin_canonizer.v[nt], 1, nt)
       TI.seti!(lin_canonizer.v[ndpt], 1, ndpt)

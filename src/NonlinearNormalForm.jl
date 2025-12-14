@@ -43,7 +43,6 @@ export        TaylorMap,
               VectorField,
               
               norm,
-              to_SO3,
       
               compose,
       
@@ -60,24 +59,15 @@ export        TaylorMap,
               normalize_eigenmode!,
               locate_modes!,
               moveback_unstable!,
-      
-              normal!,
+
               normal,
-              gofix!,
-              gofix,
-              linear_a!,
-              linear_a,
               c_map,
               ci_map,
               c_jacobian,
               ci_jacobian,
 
               log!,
-              pb,
 
-
-
-              inv_with_log,
               equilibrium_moments,
               factorize,
               canonize,
