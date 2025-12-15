@@ -9,17 +9,96 @@ field array type promotion, checking if the last plane of a map is coasting.
 # Helper functions
 getinit(m::Union{TaylorMap,VectorField}) = TI.getinit(first(m.v))
 ndiffs(m::TaylorMap) = length(m.v)
+ndiffs(m::TaylorMap{<:Any,V}) where {V} = length(V)
 ndiffs(F::VectorField) = TI.ndiffs(first(F.v))
 nmonos(m::Union{TaylorMap,VectorField}) = TI.nmonos(first(m.v))
 maxord(m::Union{TaylorMap,VectorField}) = TI.maxord(first(m.v))
 
 # NNF-specific helpers:
 nvars(m::TaylorMap) = length(m.v0)
+nvars(m::TaylorMap{V0}) where {V0<:StaticArray} = length(V0)
 nvars(F::VectorField) = length(F.v)
+nvars(F::VectorField{V0}) where {V0<:StaticArray} = length(V0)
 nparams(m::Union{TaylorMap,VectorField}) = ndiffs(m) - nvars(m)
 nhvars(m::Union{TaylorMap,VectorField}) = iseven(nvars(m)) ? nvars(m) : nvars(m)-1 # number of "harmonic" variables
 
 iscoasting(m::Union{TaylorMap,VectorField}) = !iseven(nvars(m))
+# =================================================================================== #
+# Tool to "factor" out a first order dependence on a particular variable
+# e.g. for a TPSA with monomial [1,2,3,4], for 1 will return same TPSA but 
+# that monomial is now [0,2,3,4]
+# This is useful for lattice functions (first order) with nonlinear parameter dependence
+
+factor_out(t, var::Int) = (out = zero(t); factor_out!(out, t, var))
+
+function factor_out!(out, t, var::Int)
+  TI.is_tps_type(typeof(t)) isa TI.IsTPSType || error("Function only accepts TPS types")
+  TI.is_tps_type(typeof(out)) isa TI.IsTPSType || error("Function only accepts TPS types")
+  nn = ndiffs(t)
+  v = Ref{TI.numtype(t)}()
+  tmpmono = zeros(UInt8, nn) 
+
+  idx = TI.cycle!(t, 0, mono=tmpmono, val=v)
+  while idx > 0
+    if tmpmono[var] != 0
+      tmpmono[var] -= 1
+      TI.setm!(out, v[], tmpmono)
+    end
+    idx = TI.cycle!(t, idx, mono=tmpmono, val=v)
+  end
+  return out
+end
+
+factor_in(t, var::Int, n::Int=1) = (out = zero(t); factor_in!(out, t, var, n))
+
+function factor_in!(out, t, var::Int, n::Int=1)
+  TI.is_tps_type(typeof(t)) isa TI.IsTPSType || error("Function only accepts TPS types")
+  TI.is_tps_type(typeof(out)) isa TI.IsTPSType || error("Function only accepts TPS types")
+  nn = ndiffs(t)
+  v = Ref{TI.numtype(t)}()
+  tmpmono = zeros(UInt8, nn) 
+
+  # First do scalar part
+  tmpmono[var] += n
+  TI.setm!(out, TI.geti(t, 0), tmpmono)
+
+  idx = TI.cycle!(t, 0, mono=tmpmono, val=v)
+  while idx > 0
+    tmpmono[var] += n
+    TI.setm!(out, v[], tmpmono)
+    idx = TI.cycle!(t, idx, mono=tmpmono, val=v)
+  end
+  return out
+end
+
+fast_var_slice(t, var::Int, nv::Int; par::Bool=false, all_ords::Bool=false) = (out = zero(t); fast_var_slice!(out, t, var, nv; par=par, all_ords=all_ords); return out)
+
+# This will par out the polynomial with only 
+# 1st order dependence on variable, nonlinear 
+# parameter dependence
+function fast_var_slice!(out, t, var::Int, nv::Int; par::Bool=false, all_ords::Bool=false)
+  TI.is_tps_type(typeof(t)) isa TI.IsTPSType || error("Function only accepts TPS types")
+  TI.is_tps_type(typeof(out)) isa TI.IsTPSType || error("Function only accepts TPS types")
+  nn = ndiffs(t)
+  np = nn-nv
+  v = Ref{TI.numtype(t)}()
+  tmpmono = zeros(UInt8, nn) 
+
+  idx = TI.cycle!(t, 0, mono=tmpmono, val=v)
+  while idx > 0
+    if all_ords || tmpmono[var] == 1
+      if all(t->t==0, view(tmpmono, 1:(var-1))) && all(t->t==0, view(tmpmono, (var+1):nv))
+        if par
+          tmpmono[var] -= 1
+        end
+        TI.setm!(out, v[], tmpmono)
+      end
+    end
+    idx = TI.cycle!(t, idx, mono=tmpmono, val=v)
+  end
+  return out
+end
+
 # =================================================================================== #
 # Jacobian/jacobiant
 # Useful options should be 1) harmonic variables, 2) variables, and 3) variables + parameters
@@ -410,5 +489,25 @@ by those nonzero elements in the result.
 function checksymp(M)
   res = transpose(M)*S*M-S
   return res
+end
+
+function checksymp(m::TaylorMap)
+  nv = nvars(m)
+  if iscoasting(m)
+    nv += 1
+  end
+  Sij = S(nv)
+  mo = maxord(m)
+  out = zeros(eltype(m.v), nv, nv)
+  for i in 1:nv
+    for j in 1:nv
+      grad1 = [TI.deriv(m.v[j], ell) for ell in 1:nv]
+      grad2 = [TI.deriv(m.v[i], k) for k in 1:nv]
+      # per thesis, for given k (index) we sum
+      s1 = [sum([TI.cutord(Sij[k,ell]*grad1[ell],mo) for ell in 1:nv]) for k in 1:nv]
+      out[i,j] = sum([TI.cutord(grad2[k]*s1[k],mo) for k in 1:nv])
+    end
+  end
+  return out-S
 end
 # =================================================================================== #
