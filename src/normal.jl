@@ -326,7 +326,7 @@ function factorize(a)
     vf = zero(VectorField, a)
     setray!(vf.v; v=view(a0.v, 1:nv))
     if !isnothing(a0.q)
-      setquat!(vf; q=a0.q)
+      setquat!(vf.q; q=a0.q)
     end
     #vf = VectorField(v=view(a0.v, 1:nv), q=a0.q)
     TI.clear!(vf.v[nt])
