@@ -556,8 +556,6 @@ function inv!(
   checkinplace(m, m1)
   !(m === m1) || error("Cannot inv!(m, m1) with m === m1")
 
-  #TI.inv!(m.v, m1.v)
-  
   # Following Dragt book:
   # We can use the equation on Wikipedia
   # for inverse of block matrices: https://en.wikipedia.org/wiki/Block_matrix#Inversion
