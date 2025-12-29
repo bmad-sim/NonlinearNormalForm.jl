@@ -547,13 +547,66 @@ function inv!(
   m::TaylorMap,
   m1::TaylorMap; 
   do_spin::Bool=true, 
+  work_vs::NTuple{3}=m.v isa StaticArray ? 
+                      ntuple(t->StaticArrays.sacollect(MVector{nvars(m)}, zero(first(m.v)) for i in 1:nvars(m)), Val{3}()) :
+                      ntuple(t->zero.(view(m.v, 1:nvars(m))), Val{3}()), 
   work_q::Union{Nothing,Quaternion}=isnothing(m.q) ? nothing : zero(m.q)
 )
 
   checkinplace(m, m1)
   !(m === m1) || error("Cannot inv!(m, m1) with m === m1")
 
-  TI.inv!(m.v, m1.v)
+  # Following Dragt book:
+  # We can use the equation on Wikipedia
+  # for inverse of block matrices: https://en.wikipedia.org/wiki/Block_matrix#Inversion
+  A = jacobian(m1, VARS)
+  B = jacobian(m1, PARAMS)
+  Ri = hcat(inv(A), -inv(A)*B)
+
+  clear!(m)
+  setray!(m.v, v_matrix=Ri)
+
+  mo = maxord(m1)
+  if mo > 1
+    nn = ndiffs(m)
+    nv = nvars(m)
+    np = nparams(m)
+
+    ri = work_vs[1]
+    Ntilde = work_vs[2]
+    tmp = work_vs[3]
+
+    # Put N-not-tilde in tmp
+    for j in 1:nv
+      TI.clear!(ri[j])
+      TI.clear!(Ntilde[j])
+      TI.cutord!(tmp[j], m1.v[j], -1)
+    end
+
+    # (nv x nn) * (nn x 1) = (nv x 1)
+    # Use first TPSA in ri as temporary
+    tt = first(ri)
+    for j in 1:nv
+      for i in 1:nv
+        TI.mul!(tt, -Ri[i,j], tmp[j])
+        TI.add!(Ntilde[i], Ntilde[i], tt)
+      end
+    end
+
+    # now can set ri, tt dead
+    TI.clear!(tt)
+    setray!(ri, v_matrix=Ri)
+
+    # At each step in iteration, m should contain the result up to
+    # that order
+    for i in 2:mo
+      TI.compose!(view(tmp, 1:nv), view(Ntilde, 1:nv), m.v)
+      for j in 1:nv
+        TI.cutord!(tmp[j], tmp[j], mo+1)
+        TI.add!(m.v[j], ri[j], tmp[j])
+      end
+    end
+  end
 
   # Now do quaternion: inverse of q(z0) is q^-1(M^-1(zf))
   if !isnothing(m.q)
