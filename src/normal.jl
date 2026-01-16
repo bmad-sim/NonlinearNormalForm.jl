@@ -828,7 +828,7 @@ function canonize(
       end
       setray!(canonizer.v, v_matrix=a_rot)
     end
-    return canonizer
+    # return canonizer
     # linear ===
 
     return lin_canonizer ∘ exp(canonizerf, id)
