@@ -122,6 +122,7 @@ end
     r_rot = one(a_fpp)
     NonlinearNormalForm.setray!(r_rot.v, v_matrix=R_rot)
     a = a ∘ r_rot
+    NonlinearNormalForm.setscalar!(a, 0) # bc FPP doesn't handle consistently
     @test norm(a - a_fpp) < 2e-7
 
     # Canonization with damping
