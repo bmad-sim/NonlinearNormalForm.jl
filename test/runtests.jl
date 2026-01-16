@@ -1,4 +1,5 @@
 using NonlinearNormalForm
+using NonlinearNormalForm: NonlinearNormalForm as NNF
 using TPSAInterface
 using TPSAInterface: TPSAInterface as TI
 using Test, GTPSA
@@ -123,5 +124,19 @@ end
     a = a ∘ r_rot
     @test norm(a - a_fpp) < 2e-7
 
+    # Canonization with damping
+    m = real(read_fpp_map("canonize_rad2/test.map", spin=false, stochastic=false));
+    a_fpp = real(read_fpp_map("canonize_rad2/a.map", spin=false, stochastic=false));
+    ac_norad_fpp = real(read_fpp_map("canonize_rad2/ac_norad.map", spin=false, stochastic=false));
+    ac_fpp = real(read_fpp_map("canonize_rad2/ac.map", spin=false, stochastic=false));
+
+    a = normal(m);
+    ac_norad = a ∘ canonize(a)
+    @test norm(NNF.jacobian(ac_norad - ac_norad_fpp)) < 1e-12
+
+    damp = zeros(3)
+    ac = ac_norad ∘ canonize(ac_norad; damping=true, damp=damp)
+    @test norm(damp - [  7.0794145850303742E-009 ,  3.2927211731860217E-007 ,  5.5985424078986008E-007]) < 1e-12
+    @test norm(NNF.jacobian(ac-ac_fpp)) < 1e-12
 end
 

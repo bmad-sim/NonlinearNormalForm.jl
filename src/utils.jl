@@ -76,6 +76,8 @@ fast_var_slice(t, var::Int, nv::Int; par::Bool=false, all_ords::Bool=false) = (o
 # This will par out the polynomial with only 
 # 1st order dependence on variable, nonlinear 
 # parameter dependence
+# all_ords means beyond first order variable dependence
+# par removes a variable
 function fast_var_slice!(out, t, var::Int, nv::Int; par::Bool=false, all_ords::Bool=false)
   TI.is_tps_type(typeof(t)) isa TI.IsTPSType || error("Function only accepts TPS types")
   TI.is_tps_type(typeof(out)) isa TI.IsTPSType || error("Function only accepts TPS types")
@@ -230,7 +232,7 @@ function ci_jacobian(m::TaylorMap{V0,V,Q,S}, ::T=VARS) where {V0,V,Q,S,T<:Union{
   n = T == HarmonicVariables ? nhv : nv
   CI = similar(m.v0, complex(eltype(m.v0)), n, n)
   CI .= 0
-  for i in 1:Int(nhv/2)
+  for i in 1:div(nhv, 2)
     # x_new = 1/sqrt(2)*(v+im*p)
     CI[2*i-1,2*i-1] = 1/sqrt(2)
     CI[2*i-1,2*i] = complex(0,1/sqrt(2))
@@ -295,7 +297,7 @@ function c_jacobian(m::TaylorMap{V0,V,Q,S}, ::T=VARS) where {V0,V,Q,S,T<:Union{H
   n = T == HarmonicVariables ? nhv : nv
   C = similar(m.v0, complex(eltype(m.v0)), n, n)
   C .= 0
-  for i in 1:Int(nhv/2)
+  for i in 1:div(nhv, 2)
     C[2*i-1,2*i-1] = 1/sqrt(2)
     C[2*i-1,2*i] = 1/sqrt(2)
 

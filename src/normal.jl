@@ -57,11 +57,16 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
   we do transform to a space where the time-like coordinate does not depend on the variables at all.
 
   =#
+
+  a0 = one(m)
+  # Properly set scalar part of map:
+  a0.v0 .= m.v0
+  setscalar!(a0, getscalar(m))
+
   if np > 0
     M_hvars = jacobian(m, HVARS)  
     M_hparams = jacobian(m, HPARAMS)
     A0_12 = -inv(M_hvars-I)*M_hparams
-    a0 = one(m)
     setray!(a0.v, v_matrix=A0_12, v_matrix_offset=nv) # offset to parameters part
 
     # if we are coasting, then we need to include the effect of the variables on the time-like coordinate
@@ -81,13 +86,11 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
       # And so we can capture this just by adding the Poisson bracket. 
       # But in the nonlinear part (where we "factorize" we have to actually exponentiate
       # the Poisson bracket captured in F to handle this properly.)
-      for i in 1:Int(nhv/2)
+      for i in 1:div(nhv, 2)
         TI.seti!(a0.v[nt], TI.geti(a0.v[2*i-1], ndpt), 2*i)
         TI.seti!(a0.v[nt], -TI.geti(a0.v[2*i], ndpt), 2*i-1)
       end
     end
-  else
-    a0 = I
   end
 
   if mo == 0
@@ -334,7 +337,7 @@ function factorize(a)
     t2 = zero(t1)
     tm = zero(t1)
     # set the timelike variable so poisson bracket does not change
-    for i in 1:Int(nhv/2)
+    for i in 1:div(nhv, 2)
       TI.clear!(tm)
       TI.deriv!(t1, vf.v[2*i-1], ndpt)
       TI.seti!(tm, 1, 2*i)
@@ -477,8 +480,8 @@ function is_orbital_resonance(varidx, ords, nhv, res, spin_res)
     t2 = 0
     
     for k in 1:2:nhv # ignore coasting plane
-      t1 += abs(ords[k]-ords[k+1]+res[Int((k+1)/2),curresidx]) 
-      t2 += abs(ords[k]-ords[k+1]-res[Int((k+1)/2),curresidx]) 
+      t1 += abs(ords[k]-ords[k+1]+res[div(k+1, 2),curresidx]) 
+      t2 += abs(ords[k]-ords[k+1]-res[div(k+1, 2),curresidx]) 
     end
     if t1 == 0 || t2 == 0
       ords[varidx] += 1
@@ -518,8 +521,8 @@ function is_spin_resonance(spinidx, ords, nhv, res, spin_res)
     t2 = 0
     
     for k in  1:2:nhv # ignore coasting plane
-      t1 += abs(ords[k]-ords[k+1]+res[Int((k+1)/2),curresidx]) 
-      t2 += abs(ords[k]-ords[k+1]-res[Int((k+1)/2),curresidx]) 
+      t1 += abs(ords[k]-ords[k+1]+res[div(k+1, 2),curresidx]) 
+      t2 += abs(ords[k]-ords[k+1]-res[div(k+1, 2),curresidx]) 
     end
 
     m = spin_res[curresidx]
@@ -598,11 +601,12 @@ end
 # Returns the rotation map to put a in Courant Snyder form 
 # The phase advance can be acquired from this map by atan(r11,r22), etc etc
 function canonize(
-  a::DAMap,
+  a::DAMap{V0},
   ::Val{linear}=Val{true}();
-   phase=nothing, 
-  damping::Bool=!isnothing(a.s)
-) where {linear}
+  phase=nothing, 
+  damping::Bool=!isnothing(a.s),
+  damp=nothing
+) where {V0<:StaticArray,linear}
   nv = nvars(a)
   nhv = nhvars(a)
   coast = iscoasting(a)
@@ -612,7 +616,7 @@ function canonize(
   if linear
     a_matrix = real.(jacobian(a, VARS))
     canonizer = zero(a)
-    for i in 1:Int(nhv/2) # for each harmonic oscillator
+    for i in 1:div(nhv, 2) # for each harmonic oscillator
       t = sqrt(a_matrix[2*i-1,2*i-1]^2 + a_matrix[2*i-1,2*i]^2)
       cphi = a_matrix[2*i-1,2*i-1]/t
       sphi = a_matrix[2*i-1,2*i]/t
@@ -640,8 +644,6 @@ function canonize(
         phase[end] += -TI.geti(a.v[nt], ndpt)
       end
     end
-    #a_rot = a_matrix*ri
-    #return a_rot
 
     # Now we have rotated a so that a_12, a_34, a_56, etc are 0 (Courant Snyder)
     # But if we have damping, we also have
@@ -649,28 +651,41 @@ function canonize(
     # We can multiply the normalizing map A by some dilation to make it so that, 
     # even though we don't have exactly A*S*transpose(A) == S, that 
     # we atleast have (A*S*transpose(A))[1,2] == 1, (A*S*transpose(A))[2,1] == -1, etc 
+    # NOTE THAT THIS IS NOT 0 FOR "SYMPLECTIC ANGLE" BETWEEN EIGENVECTORS THO!
 
     # note that with damping we have M as
     # A*Λ*R*A^-1  where R is the amplitude dependent rotation (diagonal matrix with 
     # complex values on unit circle) and Λ is a diagonal matrix with real values 
     # which correspond to the damping (same in each plane, Diagonal(lambda1, lambda1, lambda2, lambda2, etc)
 
+    # Basically want to multiply the matrix A by some diagonal real matrix D so that
+    # (AD)*S*transpose(AD) = S
+    # So we have to include this in the canonizer
     if damping
-      error("Canonization including damping is not implemented yet")
-      damp = zeros(Int(nvars(a)/2))
-      tmp = zeros(Int(nvars(a)/2), Int(nvars(a)/2))
-      for i in 1:Int(nvars(a)/2)
-        tmp[i,i] = a_rot[2*i-1,2*i-1]*a_rot[2*i,2*i]-a_rot[2*i-1,2*i]*a_rot[2*i,2*i-1]
-        for j in 1:Int(nvars(a)/2)
-          if i != j
-            tmp[i,j] = a_rot[2*i-1,2*j-1]*a_rot[2*i,2*j]-a_rot[2*i-1,2*j]*a_rot[2*i,2*j-1]
-          end
-        end
+      if coast
+        error("Canonization including damping and coasting beam is not supported")
       end
-      tmp = inv(tmp)
-      damp .= sqrt.(sum(tmp, dims=2))
-      a_rot = a_rot*Diagonal(repeat(damp,inner=2))
-      damp .= log.(damp)
+      #a_matrix = jacobian(a, VARS)*jacobian(canonizer, VARS)
+      tmp = StaticArrays.sacollect(SMatrix{div(nhv, 2),div(nhv, 2)}, begin
+          a_matrix[2*i-1,2*j-1]*a_matrix[2*i,2*j]-a_matrix[2*i-1,2*j]*a_matrix[2*i,2*j-1]
+      end for j in 1:div(nhv, 2) for i in 1:div(nhv, 2))
+      tmp2 = inv(tmp)
+
+      dampt = sqrt.(sum(tmp2, dims=2))
+      Λi = StaticArrays.sacollect(SMatrix{nhv,nhv}, begin
+        if j == i
+          dampt[floor(Int, (i-1)/2)+1]
+        else
+          0
+        end
+      end for j in 1:nhv for i in 1:nhv)
+      
+      # now multiply canonizer matrix by this one
+      a_rot = jacobian(canonizer, VARS)*Λi
+      if !isnothing(damp)
+        damp .+= log.(dampt)
+      end
+      setray!(canonizer.v, v_matrix=a_rot)
     end
     return canonizer
   else
@@ -679,7 +694,7 @@ function canonize(
     id = one(a)
     lin_canonizer = zero(a) # linear part separately to speed up exponent
     canonizerf = zero(VectorField, a)
-    for i in 1:Int(nhv/2) # for each harmonic oscillator
+    for i in 1:div(nhv, 2) # for each harmonic oscillator
       # Need to include parameter dependence if nonlinear, so "var-par"
       t1 = fast_var_slice(a.v[2*i-1], 2*i-1, nv; par=true)
       t2 = fast_var_slice(a.v[2*i-1], 2*i,   nv; par=true)
@@ -719,8 +734,7 @@ function canonize(
       # so for time like variable we have 
       # -\partial_\delta  (mu_x(delta)(x^2+px^2) + mu_y(delta)(y^2+py^2))
       # = -dmu_x/ddelta*(x^2+px^2) - dmu_y/ddelta(y^2+py^2)
-      for i in 1:Int(nhv/2)
-        #TI.add!(canonizerf.v[nt], canonizerf.v[nt], tm)
+      for i in 1:div(nhv, 2)
         TI.clear!(tmp3)
         TI.deriv!(tmp1, canonizerf.v[2*i-1], ndpt)
         TI.seti!(tmp3, 1, 2*i)
@@ -749,34 +763,74 @@ function canonize(
       # set linear part to zero for nonlinear part
       TI.seti!(slip, 0, ndpt)
       TI.add!(canonizerf.v[nt], canonizerf.v[nt], -slip)
-
-      #=
-        TI.seti!(canonizer.v[nt], 1, nt)
-        TI.seti!(canonizer.v[ndpt], 1, ndpt)
-        TI.seti!(canonizer.v[nt], -TI.geti(a.v[nt], ndpt), ndpt)
-        if !isnothing(phase)
-          phase[end] += -TI.geti(a.v[nt], ndpt)
-        end
-      =#
     end
 
+    # linear ===
+    # AS IN THIS IS NOT COMPLETE IN THE =====
+    # IT WAS COPIED FROM LINEAR AND I STARTED IT BUT DON'T HAVE TIME RN
     if damping
-      error("Canonization including damping is not implemented yet")
-      damp = zeros(Int(nvars(a)/2))
-      tmp = zeros(Int(nvars(a)/2), Int(nvars(a)/2))
-      for i in 1:Int(nvars(a)/2)
-        tmp[i,i] = a_rot[2*i-1,2*i-1]*a_rot[2*i,2*i]-a_rot[2*i-1,2*i]*a_rot[2*i,2*i-1]
-        for j in 1:Int(nvars(a)/2)
-          if i != j
-            tmp[i,j] = a_rot[2*i-1,2*j-1]*a_rot[2*i,2*j]-a_rot[2*i-1,2*j]*a_rot[2*i,2*j-1]
-          end
+      if coast
+        error("Canonization including damping and coasting beam is not supported")
+      end
+
+      error("Nonlinear canonization including damping not implemented yet")
+      # Note: here are are doing something a bit strange
+      # We need to invert a (nhv/2) x (nhv/2) MAP (for linear we can do matrix)
+      # Therefore we will so something a bit strange
+      tmpmap = one(canonizer)
+      tmp1 = zero(tmpmap.v[1])
+      tmp2 = zero(tmpmap.v[1])
+      tmp3 = zero(tmpmap.v[1])
+      tmp4 = zero(tmpmap.v[1])
+
+      for i in 1:div(nhv, 2)
+        TI.clear!(tmpmap.v[i])
+        for j in 1:div(nhv, 2)
+          TI.clear!(tmp1)
+          TI.clear!(tmp2)
+          TI.clear!(tmp3)
+          TI.clear!(tmp4)
+          fast_var_slice!(tmp1, a.v[2*i-1], 2*j-1, nhv; par=true)
+          fast_var_slice!(tmp2, a.v[2*i], 2*j, nhv; par=true)
+          TI.mul!(tmp3, tmp1, tmp2)
+          TI.clear!(tmp1)
+          TI.clear!(tmp2)
+          fast_var_slice!(tmp1, a.v[2*i-1], 2*j, nhv; par=true)
+          fast_var_slice!(tmp2, a.v[2*i], 2*j-1, nhv; par=true)
+          TI.mul!(tmp4, tmp1, tmp2)
+          TI.clear!(tmp1)
+          TI.sub!(tmp1, tmp3, tmp4)
+          TI.clear!(tmp2)
+          TI.cutord!(tmp2, tmp1, mo)
+          TI.factor_in!(tmpmap.v[i], tmp2, j)
         end
       end
-      tmp = inv(tmp)
-      damp .= sqrt.(sum(tmp, dims=2))
-      a_rot = a_rot*Diagonal(repeat(damp,inner=2))
-      damp .= log.(damp)
+      #=
+      tmp = StaticArrays.sacollect(SMatrix{div(nhv, 2),div(nhv, 2)}, begin
+          a_matrix[2*i-1,2*j-1]*a_matrix[2*i,2*j]-a_matrix[2*i-1,2*j]*a_matrix[2*i,2*j-1]
+      end for j in 1:div(nhv, 2) for i in 1:div(nhv, 2))
+        =#
+      tmp2 = inv(tmpmap)
+
+      dampt = sqrt.(sum(tmp2, dims=2))
+      Λi = StaticArrays.sacollect(SMatrix{nhv,nhv}, begin
+        if j == i
+          dampt[floor(Int, (i-1)/2)+1]
+        else
+          0
+        end
+      end for j in 1:nhv for i in 1:nhv)
+      
+      # now multiply canonizer matrix by this one
+      a_rot = jacobian(canonizer, VARS)*Λi
+      if !isnothing(damp)
+        damp .+= log.(dampt)
+      end
+      setray!(canonizer.v, v_matrix=a_rot)
     end
+    return canonizer
+    # linear ===
+
     return lin_canonizer ∘ exp(canonizerf, id)
   end
 end

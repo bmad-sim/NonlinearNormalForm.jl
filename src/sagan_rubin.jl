@@ -34,34 +34,34 @@ function compute_sagan_rubin(a1::DAMap{V0}, ::Val{linear}=Val{false}()) where {V
   if linear
     if !coast
       let a1_mat = jacobian(a1, HVARS), a1i_mat = inv(a1_mat), nvm = nv-2
-        H = StaticArrays.sacollect(SVector{Int(nv/2),typeof(a1_mat)}, a1_mat*ip_mat(a1, i)*a1i_mat for i in 1:Int(nv/2))
+        H = StaticArrays.sacollect(SVector{div(nv, 2),typeof(a1_mat)}, a1_mat*ip_mat(a1, i)*a1i_mat for i in 1:div(nv, 2))
         gamma_c = sqrt(H[1][1,1])
         C = nv > 2 ? StaticArrays.sacollect(SMatrix{2,2,eltype(H[1])}, -H[1][row,col]/gamma_c for col in 3:4 for row in 1:2) : 0
         Ct = nv > 2 ? SA[C[2,2] -C[1,2]; -C[2,1] C[1,1]] : 0
         Vi = gamma_c*I + vcat(hcat(zero(C), -C), hcat(Ct, zero(Ct)))
         N = Vi*StaticArrays.sacollect(SMatrix{nvm,nvm,eltype(a1_mat)}, a1_mat[row,col] for col in 1:nvm for row in 1:nvm)
-        beta = StaticArrays.sacollect(SVector{Int(nvm/2),eltype(N)}, N[i,i]^2 for i in 1:2:Int(nvm))
-        alpha = StaticArrays.sacollect(SVector{Int(nvm/2),eltype(N)}, -N[i+1,i]*N[i,i] for i in 1:2:Int(nvm))
+        beta = StaticArrays.sacollect(SVector{div(nvm, 2),eltype(N)}, N[i,i]^2 for i in 1:2:nvm)
+        alpha = StaticArrays.sacollect(SVector{div(nvm, 2),eltype(N)}, -N[i+1,i]*N[i,i] for i in 1:2:nvm)
         # Note that eta and zeta here are in x,px,y,py, not in a,pa,b,pb
         eta = StaticArrays.sacollect(SVector{nvm,eltype(H[1])}, H[end][i,nv] for i in 1:(nvm))
         zeta = StaticArrays.sacollect(SVector{nvm,eltype(H[1])}, H[end][i,nv-1] for i in 1:(nvm))
         # we also return B[3][5,6], which can then be multiplied by sin(mu_3) to approximate the
         # phase slip
-        approx_slip = (a1_mat*jp_mat(a1, Int(nv/2))*a1i_mat)[5,6]
+        approx_slip = (a1_mat*jp_mat(a1, div(nv, 2))*a1i_mat)[5,6]
         # I don't really understand the utility of this, but for consistency with Sagan-Rubin
         # multiply by Vi to put in "normalized" coordinates
         return (; beta=beta, alpha=alpha, gamma_c=gamma_c, C=C, eta=Vi*eta, zeta=Vi*zeta, approx_slip=approx_slip)
       end
     else
       let a1_mat = jacobian(a1, HVARS), a1i_mat = inv(a1_mat)
-        H = StaticArrays.sacollect(SVector{Int(nhv/2),typeof(a1_mat)}, a1_mat*ip_mat(a1, i)*a1i_mat for i in 1:Int(nhv/2))
+        H = StaticArrays.sacollect(SVector{div(nhv, 2),typeof(a1_mat)}, a1_mat*ip_mat(a1, i)*a1i_mat for i in 1:div(nhv, 2))
         gamma_c = sqrt(H[1][1,1])
         C = nv > 2 ? StaticArrays.sacollect(SMatrix{2,2,eltype(H[1])}, -H[1][row,col]/gamma_c for col in 3:4 for row in 1:2) : 0
         Ct = nv > 2 ? SA[C[2,2] -C[1,2]; -C[2,1] C[1,1]] : 0
         Vi = gamma_c*I + vcat(hcat(zero(C), -C), hcat(Ct, zero(Ct)))
         N = Vi*StaticArrays.sacollect(SMatrix{nhv,nhv,eltype(a1_mat)}, a1_mat[row,col] for col in 1:nhv for row in 1:nhv)
-        beta = StaticArrays.sacollect(SVector{Int(nhv/2),eltype(N)}, N[i,i]^2 for i in 1:2:nhv)
-        alpha = StaticArrays.sacollect(SVector{Int(nhv/2),eltype(N)}, -N[i+1,i]*N[i,i] for i in 1:2:nhv)
+        beta = StaticArrays.sacollect(SVector{div(nhv, 2),eltype(N)}, N[i,i]^2 for i in 1:2:nhv)
+        alpha = StaticArrays.sacollect(SVector{div(nhv, 2),eltype(N)}, -N[i+1,i]*N[i,i] for i in 1:2:nhv)
         return (; beta=beta, alpha=alpha, gamma_c=gamma_c, C=C)
       end
     end
@@ -70,10 +70,10 @@ function compute_sagan_rubin(a1::DAMap{V0}, ::Val{linear}=Val{false}()) where {V
       let nvm = nv-2
         tmp = zero(a1)
         a1i = inv(a1)
-        H = StaticArrays.sacollect(SVector{Int(nhv/2)}, begin
+        H = StaticArrays.sacollect(SVector{div(nhv, 2)}, begin
           setray!(tmp.v, v_matrix=ip_mat(a1, i))
           a1∘tmp∘a1i
-        end for i in 1:Int(nhv/2)
+        end for i in 1:div(nhv, 2)
         )
         mo = maxord(a1)
         gamma_c = TI.cutord(sqrt(factor_out(H[1].v[1], 1)), mo)
@@ -81,8 +81,8 @@ function compute_sagan_rubin(a1::DAMap{V0}, ::Val{linear}=Val{false}()) where {V
         Ct = nv > 2 ? SA[C[2,2] -C[1,2]; -C[2,1] C[1,1]] : 0
         Vi = gamma_c*I + vcat(hcat(zero(C), -C), hcat(Ct, zero(Ct)))
         N = TI.cutord.(Vi*StaticArrays.sacollect(SMatrix{nvm,nvm,eltype(a1.v)}, factor_out(a1.v[row], col) for col in 1:nvm for row in 1:nvm), mo)
-        beta = StaticArrays.sacollect(SVector{Int(nvm/2),eltype(N)}, TI.cutord(N[i,i]^2, mo) for i in 1:2:Int(nvm))
-        alpha = StaticArrays.sacollect(SVector{Int(nvm/2),eltype(N)}, TI.cutord(-N[i+1,i]*N[i,i], mo) for i in 1:2:Int(nvm))
+        beta = StaticArrays.sacollect(SVector{div(nvm, 2),eltype(N)}, TI.cutord(N[i,i]^2, mo) for i in 1:2:nvm)
+        alpha = StaticArrays.sacollect(SVector{div(nvm, 2),eltype(N)}, TI.cutord(-N[i+1,i]*N[i,i], mo) for i in 1:2:nvm)
         # Note that eta and zeta here are in x,px,y,py, not in a,pa,b,pb
         eta = StaticArrays.sacollect(SVector{nvm,eltype(H[1].v)}, factor_out(H[end].v[i], nv) for i in 1:(nvm))
         zeta = StaticArrays.sacollect(SVector{nvm,eltype(H[1].v)}, factor_out(H[end].v[i], nv-1) for i in 1:(nvm))
@@ -102,10 +102,10 @@ function compute_sagan_rubin(a1::DAMap{V0}, ::Val{linear}=Val{false}()) where {V
       let
         tmp = zero(a1)
         a1i = inv(a1)
-        H = StaticArrays.sacollect(SVector{Int(nhv/2)}, begin
+        H = StaticArrays.sacollect(SVector{div(nhv, 2)}, begin
           setray!(tmp.v, v_matrix=ip_mat(a1, i))
           a1∘tmp∘a1i
-        end for i in 1:Int(nhv/2)
+        end for i in 1:div(nhv, 2)
         )
         mo = maxord(a1)
         gamma_c = TI.cutord(sqrt(factor_out(H[1].v[1], 1)), mo)
@@ -113,8 +113,8 @@ function compute_sagan_rubin(a1::DAMap{V0}, ::Val{linear}=Val{false}()) where {V
         Ct = nv > 2 ? SA[C[2,2] -C[1,2]; -C[2,1] C[1,1]] : 0
         Vi = gamma_c*I + vcat(hcat(zero(C), -C), hcat(Ct, zero(Ct)))
         N = TI.cutord.(Vi*StaticArrays.sacollect(SMatrix{nhv,nhv,eltype(a1.v)}, factor_out(a1.v[row], col) for col in 1:nhv for row in 1:nhv), mo)
-        beta = StaticArrays.sacollect(SVector{Int(nhv/2),eltype(N)}, TI.cutord(N[i,i]^2, mo) for i in 1:2:Int(nhv))
-        alpha = StaticArrays.sacollect(SVector{Int(nhv/2),eltype(N)}, TI.cutord(-N[i+1,i]*N[i,i], mo) for i in 1:2:Int(nhv))
+        beta = StaticArrays.sacollect(SVector{div(nhv, 2),eltype(N)}, TI.cutord(N[i,i]^2, mo) for i in 1:2:nhv)
+        alpha = StaticArrays.sacollect(SVector{div(nhv, 2),eltype(N)}, TI.cutord(-N[i+1,i]*N[i,i], mo) for i in 1:2:nhv)
         return (; beta=beta, alpha=alpha, gamma_c=gamma_c, C=C)
       end
     end

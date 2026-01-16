@@ -24,8 +24,9 @@ program example
   remove_tune_shift=.false.
   putspin=.false.
   n_cai=-i_
-  write(6,*) " If deltap/p0 is a canonical variable  enter 3"
-  write(6,*) " else enter 2"
+  do_damping=.false.
+  !write(6,*) " If deltap/p0 is a canonical variable  enter 3"
+  !write(6,*) " else enter 2"
   !read(5,*) nd
   nd=3  ! coasting
   !if(nd/=2.and.nd/=3) stop 44
@@ -153,7 +154,20 @@ program example
 !enddo
 !stop
 
- ! call print(m%v(1))
+  call c_normal(m,normal) !,dospin=putspin,phase=phase,nu_spin=nu_spin)
+  call c_fast_canonise(normal%atot, m1, phase=ph, damping=dampdec)
+  write(*,*) dampdec
+  do_damping=.true.
+  dampdec(1:3) = 0.0
+    write(*,*) dampdec
+  call c_fast_canonise(m1, m, phase=ph, damping=dampdec)
+  write(*,*) dampdec
+  call print(m)
+  stop
+  !call print(m1)
+  !stop
+  !write(*,*) ph
+  !write(*,*) dampdec
   !stop
   call c_normal(m,normal,dospin=putspin,phase=phase,nu_spin=nu_spin)
   !m1 =ci_phasor()*normal%atot**(-1)*m*normal%atot*c_phasor()
