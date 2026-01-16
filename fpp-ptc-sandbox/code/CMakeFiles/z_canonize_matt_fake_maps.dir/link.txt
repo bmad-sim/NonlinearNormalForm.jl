@@ -1,0 +1,1 @@
+/opt/homebrew/bin/gfortran CMakeFiles/z_canonize_matt_fake_maps.dir/Ci_tpsa.f90.o CMakeFiles/z_canonize_matt_fake_maps.dir/z_canonize_matt_fake_maps.f90.o -o z_canonize_matt_fake_maps   -L/Users/matthewsignorelli/miniconda3/envs/condamatt/lib/libforest.dylib  -Wl,-rpath,/Users/matthewsignorelli/miniconda3/envs/condamatt/lib/libforest.dylib -lforest

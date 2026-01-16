@@ -1,0 +1,10 @@
+set (EXENAME z_canonize)
+
+FILE (GLOB SRC_FILES z_canonize.f90)
+
+set (INC_DIRS
+)
+
+set (LINK_LIBS
+  forest
+)

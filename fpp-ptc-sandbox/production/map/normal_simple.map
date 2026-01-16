@@ -1,0 +1,81 @@
+# Path: /Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/production/bin/normal_simple
+# Arch: arm64
+# Object files:
+[  0] linker synthesized
+[  1] CMakeFiles/normal_simple-exe.dir/normal_simple.f90.o
+[  2] /Users/matthewsignorelli/Documents/Bmad/bmad-ecosystem/20260112-0/production/lib/libforest.dylib
+[  3] /opt/homebrew/lib/libhdf5_hl_fortran.310.0.6.dylib
+[  4] /opt/homebrew/lib/libhdf5_fortran.310.3.2.dylib
+[  5] /opt/homebrew/lib/libcairo.dylib
+[  6] /opt/homebrew/lib/libpango-1.0.dylib
+[  7] /opt/homebrew/lib/libpangocairo-1.0.dylib
+[  8] /opt/homebrew/lib/libgobject-2.0.dylib
+[  9] /opt/homebrew/lib/libX11.dylib
+[ 10] /opt/homebrew/lib/libXext.dylib
+[ 11] /opt/homebrew/lib/libX11.dylib
+[ 12] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libplplotfortran.dylib
+[ 13] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libplplot.dylib
+[ 14] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libcsirocsa.dylib
+[ 15] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libqsastime.dylib
+[ 16] /opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/libstdc++.dylib
+[ 17] /opt/homebrew/lib/libhdf5_hl_f90cstub.310.0.6.dylib
+[ 18] /opt/homebrew/lib/libhdf5_f90cstub.310.3.2.dylib
+[ 19] /opt/homebrew/lib/libhdf5_hl.310.0.6.dylib
+[ 20] /opt/homebrew/lib/libhdf5.310.5.1.dylib
+[ 21] /opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/libgfortran.dylib
+[ 22] /opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/libquadmath.dylib
+[ 23] /Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/usr/lib/libSystem.tbd
+# Sections:
+# Address	Size    	Segment	Section
+0x100000E00	0x00000000	__TEXT	__text
+0x100000E00	0x00000190	__TEXT	__text_startup
+0x100000F90	0x00000078	__TEXT	__stubs
+0x100001010	0x000000B0	__TEXT	__const
+0x1000010C0	0x00000058	__TEXT	__eh_frame
+0x100004000	0x00000058	__DATA_CONST	__got
+0x100008000	0x0000EC18	__DATA	__bss
+# Symbols:
+# Address	Size    	File  Name
+0x100000000	0x00000000	[  0] __mh_execute_header
+0x100000E00	0x00000000	[  0] __TEXT,__text
+0x100000E00	0x00000190	[  1] _main
+0x100000F90	0x0000000C	[  2] ___c_tpsa_MOD_alloc_c_damap.stub
+0x100000F9C	0x0000000C	[  2] ___c_tpsa_MOD_alloc_c_normal_form.stub
+0x100000FA8	0x0000000C	[  2] ___c_tpsa_MOD_c_allocda.stub
+0x100000FB4	0x0000000C	[  2] ___c_tpsa_MOD_c_normal_new.stub
+0x100000FC0	0x0000000C	[  2] ___c_tpsa_MOD_r_mapmatrixr.stub
+0x100000FCC	0x0000000C	[  2] ___s_status_MOD_equalt.stub
+0x100000FD8	0x0000000C	[  2] ___s_status_MOD_s_init.stub
+0x100000FE4	0x0000000C	[ 21] __gfortran_set_args.stub
+0x100000FF0	0x0000000C	[ 21] __gfortran_set_options.stub
+0x100000FFC	0x0000000C	[ 21] __gfortran_stop_string.stub
+0x100001010	0x00000004	[  1] lC0
+0x100001014	0x00000004	[  1] lC1
+0x100001018	0x0000001C	[  1] _options.29.6
+0x100001040	0x00000010	[  1] 16-byte-literal
+0x100001050	0x00000010	[  1] 16-byte-literal
+0x100001060	0x00000010	[  1] 16-byte-literal
+0x100001070	0x00000010	[  1] 16-byte-literal
+0x100001080	0x00000010	[  1] 16-byte-literal
+0x100001090	0x00000010	[  1] 16-byte-literal
+0x1000010A0	0x00000010	[  1] 16-byte-literal
+0x1000010B0	0x00000010	[  1] 16-byte-literal
+0x1000010C0	0x00000018	[  1] CFI
+0x1000010D8	0x00000040	[  1] FDE for: _main
+0x100004000	0x00000008	[  2] ___c_tpsa_MOD_alloc_c_damap.got
+0x100004008	0x00000008	[  2] ___c_tpsa_MOD_alloc_c_normal_form.got
+0x100004010	0x00000008	[  2] ___c_tpsa_MOD_c_allocda.got
+0x100004018	0x00000008	[  2] ___c_tpsa_MOD_c_normal_new.got
+0x100004020	0x00000008	[  2] ___c_tpsa_MOD_n_cai.got
+0x100004028	0x00000008	[  2] ___c_tpsa_MOD_r_mapmatrixr.got
+0x100004030	0x00000008	[  2] ___s_status_MOD_equalt.got
+0x100004038	0x00000008	[  2] ___s_status_MOD_s_init.got
+0x100004040	0x00000008	[ 21] __gfortran_set_args.got
+0x100004048	0x00000008	[ 21] __gfortran_set_options.got
+0x100004050	0x00000008	[ 21] __gfortran_stop_string.got
+0x100008000	0x00008E08	[  1] _normal_form.0
+0x100010E08	0x000012D0	[  1] _m1.1
+0x1000120D8	0x000012D0	[  1] _ri.2
+0x1000133A8	0x000012D0	[  1] _a1.3
+0x100014678	0x000012D0	[  1] _n.4
+0x100015948	0x000012D0	[  1] _t.5

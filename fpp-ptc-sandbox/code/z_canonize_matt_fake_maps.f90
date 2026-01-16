@@ -16,7 +16,7 @@ program example
   logical :: damp = .false.,fastcanonize=.true.,COSLIKE,t_e
   type(c_taylor), allocatable :: phase(:)
   type(c_damap), allocatable :: mt(:)
-  real(dp)  ph(3),spintune(2),dampdec(3)
+  real(dp)  ph(3),spintune(2),dampdec(3), damping(3), phi(3)
   type(c_lattice_function) cl
    !type(c_damap) one_turn_map, id_s,m01,m12,m23,m3f,a0,a1,a2,as
    logical putspin
@@ -28,7 +28,7 @@ program example
   !write(6,*) " If deltap/p0 is a canonical variable  enter 3"
   !write(6,*) " else enter 2"
   !read(5,*) nd
-  nd=3  ! coasting
+  nd=2  ! no coast
   !if(nd/=2.and.nd/=3) stop 44
   if(nd==1) ndpt = 0
   if(nd==2) ndpt = 0
@@ -161,15 +161,22 @@ program example
   
   !remove_tune_shift=.true.
   do i=1,c_%nd2
-  !m%v(i)=m%v(i)*decrement(i)
+    m%v(i)=m%v(i)*decrement(i)
   enddo
   !call print(m)
   !stop
   
   lielib_print(4)=0
-  call c_normal(m,normal,dospin=putspin,phase=phase,nu_spin=nu_spin)
+  !call print(m)
+  !write(*,*) "====12==pfds=f=das=fds=a"
+  !stop
+  call c_normal(m,normal,canonize=.false.) !,dospin=putspin,phase=phase,nu_spin=nu_spin)
+  call c_fast_canonise(normal%atot, m1) !, phase=phi, damping=damping)
+  call print(m1)
+  write(*,*) "made it"
+  stop
   call c_full_factorise(normal%atot,as,a0,a1,a2,dir=1) 
-  call print(as)
+  !call print(as)
     stop
   !call print(m)
   !  call print(normal%atot)

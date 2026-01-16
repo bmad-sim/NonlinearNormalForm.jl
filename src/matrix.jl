@@ -67,14 +67,14 @@ function low_mat_eigen!(F, sort, phase_modes, error_unstable)
     # We must first normalize the stable modes before sorting, 
     # but to locate planes we want all eigenvectors to have equivalent norms.
     nv = length(F.values)
-    n_modes = Int(nv/2)
+    n_modes = div(nv, 2)
     modes = F.values isa StaticArray ? MVector{n_modes,Int}(undef) : Vector{Int}(undef, n_modes)
 
     # If more than 1 mode is unstable, there is no gaurantee the modes are in pairs, so sorting fails.
     if num_unstable <= 2 && locate_modes!(F.vectors, F.values, sort=false, modes=modes) # Plane locating is successful
 
       # Normalize stable modes
-      @views for i in 1:Int((nv-num_unstable)/2)
+      @views for i in 1:div(nv-num_unstable, 2)
         normalize_eigenmode!(F.vectors[:,2*i-1:2*i], F.values[2*i-1:2*i], phase_modes ? modes[i] : -1)
       end
 
@@ -88,7 +88,7 @@ function low_mat_eigen!(F, sort, phase_modes, error_unstable)
       @warn "Mode sorting of eigenvectors failed; eigenvectors in arbitrary order. Stable modes will be normalized, but no phase factor will be included."
       
       # Normalize stable modes
-      @views for i in 1:Int((nv-num_unstable)/2)
+      @views for i in 1:div(nv-num_unstable, 2)
         normalize_eigenmode!(F.vectors[:,2*i-1:2*i], F.values[2*i-1:2*i], -1)
       end
 
@@ -97,7 +97,7 @@ function low_mat_eigen!(F, sort, phase_modes, error_unstable)
 
     # Normalize the stable modes:
     nv = length(F.values)
-    @views for i in 1:Int((nv-num_unstable)/2)
+    @views for i in 1:div(nv-num_unstable, 2)
       normalize_eigenmode!(F.vectors[:,2*i-1:2*i], F.values[2*i-1:2*i], phase_modes ? i : -1)
     end
 
@@ -125,7 +125,7 @@ One-Turn Matrix Eigen Analysis" section in the Bmad manual for more details.
 function normalize_eigenmode!(evec_pair, eval_pair, phase_mode::Integer=-1)
   Base.require_one_based_indexing(evec_pair, eval_pair)
   nv = size(evec_pair,1)
-  n_modes = Int(nv/2)
+  n_modes = div(nv, 2)
 
   size(evec_pair,2) == 2 || error("Eigenvector pair not provided")
   length(eval_pair) == 2 || error("Eigenvalue pair not provided")
@@ -231,7 +231,7 @@ function locate_modes!(evecs, evals=nothing; sort=true, modes=nothing)
   # we just need to check which has the biggest component
   # nv = number variables
   nv = size(evecs,1)
-  n_modes = Int(nv/2)
+  n_modes = div(nv, 2)
 
   if isnothing(modes)
     modes = Vector{Int}(undef, n_modes)

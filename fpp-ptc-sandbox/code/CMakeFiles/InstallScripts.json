@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"/Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION $ENV{ACC_CMAKE_VERSION})
+cmake_minimum_required(VERSION 4.2)
 project(ACC)
 
 #find_library(FOREST_LIBRARY forest REQUIRED PATHS /Users/mgs255/Software/bmad/bmad-ecosystem/production/lib/)
@@ -45,5 +45,6 @@ project(ACC)
    cmake_files/cmake.main_matt_accel_als_quad_strobos_with_res_ac_new
    cmake_files/cmake.main_matt_3nux
    cmake_files/cmake.main_matt_nux_2nuy
+   cmake_files/cmake.z_canonize
  )
-include($ENV{ACC_BUILD_SYSTEM}/Master.cmake)
+include(/Users/matthewsignorelli/Documents/Bmad/bmad-ecosystem/${bmad_version}/util/Master.cmake)

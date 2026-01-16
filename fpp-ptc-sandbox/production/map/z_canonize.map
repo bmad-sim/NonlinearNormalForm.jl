@@ -1,0 +1,201 @@
+# Path: /Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/production/bin/z_canonize
+# Arch: arm64
+# Object files:
+[  0] linker synthesized
+[  1] CMakeFiles/z_canonize-exe.dir/z_canonize.f90.o
+[  2] /Users/matthewsignorelli/Documents/Bmad/bmad-ecosystem/20260112-0/production/lib/libforest.dylib
+[  3] /opt/homebrew/lib/libhdf5_hl_fortran.310.0.6.dylib
+[  4] /opt/homebrew/lib/libhdf5_fortran.310.3.2.dylib
+[  5] /opt/homebrew/lib/libcairo.dylib
+[  6] /opt/homebrew/lib/libpango-1.0.dylib
+[  7] /opt/homebrew/lib/libpangocairo-1.0.dylib
+[  8] /opt/homebrew/lib/libgobject-2.0.dylib
+[  9] /opt/homebrew/lib/libX11.dylib
+[ 10] /opt/homebrew/lib/libXext.dylib
+[ 11] /opt/homebrew/lib/libX11.dylib
+[ 12] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libplplotfortran.dylib
+[ 13] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libplplot.dylib
+[ 14] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libcsirocsa.dylib
+[ 15] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libqsastime.dylib
+[ 16] /opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/libstdc++.dylib
+[ 17] /opt/homebrew/lib/libhdf5_hl_f90cstub.310.0.6.dylib
+[ 18] /opt/homebrew/lib/libhdf5_f90cstub.310.3.2.dylib
+[ 19] /opt/homebrew/lib/libhdf5_hl.310.0.6.dylib
+[ 20] /opt/homebrew/lib/libhdf5.310.5.1.dylib
+[ 21] /opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/libgfortran.dylib
+[ 22] /opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/libquadmath.dylib
+[ 23] /Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/usr/lib/libSystem.tbd
+[ 24] /Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/usr/lib/system/libsystem_c.tbd
+[ 25] /Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/usr/lib/system/libsystem_malloc.tbd
+# Sections:
+# Address	Size    	Segment	Section
+0x100000EA0	0x00001014	__TEXT	__text
+0x100001EC0	0x0000002C	__TEXT	__text_startup
+0x100001EEC	0x0000021C	__TEXT	__stubs
+0x100002110	0x00000230	__TEXT	__const
+0x100002340	0x0000016C	__TEXT	__cstring
+0x1000024B0	0x000000D8	__TEXT	__eh_frame
+0x100004000	0x00000198	__DATA_CONST	__got
+0x100008000	0x00000004	__DATA	__data
+0x100008008	0x00014198	__DATA	__bss
+# Symbols:
+# Address	Size    	File  Name
+0x100000000	0x00000000	[  0] __mh_execute_header
+0x100000EA0	0x00001014	[  1] _MAIN__
+0x100001EC0	0x0000002C	[  1] _main
+0x100001EEC	0x0000000C	[  2] ___c_tpsa_MOD_a_opt_c_damap.stub
+0x100001EF8	0x0000000C	[  2] ___c_tpsa_MOD_a_opt_c_vector.stub
+0x100001F04	0x0000000C	[  2] ___c_tpsa_MOD_add.stub
+0x100001F10	0x0000000C	[  2] ___c_tpsa_MOD_alloc_c_damap.stub
+0x100001F1C	0x0000000C	[  2] ___c_tpsa_MOD_alloc_c_normal_form.stub
+0x100001F28	0x0000000C	[  2] ___c_tpsa_MOD_c_a_opt.stub
+0x100001F34	0x0000000C	[  2] ___c_tpsa_MOD_c_aimag.stub
+0x100001F40	0x0000000C	[  2] ___c_tpsa_MOD_c_allocda.stub
+0x100001F4C	0x0000000C	[  2] ___c_tpsa_MOD_c_allocdas.stub
+0x100001F58	0x0000000C	[  2] ___c_tpsa_MOD_c_clean_taylor.stub
+0x100001F64	0x0000000C	[  2] ___c_tpsa_MOD_c_clean_taylors.stub
+0x100001F70	0x0000000C	[  2] ___c_tpsa_MOD_c_concat.stub
+0x100001F7C	0x0000000C	[  2] ___c_tpsa_MOD_c_equalmap.stub
+0x100001F88	0x0000000C	[  2] ___c_tpsa_MOD_c_equalvec.stub
+0x100001F94	0x0000000C	[  2] ___c_tpsa_MOD_c_expflo_map.stub
+0x100001FA0	0x0000000C	[  2] ___c_tpsa_MOD_c_fast_canonise.stub
+0x100001FAC	0x0000000C	[  2] ___c_tpsa_MOD_c_full_canonise.stub
+0x100001FB8	0x0000000C	[  2] ___c_tpsa_MOD_c_identityequalmap.stub
+0x100001FC4	0x0000000C	[  2] ___c_tpsa_MOD_c_identityequalvec.stub
+0x100001FD0	0x0000000C	[  2] ___c_tpsa_MOD_c_init.stub
+0x100001FDC	0x0000000C	[  2] ___c_tpsa_MOD_c_normal.stub
+0x100001FE8	0x0000000C	[  2] ___c_tpsa_MOD_c_pri.stub
+0x100001FF4	0x0000000C	[  2] ___c_tpsa_MOD_c_taylor_ran.stub
+0x100002000	0x0000000C	[  2] ___c_tpsa_MOD_cdscmul.stub
+0x10000200C	0x0000000C	[  2] ___c_tpsa_MOD_cutorder.stub
+0x100002018	0x0000000C	[  2] ___c_tpsa_MOD_daprinttaylors.stub
+0x100002024	0x0000000C	[  2] ___c_tpsa_MOD_dequaldacon.stub
+0x100002030	0x0000000C	[  2] ___c_tpsa_MOD_dmulsc.stub
+0x10000203C	0x0000000C	[  2] ___c_tpsa_MOD_dscmul.stub
+0x100002048	0x0000000C	[  2] ___c_tpsa_MOD_equal.stub
+0x100002054	0x0000000C	[  2] ___c_tpsa_MOD_getvectorfield.stub
+0x100002060	0x0000000C	[  2] ___c_tpsa_MOD_pow.stub
+0x10000206C	0x0000000C	[  2] ___c_tpsa_MOD_subs.stub
+0x100002078	0x0000000C	[  2] ___c_tpsa_MOD_unarysub.stub
+0x100002084	0x0000000C	[  2] ___gauss_dis_MOD_grnf.stub
+0x100002090	0x0000000C	[ 21] __gfortran_os_error_at.stub
+0x10000209C	0x0000000C	[ 21] __gfortran_set_args.stub
+0x1000020A8	0x0000000C	[ 21] __gfortran_set_options.stub
+0x1000020B4	0x0000000C	[ 21] __gfortran_st_write.stub
+0x1000020C0	0x0000000C	[ 21] __gfortran_st_write_done.stub
+0x1000020CC	0x0000000C	[ 21] __gfortran_transfer_array_write.stub
+0x1000020D8	0x0000000C	[ 21] __gfortran_transfer_character_write.stub
+0x1000020E4	0x0000000C	[ 21] __gfortran_transfer_real_write.stub
+0x1000020F0	0x0000000C	[ 25] _malloc.stub
+0x1000020FC	0x0000000C	[ 24] _memcpy.stub
+0x100002110	0x00000008	[  1] lC0
+0x100002118	0x00000010	[  1] lC4
+0x100002128	0x00000008	[  1] lC5
+0x100002130	0x00000008	[  1] lC6
+0x100002138	0x00000008	[  1] lC7
+0x100002140	0x00000008	[  1] lC8
+0x100002148	0x00000004	[  1] lC9
+0x10000214C	0x00000004	[  1] lC10
+0x100002150	0x00000008	[  1] lC11
+0x100002158	0x00000008	[  1] lC12
+0x100002160	0x00000018	[  1] lC14
+0x100002178	0x00000010	[  1] lC15
+0x100002188	0x00000010	[  1] lC16
+0x100002198	0x00000010	[  1] lC17
+0x1000021A8	0x00000018	[  1] lC18
+0x1000021C0	0x00000008	[  1] lC19
+0x1000021C8	0x00000010	[  1] lC20
+0x1000021D8	0x00000010	[  1] lC21
+0x1000021E8	0x00000008	[  1] lC22
+0x1000021F0	0x00000008	[  1] lC23
+0x1000021F8	0x00000028	[  1] lC24
+0x100002220	0x00000020	[  1] lC25
+0x100002240	0x00000010	[  1] lC26
+0x100002250	0x00000008	[  1] lC27
+0x100002258	0x00000018	[  1] lC28
+0x100002270	0x00000018	[  1] lC29
+0x100002288	0x00000024	[  1] lC30
+0x1000022AC	0x0000001C	[  1] _options.32.15
+0x1000022C8	0x00000008	[  1] lC35
+0x1000022D0	0x00000008	[  1] lC37
+0x1000022E0	0x00000010	[  1] 16-byte-literal
+0x1000022F0	0x00000010	[  1] 16-byte-literal
+0x100002300	0x00000010	[  1] 16-byte-literal
+0x100002310	0x00000010	[  1] 16-byte-literal
+0x100002320	0x00000010	[  1] 16-byte-literal
+0x100002330	0x00000008	[  1] 8-byte-literal
+0x100002338	0x00000008	[  1] 8-byte-literal
+0x100002340	0x0000001B	[  1] literal string: Error allocating %lu bytes
+0x10000235C	0x00000001	[  1] literal string: 
+0x100002360	0x00000076	[  1] literal string: In file '/Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/z_canonize.f90', around line 25
+0x1000023D8	0x00000076	[  1] literal string: In file '/Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/z_canonize.f90', around line 34
+0x100002450	0x0000005C	[  1] literal string: /Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/z_canonize.f90
+0x1000024B0	0x00000018	[  1] CFI
+0x1000024C8	0x00000088	[  1] FDE for: _MAIN__
+0x100002550	0x00000038	[  1] FDE for: _main
+0x100004000	0x00000008	[  2] ___c_da_arrays_MOD_c_lda_used.got
+0x100004008	0x00000008	[  2] ___c_tpsa_MOD_a_opt_c_damap.got
+0x100004010	0x00000008	[  2] ___c_tpsa_MOD_a_opt_c_vector.got
+0x100004018	0x00000008	[  2] ___c_tpsa_MOD_add.got
+0x100004020	0x00000008	[  2] ___c_tpsa_MOD_alloc_c_damap.got
+0x100004028	0x00000008	[  2] ___c_tpsa_MOD_alloc_c_normal_form.got
+0x100004030	0x00000008	[  2] ___c_tpsa_MOD_c_a_opt.got
+0x100004038	0x00000008	[  2] ___c_tpsa_MOD_c_aimag.got
+0x100004040	0x00000008	[  2] ___c_tpsa_MOD_c_allocda.got
+0x100004048	0x00000008	[  2] ___c_tpsa_MOD_c_allocdas.got
+0x100004050	0x00000008	[  2] ___c_tpsa_MOD_c_clean_taylor.got
+0x100004058	0x00000008	[  2] ___c_tpsa_MOD_c_clean_taylors.got
+0x100004060	0x00000008	[  2] ___c_tpsa_MOD_c_concat.got
+0x100004068	0x00000008	[  2] ___c_tpsa_MOD_c_equalmap.got
+0x100004070	0x00000008	[  2] ___c_tpsa_MOD_c_equalvec.got
+0x100004078	0x00000008	[  2] ___c_tpsa_MOD_c_expflo_map.got
+0x100004080	0x00000008	[  2] ___c_tpsa_MOD_c_fast_canonise.got
+0x100004088	0x00000008	[  2] ___c_tpsa_MOD_c_full_canonise.got
+0x100004090	0x00000008	[  2] ___c_tpsa_MOD_c_identityequalmap.got
+0x100004098	0x00000008	[  2] ___c_tpsa_MOD_c_identityequalvec.got
+0x1000040A0	0x00000008	[  2] ___c_tpsa_MOD_c_init.got
+0x1000040A8	0x00000008	[  2] ___c_tpsa_MOD_c_normal.got
+0x1000040B0	0x00000008	[  2] ___c_tpsa_MOD_c_pri.got
+0x1000040B8	0x00000008	[  2] ___c_tpsa_MOD_c_taylor_ran.got
+0x1000040C0	0x00000008	[  2] ___c_tpsa_MOD_cdscmul.got
+0x1000040C8	0x00000008	[  2] ___c_tpsa_MOD_cutorder.got
+0x1000040D0	0x00000008	[  2] ___c_tpsa_MOD_daprinttaylors.got
+0x1000040D8	0x00000008	[  2] ___c_tpsa_MOD_dequaldacon.got
+0x1000040E0	0x00000008	[  2] ___c_tpsa_MOD_dmulsc.got
+0x1000040E8	0x00000008	[  2] ___c_tpsa_MOD_do_damping.got
+0x1000040F0	0x00000008	[  2] ___c_tpsa_MOD_dscmul.got
+0x1000040F8	0x00000008	[  2] ___c_tpsa_MOD_equal.got
+0x100004100	0x00000008	[  2] ___c_tpsa_MOD_getvectorfield.got
+0x100004108	0x00000008	[  2] ___c_tpsa_MOD_n_cai.got
+0x100004110	0x00000008	[  2] ___c_tpsa_MOD_pow.got
+0x100004118	0x00000008	[  2] ___c_tpsa_MOD_subs.got
+0x100004120	0x00000008	[  2] ___c_tpsa_MOD_unarysub.got
+0x100004128	0x00000008	[  2] ___definition_MOD_dz_c.got
+0x100004130	0x00000008	[  2] ___definition_MOD_negative_synchrotron_tune.got
+0x100004138	0x00000008	[  2] ___gauss_dis_MOD_grnf.got
+0x100004140	0x00000008	[  2] ___precision_constants_MOD_use_quaternion.got
+0x100004148	0x00000008	[ 21] __gfortran_os_error_at.got
+0x100004150	0x00000008	[ 21] __gfortran_set_args.got
+0x100004158	0x00000008	[ 21] __gfortran_set_options.got
+0x100004160	0x00000008	[ 21] __gfortran_st_write.got
+0x100004168	0x00000008	[ 21] __gfortran_st_write_done.got
+0x100004170	0x00000008	[ 21] __gfortran_transfer_array_write.got
+0x100004178	0x00000008	[ 21] __gfortran_transfer_character_write.got
+0x100004180	0x00000008	[ 21] __gfortran_transfer_real_write.got
+0x100004188	0x00000008	[ 25] _malloc.got
+0x100004190	0x00000008	[ 24] _memcpy.got
+0x100008000	0x00000004	[  1] _fastcanonize.1
+0x100008008	0x00008E08	[  1] _normal.0
+0x100010E10	0x00000008	[  1] _damp.2
+0x100010E18	0x000012D0	[  1] _a_cs.3
+0x1000120E8	0x000012D0	[  1] _a2.4
+0x1000133B8	0x000012D0	[  1] _a1.5
+0x100014688	0x000012D0	[  1] _a0.6
+0x100015958	0x000012D0	[  1] _as.7
+0x100016C28	0x000012D0	[  1] _m3.8
+0x100017EF8	0x000012D0	[  1] _m2.9
+0x1000191C8	0x000012D0	[  1] _m1.10
+0x10001A498	0x000012D0	[  1] _m.11
+0x10001B768	0x00000368	[  1] _vf3.12
+0x10001BAD0	0x00000368	[  1] _vf2.13
+0x10001BE38	0x00000368	[  1] _vf1.14
