@@ -20,9 +20,9 @@ program example
   type(c_lattice_function) cl
    logical putspin
   
-  radfluc=0.0001d0
+  !radfluc=0.0001d0
   remove_tune_shift=.false.
-  putspin=.false.
+  putspin=.true.
   n_cai=-i_
   do_damping=.false.
   !write(6,*) " If deltap/p0 is a canonical variable  enter 3"
@@ -32,7 +32,7 @@ program example
   !if(nd/=2.and.nd/=3) stop 44
   if(nd==1) ndpt = 0
   if(nd==2) ndpt = 0
-  if(nd==3) ndpt = 0  !6  ! BMAD choice
+  if(nd==3) ndpt = 6  ! BMAD choice
   no=3;     ! no: the order of the polynomial    nv: the number of variables   
   np=2
   c_lda_used=1500
@@ -134,9 +134,9 @@ program example
   decrement(6)=0.9d0
   
    
-  do i=1,c_%nd2
-  m%v(i)=m%v(i)*decrement(i)
- enddo
+  !do i=1,c_%nd2
+  !m%v(i)=m%v(i)*decrement(i)
+ !enddo
  !m1=3.d0 + m
 
   ! do i=1,6
@@ -153,8 +153,13 @@ program example
 !  write(6,format6) real(m1%e_ij(i,1:6) )
 !enddo
 !stop
-
-  call c_normal(m,normal) !,dospin=putspin,phase=phase,nu_spin=nu_spin)
+  !call print(m)
+  call c_normal(m,normal,dospin=putspin,phase=phase,nu_spin=nu_spin)
+  write(*,*) "should be coast"
+  call clean(nu_spin,nu_spin,prec=1.d-6)
+    write(6,'(A,1x,g23.16,/)') "The spin tune  is "
+    call print(nu_spin)
+    stop
   call c_fast_canonise(normal%atot, m1, phase=ph, damping=dampdec)
   write(*,*) dampdec
   do_damping=.true.
@@ -188,7 +193,6 @@ program example
   do i=1,6
     write(6,format6) real(normal%s_ij0(i,1:6) )
   enddo
-  stop
 
   !write(*,*) "emit_1 = ", normal%emittance(1)
   !write(*,*) "emit_2 = ", normal%emittance(2)

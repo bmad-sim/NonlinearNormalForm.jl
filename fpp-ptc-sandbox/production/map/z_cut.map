@@ -3,63 +3,65 @@
 # Object files:
 [  0] linker synthesized
 [  1] CMakeFiles/z_cut-exe.dir/z_cut.f90.o
-[  2] /Users/matthewsignorelli/Documents/Bmad/bmad-ecosystem/20260112-0/production/lib/libforest.dylib
+[  2] /Users/matthewsignorelli/Documents/Bmad/bmad-ecosystem/20260121-0/production/lib/libforest.dylib
 [  3] /opt/homebrew/lib/libhdf5_hl_fortran.310.0.6.dylib
 [  4] /opt/homebrew/lib/libhdf5_fortran.310.3.2.dylib
 [  5] /opt/homebrew/lib/libcairo.dylib
 [  6] /opt/homebrew/lib/libpango-1.0.dylib
 [  7] /opt/homebrew/lib/libpangocairo-1.0.dylib
 [  8] /opt/homebrew/lib/libgobject-2.0.dylib
-[  9] /opt/homebrew/lib/libX11.dylib
-[ 10] /opt/homebrew/lib/libXext.dylib
+[  9] /opt/homebrew/lib/libSM.dylib
+[ 10] /opt/homebrew/lib/libICE.dylib
 [ 11] /opt/homebrew/lib/libX11.dylib
-[ 12] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libplplotfortran.dylib
-[ 13] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libplplot.dylib
-[ 14] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libcsirocsa.dylib
-[ 15] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libqsastime.dylib
-[ 16] /opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/libstdc++.dylib
-[ 17] /opt/homebrew/lib/libhdf5_hl_f90cstub.310.0.6.dylib
-[ 18] /opt/homebrew/lib/libhdf5_f90cstub.310.3.2.dylib
-[ 19] /opt/homebrew/lib/libhdf5_hl.310.0.6.dylib
-[ 20] /opt/homebrew/lib/libhdf5.310.5.1.dylib
-[ 21] /opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/libgfortran.dylib
-[ 22] /opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/libquadmath.dylib
-[ 23] /Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/usr/lib/libSystem.tbd
+[ 12] /opt/homebrew/lib/libXext.dylib
+[ 13] /opt/homebrew/lib/libX11.dylib
+[ 14] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libplplotfortran.dylib
+[ 15] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libplplot.dylib
+[ 16] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libcsirocsa.dylib
+[ 17] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libqsastime.dylib
+[ 18] /opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/libstdc++.dylib
+[ 19] /opt/homebrew/lib/libhdf5_hl_f90cstub.310.0.6.dylib
+[ 20] /opt/homebrew/lib/libhdf5_f90cstub.310.3.2.dylib
+[ 21] /opt/homebrew/lib/libhdf5_hl.310.0.6.dylib
+[ 22] /opt/homebrew/lib/libhdf5.310.5.1.dylib
+[ 23] /opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/libgfortran.dylib
+[ 24] /opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/libquadmath.dylib
+[ 25] /Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/usr/lib/libSystem.tbd
 # Sections:
 # Address	Size    	Segment	Section
-0x100000D68	0x00000000	__TEXT	__text
-0x100000D80	0x00000284	__TEXT	__text_startup
-0x100001004	0x00000084	__TEXT	__stubs
-0x100001088	0x00000058	__TEXT	__const
-0x1000010E0	0x00000078	__TEXT	__eh_frame
+0x100000DF8	0x00000000	__TEXT	__text
+0x100000E00	0x00000284	__TEXT	__text_startup
+0x100001084	0x00000084	__TEXT	__stubs
+0x100001108	0x00000058	__TEXT	__const
+0x100001160	0x00000078	__TEXT	__eh_frame
 0x100004000	0x00000058	__DATA_CONST	__got
 # Symbols:
 # Address	Size    	File  Name
 0x100000000	0x00000000	[  0] __mh_execute_header
-0x100000D68	0x00000000	[  0] __TEXT,__text
-0x100000D80	0x00000284	[  1] _main
-0x100001004	0x0000000C	[  2] ___c_tpsa_MOD_add.stub
-0x100001010	0x0000000C	[  2] ___c_tpsa_MOD_c_a_opt.stub
-0x10000101C	0x0000000C	[  2] ___c_tpsa_MOD_c_init.stub
-0x100001028	0x0000000C	[  2] ___c_tpsa_MOD_c_pri.stub
-0x100001034	0x0000000C	[  2] ___c_tpsa_MOD_cutorder.stub
-0x100001040	0x0000000C	[  2] ___c_tpsa_MOD_daddsca.stub
-0x10000104C	0x0000000C	[  2] ___c_tpsa_MOD_dputcharr.stub
-0x100001058	0x0000000C	[  2] ___c_tpsa_MOD_equal.stub
-0x100001064	0x0000000C	[  2] ___c_tpsa_MOD_k_opt.stub
-0x100001070	0x0000000C	[ 21] __gfortran_set_args.stub
-0x10000107C	0x0000000C	[ 21] __gfortran_set_options.stub
-0x100001088	0x00000008	[  1] lC0
-0x100001090	0x00000008	[  1] lC1
-0x100001098	0x00000008	[  1] lC2
-0x1000010A0	0x00000008	[  1] lC3
-0x1000010A8	0x00000008	[  1] lC4
-0x1000010B0	0x00000008	[  1] lC5
-0x1000010B8	0x00000008	[  1] lC6
-0x1000010C0	0x00000004	[  1] lC7
-0x1000010C4	0x0000001C	[  1] _options.0.0
-0x1000010E0	0x00000018	[  1] CFI
-0x1000010F8	0x00000060	[  1] FDE for: _main
+0x100000DF8	0x00000000	[  0] __TEXT,__text
+0x100000E00	0x00000284	[  1] _main
+0x100001084	0x0000000C	[  2] ___c_tpsa_MOD_add.stub
+0x100001090	0x0000000C	[  2] ___c_tpsa_MOD_c_a_opt.stub
+0x10000109C	0x0000000C	[  2] ___c_tpsa_MOD_c_init.stub
+0x1000010A8	0x0000000C	[  2] ___c_tpsa_MOD_c_pri.stub
+0x1000010B4	0x0000000C	[  2] ___c_tpsa_MOD_cutorder.stub
+0x1000010C0	0x0000000C	[  2] ___c_tpsa_MOD_daddsca.stub
+0x1000010CC	0x0000000C	[  2] ___c_tpsa_MOD_dputcharr.stub
+0x1000010D8	0x0000000C	[  2] ___c_tpsa_MOD_equal.stub
+0x1000010E4	0x0000000C	[  2] ___c_tpsa_MOD_k_opt.stub
+0x1000010F0	0x0000000C	[ 23] __gfortran_set_args.stub
+0x1000010FC	0x0000000C	[ 23] __gfortran_set_options.stub
+0x100001108	0x00000008	[  1] lC0
+0x100001110	0x00000008	[  1] lC1
+0x100001118	0x00000008	[  1] lC2
+0x100001120	0x00000008	[  1] lC3
+0x100001128	0x00000008	[  1] lC4
+0x100001130	0x00000008	[  1] lC5
+0x100001138	0x00000008	[  1] lC6
+0x100001140	0x00000004	[  1] lC7
+0x100001144	0x0000001C	[  1] _options.0.0
+0x100001160	0x00000018	[  1] CFI
+0x100001178	0x00000060	[  1] FDE for: _main
 0x100004000	0x00000008	[  2] ___c_tpsa_MOD_add.got
 0x100004008	0x00000008	[  2] ___c_tpsa_MOD_c_a_opt.got
 0x100004010	0x00000008	[  2] ___c_tpsa_MOD_c_init.got
@@ -69,5 +71,5 @@
 0x100004030	0x00000008	[  2] ___c_tpsa_MOD_dputcharr.got
 0x100004038	0x00000008	[  2] ___c_tpsa_MOD_equal.got
 0x100004040	0x00000008	[  2] ___c_tpsa_MOD_k_opt.got
-0x100004048	0x00000008	[ 21] __gfortran_set_args.got
-0x100004050	0x00000008	[ 21] __gfortran_set_options.got
+0x100004048	0x00000008	[ 23] __gfortran_set_args.got
+0x100004050	0x00000008	[ 23] __gfortran_set_options.got

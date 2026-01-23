@@ -3,359 +3,353 @@
 # Object files:
 [  0] linker synthesized
 [  1] CMakeFiles/main_matt_3nux-exe.dir/main_matt_3nux.f90.o
-[  2] /Users/matthewsignorelli/Documents/Bmad/bmad-ecosystem/20260112-0/production/lib/libforest.dylib
+[  2] /Users/matthewsignorelli/Documents/Bmad/bmad-ecosystem/20260121-0/production/lib/libforest.dylib
 [  3] /opt/homebrew/lib/libhdf5_hl_fortran.310.0.6.dylib
 [  4] /opt/homebrew/lib/libhdf5_fortran.310.3.2.dylib
 [  5] /opt/homebrew/lib/libcairo.dylib
 [  6] /opt/homebrew/lib/libpango-1.0.dylib
 [  7] /opt/homebrew/lib/libpangocairo-1.0.dylib
 [  8] /opt/homebrew/lib/libgobject-2.0.dylib
-[  9] /opt/homebrew/lib/libX11.dylib
-[ 10] /opt/homebrew/lib/libXext.dylib
+[  9] /opt/homebrew/lib/libSM.dylib
+[ 10] /opt/homebrew/lib/libICE.dylib
 [ 11] /opt/homebrew/lib/libX11.dylib
-[ 12] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libplplotfortran.dylib
-[ 13] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libplplot.dylib
-[ 14] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libcsirocsa.dylib
-[ 15] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libqsastime.dylib
-[ 16] /opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/libstdc++.dylib
-[ 17] /opt/homebrew/lib/libhdf5_hl_f90cstub.310.0.6.dylib
-[ 18] /opt/homebrew/lib/libhdf5_f90cstub.310.3.2.dylib
-[ 19] /opt/homebrew/lib/libhdf5_hl.310.0.6.dylib
-[ 20] /opt/homebrew/lib/libhdf5.310.5.1.dylib
-[ 21] /opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/libgfortran.dylib
-[ 22] /opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/libquadmath.dylib
-[ 23] /Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/usr/lib/libSystem.tbd
-[ 24] /Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/usr/lib/system/libsystem_c.tbd
-[ 25] /Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/usr/lib/system/libsystem_m.tbd
-[ 26] /Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/usr/lib/system/libsystem_malloc.tbd
+[ 12] /opt/homebrew/lib/libXext.dylib
+[ 13] /opt/homebrew/lib/libX11.dylib
+[ 14] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libplplotfortran.dylib
+[ 15] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libplplot.dylib
+[ 16] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libcsirocsa.dylib
+[ 17] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libqsastime.dylib
+[ 18] /opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/libstdc++.dylib
+[ 19] /opt/homebrew/lib/libhdf5_hl_f90cstub.310.0.6.dylib
+[ 20] /opt/homebrew/lib/libhdf5_f90cstub.310.3.2.dylib
+[ 21] /opt/homebrew/lib/libhdf5_hl.310.0.6.dylib
+[ 22] /opt/homebrew/lib/libhdf5.310.5.1.dylib
+[ 23] /opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/libgfortran.dylib
+[ 24] /opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/libquadmath.dylib
+[ 25] /Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/usr/lib/libSystem.tbd
+[ 26] /Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/usr/lib/system/libsystem_c.tbd
+[ 27] /Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/usr/lib/system/libsystem_m.tbd
+[ 28] /Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/usr/lib/system/libsystem_malloc.tbd
 # Sections:
 # Address	Size    	Segment	Section
-0x100000E60	0x0000BDC0	__TEXT	__text
-0x10000CC20	0x0000002C	__TEXT	__text_startup
-0x10000CC4C	0x000005E8	__TEXT	__stubs
-0x10000D240	0x00000950	__TEXT	__const
-0x10000DB90	0x000001C3	__TEXT	__cstring
-0x10000DD58	0x00000230	__TEXT	__eh_frame
+0x100000EE0	0x0000BDC0	__TEXT	__text
+0x10000CCA0	0x0000002C	__TEXT	__text_startup
+0x10000CCCC	0x000005E8	__TEXT	__stubs
+0x10000D2C0	0x00000950	__TEXT	__const
+0x10000DC10	0x000001C3	__TEXT	__cstring
+0x10000DDD8	0x00000230	__TEXT	__eh_frame
 0x100010000	0x00000488	__DATA_CONST	__got
 0x100014000	0x0001AB50	__DATA	__bss
 # Symbols:
 # Address	Size    	File  Name
 0x100000000	0x00000000	[  0] __mh_execute_header
-0x100000E60	0x00005ACC	[  1] _build_lattice.1.constprop.0
-0x10000692C	0x00000558	[  1] _newton_search.0.constprop.0
-0x100006E84	0x00005D9C	[  1] _MAIN__
-0x10000CC20	0x0000002C	[  1] _main
-0x10000CC4C	0x0000000C	[  2] ___c_tpsa_MOD_a_opt_c_damap.stub
-0x10000CC58	0x0000000C	[  2] ___c_tpsa_MOD_a_opt_c_vector.stub
-0x10000CC64	0x0000000C	[  2] ___c_tpsa_MOD_add.stub
-0x10000CC70	0x0000000C	[  2] ___c_tpsa_MOD_alloc_c_damap.stub
-0x10000CC7C	0x0000000C	[  2] ___c_tpsa_MOD_alloc_c_normal_form.stub
-0x10000CC88	0x0000000C	[  2] ___c_tpsa_MOD_alloc_c_vector_field.stub
-0x10000CC94	0x0000000C	[  2] ___c_tpsa_MOD_c_alloc_us.stub
-0x10000CCA0	0x0000000C	[  2] ___c_tpsa_MOD_c_allocda.stub
-0x10000CCAC	0x0000000C	[  2] ___c_tpsa_MOD_c_allocdas.stub
-0x10000CCB8	0x0000000C	[  2] ___c_tpsa_MOD_c_clean_damap.stub
-0x10000CCC4	0x0000000C	[  2] ___c_tpsa_MOD_c_clean_taylor.stub
-0x10000CCD0	0x0000000C	[  2] ___c_tpsa_MOD_c_clean_vector_field.stub
-0x10000CCDC	0x0000000C	[  2] ___c_tpsa_MOD_c_concat.stub
-0x10000CCE8	0x0000000C	[  2] ___c_tpsa_MOD_c_concat_map_ray.stub
-0x10000CCF4	0x0000000C	[  2] ___c_tpsa_MOD_c_concat_tpsa.stub
-0x10000CD00	0x0000000C	[  2] ___c_tpsa_MOD_c_dputint0r.stub
-0x10000CD0C	0x0000000C	[  2] ___c_tpsa_MOD_c_equalcray.stub
-0x10000CD18	0x0000000C	[  2] ___c_tpsa_MOD_c_equalmap.stub
-0x10000CD24	0x0000000C	[  2] ___c_tpsa_MOD_c_equalvec.stub
-0x10000CD30	0x0000000C	[  2] ___c_tpsa_MOD_c_expflo_map.stub
-0x10000CD3C	0x0000000C	[  2] ___c_tpsa_MOD_c_factor_map.stub
-0x10000CD48	0x0000000C	[  2] ___c_tpsa_MOD_c_fast_canonise.stub
-0x10000CD54	0x0000000C	[  2] ___c_tpsa_MOD_c_fill_uni.stub
-0x10000CD60	0x0000000C	[  2] ___c_tpsa_MOD_c_full_norm_damap.stub
-0x10000CD6C	0x0000000C	[  2] ___c_tpsa_MOD_c_get_coeff.stub
-0x10000CD78	0x0000000C	[  2] ___c_tpsa_MOD_c_identityequalmap.stub
-0x10000CD84	0x0000000C	[  2] ___c_tpsa_MOD_c_logf_spin.stub
-0x10000CD90	0x0000000C	[  2] ___c_tpsa_MOD_c_map_vec.stub
-0x10000CD9C	0x0000000C	[  2] ___c_tpsa_MOD_c_normal.stub
-0x10000CDA8	0x0000000C	[  2] ___c_tpsa_MOD_c_pri_map.stub
-0x10000CDB4	0x0000000C	[  2] ___c_tpsa_MOD_c_pri_vec.stub
-0x10000CDC0	0x0000000C	[  2] ___c_tpsa_MOD_c_printunitaylor_old.stub
-0x10000CDCC	0x0000000C	[  2] ___c_tpsa_MOD_c_sub_map.stub
-0x10000CDD8	0x0000000C	[  2] ___c_tpsa_MOD_c_trxtaylor.stub
-0x10000CDE4	0x0000000C	[  2] ___c_tpsa_MOD_c_trxtaylor_da.stub
-0x10000CDF0	0x0000000C	[  2] ___c_tpsa_MOD_cdaddsc.stub
-0x10000CDFC	0x0000000C	[  2] ___c_tpsa_MOD_cdequaldacon.stub
-0x10000CE08	0x0000000C	[  2] ___c_tpsa_MOD_cdscadd.stub
-0x10000CE14	0x0000000C	[  2] ___c_tpsa_MOD_cdscmul.stub
-0x10000CE20	0x0000000C	[  2] ___c_tpsa_MOD_clean_c_universal_taylor.stub
-0x10000CE2C	0x0000000C	[  2] ___c_tpsa_MOD_cutordermap.stub
-0x10000CE38	0x0000000C	[  2] ___c_tpsa_MOD_cutordervec.stub
-0x10000CE44	0x0000000C	[  2] ___c_tpsa_MOD_d_field_for_demin.stub
-0x10000CE50	0x0000000C	[  2] ___c_tpsa_MOD_daddsca.stub
-0x10000CE5C	0x0000000C	[  2] ___c_tpsa_MOD_dequal.stub
-0x10000CE68	0x0000000C	[  2] ___c_tpsa_MOD_dsubsc.stub
-0x10000CE74	0x0000000C	[  2] ___c_tpsa_MOD_equal.stub
-0x10000CE80	0x0000000C	[  2] ___c_tpsa_MOD_equalc_ray_ray.stub
-0x10000CE8C	0x0000000C	[  2] ___c_tpsa_MOD_from_phasor.stub
-0x10000CE98	0x0000000C	[  2] ___c_tpsa_MOD_getchar.stub
-0x10000CEA4	0x0000000C	[  2] ___c_tpsa_MOD_getordermap.stub
-0x10000CEB0	0x0000000C	[  2] ___c_tpsa_MOD_getpb.stub
-0x10000CEBC	0x0000000C	[  2] ___c_tpsa_MOD_gramschmidt.stub
-0x10000CEC8	0x0000000C	[  2] ___c_tpsa_MOD_iequaldacon.stub
-0x10000CED4	0x0000000C	[  2] ___c_tpsa_MOD_k_opt_c_damap.stub
-0x10000CEE0	0x0000000C	[  2] ___c_tpsa_MOD_kill_c_normal_form.stub
-0x10000CEEC	0x0000000C	[  2] ___c_tpsa_MOD_kill_c_vector_field.stub
-0x10000CEF8	0x0000000C	[  2] ___c_tpsa_MOD_pow_tpsamap.stub
-0x10000CF04	0x0000000C	[  2] ___c_tpsa_MOD_powmap.stub
-0x10000CF10	0x0000000C	[  2] ___c_tpsa_MOD_to_phasor.stub
-0x10000CF1C	0x0000000C	[  2] ___c_tpsa_MOD_unarysub.stub
-0x10000CF28	0x0000000C	[  2] ___c_tpsa_MOD_unarysub_vec.stub
-0x10000CF34	0x0000000C	[  2] ___file_handler_MOD_kanalnummer.stub
-0x10000CF40	0x0000000C	[  2] ___mad_like_MOD_add_bb.stub
-0x10000CF4C	0x0000000C	[  2] ___mad_like_MOD_add_be.stub
-0x10000CF58	0x0000000C	[  2] ___mad_like_MOD_add_ee.stub
-0x10000CF64	0x0000000C	[  2] ___mad_like_MOD_b2.stub
-0x10000CF70	0x0000000C	[  2] ___mad_like_MOD_drft.stub
-0x10000CF7C	0x0000000C	[  2] ___mad_like_MOD_el_q.stub
-0x10000CF88	0x0000000C	[  2] ___mad_like_MOD_equal_l_l.stub
-0x10000CF94	0x0000000C	[  2] ___mad_like_MOD_makeitc.stub
-0x10000CFA0	0x0000000C	[  2] ___mad_like_MOD_mark.stub
-0x10000CFAC	0x0000000C	[  2] ___mad_like_MOD_mul_b.stub
-0x10000CFB8	0x0000000C	[  2] ___mad_like_MOD_quadtilt.stub
-0x10000CFC4	0x0000000C	[  2] ___mad_like_MOD_rectaetilt.stub
-0x10000CFD0	0x0000000C	[  2] ___mad_like_MOD_rfcavityl.stub
-0x10000CFDC	0x0000000C	[  2] ___mad_like_MOD_set_mad.stub
-0x10000CFE8	0x0000000C	[  2] ___mad_like_MOD_sexttilt.stub
-0x10000CFF4	0x0000000C	[  2] ___madx_ptc_module_MOD_ptc_end.stub
-0x10000D000	0x0000000C	[  2] ___madx_ptc_module_MOD_ptc_ini_no_append.stub
-0x10000D00C	0x0000000C	[  2] ___ptc_multiparticle_MOD_survey_exist_planar_l_new.stub
-0x10000D018	0x0000000C	[  2] ___ptc_spin_MOD_track_node_layout_flag_pr_t12_p.stub
-0x10000D024	0x0000000C	[  2] ___s_def_all_kinds_MOD_get_length.stub
-0x10000D030	0x0000000C	[  2] ___s_extend_poly_MOD_daddsc.stub
-0x10000D03C	0x0000000C	[  2] ___s_extend_poly_MOD_equal_c_map_ray8.stub
-0x10000D048	0x0000000C	[  2] ___s_extend_poly_MOD_scdadd.stub
-0x10000D054	0x0000000C	[  2] ___s_family_MOD_addp_anbn.stub
-0x10000D060	0x0000000C	[  2] ___s_fibre_bundle_MOD_append_empty_layout.stub
-0x10000D06C	0x0000000C	[  2] ___s_fitting_new_MOD_find_orbit_layout_noda_object.stub
-0x10000D078	0x0000000C	[  2] ___s_status_MOD_equalt.stub
-0x10000D084	0x0000000C	[  2] ___s_status_MOD_make_states_0.stub
-0x10000D090	0x0000000C	[  2] ___s_status_MOD_para_rema.stub
-0x10000D09C	0x0000000C	[  2] ___s_status_MOD_s_init.stub
-0x10000D0A8	0x0000000C	[  2] ___s_status_MOD_update_states.stub
-0x10000D0B4	0x0000000C	[  2] ___tree_element_module_MOD_alloc_probe_8.stub
-0x10000D0C0	0x0000000C	[  2] ___tree_element_module_MOD_equal_probe8_probe8.stub
-0x10000D0CC	0x0000000C	[  2] ___tree_element_module_MOD_equal_probe_probe8.stub
-0x10000D0D8	0x0000000C	[  2] ___tree_element_module_MOD_equal_probe_real6.stub
-0x10000D0E4	0x0000000C	[  2] ___tree_element_module_MOD_kill_probe_8.stub
-0x10000D0F0	0x0000000C	[ 21] __gfortran_os_error_at.stub
-0x10000D0FC	0x0000000C	[ 21] __gfortran_runtime_error.stub
-0x10000D108	0x0000000C	[ 21] __gfortran_set_args.stub
-0x10000D114	0x0000000C	[ 21] __gfortran_set_options.stub
-0x10000D120	0x0000000C	[ 21] __gfortran_st_close.stub
-0x10000D12C	0x0000000C	[ 21] __gfortran_st_read.stub
-0x10000D138	0x0000000C	[ 21] __gfortran_st_read_done.stub
-0x10000D144	0x0000000C	[ 21] __gfortran_st_write.stub
-0x10000D150	0x0000000C	[ 21] __gfortran_st_write_done.stub
-0x10000D15C	0x0000000C	[ 21] __gfortran_transfer_array_write.stub
-0x10000D168	0x0000000C	[ 21] __gfortran_transfer_character_write.stub
-0x10000D174	0x0000000C	[ 21] __gfortran_transfer_complex_write.stub
-0x10000D180	0x0000000C	[ 21] __gfortran_transfer_integer.stub
-0x10000D18C	0x0000000C	[ 21] __gfortran_transfer_integer_write.stub
-0x10000D198	0x0000000C	[ 21] __gfortran_transfer_real.stub
-0x10000D1A4	0x0000000C	[ 21] __gfortran_transfer_real_write.stub
-0x10000D1B0	0x0000000C	[ 25] _atan2.stub
-0x10000D1BC	0x0000000C	[ 25] _cabs.stub
-0x10000D1C8	0x0000000C	[ 25] _cexp.stub
-0x10000D1D4	0x0000000C	[ 25] _cos.stub
-0x10000D1E0	0x0000000C	[ 26] _malloc.stub
-0x10000D1EC	0x0000000C	[ 24] _memcpy.stub
-0x10000D1F8	0x0000000C	[ 24] _memset.stub
-0x10000D204	0x0000000C	[ 25] _pow.stub
-0x10000D210	0x0000000C	[ 26] _realloc.stub
-0x10000D21C	0x0000000C	[ 25] _sin.stub
-0x10000D228	0x0000000C	[ 25] _tan.stub
-0x10000D240	0x00000004	[  1] lC0
-0x10000D244	0x00000004	[  1] lC1
-0x10000D248	0x00000008	[  1] lC2
-0x10000D250	0x00000008	[  1] lC3
-0x10000D258	0x00000008	[  1] lC4
-0x10000D260	0x00000008	[  1] lC5
-0x10000D268	0x00000008	[  1] lC6
-0x10000D270	0x00000008	[  1] lC7
-0x10000D278	0x00000008	[  1] lC8
-0x10000D280	0x00000008	[  1] lC9
-0x10000D288	0x00000008	[  1] lC10
-0x10000D290	0x00000008	[  1] lC11
-0x10000D298	0x00000008	[  1] lC12
-0x10000D2A0	0x00000008	[  1] lC13
-0x10000D2A8	0x00000008	[  1] lC14
-0x10000D2B0	0x00000008	[  1] lC15
-0x10000D2B8	0x00000008	[  1] lC16
-0x10000D2C0	0x00000008	[  1] lC17
-0x10000D2C8	0x00000008	[  1] lC18
-0x10000D2D0	0x00000008	[  1] lC19
-0x10000D2D8	0x00000008	[  1] lC20
-0x10000D2E0	0x00000008	[  1] lC21
-0x10000D2E8	0x00000008	[  1] lC22
-0x10000D2F0	0x00000008	[  1] lC23
-0x10000D2F8	0x00000008	[  1] lC24
-0x10000D300	0x00000008	[  1] lC25
-0x10000D308	0x00000008	[  1] lC26
-0x10000D310	0x00000008	[  1] lC27
-0x10000D318	0x00000008	[  1] lC28
-0x10000D320	0x00000008	[  1] lC29
-0x10000D328	0x00000008	[  1] lC30
-0x10000D330	0x00000008	[  1] lC31
-0x10000D338	0x00000008	[  1] lC32
-0x10000D340	0x00000008	[  1] lC33
-0x10000D348	0x00000008	[  1] lC34
-0x10000D350	0x00000008	[  1] lC35
-0x10000D358	0x00000008	[  1] lC36
-0x10000D360	0x00000008	[  1] lC37
-0x10000D368	0x00000008	[  1] lC38
-0x10000D370	0x00000008	[  1] lC39
-0x10000D378	0x00000008	[  1] lC40
-0x10000D380	0x00000008	[  1] lC41
-0x10000D388	0x00000008	[  1] lC42
-0x10000D390	0x00000008	[  1] lC43
-0x10000D398	0x00000008	[  1] lC44
-0x10000D3A0	0x00000008	[  1] lC45
-0x10000D3A8	0x00000008	[  1] lC46
-0x10000D3B0	0x00000008	[  1] lC47
-0x10000D3B8	0x00000008	[  1] lC48
-0x10000D3C0	0x00000008	[  1] lC49
-0x10000D3C8	0x00000008	[  1] lC50
-0x10000D3D0	0x00000008	[  1] lC51
-0x10000D3D8	0x00000008	[  1] lC52
-0x10000D3E0	0x00000008	[  1] lC53
-0x10000D3E8	0x00000008	[  1] lC54
-0x10000D3F0	0x00000008	[  1] lC55
-0x10000D3F8	0x00000008	[  1] lC56
-0x10000D400	0x00000008	[  1] lC57
-0x10000D408	0x00000008	[  1] lC58
-0x10000D410	0x00000008	[  1] lC59
-0x10000D418	0x00000008	[  1] lC60
-0x10000D420	0x00000008	[  1] lC61
-0x10000D428	0x00000008	[  1] lC62
-0x10000D430	0x00000008	[  1] lC63
-0x10000D438	0x00000008	[  1] lC64
-0x10000D440	0x00000008	[  1] lC65
-0x10000D448	0x00000008	[  1] lC66
-0x10000D450	0x00000008	[  1] lC67
-0x10000D458	0x00000008	[  1] lC68
-0x10000D460	0x00000008	[  1] lC69
-0x10000D468	0x00000008	[  1] lC70
-0x10000D470	0x00000008	[  1] lC71
-0x10000D478	0x00000008	[  1] lC72
-0x10000D480	0x00000008	[  1] lC73
-0x10000D488	0x00000008	[  1] lC74
-0x10000D490	0x00000008	[  1] lC75
-0x10000D498	0x00000008	[  1] lC76
-0x10000D4A0	0x00000008	[  1] lC77
-0x10000D4A8	0x00000008	[  1] lC78
-0x10000D4B0	0x00000008	[  1] lC79
-0x10000D4B8	0x00000008	[  1] lC80
-0x10000D4C0	0x00000008	[  1] lC81
-0x10000D4C8	0x00000008	[  1] lC82
-0x10000D4D0	0x00000008	[  1] lC83
-0x10000D4D8	0x00000008	[  1] lC84
-0x10000D4E0	0x00000008	[  1] lC85
-0x10000D4E8	0x00000008	[  1] lC86
-0x10000D4F0	0x00000008	[  1] lC87
-0x10000D4F8	0x00000008	[  1] lC88
-0x10000D500	0x00000008	[  1] lC89
-0x10000D508	0x00000008	[  1] lC90
-0x10000D510	0x00000008	[  1] lC91
-0x10000D518	0x00000008	[  1] lC92
-0x10000D520	0x00000008	[  1] lC93
-0x10000D528	0x00000008	[  1] lC94
-0x10000D530	0x00000008	[  1] lC95
-0x10000D538	0x00000004	[  1] lC96
-0x10000D53C	0x00000004	[  1] lC97
-0x10000D540	0x00000004	[  1] lC98
-0x10000D544	0x00000004	[  1] lC99
-0x10000D548	0x00000008	[  1] lC107
-0x10000D550	0x00000008	[  1] lC108
-0x10000D558	0x00000020	[  1] lC110
-0x10000D578	0x00000008	[  1] lC111
-0x10000D580	0x00000018	[  1] lC112
-0x10000D598	0x00000050	[  1] lC116
-0x10000D5E8	0x00000050	[  1] lC117
-0x10000D638	0x00000010	[  1] lC118
-0x10000D648	0x00000020	[  1] lC119
-0x10000D668	0x00000008	[  1] lC120
-0x10000D670	0x00000010	[  1] lC121
-0x10000D680	0x00000010	[  1] lC122
-0x10000D690	0x00000018	[  1] lC123
-0x10000D6A8	0x00000008	[  1] lC127
-0x10000D6B0	0x00000028	[  1] lC128
-0x10000D6D8	0x00000008	[  1] lC129
-0x10000D6E0	0x00000010	[  1] lC130
-0x10000D6F0	0x00000008	[  1] lC131
-0x10000D6F8	0x00000008	[  1] lC132
-0x10000D700	0x00000010	[  1] lC133
-0x10000D710	0x00000010	[  1] lC134
-0x10000D720	0x00000008	[  1] lC135
-0x10000D728	0x00000048	[  1] lC136
-0x10000D770	0x00000020	[  1] lC137
-0x10000D790	0x00000008	[  1] lC138
-0x10000D798	0x00000028	[  1] lC139
-0x10000D7C0	0x00000008	[  1] lC141
-0x10000D7C8	0x00000008	[  1] lC142
-0x10000D7D0	0x00000008	[  1] lC143
-0x10000D7D8	0x00000010	[  1] lC144
-0x10000D7E8	0x00000018	[  1] lC145
-0x10000D800	0x00000028	[  1] lC146
-0x10000D828	0x00000008	[  1] lC147
-0x10000D830	0x00000008	[  1] lC148
-0x10000D838	0x00000008	[  1] lC149
-0x10000D840	0x00000008	[  1] lC150
-0x10000D848	0x00000028	[  1] lC151
-0x10000D870	0x00000028	[  1] lC152
-0x10000D898	0x00000010	[  1] lC153
-0x10000D8A8	0x00000030	[  1] lC154
-0x10000D8D8	0x00000018	[  1] lC155
-0x10000D8F0	0x00000010	[  1] lC156
-0x10000D900	0x00000010	[  1] lC157
-0x10000D910	0x00000008	[  1] lC158
-0x10000D918	0x00000008	[  1] lC159
-0x10000D920	0x00000008	[  1] lC160
-0x10000D928	0x00000008	[  1] lC161
-0x10000D930	0x00000010	[  1] lC162
-0x10000D940	0x00000018	[  1] lC163
-0x10000D958	0x00000008	[  1] lC164
-0x10000D960	0x0000000C	[  1] lC165
-0x10000D96C	0x00000010	[  1] _A.216.3
-0x10000D97C	0x00000010	[  1] _A.210.4
-0x10000D98C	0x00000010	[  1] _A.208.5
-0x10000D99C	0x00000010	[  1] _A.200.6
-0x10000D9AC	0x00000010	[  1] _A.198.7
-0x10000D9BC	0x00000010	[  1] _A.194.8
-0x10000D9CC	0x00000010	[  1] _A.192.9
-0x10000D9DC	0x00000010	[  1] _A.188.10
-0x10000D9EC	0x00000010	[  1] _A.186.11
-0x10000D9FC	0x00000010	[  1] _A.174.14
-0x10000DA0C	0x0000001C	[  1] _options.244.41
-0x10000DA28	0x00000008	[  1] lC115
-0x10000DA30	0x00000008	[  1] lC166
-0x10000DA38	0x00000008	[  1] lC172
-0x10000DA40	0x00000008	[  1] 8-byte-literal
-0x10000DA48	0x00000008	[  1] 8-byte-literal
-0x10000DA50	0x00000008	[  1] 8-byte-literal
-0x10000DA58	0x00000008	[  1] 8-byte-literal
-0x10000DA60	0x00000008	[  1] 8-byte-literal
-0x10000DA68	0x00000008	[  1] 8-byte-literal
-0x10000DA70	0x00000008	[  1] 8-byte-literal
-0x10000DA78	0x00000008	[  1] 8-byte-literal
-0x10000DA80	0x00000008	[  1] 8-byte-literal
-0x10000DA88	0x00000008	[  1] 8-byte-literal
-0x10000DA90	0x00000008	[  1] 8-byte-literal
-0x10000DA98	0x00000008	[  1] 8-byte-literal
-0x10000DAA0	0x00000010	[  1] 16-byte-literal
-0x10000DAB0	0x00000010	[  1] 16-byte-literal
-0x10000DAC0	0x00000010	[  1] 16-byte-literal
-0x10000DAD0	0x00000010	[  1] 16-byte-literal
-0x10000DAE0	0x00000010	[  1] 16-byte-literal
-0x10000DAF0	0x00000010	[  1] 16-byte-literal
-0x10000DB00	0x00000010	[  1] 16-byte-literal
-0x10000DB10	0x00000010	[  1] 16-byte-literal
+0x100000EE0	0x00005ACC	[  1] _build_lattice.1.constprop.0
+0x1000069AC	0x00000558	[  1] _newton_search.0.constprop.0
+0x100006F04	0x00005D9C	[  1] _MAIN__
+0x10000CCA0	0x0000002C	[  1] _main
+0x10000CCCC	0x0000000C	[  2] ___c_tpsa_MOD_a_opt_c_damap.stub
+0x10000CCD8	0x0000000C	[  2] ___c_tpsa_MOD_a_opt_c_vector.stub
+0x10000CCE4	0x0000000C	[  2] ___c_tpsa_MOD_add.stub
+0x10000CCF0	0x0000000C	[  2] ___c_tpsa_MOD_alloc_c_damap.stub
+0x10000CCFC	0x0000000C	[  2] ___c_tpsa_MOD_alloc_c_normal_form.stub
+0x10000CD08	0x0000000C	[  2] ___c_tpsa_MOD_alloc_c_vector_field.stub
+0x10000CD14	0x0000000C	[  2] ___c_tpsa_MOD_c_alloc_us.stub
+0x10000CD20	0x0000000C	[  2] ___c_tpsa_MOD_c_allocda.stub
+0x10000CD2C	0x0000000C	[  2] ___c_tpsa_MOD_c_allocdas.stub
+0x10000CD38	0x0000000C	[  2] ___c_tpsa_MOD_c_clean_damap.stub
+0x10000CD44	0x0000000C	[  2] ___c_tpsa_MOD_c_clean_taylor.stub
+0x10000CD50	0x0000000C	[  2] ___c_tpsa_MOD_c_clean_vector_field.stub
+0x10000CD5C	0x0000000C	[  2] ___c_tpsa_MOD_c_concat.stub
+0x10000CD68	0x0000000C	[  2] ___c_tpsa_MOD_c_concat_map_ray.stub
+0x10000CD74	0x0000000C	[  2] ___c_tpsa_MOD_c_concat_tpsa.stub
+0x10000CD80	0x0000000C	[  2] ___c_tpsa_MOD_c_dputint0r.stub
+0x10000CD8C	0x0000000C	[  2] ___c_tpsa_MOD_c_equalcray.stub
+0x10000CD98	0x0000000C	[  2] ___c_tpsa_MOD_c_equalmap.stub
+0x10000CDA4	0x0000000C	[  2] ___c_tpsa_MOD_c_equalvec.stub
+0x10000CDB0	0x0000000C	[  2] ___c_tpsa_MOD_c_expflo_map.stub
+0x10000CDBC	0x0000000C	[  2] ___c_tpsa_MOD_c_factor_map.stub
+0x10000CDC8	0x0000000C	[  2] ___c_tpsa_MOD_c_fast_canonise.stub
+0x10000CDD4	0x0000000C	[  2] ___c_tpsa_MOD_c_fill_uni.stub
+0x10000CDE0	0x0000000C	[  2] ___c_tpsa_MOD_c_full_norm_damap.stub
+0x10000CDEC	0x0000000C	[  2] ___c_tpsa_MOD_c_get_coeff.stub
+0x10000CDF8	0x0000000C	[  2] ___c_tpsa_MOD_c_identityequalmap.stub
+0x10000CE04	0x0000000C	[  2] ___c_tpsa_MOD_c_logf_spin.stub
+0x10000CE10	0x0000000C	[  2] ___c_tpsa_MOD_c_map_vec.stub
+0x10000CE1C	0x0000000C	[  2] ___c_tpsa_MOD_c_normal.stub
+0x10000CE28	0x0000000C	[  2] ___c_tpsa_MOD_c_pri_map.stub
+0x10000CE34	0x0000000C	[  2] ___c_tpsa_MOD_c_pri_vec.stub
+0x10000CE40	0x0000000C	[  2] ___c_tpsa_MOD_c_printunitaylor_old.stub
+0x10000CE4C	0x0000000C	[  2] ___c_tpsa_MOD_c_sub_map.stub
+0x10000CE58	0x0000000C	[  2] ___c_tpsa_MOD_c_trxtaylor.stub
+0x10000CE64	0x0000000C	[  2] ___c_tpsa_MOD_c_trxtaylor_da.stub
+0x10000CE70	0x0000000C	[  2] ___c_tpsa_MOD_cdaddsc.stub
+0x10000CE7C	0x0000000C	[  2] ___c_tpsa_MOD_cdequaldacon.stub
+0x10000CE88	0x0000000C	[  2] ___c_tpsa_MOD_cdscadd.stub
+0x10000CE94	0x0000000C	[  2] ___c_tpsa_MOD_cdscmul.stub
+0x10000CEA0	0x0000000C	[  2] ___c_tpsa_MOD_clean_c_universal_taylor.stub
+0x10000CEAC	0x0000000C	[  2] ___c_tpsa_MOD_cutordermap.stub
+0x10000CEB8	0x0000000C	[  2] ___c_tpsa_MOD_cutordervec.stub
+0x10000CEC4	0x0000000C	[  2] ___c_tpsa_MOD_d_field_for_demin.stub
+0x10000CED0	0x0000000C	[  2] ___c_tpsa_MOD_daddsca.stub
+0x10000CEDC	0x0000000C	[  2] ___c_tpsa_MOD_dequal.stub
+0x10000CEE8	0x0000000C	[  2] ___c_tpsa_MOD_dsubsc.stub
+0x10000CEF4	0x0000000C	[  2] ___c_tpsa_MOD_equal.stub
+0x10000CF00	0x0000000C	[  2] ___c_tpsa_MOD_equalc_ray_ray.stub
+0x10000CF0C	0x0000000C	[  2] ___c_tpsa_MOD_from_phasor.stub
+0x10000CF18	0x0000000C	[  2] ___c_tpsa_MOD_getchar.stub
+0x10000CF24	0x0000000C	[  2] ___c_tpsa_MOD_getordermap.stub
+0x10000CF30	0x0000000C	[  2] ___c_tpsa_MOD_getpb.stub
+0x10000CF3C	0x0000000C	[  2] ___c_tpsa_MOD_gramschmidt.stub
+0x10000CF48	0x0000000C	[  2] ___c_tpsa_MOD_iequaldacon.stub
+0x10000CF54	0x0000000C	[  2] ___c_tpsa_MOD_k_opt_c_damap.stub
+0x10000CF60	0x0000000C	[  2] ___c_tpsa_MOD_kill_c_normal_form.stub
+0x10000CF6C	0x0000000C	[  2] ___c_tpsa_MOD_kill_c_vector_field.stub
+0x10000CF78	0x0000000C	[  2] ___c_tpsa_MOD_pow_tpsamap.stub
+0x10000CF84	0x0000000C	[  2] ___c_tpsa_MOD_powmap.stub
+0x10000CF90	0x0000000C	[  2] ___c_tpsa_MOD_to_phasor.stub
+0x10000CF9C	0x0000000C	[  2] ___c_tpsa_MOD_unarysub.stub
+0x10000CFA8	0x0000000C	[  2] ___c_tpsa_MOD_unarysub_vec.stub
+0x10000CFB4	0x0000000C	[  2] ___file_handler_MOD_kanalnummer.stub
+0x10000CFC0	0x0000000C	[  2] ___mad_like_MOD_add_bb.stub
+0x10000CFCC	0x0000000C	[  2] ___mad_like_MOD_add_be.stub
+0x10000CFD8	0x0000000C	[  2] ___mad_like_MOD_add_ee.stub
+0x10000CFE4	0x0000000C	[  2] ___mad_like_MOD_b2.stub
+0x10000CFF0	0x0000000C	[  2] ___mad_like_MOD_drft.stub
+0x10000CFFC	0x0000000C	[  2] ___mad_like_MOD_el_q.stub
+0x10000D008	0x0000000C	[  2] ___mad_like_MOD_equal_l_l.stub
+0x10000D014	0x0000000C	[  2] ___mad_like_MOD_makeitc.stub
+0x10000D020	0x0000000C	[  2] ___mad_like_MOD_mark.stub
+0x10000D02C	0x0000000C	[  2] ___mad_like_MOD_mul_b.stub
+0x10000D038	0x0000000C	[  2] ___mad_like_MOD_quadtilt.stub
+0x10000D044	0x0000000C	[  2] ___mad_like_MOD_rectaetilt.stub
+0x10000D050	0x0000000C	[  2] ___mad_like_MOD_rfcavityl.stub
+0x10000D05C	0x0000000C	[  2] ___mad_like_MOD_set_mad.stub
+0x10000D068	0x0000000C	[  2] ___mad_like_MOD_sexttilt.stub
+0x10000D074	0x0000000C	[  2] ___madx_ptc_module_MOD_ptc_end.stub
+0x10000D080	0x0000000C	[  2] ___madx_ptc_module_MOD_ptc_ini_no_append.stub
+0x10000D08C	0x0000000C	[  2] ___ptc_multiparticle_MOD_survey_exist_planar_l_new.stub
+0x10000D098	0x0000000C	[  2] ___ptc_spin_MOD_track_node_layout_flag_pr_t12_p.stub
+0x10000D0A4	0x0000000C	[  2] ___s_def_all_kinds_MOD_get_length.stub
+0x10000D0B0	0x0000000C	[  2] ___s_extend_poly_MOD_daddsc.stub
+0x10000D0BC	0x0000000C	[  2] ___s_extend_poly_MOD_equal_c_map_ray8.stub
+0x10000D0C8	0x0000000C	[  2] ___s_extend_poly_MOD_scdadd.stub
+0x10000D0D4	0x0000000C	[  2] ___s_family_MOD_addp_anbn.stub
+0x10000D0E0	0x0000000C	[  2] ___s_fibre_bundle_MOD_append_empty_layout.stub
+0x10000D0EC	0x0000000C	[  2] ___s_fitting_new_MOD_find_orbit_layout_noda_object.stub
+0x10000D0F8	0x0000000C	[  2] ___s_status_MOD_equalt.stub
+0x10000D104	0x0000000C	[  2] ___s_status_MOD_make_states_0.stub
+0x10000D110	0x0000000C	[  2] ___s_status_MOD_para_rema.stub
+0x10000D11C	0x0000000C	[  2] ___s_status_MOD_s_init.stub
+0x10000D128	0x0000000C	[  2] ___s_status_MOD_update_states.stub
+0x10000D134	0x0000000C	[  2] ___tree_element_module_MOD_alloc_probe_8.stub
+0x10000D140	0x0000000C	[  2] ___tree_element_module_MOD_equal_probe8_probe8.stub
+0x10000D14C	0x0000000C	[  2] ___tree_element_module_MOD_equal_probe_probe8.stub
+0x10000D158	0x0000000C	[  2] ___tree_element_module_MOD_equal_probe_real6.stub
+0x10000D164	0x0000000C	[  2] ___tree_element_module_MOD_kill_probe_8.stub
+0x10000D170	0x0000000C	[ 23] __gfortran_os_error_at.stub
+0x10000D17C	0x0000000C	[ 23] __gfortran_runtime_error.stub
+0x10000D188	0x0000000C	[ 23] __gfortran_set_args.stub
+0x10000D194	0x0000000C	[ 23] __gfortran_set_options.stub
+0x10000D1A0	0x0000000C	[ 23] __gfortran_st_close.stub
+0x10000D1AC	0x0000000C	[ 23] __gfortran_st_read.stub
+0x10000D1B8	0x0000000C	[ 23] __gfortran_st_read_done.stub
+0x10000D1C4	0x0000000C	[ 23] __gfortran_st_write.stub
+0x10000D1D0	0x0000000C	[ 23] __gfortran_st_write_done.stub
+0x10000D1DC	0x0000000C	[ 23] __gfortran_transfer_array_write.stub
+0x10000D1E8	0x0000000C	[ 23] __gfortran_transfer_character_write.stub
+0x10000D1F4	0x0000000C	[ 23] __gfortran_transfer_complex_write.stub
+0x10000D200	0x0000000C	[ 23] __gfortran_transfer_integer.stub
+0x10000D20C	0x0000000C	[ 23] __gfortran_transfer_integer_write.stub
+0x10000D218	0x0000000C	[ 23] __gfortran_transfer_real.stub
+0x10000D224	0x0000000C	[ 23] __gfortran_transfer_real_write.stub
+0x10000D230	0x0000000C	[ 27] _atan2.stub
+0x10000D23C	0x0000000C	[ 27] _cabs.stub
+0x10000D248	0x0000000C	[ 27] _cexp.stub
+0x10000D254	0x0000000C	[ 27] _cos.stub
+0x10000D260	0x0000000C	[ 28] _malloc.stub
+0x10000D26C	0x0000000C	[ 26] _memcpy.stub
+0x10000D278	0x0000000C	[ 26] _memset.stub
+0x10000D284	0x0000000C	[ 27] _pow.stub
+0x10000D290	0x0000000C	[ 28] _realloc.stub
+0x10000D29C	0x0000000C	[ 27] _sin.stub
+0x10000D2A8	0x0000000C	[ 27] _tan.stub
+0x10000D2C0	0x00000004	[  1] lC0
+0x10000D2C4	0x00000004	[  1] lC1
+0x10000D2C8	0x00000008	[  1] lC2
+0x10000D2D0	0x00000008	[  1] lC3
+0x10000D2D8	0x00000008	[  1] lC4
+0x10000D2E0	0x00000008	[  1] lC5
+0x10000D2E8	0x00000008	[  1] lC6
+0x10000D2F0	0x00000008	[  1] lC7
+0x10000D2F8	0x00000008	[  1] lC8
+0x10000D300	0x00000008	[  1] lC9
+0x10000D308	0x00000008	[  1] lC10
+0x10000D310	0x00000008	[  1] lC11
+0x10000D318	0x00000008	[  1] lC12
+0x10000D320	0x00000008	[  1] lC13
+0x10000D328	0x00000008	[  1] lC14
+0x10000D330	0x00000008	[  1] lC15
+0x10000D338	0x00000008	[  1] lC16
+0x10000D340	0x00000008	[  1] lC17
+0x10000D348	0x00000008	[  1] lC18
+0x10000D350	0x00000008	[  1] lC19
+0x10000D358	0x00000008	[  1] lC20
+0x10000D360	0x00000008	[  1] lC21
+0x10000D368	0x00000008	[  1] lC22
+0x10000D370	0x00000008	[  1] lC23
+0x10000D378	0x00000008	[  1] lC24
+0x10000D380	0x00000008	[  1] lC25
+0x10000D388	0x00000008	[  1] lC26
+0x10000D390	0x00000008	[  1] lC27
+0x10000D398	0x00000008	[  1] lC28
+0x10000D3A0	0x00000008	[  1] lC29
+0x10000D3A8	0x00000008	[  1] lC30
+0x10000D3B0	0x00000008	[  1] lC31
+0x10000D3B8	0x00000008	[  1] lC32
+0x10000D3C0	0x00000008	[  1] lC33
+0x10000D3C8	0x00000008	[  1] lC34
+0x10000D3D0	0x00000008	[  1] lC35
+0x10000D3D8	0x00000008	[  1] lC36
+0x10000D3E0	0x00000008	[  1] lC37
+0x10000D3E8	0x00000008	[  1] lC38
+0x10000D3F0	0x00000008	[  1] lC39
+0x10000D3F8	0x00000008	[  1] lC40
+0x10000D400	0x00000008	[  1] lC41
+0x10000D408	0x00000008	[  1] lC42
+0x10000D410	0x00000008	[  1] lC43
+0x10000D418	0x00000008	[  1] lC44
+0x10000D420	0x00000008	[  1] lC45
+0x10000D428	0x00000008	[  1] lC46
+0x10000D430	0x00000008	[  1] lC47
+0x10000D438	0x00000008	[  1] lC48
+0x10000D440	0x00000008	[  1] lC49
+0x10000D448	0x00000008	[  1] lC50
+0x10000D450	0x00000008	[  1] lC51
+0x10000D458	0x00000008	[  1] lC52
+0x10000D460	0x00000008	[  1] lC53
+0x10000D468	0x00000008	[  1] lC54
+0x10000D470	0x00000008	[  1] lC55
+0x10000D478	0x00000008	[  1] lC56
+0x10000D480	0x00000008	[  1] lC57
+0x10000D488	0x00000008	[  1] lC58
+0x10000D490	0x00000008	[  1] lC59
+0x10000D498	0x00000008	[  1] lC60
+0x10000D4A0	0x00000008	[  1] lC61
+0x10000D4A8	0x00000008	[  1] lC62
+0x10000D4B0	0x00000008	[  1] lC63
+0x10000D4B8	0x00000008	[  1] lC64
+0x10000D4C0	0x00000008	[  1] lC65
+0x10000D4C8	0x00000008	[  1] lC66
+0x10000D4D0	0x00000008	[  1] lC67
+0x10000D4D8	0x00000008	[  1] lC68
+0x10000D4E0	0x00000008	[  1] lC69
+0x10000D4E8	0x00000008	[  1] lC70
+0x10000D4F0	0x00000008	[  1] lC71
+0x10000D4F8	0x00000008	[  1] lC72
+0x10000D500	0x00000008	[  1] lC73
+0x10000D508	0x00000008	[  1] lC74
+0x10000D510	0x00000008	[  1] lC75
+0x10000D518	0x00000008	[  1] lC76
+0x10000D520	0x00000008	[  1] lC77
+0x10000D528	0x00000008	[  1] lC78
+0x10000D530	0x00000008	[  1] lC79
+0x10000D538	0x00000008	[  1] lC80
+0x10000D540	0x00000008	[  1] lC81
+0x10000D548	0x00000008	[  1] lC82
+0x10000D550	0x00000008	[  1] lC83
+0x10000D558	0x00000008	[  1] lC84
+0x10000D560	0x00000008	[  1] lC85
+0x10000D568	0x00000008	[  1] lC86
+0x10000D570	0x00000008	[  1] lC87
+0x10000D578	0x00000008	[  1] lC88
+0x10000D580	0x00000008	[  1] lC89
+0x10000D588	0x00000008	[  1] lC90
+0x10000D590	0x00000008	[  1] lC91
+0x10000D598	0x00000008	[  1] lC92
+0x10000D5A0	0x00000008	[  1] lC93
+0x10000D5A8	0x00000008	[  1] lC94
+0x10000D5B0	0x00000008	[  1] lC95
+0x10000D5B8	0x00000004	[  1] lC96
+0x10000D5BC	0x00000004	[  1] lC97
+0x10000D5C0	0x00000004	[  1] lC98
+0x10000D5C4	0x00000004	[  1] lC99
+0x10000D5C8	0x00000008	[  1] lC107
+0x10000D5D0	0x00000008	[  1] lC108
+0x10000D5D8	0x00000020	[  1] lC110
+0x10000D5F8	0x00000008	[  1] lC111
+0x10000D600	0x00000018	[  1] lC112
+0x10000D618	0x00000050	[  1] lC116
+0x10000D668	0x00000050	[  1] lC117
+0x10000D6B8	0x00000010	[  1] lC118
+0x10000D6C8	0x00000020	[  1] lC119
+0x10000D6E8	0x00000008	[  1] lC120
+0x10000D6F0	0x00000010	[  1] lC121
+0x10000D700	0x00000010	[  1] lC122
+0x10000D710	0x00000018	[  1] lC123
+0x10000D728	0x00000008	[  1] lC127
+0x10000D730	0x00000028	[  1] lC128
+0x10000D758	0x00000008	[  1] lC129
+0x10000D760	0x00000010	[  1] lC130
+0x10000D770	0x00000008	[  1] lC131
+0x10000D778	0x00000008	[  1] lC132
+0x10000D780	0x00000010	[  1] lC133
+0x10000D790	0x00000010	[  1] lC134
+0x10000D7A0	0x00000008	[  1] lC135
+0x10000D7A8	0x00000048	[  1] lC136
+0x10000D7F0	0x00000020	[  1] lC137
+0x10000D810	0x00000008	[  1] lC138
+0x10000D818	0x00000028	[  1] lC139
+0x10000D840	0x00000008	[  1] lC141
+0x10000D848	0x00000008	[  1] lC142
+0x10000D850	0x00000008	[  1] lC143
+0x10000D858	0x00000010	[  1] lC144
+0x10000D868	0x00000018	[  1] lC145
+0x10000D880	0x00000028	[  1] lC146
+0x10000D8A8	0x00000008	[  1] lC147
+0x10000D8B0	0x00000008	[  1] lC148
+0x10000D8B8	0x00000008	[  1] lC149
+0x10000D8C0	0x00000008	[  1] lC150
+0x10000D8C8	0x00000028	[  1] lC151
+0x10000D8F0	0x00000028	[  1] lC152
+0x10000D918	0x00000010	[  1] lC153
+0x10000D928	0x00000030	[  1] lC154
+0x10000D958	0x00000018	[  1] lC155
+0x10000D970	0x00000010	[  1] lC156
+0x10000D980	0x00000010	[  1] lC157
+0x10000D990	0x00000008	[  1] lC158
+0x10000D998	0x00000008	[  1] lC159
+0x10000D9A0	0x00000008	[  1] lC160
+0x10000D9A8	0x00000008	[  1] lC161
+0x10000D9B0	0x00000010	[  1] lC162
+0x10000D9C0	0x00000018	[  1] lC163
+0x10000D9D8	0x00000008	[  1] lC164
+0x10000D9E0	0x0000000C	[  1] lC165
+0x10000D9EC	0x00000010	[  1] _A.216.3
+0x10000D9FC	0x00000010	[  1] _A.210.4
+0x10000DA0C	0x00000010	[  1] _A.208.5
+0x10000DA1C	0x00000010	[  1] _A.200.6
+0x10000DA2C	0x00000010	[  1] _A.198.7
+0x10000DA3C	0x00000010	[  1] _A.194.8
+0x10000DA4C	0x00000010	[  1] _A.192.9
+0x10000DA5C	0x00000010	[  1] _A.188.10
+0x10000DA6C	0x00000010	[  1] _A.186.11
+0x10000DA7C	0x00000010	[  1] _A.174.14
+0x10000DA8C	0x0000001C	[  1] _options.244.41
+0x10000DAA8	0x00000008	[  1] lC115
+0x10000DAB0	0x00000008	[  1] lC166
+0x10000DAB8	0x00000008	[  1] lC172
+0x10000DAC0	0x00000008	[  1] 8-byte-literal
+0x10000DAC8	0x00000008	[  1] 8-byte-literal
+0x10000DAD0	0x00000008	[  1] 8-byte-literal
+0x10000DAD8	0x00000008	[  1] 8-byte-literal
+0x10000DAE0	0x00000008	[  1] 8-byte-literal
+0x10000DAE8	0x00000008	[  1] 8-byte-literal
+0x10000DAF0	0x00000008	[  1] 8-byte-literal
+0x10000DAF8	0x00000008	[  1] 8-byte-literal
+0x10000DB00	0x00000008	[  1] 8-byte-literal
+0x10000DB08	0x00000008	[  1] 8-byte-literal
+0x10000DB10	0x00000008	[  1] 8-byte-literal
+0x10000DB18	0x00000008	[  1] 8-byte-literal
 0x10000DB20	0x00000010	[  1] 16-byte-literal
 0x10000DB30	0x00000010	[  1] 16-byte-literal
 0x10000DB40	0x00000010	[  1] 16-byte-literal
@@ -363,17 +357,25 @@
 0x10000DB60	0x00000010	[  1] 16-byte-literal
 0x10000DB70	0x00000010	[  1] 16-byte-literal
 0x10000DB80	0x00000010	[  1] 16-byte-literal
-0x10000DB90	0x00000060	[  1] literal string: /Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/main_matt_3nux.f90
-0x10000DBF0	0x00000043	[  1] literal string: Integer overflow when calculating the amount of memory to allocate
-0x10000DC34	0x00000001	[  1] literal string: 
-0x10000DC38	0x0000001B	[  1] literal string: Error allocating %lu bytes
-0x10000DC58	0x0000007B	[  1] literal string: In file '/Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/main_matt_3nux.f90', around line 142
-0x10000DCD8	0x0000007B	[  1] literal string: In file '/Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/main_matt_3nux.f90', around line 497
-0x10000DD58	0x00000018	[  1] CFI
-0x10000DD70	0x00000088	[  1] FDE for: _build_lattice.1.constprop.0
-0x10000DDF8	0x000000B0	[  1] FDE for: _newton_search.0.constprop.0
-0x10000DEA8	0x000000A8	[  1] FDE for: _MAIN__
-0x10000DF50	0x00000038	[  1] FDE for: _main
+0x10000DB90	0x00000010	[  1] 16-byte-literal
+0x10000DBA0	0x00000010	[  1] 16-byte-literal
+0x10000DBB0	0x00000010	[  1] 16-byte-literal
+0x10000DBC0	0x00000010	[  1] 16-byte-literal
+0x10000DBD0	0x00000010	[  1] 16-byte-literal
+0x10000DBE0	0x00000010	[  1] 16-byte-literal
+0x10000DBF0	0x00000010	[  1] 16-byte-literal
+0x10000DC00	0x00000010	[  1] 16-byte-literal
+0x10000DC10	0x00000060	[  1] literal string: /Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/main_matt_3nux.f90
+0x10000DC70	0x00000043	[  1] literal string: Integer overflow when calculating the amount of memory to allocate
+0x10000DCB4	0x00000001	[  1] literal string: 
+0x10000DCB8	0x0000001B	[  1] literal string: Error allocating %lu bytes
+0x10000DCD8	0x0000007B	[  1] literal string: In file '/Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/main_matt_3nux.f90', around line 142
+0x10000DD58	0x0000007B	[  1] literal string: In file '/Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/main_matt_3nux.f90', around line 497
+0x10000DDD8	0x00000018	[  1] CFI
+0x10000DDF0	0x00000088	[  1] FDE for: _build_lattice.1.constprop.0
+0x10000DE78	0x000000B0	[  1] FDE for: _newton_search.0.constprop.0
+0x10000DF28	0x000000A8	[  1] FDE for: _MAIN__
+0x10000DFD0	0x00000038	[  1] FDE for: _main
 0x100010000	0x00000008	[  2] ___c_tpsa_MOD_a_opt_c_damap.got
 0x100010008	0x00000008	[  2] ___c_tpsa_MOD_a_opt_c_vector.got
 0x100010010	0x00000008	[  2] ___c_tpsa_MOD_add.got
@@ -492,33 +494,33 @@
 0x100010398	0x00000008	[  2] ___tree_element_module_MOD_equal_probe_probe8.got
 0x1000103A0	0x00000008	[  2] ___tree_element_module_MOD_equal_probe_real6.got
 0x1000103A8	0x00000008	[  2] ___tree_element_module_MOD_kill_probe_8.got
-0x1000103B0	0x00000008	[ 21] __gfortran_os_error_at.got
-0x1000103B8	0x00000008	[ 21] __gfortran_runtime_error.got
-0x1000103C0	0x00000008	[ 21] __gfortran_set_args.got
-0x1000103C8	0x00000008	[ 21] __gfortran_set_options.got
-0x1000103D0	0x00000008	[ 21] __gfortran_st_close.got
-0x1000103D8	0x00000008	[ 21] __gfortran_st_read.got
-0x1000103E0	0x00000008	[ 21] __gfortran_st_read_done.got
-0x1000103E8	0x00000008	[ 21] __gfortran_st_write.got
-0x1000103F0	0x00000008	[ 21] __gfortran_st_write_done.got
-0x1000103F8	0x00000008	[ 21] __gfortran_transfer_array_write.got
-0x100010400	0x00000008	[ 21] __gfortran_transfer_character_write.got
-0x100010408	0x00000008	[ 21] __gfortran_transfer_complex_write.got
-0x100010410	0x00000008	[ 21] __gfortran_transfer_integer.got
-0x100010418	0x00000008	[ 21] __gfortran_transfer_integer_write.got
-0x100010420	0x00000008	[ 21] __gfortran_transfer_real.got
-0x100010428	0x00000008	[ 21] __gfortran_transfer_real_write.got
-0x100010430	0x00000008	[ 25] _atan2.got
-0x100010438	0x00000008	[ 25] _cabs.got
-0x100010440	0x00000008	[ 25] _cexp.got
-0x100010448	0x00000008	[ 25] _cos.got
-0x100010450	0x00000008	[ 26] _malloc.got
-0x100010458	0x00000008	[ 24] _memcpy.got
-0x100010460	0x00000008	[ 24] _memset.got
-0x100010468	0x00000008	[ 25] _pow.got
-0x100010470	0x00000008	[ 26] _realloc.got
-0x100010478	0x00000008	[ 25] _sin.got
-0x100010480	0x00000008	[ 25] _tan.got
+0x1000103B0	0x00000008	[ 23] __gfortran_os_error_at.got
+0x1000103B8	0x00000008	[ 23] __gfortran_runtime_error.got
+0x1000103C0	0x00000008	[ 23] __gfortran_set_args.got
+0x1000103C8	0x00000008	[ 23] __gfortran_set_options.got
+0x1000103D0	0x00000008	[ 23] __gfortran_st_close.got
+0x1000103D8	0x00000008	[ 23] __gfortran_st_read.got
+0x1000103E0	0x00000008	[ 23] __gfortran_st_read_done.got
+0x1000103E8	0x00000008	[ 23] __gfortran_st_write.got
+0x1000103F0	0x00000008	[ 23] __gfortran_st_write_done.got
+0x1000103F8	0x00000008	[ 23] __gfortran_transfer_array_write.got
+0x100010400	0x00000008	[ 23] __gfortran_transfer_character_write.got
+0x100010408	0x00000008	[ 23] __gfortran_transfer_complex_write.got
+0x100010410	0x00000008	[ 23] __gfortran_transfer_integer.got
+0x100010418	0x00000008	[ 23] __gfortran_transfer_integer_write.got
+0x100010420	0x00000008	[ 23] __gfortran_transfer_real.got
+0x100010428	0x00000008	[ 23] __gfortran_transfer_real_write.got
+0x100010430	0x00000008	[ 27] _atan2.got
+0x100010438	0x00000008	[ 27] _cabs.got
+0x100010440	0x00000008	[ 27] _cexp.got
+0x100010448	0x00000008	[ 27] _cos.got
+0x100010450	0x00000008	[ 28] _malloc.got
+0x100010458	0x00000008	[ 26] _memcpy.got
+0x100010460	0x00000008	[ 26] _memset.got
+0x100010468	0x00000008	[ 27] _pow.got
+0x100010470	0x00000008	[ 28] _realloc.got
+0x100010478	0x00000008	[ 27] _sin.got
+0x100010480	0x00000008	[ 27] _tan.got
 0x100014000	0x000000B0	[  1] _f_res.12
 0x1000140B0	0x00000118	[  1] _xs0.13
 0x1000141C8	0x000012D0	[  1] _fr2.15

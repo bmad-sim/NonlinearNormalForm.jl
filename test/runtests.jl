@@ -139,5 +139,15 @@ end
     ac = ac_norad ∘ canonize(ac_norad; damping=true, damp=damp)
     @test norm(damp - [  7.0794145850303742E-009 ,  3.2927211731860217E-007 ,  5.5985424078986008E-007]) < 1e-12
     @test norm(NNF.jacobian(ac-ac_fpp)) < 1e-12
+
+
+    # ADST
+    m = read_fpp_map("adst/test.map",coast=true)
+    a = normal(m)
+    c = c_map(a)
+    r = inv(c)*inv(a)*m*a*c
+    adst = -atan(real(r.q.q2), real(r.q.q0))/pi
+    include("adst/adst.jl")
+    @test TI.norm_tps(adst-adst_fpp) < 1e-9
 end
 
