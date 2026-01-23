@@ -23,7 +23,7 @@ function setray!(
 
   if !isnothing(v)
     length(v) <= length(r) || error("Length of input vector `v` cannot be greater than the length of output vector `r`!")
-    foreach((out_xi, xi)->copy!(out_xi, xi), view(r, 1:length(v)), v)
+    foreach((out_xi, xi)->TI.copy_tps!(out_xi, xi), view(r, 1:length(v)), v)
   end
 
   if !isnothing(v_matrix)
@@ -63,12 +63,12 @@ function setquat!(
   if !isnothing(q)
     if q isa AbstractVector || q isa Quaternion #  TPSA map or scalar part provided:
       length(q) <= 4 || error("Length of input vector `q` cannot be greater than 4!")
-      foreach((out_qi, qi)->copy!(out_qi, qi), quat, q)
+      foreach((out_qi, qi)->TI.copy_tps!(out_qi, qi), quat, q)
     else # Uniform scaling: Making identity quaternion
-      TI.copy!(quat.q0, 1)
-      TI.copy!(quat.q1, 0)
-      TI.copy!(quat.q2, 0)
-      TI.copy!(quat.q3, 0)
+      TI.copy_tps!(quat.q0, 1)
+      TI.copy_tps!(quat.q1, 0)
+      TI.copy_tps!(quat.q2, 0)
+      TI.copy_tps!(quat.q3, 0)
     end
   end
 

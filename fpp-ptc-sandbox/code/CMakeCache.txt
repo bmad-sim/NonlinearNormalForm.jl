@@ -260,26 +260,50 @@ CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE
 //Path to a library.
 FOREST_LIBRARY:FILEPATH=/Users/matthewsignorelli/miniconda3/envs/condamatt/lib/libforest.dylib
 
+//Path to a file.
+FREETYPE_INCLUDE_DIR_freetype2:PATH=/opt/homebrew/include/freetype2
+
+//Path to a file.
+FREETYPE_INCLUDE_DIR_ft2build:PATH=/opt/homebrew/include/freetype2
+
+//Path to a library.
+FREETYPE_LIBRARY_DEBUG:FILEPATH=FREETYPE_LIBRARY_DEBUG-NOTFOUND
+
+//Path to a library.
+FREETYPE_LIBRARY_RELEASE:FILEPATH=/opt/homebrew/lib/libfreetype.dylib
+
+//Path to a file.
+Fontconfig_INCLUDE_DIR:PATH=/opt/homebrew/Cellar/fontconfig/2.17.1/include
+
+//Path to a library.
+Fontconfig_LIBRARY:FILEPATH=/opt/homebrew/lib/libfontconfig.dylib
+
 //HDF5 file differencing tool.
 HDF5_DIFF_EXECUTABLE:FILEPATH=/opt/homebrew/bin/h5diff
 
 //The directory containing a CMake configuration file for HDF5.
 HDF5_DIR:PATH=/opt/homebrew/lib/cmake/hdf5
 
+//Arguments to supply to pkg-config
+PKG_CONFIG_ARGN:STRING=
+
+//pkg-config executable
+PKG_CONFIG_EXECUTABLE:FILEPATH=/opt/homebrew/bin/pkg-config
+
 //Path to a program.
 PORT:FILEPATH=PORT-NOTFOUND
 
 //Path to a file.
-X11_ICE_INCLUDE_PATH:PATH=X11_ICE_INCLUDE_PATH-NOTFOUND
+X11_ICE_INCLUDE_PATH:PATH=/opt/homebrew/include
 
 //Path to a library.
-X11_ICE_LIB:FILEPATH=X11_ICE_LIB-NOTFOUND
+X11_ICE_LIB:FILEPATH=/opt/homebrew/lib/libICE.dylib
 
 //Path to a file.
-X11_SM_INCLUDE_PATH:PATH=X11_SM_INCLUDE_PATH-NOTFOUND
+X11_SM_INCLUDE_PATH:PATH=/opt/homebrew/include
 
 //Path to a library.
-X11_SM_LIB:FILEPATH=X11_SM_LIB-NOTFOUND
+X11_SM_LIB:FILEPATH=/opt/homebrew/lib/libSM.dylib
 
 //Path to a file.
 X11_X11_INCLUDE_PATH:PATH=/opt/homebrew/include
@@ -306,7 +330,7 @@ X11_XShm_INCLUDE_PATH:PATH=/opt/homebrew/include
 X11_XSync_INCLUDE_PATH:PATH=/opt/homebrew/include
 
 //Path to a file.
-X11_Xaccessrules_INCLUDE_PATH:PATH=X11_Xaccessrules_INCLUDE_PATH-NOTFOUND
+X11_Xaccessrules_INCLUDE_PATH:PATH=/opt/homebrew/include
 
 //Path to a file.
 X11_Xaccessstr_INCLUDE_PATH:PATH=/opt/homebrew/include
@@ -318,10 +342,10 @@ X11_Xau_INCLUDE_PATH:PATH=/opt/homebrew/include
 X11_Xau_LIB:FILEPATH=/opt/homebrew/lib/libXau.dylib
 
 //Path to a file.
-X11_Xaw_INCLUDE_PATH:PATH=X11_Xaw_INCLUDE_PATH-NOTFOUND
+X11_Xaw_INCLUDE_PATH:PATH=/opt/homebrew/include
 
 //Path to a library.
-X11_Xaw_LIB:FILEPATH=X11_Xaw_LIB-NOTFOUND
+X11_Xaw_LIB:FILEPATH=/opt/homebrew/lib/libXaw.dylib
 
 //Path to a file.
 X11_Xcomposite_INCLUDE_PATH:PATH=X11_Xcomposite_INCLUDE_PATH-NOTFOUND
@@ -357,16 +381,16 @@ X11_Xext_INCLUDE_PATH:PATH=/opt/homebrew/include
 X11_Xext_LIB:FILEPATH=/opt/homebrew/lib/libXext.dylib
 
 //Path to a file.
-X11_Xfixes_INCLUDE_PATH:PATH=X11_Xfixes_INCLUDE_PATH-NOTFOUND
+X11_Xfixes_INCLUDE_PATH:PATH=/opt/homebrew/include
 
 //Path to a library.
-X11_Xfixes_LIB:FILEPATH=X11_Xfixes_LIB-NOTFOUND
+X11_Xfixes_LIB:FILEPATH=/opt/homebrew/lib/libXfixes.dylib
 
 //Path to a file.
-X11_Xft_INCLUDE_PATH:PATH=X11_Xft_INCLUDE_PATH-NOTFOUND
+X11_Xft_INCLUDE_PATH:PATH=/opt/homebrew/include
 
 //Path to a library.
-X11_Xft_LIB:FILEPATH=X11_Xft_LIB-NOTFOUND
+X11_Xft_LIB:FILEPATH=/opt/homebrew/lib/libXft.dylib
 
 //Path to a file.
 X11_Xi_INCLUDE_PATH:PATH=X11_Xi_INCLUDE_PATH-NOTFOUND
@@ -375,10 +399,10 @@ X11_Xi_INCLUDE_PATH:PATH=X11_Xi_INCLUDE_PATH-NOTFOUND
 X11_Xi_LIB:FILEPATH=X11_Xi_LIB-NOTFOUND
 
 //Path to a file.
-X11_Xinerama_INCLUDE_PATH:PATH=X11_Xinerama_INCLUDE_PATH-NOTFOUND
+X11_Xinerama_INCLUDE_PATH:PATH=/opt/homebrew/include
 
 //Path to a library.
-X11_Xinerama_LIB:FILEPATH=X11_Xinerama_LIB-NOTFOUND
+X11_Xinerama_LIB:FILEPATH=/opt/homebrew/lib/libXinerama.dylib
 
 //Path to a file.
 X11_Xkb_INCLUDE_PATH:PATH=/opt/homebrew/include
@@ -390,16 +414,16 @@ X11_Xkblib_INCLUDE_PATH:PATH=/opt/homebrew/include
 X11_Xlib_INCLUDE_PATH:PATH=/opt/homebrew/include
 
 //Path to a file.
-X11_Xmu_INCLUDE_PATH:PATH=X11_Xmu_INCLUDE_PATH-NOTFOUND
+X11_Xmu_INCLUDE_PATH:PATH=/opt/homebrew/include
 
 //Path to a library.
-X11_Xmu_LIB:FILEPATH=X11_Xmu_LIB-NOTFOUND
+X11_Xmu_LIB:FILEPATH=/opt/homebrew/lib/libXmu.dylib
 
 //Path to a file.
-X11_Xpm_INCLUDE_PATH:PATH=X11_Xpm_INCLUDE_PATH-NOTFOUND
+X11_Xpm_INCLUDE_PATH:PATH=/opt/homebrew/include
 
 //Path to a library.
-X11_Xpm_LIB:FILEPATH=X11_Xpm_LIB-NOTFOUND
+X11_Xpm_LIB:FILEPATH=/opt/homebrew/lib/libXpm.dylib
 
 //Path to a file.
 X11_Xpresent_INCLUDE_PATH:PATH=X11_Xpresent_INCLUDE_PATH-NOTFOUND
@@ -408,10 +432,10 @@ X11_Xpresent_INCLUDE_PATH:PATH=X11_Xpresent_INCLUDE_PATH-NOTFOUND
 X11_Xpresent_LIB:FILEPATH=X11_Xpresent_LIB-NOTFOUND
 
 //Path to a file.
-X11_Xrandr_INCLUDE_PATH:PATH=X11_Xrandr_INCLUDE_PATH-NOTFOUND
+X11_Xrandr_INCLUDE_PATH:PATH=/opt/homebrew/include
 
 //Path to a library.
-X11_Xrandr_LIB:FILEPATH=X11_Xrandr_LIB-NOTFOUND
+X11_Xrandr_LIB:FILEPATH=/opt/homebrew/lib/libXrandr.dylib
 
 //Path to a file.
 X11_Xrender_INCLUDE_PATH:PATH=/opt/homebrew/include
@@ -429,10 +453,10 @@ X11_Xss_INCLUDE_PATH:PATH=X11_Xss_INCLUDE_PATH-NOTFOUND
 X11_Xss_LIB:FILEPATH=X11_Xss_LIB-NOTFOUND
 
 //Path to a file.
-X11_Xt_INCLUDE_PATH:PATH=X11_Xt_INCLUDE_PATH-NOTFOUND
+X11_Xt_INCLUDE_PATH:PATH=/opt/homebrew/include
 
 //Path to a library.
-X11_Xt_LIB:FILEPATH=X11_Xt_LIB-NOTFOUND
+X11_Xt_LIB:FILEPATH=/opt/homebrew/lib/libXt.dylib
 
 //Path to a file.
 X11_Xtst_INCLUDE_PATH:PATH=X11_Xtst_INCLUDE_PATH-NOTFOUND
@@ -513,10 +537,10 @@ X11_xcb_errors_INCLUDE_PATH:PATH=X11_xcb_errors_INCLUDE_PATH-NOTFOUND
 X11_xcb_errors_LIB:FILEPATH=X11_xcb_errors_LIB-NOTFOUND
 
 //Path to a file.
-X11_xcb_ewmh_INCLUDE_PATH:PATH=X11_xcb_ewmh_INCLUDE_PATH-NOTFOUND
+X11_xcb_ewmh_INCLUDE_PATH:PATH=/opt/homebrew/include
 
 //Path to a library.
-X11_xcb_ewmh_LIB:FILEPATH=X11_xcb_ewmh_LIB-NOTFOUND
+X11_xcb_ewmh_LIB:FILEPATH=/opt/homebrew/lib/libxcb-ewmh.dylib
 
 //Path to a file.
 X11_xcb_glx_INCLUDE_PATH:PATH=/opt/homebrew/include
@@ -525,22 +549,22 @@ X11_xcb_glx_INCLUDE_PATH:PATH=/opt/homebrew/include
 X11_xcb_glx_LIB:FILEPATH=/opt/homebrew/lib/libxcb-glx.dylib
 
 //Path to a file.
-X11_xcb_icccm_INCLUDE_PATH:PATH=X11_xcb_icccm_INCLUDE_PATH-NOTFOUND
+X11_xcb_icccm_INCLUDE_PATH:PATH=/opt/homebrew/include
 
 //Path to a library.
-X11_xcb_icccm_LIB:FILEPATH=X11_xcb_icccm_LIB-NOTFOUND
+X11_xcb_icccm_LIB:FILEPATH=/opt/homebrew/lib/libxcb-icccm.dylib
 
 //Path to a file.
-X11_xcb_image_INCLUDE_PATH:PATH=X11_xcb_image_INCLUDE_PATH-NOTFOUND
+X11_xcb_image_INCLUDE_PATH:PATH=/opt/homebrew/include
 
 //Path to a library.
-X11_xcb_image_LIB:FILEPATH=X11_xcb_image_LIB-NOTFOUND
+X11_xcb_image_LIB:FILEPATH=/opt/homebrew/lib/libxcb-image.dylib
 
 //Path to a file.
-X11_xcb_keysyms_INCLUDE_PATH:PATH=X11_xcb_keysyms_INCLUDE_PATH-NOTFOUND
+X11_xcb_keysyms_INCLUDE_PATH:PATH=/opt/homebrew/include
 
 //Path to a library.
-X11_xcb_keysyms_LIB:FILEPATH=X11_xcb_keysyms_LIB-NOTFOUND
+X11_xcb_keysyms_LIB:FILEPATH=/opt/homebrew/lib/libxcb-keysyms.dylib
 
 //Path to a file.
 X11_xcb_present_INCLUDE_PATH:PATH=/opt/homebrew/include
@@ -567,10 +591,10 @@ X11_xcb_render_INCLUDE_PATH:PATH=/opt/homebrew/include
 X11_xcb_render_LIB:FILEPATH=/opt/homebrew/lib/libxcb-render.dylib
 
 //Path to a file.
-X11_xcb_render_util_INCLUDE_PATH:PATH=X11_xcb_render_util_INCLUDE_PATH-NOTFOUND
+X11_xcb_render_util_INCLUDE_PATH:PATH=/opt/homebrew/include
 
 //Path to a library.
-X11_xcb_render_util_LIB:FILEPATH=X11_xcb_render_util_LIB-NOTFOUND
+X11_xcb_render_util_LIB:FILEPATH=/opt/homebrew/lib/libxcb-render-util.dylib
 
 //Path to a file.
 X11_xcb_res_INCLUDE_PATH:PATH=/opt/homebrew/include
@@ -603,10 +627,10 @@ X11_xcb_sync_INCLUDE_PATH:PATH=/opt/homebrew/include
 X11_xcb_sync_LIB:FILEPATH=/opt/homebrew/lib/libxcb-sync.dylib
 
 //Path to a file.
-X11_xcb_util_INCLUDE_PATH:PATH=X11_xcb_util_INCLUDE_PATH-NOTFOUND
+X11_xcb_util_INCLUDE_PATH:PATH=/opt/homebrew/include
 
 //Path to a library.
-X11_xcb_util_LIB:FILEPATH=X11_xcb_util_LIB-NOTFOUND
+X11_xcb_util_LIB:FILEPATH=/opt/homebrew/lib/libxcb-util.dylib
 
 //Path to a file.
 X11_xcb_xf86dri_INCLUDE_PATH:PATH=/opt/homebrew/include
@@ -675,10 +699,13 @@ X11_xkbcommon_X11_INCLUDE_PATH:PATH=X11_xkbcommon_X11_INCLUDE_PATH-NOTFOUND
 X11_xkbcommon_X11_LIB:FILEPATH=X11_xkbcommon_X11_LIB-NOTFOUND
 
 //Path to a file.
-X11_xkbfile_INCLUDE_PATH:PATH=X11_xkbfile_INCLUDE_PATH-NOTFOUND
+X11_xkbfile_INCLUDE_PATH:PATH=/opt/homebrew/include
 
 //Path to a library.
-X11_xkbfile_LIB:FILEPATH=X11_xkbfile_LIB-NOTFOUND
+X11_xkbfile_LIB:FILEPATH=/opt/homebrew/lib/libxkbfile.dylib
+
+//Path to a library.
+pkgcfg_lib_PKG_FONTCONFIG_fontconfig:FILEPATH=/opt/homebrew/Cellar/fontconfig/2.17.1/lib/libfontconfig.dylib
 
 //Value Computed by CMake
 z_canonize_matt_fake_maps_BINARY_DIR:STATIC=/Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code
@@ -795,6 +822,8 @@ CMAKE_HAVE_SHMAT:INTERNAL=1
 CMAKE_HOME_DIRECTORY:INTERNAL=/Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code
 //ADVANCED property for variable: CMAKE_INSTALL_NAME_TOOL
 CMAKE_INSTALL_NAME_TOOL-ADVANCED:INTERNAL=1
+//Have library ICE
+CMAKE_LIB_ICE_HAS_ICECONNECTIONNUMBER:INTERNAL=1
 //ADVANCED property for variable: CMAKE_LINKER
 CMAKE_LINKER-ADVANCED:INTERNAL=1
 //Name of CMakeLists files to read
@@ -863,8 +892,59 @@ CMAKE_VERBOSE_MAKEFILE-ADVANCED:INTERNAL=1
 FIND_PACKAGE_MESSAGE_DETAILS_HDF5:INTERNAL=[hdf5_fortran-shared][/opt/homebrew/include][found components: Fortran HL ][v1.14.6()]
 //Details about finding X11
 FIND_PACKAGE_MESSAGE_DETAILS_X11:INTERNAL=[/opt/homebrew/include][/opt/homebrew/lib/libX11.dylib][ ][v()]
+//ADVANCED property for variable: FREETYPE_INCLUDE_DIR_freetype2
+FREETYPE_INCLUDE_DIR_freetype2-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: FREETYPE_INCLUDE_DIR_ft2build
+FREETYPE_INCLUDE_DIR_ft2build-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: FREETYPE_LIBRARY_DEBUG
+FREETYPE_LIBRARY_DEBUG-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: FREETYPE_LIBRARY_RELEASE
+FREETYPE_LIBRARY_RELEASE-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: Fontconfig_INCLUDE_DIR
+Fontconfig_INCLUDE_DIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: Fontconfig_LIBRARY
+Fontconfig_LIBRARY-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: HDF5_DIFF_EXECUTABLE
 HDF5_DIFF_EXECUTABLE-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: PKG_CONFIG_ARGN
+PKG_CONFIG_ARGN-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: PKG_CONFIG_EXECUTABLE
+PKG_CONFIG_EXECUTABLE-ADVANCED:INTERNAL=1
+PKG_FONTCONFIG_CFLAGS:INTERNAL=-I/opt/homebrew/Cellar/fontconfig/2.17.1/include;-I/opt/homebrew/opt/freetype/include/freetype2;-I/opt/homebrew/opt/libpng/include/libpng16
+PKG_FONTCONFIG_CFLAGS_I:INTERNAL=
+PKG_FONTCONFIG_CFLAGS_OTHER:INTERNAL=
+PKG_FONTCONFIG_FOUND:INTERNAL=1
+PKG_FONTCONFIG_INCLUDEDIR:INTERNAL=/opt/homebrew/Cellar/fontconfig/2.17.1/include
+PKG_FONTCONFIG_INCLUDE_DIRS:INTERNAL=/opt/homebrew/Cellar/fontconfig/2.17.1/include;/opt/homebrew/opt/freetype/include/freetype2;/opt/homebrew/opt/libpng/include/libpng16
+PKG_FONTCONFIG_LDFLAGS:INTERNAL=-L/opt/homebrew/Cellar/fontconfig/2.17.1/lib;-lfontconfig
+PKG_FONTCONFIG_LDFLAGS_OTHER:INTERNAL=
+PKG_FONTCONFIG_LIBDIR:INTERNAL=/opt/homebrew/Cellar/fontconfig/2.17.1/lib
+PKG_FONTCONFIG_LIBRARIES:INTERNAL=fontconfig
+PKG_FONTCONFIG_LIBRARY_DIRS:INTERNAL=/opt/homebrew/Cellar/fontconfig/2.17.1/lib
+PKG_FONTCONFIG_LIBS:INTERNAL=
+PKG_FONTCONFIG_LIBS_L:INTERNAL=
+PKG_FONTCONFIG_LIBS_OTHER:INTERNAL=
+PKG_FONTCONFIG_LIBS_PATHS:INTERNAL=
+PKG_FONTCONFIG_MODULE_NAME:INTERNAL=fontconfig
+PKG_FONTCONFIG_PREFIX:INTERNAL=/opt/homebrew/Cellar/fontconfig/2.17.1
+PKG_FONTCONFIG_STATIC_CFLAGS:INTERNAL=-I/opt/homebrew/Cellar/fontconfig/2.17.1/include;-I/opt/homebrew/opt/freetype/include/freetype2;-I/opt/homebrew/opt/libpng/include/libpng16;-DXML_STATIC
+PKG_FONTCONFIG_STATIC_CFLAGS_I:INTERNAL=
+PKG_FONTCONFIG_STATIC_CFLAGS_OTHER:INTERNAL=-DXML_STATIC
+PKG_FONTCONFIG_STATIC_INCLUDE_DIRS:INTERNAL=/opt/homebrew/Cellar/fontconfig/2.17.1/include;/opt/homebrew/opt/freetype/include/freetype2;/opt/homebrew/opt/libpng/include/libpng16
+PKG_FONTCONFIG_STATIC_LDFLAGS:INTERNAL=-L/opt/homebrew/Cellar/fontconfig/2.17.1/lib;-lfontconfig;-lintl;-lm;-L/opt/homebrew/opt/freetype/lib;-lfreetype;-L/usr/lib;-lbz2;-L/opt/homebrew/opt/libpng/lib;-lpng16;-lz;-lexpat
+PKG_FONTCONFIG_STATIC_LDFLAGS_OTHER:INTERNAL=
+PKG_FONTCONFIG_STATIC_LIBDIR:INTERNAL=
+PKG_FONTCONFIG_STATIC_LIBRARIES:INTERNAL=fontconfig;intl;m;freetype;bz2;png16;z;expat
+PKG_FONTCONFIG_STATIC_LIBRARY_DIRS:INTERNAL=/opt/homebrew/Cellar/fontconfig/2.17.1/lib;/opt/homebrew/opt/freetype/lib;/usr/lib;/opt/homebrew/opt/libpng/lib
+PKG_FONTCONFIG_STATIC_LIBS:INTERNAL=
+PKG_FONTCONFIG_STATIC_LIBS_L:INTERNAL=
+PKG_FONTCONFIG_STATIC_LIBS_OTHER:INTERNAL=
+PKG_FONTCONFIG_STATIC_LIBS_PATHS:INTERNAL=
+PKG_FONTCONFIG_VERSION:INTERNAL=2.17.1
+PKG_FONTCONFIG_fontconfig_INCLUDEDIR:INTERNAL=
+PKG_FONTCONFIG_fontconfig_LIBDIR:INTERNAL=
+PKG_FONTCONFIG_fontconfig_PREFIX:INTERNAL=
+PKG_FONTCONFIG_fontconfig_VERSION:INTERNAL=
 //ADVANCED property for variable: X11_ICE_INCLUDE_PATH
 X11_ICE_INCLUDE_PATH-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: X11_ICE_LIB
@@ -1139,4 +1219,9 @@ X11_xkbcommon_X11_LIB-ADVANCED:INTERNAL=1
 X11_xkbfile_INCLUDE_PATH-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: X11_xkbfile_LIB
 X11_xkbfile_LIB-ADVANCED:INTERNAL=1
+__pkg_config_arguments_PKG_FONTCONFIG:INTERNAL=QUIET;fontconfig
+__pkg_config_checked_PKG_FONTCONFIG:INTERNAL=1
+//ADVANCED property for variable: pkgcfg_lib_PKG_FONTCONFIG_fontconfig
+pkgcfg_lib_PKG_FONTCONFIG_fontconfig-ADVANCED:INTERNAL=1
+prefix_result:INTERNAL=/opt/homebrew/Cellar/fontconfig/2.17.1/lib
 

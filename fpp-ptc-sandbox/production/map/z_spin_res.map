@@ -3,135 +3,137 @@
 # Object files:
 [  0] linker synthesized
 [  1] CMakeFiles/z_spin_res-exe.dir/z_spin_res.f90.o
-[  2] /Users/matthewsignorelli/Documents/Bmad/bmad-ecosystem/20260112-0/production/lib/libforest.dylib
+[  2] /Users/matthewsignorelli/Documents/Bmad/bmad-ecosystem/20260121-0/production/lib/libforest.dylib
 [  3] /opt/homebrew/lib/libhdf5_hl_fortran.310.0.6.dylib
 [  4] /opt/homebrew/lib/libhdf5_fortran.310.3.2.dylib
 [  5] /opt/homebrew/lib/libcairo.dylib
 [  6] /opt/homebrew/lib/libpango-1.0.dylib
 [  7] /opt/homebrew/lib/libpangocairo-1.0.dylib
 [  8] /opt/homebrew/lib/libgobject-2.0.dylib
-[  9] /opt/homebrew/lib/libX11.dylib
-[ 10] /opt/homebrew/lib/libXext.dylib
+[  9] /opt/homebrew/lib/libSM.dylib
+[ 10] /opt/homebrew/lib/libICE.dylib
 [ 11] /opt/homebrew/lib/libX11.dylib
-[ 12] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libplplotfortran.dylib
-[ 13] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libplplot.dylib
-[ 14] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libcsirocsa.dylib
-[ 15] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libqsastime.dylib
-[ 16] /opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/libstdc++.dylib
-[ 17] /opt/homebrew/lib/libhdf5_hl_f90cstub.310.0.6.dylib
-[ 18] /opt/homebrew/lib/libhdf5_f90cstub.310.3.2.dylib
-[ 19] /opt/homebrew/lib/libhdf5_hl.310.0.6.dylib
-[ 20] /opt/homebrew/lib/libhdf5.310.5.1.dylib
-[ 21] /opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/libgfortran.dylib
-[ 22] /opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/libquadmath.dylib
-[ 23] /Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/usr/lib/libSystem.tbd
-[ 24] /Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/usr/lib/system/libsystem_c.tbd
+[ 12] /opt/homebrew/lib/libXext.dylib
+[ 13] /opt/homebrew/lib/libX11.dylib
+[ 14] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libplplotfortran.dylib
+[ 15] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libplplot.dylib
+[ 16] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libcsirocsa.dylib
+[ 17] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libqsastime.dylib
+[ 18] /opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/libstdc++.dylib
+[ 19] /opt/homebrew/lib/libhdf5_hl_f90cstub.310.0.6.dylib
+[ 20] /opt/homebrew/lib/libhdf5_f90cstub.310.3.2.dylib
+[ 21] /opt/homebrew/lib/libhdf5_hl.310.0.6.dylib
+[ 22] /opt/homebrew/lib/libhdf5.310.5.1.dylib
+[ 23] /opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/libgfortran.dylib
+[ 24] /opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/libquadmath.dylib
+[ 25] /Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/usr/lib/libSystem.tbd
+[ 26] /Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/usr/lib/system/libsystem_c.tbd
 # Sections:
 # Address	Size    	Segment	Section
-0x100000E60	0x00000E44	__TEXT	__text
-0x100001CC0	0x00000020	__TEXT	__text_startup
-0x100001CE0	0x00000294	__TEXT	__stubs
-0x100001F80	0x00000150	__TEXT	__const
-0x1000020D0	0x0000005C	__TEXT	__cstring
-0x100002130	0x000000C8	__TEXT	__eh_frame
+0x100000EE0	0x00000E44	__TEXT	__text
+0x100001D40	0x00000020	__TEXT	__text_startup
+0x100001D60	0x00000294	__TEXT	__stubs
+0x100002000	0x00000150	__TEXT	__const
+0x100002150	0x0000005C	__TEXT	__cstring
+0x1000021B0	0x000000C8	__TEXT	__eh_frame
 0x100004000	0x00000208	__DATA_CONST	__got
 0x100008000	0x00012EF0	__DATA	__bss
 # Symbols:
 # Address	Size    	File  Name
 0x100000000	0x00000000	[  0] __mh_execute_header
-0x100000E60	0x00000E44	[  1] _MAIN__
-0x100001CC0	0x00000020	[  1] _main
-0x100001CE0	0x0000000C	[  2] ___c_tpsa_MOD_a_opt_c_damap.stub
-0x100001CEC	0x0000000C	[  2] ___c_tpsa_MOD_alloc_c_normal_form.stub
-0x100001CF8	0x0000000C	[  2] ___c_tpsa_MOD_alloc_c_quaternion.stub
-0x100001D04	0x0000000C	[  2] ___c_tpsa_MOD_alloc_c_spinor.stub
-0x100001D10	0x0000000C	[  2] ___c_tpsa_MOD_alloc_c_vector_field.stub
-0x100001D1C	0x0000000C	[  2] ___c_tpsa_MOD_c_allocda.stub
-0x100001D28	0x0000000C	[  2] ___c_tpsa_MOD_c_allocdas.stub
-0x100001D34	0x0000000C	[  2] ___c_tpsa_MOD_c_concat.stub
-0x100001D40	0x0000000C	[  2] ___c_tpsa_MOD_c_equalmap.stub
-0x100001D4C	0x0000000C	[  2] ___c_tpsa_MOD_c_identityequalmap.stub
-0x100001D58	0x0000000C	[  2] ___c_tpsa_MOD_c_normal.stub
-0x100001D64	0x0000000C	[  2] ___c_tpsa_MOD_c_pri_map.stub
-0x100001D70	0x0000000C	[  2] ___c_tpsa_MOD_powmap.stub
-0x100001D7C	0x0000000C	[  2] ___mad_like_MOD_add_bb.stub
-0x100001D88	0x0000000C	[  2] ___mad_like_MOD_add_be.stub
-0x100001D94	0x0000000C	[  2] ___mad_like_MOD_add_ee.stub
-0x100001DA0	0x0000000C	[  2] ___mad_like_MOD_el_q.stub
-0x100001DAC	0x0000000C	[  2] ___mad_like_MOD_equal_l_l.stub
-0x100001DB8	0x0000000C	[  2] ___mad_like_MOD_makeitc.stub
-0x100001DC4	0x0000000C	[  2] ___mad_like_MOD_mark.stub
-0x100001DD0	0x0000000C	[  2] ___mad_like_MOD_mul_b.stub
-0x100001DDC	0x0000000C	[  2] ___mad_like_MOD_quadtilt.stub
-0x100001DE8	0x0000000C	[  2] ___mad_like_MOD_sbtilt.stub
-0x100001DF4	0x0000000C	[  2] ___mad_like_MOD_set_mad.stub
-0x100001E00	0x0000000C	[  2] ___madx_ptc_module_MOD_ptc_ini_no_append.stub
-0x100001E0C	0x0000000C	[  2] ___ptc_multiparticle_MOD_make_node_layout.stub
-0x100001E18	0x0000000C	[  2] ___ptc_multiparticle_MOD_survey_exist_planar_l_new.stub
-0x100001E24	0x0000000C	[  2] ___ptc_spin_MOD_track_node_layout_flag_pr_t12_p.stub
-0x100001E30	0x0000000C	[  2] ___s_def_all_kinds_MOD_get_length.stub
-0x100001E3C	0x0000000C	[  2] ___s_extend_poly_MOD_equal_c_map_ray8.stub
-0x100001E48	0x0000000C	[  2] ___s_extend_poly_MOD_scdadd.stub
-0x100001E54	0x0000000C	[  2] ___s_family_MOD_addp_anbn.stub
-0x100001E60	0x0000000C	[  2] ___s_family_MOD_work_fibre.stub
-0x100001E6C	0x0000000C	[  2] ___s_fibre_bundle_MOD_append_empty_layout.stub
-0x100001E78	0x0000000C	[  2] ___s_fibre_bundle_MOD_move_to_name_old.stub
-0x100001E84	0x0000000C	[  2] ___s_fitting_new_MOD_find_orbit_layout_noda_object.stub
-0x100001E90	0x0000000C	[  2] ___s_status_MOD_add.stub
-0x100001E9C	0x0000000C	[  2] ___s_status_MOD_equalt.stub
-0x100001EA8	0x0000000C	[  2] ___s_status_MOD_make_states_0.stub
-0x100001EB4	0x0000000C	[  2] ___s_status_MOD_s_init.stub
-0x100001EC0	0x0000000C	[  2] ___s_status_MOD_update_states.stub
-0x100001ECC	0x0000000C	[  2] ___tree_element_module_MOD_alloc_probe_8.stub
-0x100001ED8	0x0000000C	[  2] ___tree_element_module_MOD_equal_probe8_probe8.stub
-0x100001EE4	0x0000000C	[  2] ___tree_element_module_MOD_equal_probe_real6.stub
-0x100001EF0	0x0000000C	[ 21] __gfortran_set_args.stub
-0x100001EFC	0x0000000C	[ 21] __gfortran_set_options.stub
-0x100001F08	0x0000000C	[ 21] __gfortran_st_write.stub
-0x100001F14	0x0000000C	[ 21] __gfortran_st_write_done.stub
-0x100001F20	0x0000000C	[ 21] __gfortran_stop_string.stub
-0x100001F2C	0x0000000C	[ 21] __gfortran_transfer_array_write.stub
-0x100001F38	0x0000000C	[ 21] __gfortran_transfer_character_write.stub
-0x100001F44	0x0000000C	[ 21] __gfortran_transfer_logical_write.stub
-0x100001F50	0x0000000C	[ 21] __gfortran_transfer_real_write.stub
-0x100001F5C	0x0000000C	[ 24] _memcpy.stub
-0x100001F68	0x0000000C	[ 24] _memset.stub
-0x100001F80	0x00000004	[  1] lC0
-0x100001F84	0x00000004	[  1] lC1
-0x100001F88	0x00000008	[  1] lC2
-0x100001F90	0x00000008	[  1] lC3
-0x100001F98	0x00000008	[  1] lC4
-0x100001FA0	0x00000008	[  1] lC5
-0x100001FA8	0x00000008	[  1] lC6
-0x100001FB0	0x00000008	[  1] lC7
-0x100001FB8	0x00000008	[  1] lC8
-0x100001FC0	0x00000008	[  1] lC9
-0x100001FC8	0x00000004	[  1] lC10
-0x100001FCC	0x00000004	[  1] lC11
-0x100001FD0	0x00000010	[  1] lC13
-0x100001FE0	0x00000008	[  1] lC14
-0x100001FE8	0x00000008	[  1] lC15
-0x100001FF0	0x00000008	[  1] lC16
-0x100001FF8	0x00000008	[  1] lC17
-0x100002000	0x00000004	[  1] lC18
-0x100002004	0x00000004	[  1] lC19
-0x100002008	0x00000020	[  1] _options.40.14
-0x100002028	0x00000008	[  1] lC25
-0x100002030	0x00000008	[  1] lC29
-0x100002040	0x00000010	[  1] 16-byte-literal
-0x100002050	0x00000010	[  1] 16-byte-literal
-0x100002060	0x00000010	[  1] 16-byte-literal
-0x100002070	0x00000010	[  1] 16-byte-literal
-0x100002080	0x00000010	[  1] 16-byte-literal
-0x100002090	0x00000010	[  1] 16-byte-literal
-0x1000020A0	0x00000010	[  1] 16-byte-literal
-0x1000020B0	0x00000010	[  1] 16-byte-literal
-0x1000020C0	0x00000008	[  1] 8-byte-literal
-0x1000020C8	0x00000008	[  1] 8-byte-literal
-0x1000020D0	0x0000005C	[  1] literal string: /Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/z_spin_res.f90
-0x100002130	0x00000018	[  1] CFI
-0x100002148	0x00000080	[  1] FDE for: _MAIN__
-0x1000021C8	0x00000030	[  1] FDE for: _main
+0x100000EE0	0x00000E44	[  1] _MAIN__
+0x100001D40	0x00000020	[  1] _main
+0x100001D60	0x0000000C	[  2] ___c_tpsa_MOD_a_opt_c_damap.stub
+0x100001D6C	0x0000000C	[  2] ___c_tpsa_MOD_alloc_c_normal_form.stub
+0x100001D78	0x0000000C	[  2] ___c_tpsa_MOD_alloc_c_quaternion.stub
+0x100001D84	0x0000000C	[  2] ___c_tpsa_MOD_alloc_c_spinor.stub
+0x100001D90	0x0000000C	[  2] ___c_tpsa_MOD_alloc_c_vector_field.stub
+0x100001D9C	0x0000000C	[  2] ___c_tpsa_MOD_c_allocda.stub
+0x100001DA8	0x0000000C	[  2] ___c_tpsa_MOD_c_allocdas.stub
+0x100001DB4	0x0000000C	[  2] ___c_tpsa_MOD_c_concat.stub
+0x100001DC0	0x0000000C	[  2] ___c_tpsa_MOD_c_equalmap.stub
+0x100001DCC	0x0000000C	[  2] ___c_tpsa_MOD_c_identityequalmap.stub
+0x100001DD8	0x0000000C	[  2] ___c_tpsa_MOD_c_normal.stub
+0x100001DE4	0x0000000C	[  2] ___c_tpsa_MOD_c_pri_map.stub
+0x100001DF0	0x0000000C	[  2] ___c_tpsa_MOD_powmap.stub
+0x100001DFC	0x0000000C	[  2] ___mad_like_MOD_add_bb.stub
+0x100001E08	0x0000000C	[  2] ___mad_like_MOD_add_be.stub
+0x100001E14	0x0000000C	[  2] ___mad_like_MOD_add_ee.stub
+0x100001E20	0x0000000C	[  2] ___mad_like_MOD_el_q.stub
+0x100001E2C	0x0000000C	[  2] ___mad_like_MOD_equal_l_l.stub
+0x100001E38	0x0000000C	[  2] ___mad_like_MOD_makeitc.stub
+0x100001E44	0x0000000C	[  2] ___mad_like_MOD_mark.stub
+0x100001E50	0x0000000C	[  2] ___mad_like_MOD_mul_b.stub
+0x100001E5C	0x0000000C	[  2] ___mad_like_MOD_quadtilt.stub
+0x100001E68	0x0000000C	[  2] ___mad_like_MOD_sbtilt.stub
+0x100001E74	0x0000000C	[  2] ___mad_like_MOD_set_mad.stub
+0x100001E80	0x0000000C	[  2] ___madx_ptc_module_MOD_ptc_ini_no_append.stub
+0x100001E8C	0x0000000C	[  2] ___ptc_multiparticle_MOD_make_node_layout.stub
+0x100001E98	0x0000000C	[  2] ___ptc_multiparticle_MOD_survey_exist_planar_l_new.stub
+0x100001EA4	0x0000000C	[  2] ___ptc_spin_MOD_track_node_layout_flag_pr_t12_p.stub
+0x100001EB0	0x0000000C	[  2] ___s_def_all_kinds_MOD_get_length.stub
+0x100001EBC	0x0000000C	[  2] ___s_extend_poly_MOD_equal_c_map_ray8.stub
+0x100001EC8	0x0000000C	[  2] ___s_extend_poly_MOD_scdadd.stub
+0x100001ED4	0x0000000C	[  2] ___s_family_MOD_addp_anbn.stub
+0x100001EE0	0x0000000C	[  2] ___s_family_MOD_work_fibre.stub
+0x100001EEC	0x0000000C	[  2] ___s_fibre_bundle_MOD_append_empty_layout.stub
+0x100001EF8	0x0000000C	[  2] ___s_fibre_bundle_MOD_move_to_name_old.stub
+0x100001F04	0x0000000C	[  2] ___s_fitting_new_MOD_find_orbit_layout_noda_object.stub
+0x100001F10	0x0000000C	[  2] ___s_status_MOD_add.stub
+0x100001F1C	0x0000000C	[  2] ___s_status_MOD_equalt.stub
+0x100001F28	0x0000000C	[  2] ___s_status_MOD_make_states_0.stub
+0x100001F34	0x0000000C	[  2] ___s_status_MOD_s_init.stub
+0x100001F40	0x0000000C	[  2] ___s_status_MOD_update_states.stub
+0x100001F4C	0x0000000C	[  2] ___tree_element_module_MOD_alloc_probe_8.stub
+0x100001F58	0x0000000C	[  2] ___tree_element_module_MOD_equal_probe8_probe8.stub
+0x100001F64	0x0000000C	[  2] ___tree_element_module_MOD_equal_probe_real6.stub
+0x100001F70	0x0000000C	[ 23] __gfortran_set_args.stub
+0x100001F7C	0x0000000C	[ 23] __gfortran_set_options.stub
+0x100001F88	0x0000000C	[ 23] __gfortran_st_write.stub
+0x100001F94	0x0000000C	[ 23] __gfortran_st_write_done.stub
+0x100001FA0	0x0000000C	[ 23] __gfortran_stop_string.stub
+0x100001FAC	0x0000000C	[ 23] __gfortran_transfer_array_write.stub
+0x100001FB8	0x0000000C	[ 23] __gfortran_transfer_character_write.stub
+0x100001FC4	0x0000000C	[ 23] __gfortran_transfer_logical_write.stub
+0x100001FD0	0x0000000C	[ 23] __gfortran_transfer_real_write.stub
+0x100001FDC	0x0000000C	[ 26] _memcpy.stub
+0x100001FE8	0x0000000C	[ 26] _memset.stub
+0x100002000	0x00000004	[  1] lC0
+0x100002004	0x00000004	[  1] lC1
+0x100002008	0x00000008	[  1] lC2
+0x100002010	0x00000008	[  1] lC3
+0x100002018	0x00000008	[  1] lC4
+0x100002020	0x00000008	[  1] lC5
+0x100002028	0x00000008	[  1] lC6
+0x100002030	0x00000008	[  1] lC7
+0x100002038	0x00000008	[  1] lC8
+0x100002040	0x00000008	[  1] lC9
+0x100002048	0x00000004	[  1] lC10
+0x10000204C	0x00000004	[  1] lC11
+0x100002050	0x00000010	[  1] lC13
+0x100002060	0x00000008	[  1] lC14
+0x100002068	0x00000008	[  1] lC15
+0x100002070	0x00000008	[  1] lC16
+0x100002078	0x00000008	[  1] lC17
+0x100002080	0x00000004	[  1] lC18
+0x100002084	0x00000004	[  1] lC19
+0x100002088	0x00000020	[  1] _options.40.14
+0x1000020A8	0x00000008	[  1] lC25
+0x1000020B0	0x00000008	[  1] lC29
+0x1000020C0	0x00000010	[  1] 16-byte-literal
+0x1000020D0	0x00000010	[  1] 16-byte-literal
+0x1000020E0	0x00000010	[  1] 16-byte-literal
+0x1000020F0	0x00000010	[  1] 16-byte-literal
+0x100002100	0x00000010	[  1] 16-byte-literal
+0x100002110	0x00000010	[  1] 16-byte-literal
+0x100002120	0x00000010	[  1] 16-byte-literal
+0x100002130	0x00000010	[  1] 16-byte-literal
+0x100002140	0x00000008	[  1] 8-byte-literal
+0x100002148	0x00000008	[  1] 8-byte-literal
+0x100002150	0x0000005C	[  1] literal string: /Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/z_spin_res.f90
+0x1000021B0	0x00000018	[  1] CFI
+0x1000021C8	0x00000080	[  1] FDE for: _MAIN__
+0x100002248	0x00000030	[  1] FDE for: _main
 0x100004000	0x00000008	[  2] ___c_tpsa_MOD_a_opt_c_damap.got
 0x100004008	0x00000008	[  2] ___c_tpsa_MOD_alloc_c_normal_form.got
 0x100004010	0x00000008	[  2] ___c_tpsa_MOD_alloc_c_quaternion.got
@@ -186,17 +188,17 @@
 0x100004198	0x00000008	[  2] ___tree_element_module_MOD_alloc_probe_8.got
 0x1000041A0	0x00000008	[  2] ___tree_element_module_MOD_equal_probe8_probe8.got
 0x1000041A8	0x00000008	[  2] ___tree_element_module_MOD_equal_probe_real6.got
-0x1000041B0	0x00000008	[ 21] __gfortran_set_args.got
-0x1000041B8	0x00000008	[ 21] __gfortran_set_options.got
-0x1000041C0	0x00000008	[ 21] __gfortran_st_write.got
-0x1000041C8	0x00000008	[ 21] __gfortran_st_write_done.got
-0x1000041D0	0x00000008	[ 21] __gfortran_stop_string.got
-0x1000041D8	0x00000008	[ 21] __gfortran_transfer_array_write.got
-0x1000041E0	0x00000008	[ 21] __gfortran_transfer_character_write.got
-0x1000041E8	0x00000008	[ 21] __gfortran_transfer_logical_write.got
-0x1000041F0	0x00000008	[ 21] __gfortran_transfer_real_write.got
-0x1000041F8	0x00000008	[ 24] _memcpy.got
-0x100004200	0x00000008	[ 24] _memset.got
+0x1000041B0	0x00000008	[ 23] __gfortran_set_args.got
+0x1000041B8	0x00000008	[ 23] __gfortran_set_options.got
+0x1000041C0	0x00000008	[ 23] __gfortran_st_write.got
+0x1000041C8	0x00000008	[ 23] __gfortran_st_write_done.got
+0x1000041D0	0x00000008	[ 23] __gfortran_stop_string.got
+0x1000041D8	0x00000008	[ 23] __gfortran_transfer_array_write.got
+0x1000041E0	0x00000008	[ 23] __gfortran_transfer_character_write.got
+0x1000041E8	0x00000008	[ 23] __gfortran_transfer_logical_write.got
+0x1000041F0	0x00000008	[ 23] __gfortran_transfer_real_write.got
+0x1000041F8	0x00000008	[ 26] _memcpy.got
+0x100004200	0x00000008	[ 26] _memset.got
 0x100008000	0x00000368	[  1] _fq.1
 0x100008368	0x000005E8	[  1] _xs.2
 0x100008950	0x00008E08	[  1] _c_n.3

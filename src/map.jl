@@ -737,7 +737,7 @@ function ∘(m2, m1::$t)
   T = promote_type(eltype(m1.v), eltype(m2))
   T == eltype(m1.v) ? m1xprom = m1.v : m1xprom = T.(m1.v)
   T == eltype(m2) ? m2prom = m2 : m2prom = T.(m2)
-  m = zero(m2prom)
+  m = zero.(m2prom)
   TI.compose!(m, m2prom, m1xprom)
   return m
 end

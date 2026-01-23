@@ -96,6 +96,8 @@ z_poisson__exe_EXTERNAL_OBJECTS =
 /Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/production/bin/z_poisson: CMakeFiles/z_poisson-exe.dir/build.make
 /Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/production/bin/z_poisson: /opt/homebrew/lib/libhdf5_hl_fortran.310.0.6.dylib
 /Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/production/bin/z_poisson: /opt/homebrew/lib/libhdf5_fortran.310.3.2.dylib
+/Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/production/bin/z_poisson: /opt/homebrew/lib/libSM.dylib
+/Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/production/bin/z_poisson: /opt/homebrew/lib/libICE.dylib
 /Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/production/bin/z_poisson: /opt/homebrew/lib/libX11.dylib
 /Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/production/bin/z_poisson: /opt/homebrew/lib/libXext.dylib
 /Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/production/bin/z_poisson: /opt/homebrew/lib/libhdf5_hl_f90cstub.310.0.6.dylib

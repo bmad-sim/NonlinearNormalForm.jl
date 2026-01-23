@@ -96,6 +96,8 @@ z_coast_matt_fake_maps__exe_EXTERNAL_OBJECTS =
 /Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/production/bin/z_coast_matt_fake_maps: CMakeFiles/z_coast_matt_fake_maps-exe.dir/build.make
 /Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/production/bin/z_coast_matt_fake_maps: /opt/homebrew/lib/libhdf5_hl_fortran.310.0.6.dylib
 /Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/production/bin/z_coast_matt_fake_maps: /opt/homebrew/lib/libhdf5_fortran.310.3.2.dylib
+/Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/production/bin/z_coast_matt_fake_maps: /opt/homebrew/lib/libSM.dylib
+/Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/production/bin/z_coast_matt_fake_maps: /opt/homebrew/lib/libICE.dylib
 /Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/production/bin/z_coast_matt_fake_maps: /opt/homebrew/lib/libX11.dylib
 /Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/production/bin/z_coast_matt_fake_maps: /opt/homebrew/lib/libXext.dylib
 /Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/production/bin/z_coast_matt_fake_maps: /opt/homebrew/lib/libhdf5_hl_f90cstub.310.0.6.dylib

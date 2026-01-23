@@ -15,26 +15,26 @@ end
 function mul!(q::Quaternion, q1::Quaternion, q2::Quaternion)
   @assert !(q === q1) && !(q === q2) "Aliasing q with q1 or q2 not allowed!"
   all(qi->TI.IsTPSType(eltype(qi)) isa TI.IsTPSType) || error("mul! only works on TPS types supported by TPSAInterface.jl!")
-  TI.copy!(q.q0, q1.q0 * q2.q0 - q1.q1 * q2.q1 - q1.q2 * q2.q2 - q1.q3 * q2.q3)
-  TI.copy!(q.q1, q1.q0 * q2.q1 + q1.q1 * q2.q0 + q1.q2 * q2.q3 - q1.q3 * q2.q2)
-  TI.copy!(q.q2, q1.q0 * q2.q2 - q1.q1 * q2.q3 + q1.q2 * q2.q0 + q1.q3 * q2.q1)
-  TI.copy!(q.q3, q1.q0 * q2.q3 + q1.q1 * q2.q2 - q1.q2 * q2.q1 + q1.q3 * q2.q0)
+  TI.copy_tps!(q.q0, q1.q0 * q2.q0 - q1.q1 * q2.q1 - q1.q2 * q2.q2 - q1.q3 * q2.q3)
+  TI.copy_tps!(q.q1, q1.q0 * q2.q1 + q1.q1 * q2.q0 + q1.q2 * q2.q3 - q1.q3 * q2.q2)
+  TI.copy_tps!(q.q2, q1.q0 * q2.q2 - q1.q1 * q2.q3 + q1.q2 * q2.q0 + q1.q3 * q2.q1)
+  TI.copy_tps!(q.q3, q1.q0 * q2.q3 + q1.q1 * q2.q2 - q1.q2 * q2.q1 + q1.q3 * q2.q0)
   return q
 end
 
 function inv!(q::Quaternion, q1::Quaternion)
   @assert !(q === q1) "Aliasing q with q1 not allowed!"
   all(qi->TI.IsTPSType(eltype(qi)) isa TI.IsTPSType) || error("inv! only works on TPS types supported by TPSAInterface.jl!")
-  TI.copy!(q.q0, q1.q0 * q1.q0 + q1.q1 * q1.q1 + q1.q2 * q1.q2 + q1.q3 * q1.q3)
-  TI.copy!(q.q1, -q1.q1/q.q0)
-  TI.copy!(q.q2, -q1.q2/q.q0)
-  TI.copy!(q.q3, -q1.q3/q.q0)
-  TI.copy!(q.q0, q1.q0/q.q0)
+  TI.copy_tps!(q.q0, q1.q0 * q1.q0 + q1.q1 * q1.q1 + q1.q2 * q1.q2 + q1.q3 * q1.q3)
+  TI.copy_tps!(q.q1, -q1.q1/q.q0)
+  TI.copy_tps!(q.q2, -q1.q2/q.q0)
+  TI.copy_tps!(q.q3, -q1.q3/q.q0)
+  TI.copy_tps!(q.q0, q1.q0/q.q0)
   return
 end
 
 # TO-DO: Optimize
-function exp(q1::Quaternion{T}) where {T}
+function exp(q1::Quaternion)
   nmax = 100
   nrm_min1 = 1e-9
   nrm_min2 = 100*eps(Float64)*4
@@ -42,8 +42,8 @@ function exp(q1::Quaternion{T}) where {T}
   conv = false
   slow = false
 
-  q_out = Quaternion{T}(1,0,0,0)
-  q = Quaternion{T}(1,0,0,0)
+  q_out = one(q1) 
+  q = one(q1)
   for j in 1:nmax
     q = q*q1/j
     q_out += q

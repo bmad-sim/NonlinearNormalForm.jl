@@ -1,7 +1,7 @@
 name = "NonlinearNormalForm"
 uuid = "05e19671-dec8-4f15-984f-54eaa6ca64be"
 authors = ["Matt Signorelli"]
-version = "0.4.2"
+version = "0.4.3"
 
 [deps]
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
@@ -21,12 +21,12 @@ NonlinearNormalFormGTPSAExt = "GTPSA"
 
 [compat]
 DelimitedFiles = "1"
-GTPSA = "1.4"
+GTPSA = "1.5"
 Reexport = "1"
 ReferenceFrameRotations = "3"
 SkewLinearAlgebra = "1"
 StaticArrays = "1"
-TPSAInterface = "0.2.2"
+TPSAInterface = "0.3.0"
 julia = "1.9"
 
 [extras]

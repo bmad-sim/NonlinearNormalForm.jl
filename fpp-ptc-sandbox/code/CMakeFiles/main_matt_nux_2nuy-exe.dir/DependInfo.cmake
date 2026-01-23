@@ -23,8 +23,8 @@ set(CMAKE_TARGET_DEFINITIONS_Fortran
 set(CMAKE_Fortran_TARGET_INCLUDE_PATH
   "../production/include"
   "../production/modules"
-  "/Users/matthewsignorelli/Documents/Bmad/bmad-ecosystem/20260112-0/production/modules"
-  "/Users/matthewsignorelli/Documents/Bmad/bmad-ecosystem/20260112-0/production/include"
+  "/Users/matthewsignorelli/Documents/Bmad/bmad-ecosystem/20260121-0/production/modules"
+  "/Users/matthewsignorelli/Documents/Bmad/bmad-ecosystem/20260121-0/production/include"
   "/Users/matthewsignorelli/Documents/Bmad/packages/include"
   "/Users/matthewsignorelli/Documents/Bmad/packages/include/fgsl"
   "/Users/matthewsignorelli/Documents/Bmad/packages/include/xraylib"
