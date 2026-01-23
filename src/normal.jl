@@ -106,11 +106,6 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
 
   a1 = one(m)
   setray!(a1.v, v_matrix=inv(a1_inv_matrix))
-  
-  if mo == 1 
-    return a0 ∘ a1
-  end
-
 
   # Continue:
   a1i = one(m)
@@ -285,8 +280,8 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
       end
       # Now exit the basis and exponentiate
       na = SA[(na[1]+na[3])/2, na[2], im*(na[1]-na[3])/2]
-      qnr = one(m)
-      setquat!(qnr.q, q=exp(Quaternion(0,na...)))
+      qnr = one(c)
+      setquat!(qnr.q, q=exp(Quaternion(zero(first(na)),na...)))
 
       aspin = aspin ∘ qnr # put in normalizing map
       m1 = inv(qnr) ∘ m1 ∘ qnr # kill the terms in m1
@@ -371,7 +366,7 @@ function factorize(a)
       end
       idx = TI.cycle!(a1t.v[i], idx, mono=ords, val=v)
     end
-    TI.copy!(a1.v[i], tmp)
+    TI.copy_tps!(a1.v[i], tmp)
   end
 
   # for the coasting part need to remove quadratic orbital part:
@@ -387,7 +382,7 @@ function factorize(a)
       idx = TI.cycle!(a1t.v[nt], idx, mono=ords, val=v)
     end
     TI.seti!(tmp, 1, nt)
-    TI.copy!(a1.v[nt], tmp)
+    TI.copy_tps!(a1.v[nt], tmp)
   end
 
   if !isnothing(a.q)
@@ -615,7 +610,7 @@ function canonize(
   # tries to be fast for linear calc
   if linear
     a_matrix = real.(jacobian(a, VARS))
-    canonizer = zero(a)
+    canonizer = one(a)
     for i in 1:div(nhv, 2) # for each harmonic oscillator
       t = sqrt(a_matrix[2*i-1,2*i-1]^2 + a_matrix[2*i-1,2*i]^2)
       cphi = a_matrix[2*i-1,2*i-1]/t
@@ -692,7 +687,7 @@ function canonize(
     mo = maxord(a)
     # For nonlinear case we have to exponentiate to ensure symplecticity
     id = one(a)
-    lin_canonizer = zero(a) # linear part separately to speed up exponent
+    lin_canonizer = one(a) # linear part separately to speed up exponent
     canonizerf = zero(VectorField, a)
     for i in 1:div(nhv, 2) # for each harmonic oscillator
       # Need to include parameter dependence if nonlinear, so "var-par"

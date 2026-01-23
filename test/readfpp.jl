@@ -89,10 +89,10 @@ function read_fpp_map(file; stochastic::Union{Nothing,Bool}=nothing,spin::Union{
   if !isnothing(spin)
     idx = findfirst(t->t=="c_quaternion", data[:,1])
     if data[idx,3] == "identity"
-      TI.copy!(m.q.q0, 1)
-      TI.copy!(m.q.q1, 0)
-      TI.copy!(m.q.q2, 0)
-      TI.copy!(m.q.q3, 0)
+      TI.copy_tps!(m.q.q0, 1)
+      TI.copy_tps!(m.q.q1, 0)
+      TI.copy_tps!(m.q.q2, 0)
+      TI.copy_tps!(m.q.q3, 0)
     else
       for qi in m.q
         idx = findfirst(v->(v isa Integer), data[:,1])

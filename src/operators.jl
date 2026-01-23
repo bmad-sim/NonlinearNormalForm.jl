@@ -83,15 +83,15 @@ function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, J::UniformScalin
   nv = nvars(m)
 
   for i in 1:nv
-    copy!(m.v[i], m1.v[i])
+    TI.copy_tps!(m.v[i], m1.v[i])
     TI.seti!(m.v[i], $(ops[2])(1, TI.geti(m.v[i], i)), i)
   end
 
   if !isnothing(m.q) && do_spin
-    copy!(m.q.q0, m1.q.q0)
-    copy!(m.q.q1, m1.q.q1)
-    copy!(m.q.q2, m1.q.q2)
-    copy!(m.q.q3, m1.q.q3)
+    TI.copy_tps!(m.q.q0, m1.q.q0)
+    TI.copy_tps!(m.q.q1, m1.q.q1)
+    TI.copy_tps!(m.q.q2, m1.q.q2)
+    TI.copy_tps!(m.q.q3, m1.q.q3)
     TI.seti!(m.q.q0, $(ops[2])(1, TI.geti(m.q.q0, 0)), 0)
   end
 
@@ -122,15 +122,15 @@ function $(Meta.parse(ops[1]))(m::Union{TaylorMap,VectorField}, m1::Union{Taylor
   nv = nvars(m)
 
   for i in 1:nv
-    copy!(m.v[i], m1.v[i])
+    TI.copy_tps!(m.v[i], m1.v[i])
     TI.seti!(m.v[i], $(ops[2])(TI.geti(m.v[i], i), 1), i)
   end
 
   if !isnothing(m.q) && do_spin
-    copy!(m.q.q0, m1.q.q0)
-    copy!(m.q.q1, m1.q.q1)
-    copy!(m.q.q2, m1.q.q2)
-    copy!(m.q.q3, m1.q.q3)
+    TI.copy_tps!(m.q.q0, m1.q.q0)
+    TI.copy_tps!(m.q.q1, m1.q.q1)
+    TI.copy_tps!(m.q.q2, m1.q.q2)
+    TI.copy_tps!(m.q.q3, m1.q.q3)
     TI.seti!(m.q.q0, $(ops[2])(TI.geti(m.q.q0, 0), 1), 0)
   end
 

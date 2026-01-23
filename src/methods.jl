@@ -34,9 +34,9 @@ function copy!(m::Union{TaylorMap,VectorField}, m1::Union{TaylorMap,VectorField}
     m.v0 .= m1.v0
   end
   nv = nvars(m)
-  foreach((xi, x1i)->TI.copy!(xi, x1i), view(m.v, 1:nv), m1.v)
+  foreach((xi, x1i)->TI.copy_tps!(xi, x1i), view(m.v, 1:nv), m1.v)
   if m isa TaylorMap && !isnothing(m.q)
-    foreach((qi, q1i)->TI.copy!(qi, q1i), m.q, m1.q)
+    foreach((qi, q1i)->TI.copy_tps!(qi, q1i), m.q, m1.q)
   end
   if m isa TaylorMap && !isnothing(m.s) && m1 isa TaylorMap
     m.s .= m1.s
