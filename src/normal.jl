@@ -346,6 +346,8 @@ function factorize(a)
       TI.add!(vf.v[nt], vf.v[nt], t2)
     end
     a0 = exp(vf,exp(-vf,id) ∘ a0 + I)
+    # Need to reset the scalar part:
+    setray!(view(a0.v, 1:nv), scalar=getscalar(a))
   else
     add!(a0, a0, I)
   end
