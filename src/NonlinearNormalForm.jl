@@ -71,6 +71,7 @@ export        TaylorMap,
               equilibrium_moments,
               factorize,
               canonize,
+              compute_de_moivre_full,
               compute_de_moivre,
               compute_sagan_rubin
 

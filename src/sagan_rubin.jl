@@ -1,4 +1,4 @@
-function compute_sagan_rubin(a1::DAMap{V0}, ::Val{linear}=Val{false}()) where {V0<:StaticArray,linear}
+function compute_sagan_rubin(a1::DAMap{V0}, ::Val{linear}=Val{true}()) where {V0<:StaticArray,linear}
   # jp_mat[i] in FPP is J matrix restricted to i-th plane
   # ip_mat[i] in FPP is identity matrix restricted to i-th plane
   # jt_mat in FPP is symplectic s matrix
