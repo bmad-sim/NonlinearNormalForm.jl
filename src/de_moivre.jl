@@ -5,8 +5,9 @@ function compute_de_moivre(a1::DAMap{V0}, ::Val{linear}=Val{true}()) where {V0<:
   nhv = nhvars(a1)
   if linear
     let a1_mat = jacobian(a1, HVARS), a1i_mat = inv(a1_mat)
-      # the most important matrix is E
-      E = StaticArrays.sacollect(SVector{div(nhv, 2),typeof(a1_mat)}, a1_mat*jp_mat(a1, i)*a1i_mat*j_mat(a1) for i in 1:div(nhv, 2))
+      B = StaticArrays.sacollect(SVector{div(nhv, 2),typeof(a1_mat)}, a1_mat*jp_mat(a1, i)*a1i_mat for i in 1:div(nhv, 2))
+      K = StaticArrays.sacollect(SVector{div(nhv, 2),typeof(a1_mat)}, -j_mat(a1)*B[i] for i in 1:div(nhv, 2))
+      E = StaticArrays.sacollect(SVector{div(nhv, 2),typeof(a1_mat)}, -B[i]*j_mat(a1) for i in 1:div(nhv, 2))
       H = StaticArrays.sacollect(SVector{div(nhv, 2),typeof(a1_mat)}, a1_mat*ip_mat(a1, i)*a1i_mat for i in 1:div(nhv, 2))
       return (; H=H, B=B, E=E, K=K)
     end
@@ -78,3 +79,6 @@ function compute_de_moivre(a1::DAMap, ::Val{linear}=Val{true}()) where {linear}
     end
   end
 end
+
+
+

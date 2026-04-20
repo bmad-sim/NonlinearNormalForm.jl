@@ -71,8 +71,8 @@ export        TaylorMap,
               equilibrium_moments,
               factorize,
               canonize,
-              compute_de_moivre_full,
               compute_de_moivre,
+              compute_ripken,
               compute_sagan_rubin
 
 
@@ -109,6 +109,7 @@ include("operators.jl")
 include("methods.jl")
 include("normal.jl")
 include("de_moivre.jl")
+include("ripken.jl")
 include("sagan_rubin.jl")
 
 end

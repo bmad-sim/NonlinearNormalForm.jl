@@ -513,3 +513,92 @@ function checksymp(m::TaylorMap)
   return out-S
 end
 # =================================================================================== #
+# Construct special matrices for lattice functions
+function ip_mat(m::DAMap{V0}, i) where {V0<:StaticArray}
+  nhv = nhvars(m) #isodd(length(V0)) ? length(V0)+1 : length(V0)
+  return StaticArrays.sacollect(SMatrix{nhv,nhv,real(eltype(V0))}, 
+  begin
+    if col == 2*i-1 && row == 2*i-1
+      1
+    elseif col == 2*i && row == 2*i
+      1
+    else
+      0
+    end
+  end for col in 1:nhv for row in 1:nhv)
+end
+
+function ip_mat(m::DAMap, i)
+  nhv = nhvars(m)
+  ip = zeros(real(eltype(m.v0)), nhv, nhv)
+  ip[2*i-1, 2*i-1] = 1
+  ip[2*i, 2*i] = 1
+  return ip
+end
+
+function jp_mat(m::DAMap{V0}, i) where {V0<:StaticArray}
+  nhv = nhvars(m) 
+  return StaticArrays.sacollect(SMatrix{nhv,nhv,real(eltype(V0))}, 
+  begin
+    if col == 2*i && row == 2*i-1
+      1
+    elseif col == 2*i-1 && row == 2*i
+      -1
+    else
+      0
+    end
+  end for col in 1:nhv for row in 1:nhv)
+end
+
+function jp_mat(m::DAMap, i)
+  nhv = nhvars(m)
+  jp = zeros(real(eltype(m.v0)), nhv, nhv)
+  jp[2*i-1, 2*i] = 1
+  jp[2*i, 2*i-1] = -1
+  return jp
+end
+
+function j_mat(m::DAMap{V0}) where {V0<:StaticArray}
+  nhv = nhvars(m) 
+  return StaticArrays.sacollect(SMatrix{nhv,nhv,real(eltype(V0))}, 
+  begin
+    if fld1(col,2) != fld1(row,2) 
+      0
+    else # then we are in the block
+      if mod1(row,2) == 1 && mod1(col,2) == 2 # First row second col is 1
+        1
+      elseif mod1(row,2) == 2 && mod1(col,2) == 1
+        -1
+      else
+        0
+      end
+    end
+  end for col in 1:nhv for row in 1:nhv)
+end
+
+function j_mat(::Val{nhv}) where {nhv}
+  return StaticArrays.sacollect(SMatrix{nhv,nhv,Int}, 
+  begin
+    if fld1(col,2) != fld1(row,2) 
+      0
+    else # then we are in the block
+      if mod1(row,2) == 1 && mod1(col,2) == 2 # First row second col is 1
+        1
+      elseif mod1(row,2) == 2 && mod1(col,2) == 1
+        -1
+      else
+        0
+      end
+    end
+  end for col in 1:nhv for row in 1:nhv)
+end
+
+function j_mat(m::DAMap)
+  nhv = nhvars(m)
+  j = zeros(real(eltype(m.v0)), nhv, nhv)
+  for i in 1:div(nhv, 2)
+    j[2*i-1, 2*i] = 1
+    j[2*i, 2*i-1] = -1
+  end
+  return j
+end
