@@ -1,0 +1,100 @@
+using GTPSA
+using NonlinearNormalForm
+
+# ─── Parameters ──────────────────────────────────────────────────────────────
+const Qx, Qy, Qs = 0.31, 0.22, 0.0035
+const βx, βy     = 10.0, 5.0
+const K2L_ref    = 0.0          # reference value of the parameter (often 0; here 1 for clarity)
+
+const μx, μy, μs = 2π*Qx, 2π*Qy, 2π*Qs
+const cx, sx     = cos(μx), sin(μx)
+const cy, sy     = cos(μy), sin(μy)
+const cs, ss     = cos(μs), sin(μs)
+
+# ─── TPSA setup with parameters ──────────────────────────────────────────────
+# Descriptor(nv, var_max_order, np, par_max_order)
+# 6 variables to order 10, 1 parameter (K2L) to order 5
+d_z = Descriptor(6, 10, 1, 5)
+
+# Get the parameter as a TPS we can multiply into the map
+δK2L = TPS64{d_z}()
+δK2L[[0,0,0,0,0,0, 1]] = 1.0     # the parameter, first-order in slot 7
+
+K2L = K2L_ref + δK2L              # K2L as a parameter-dependent TPS
+
+# ─── Linear rotation (parameter-independent, same as before) ─────────────────
+v_rot = zeros(TPS64{d_z}, 6)
+
+v_rot[1][[1,0,0,0,0,0]] = cx
+v_rot[1][[0,1,0,0,0,0]] = βx * sx
+v_rot[2][[1,0,0,0,0,0]] = -sx / βx
+v_rot[2][[0,1,0,0,0,0]] = cx
+
+v_rot[3][[0,0,1,0,0,0]] = cy
+v_rot[3][[0,0,0,1,0,0]] = βy * sy
+v_rot[4][[0,0,1,0,0,0]] = -sy / βy
+v_rot[4][[0,0,0,1,0,0]] = cy
+
+v_rot[5][[0,0,0,0,1,0]] = cs
+v_rot[5][[0,0,0,0,0,1]] = ss
+v_rot[6][[0,0,0,0,1,0]] = -ss
+v_rot[6][[0,0,0,0,0,1]] = cs
+
+# ─── Sextupole kick — coefficients now multiplied by the parameter TPS ───────
+# We can't use scalar indexing for parameter-dependent coefficients, so we build
+# the nonlinear pieces by assembling TPS expressions and adding them in.
+v_kick = zeros(TPS64{d_z}, 6)
+
+# Identity
+v_kick[1][[1,0,0,0,0,0]] = 1.0
+v_kick[2][[0,1,0,0,0,0]] = 1.0
+v_kick[3][[0,0,1,0,0,0]] = 1.0
+v_kick[4][[0,0,0,1,0,0]] = 1.0
+v_kick[5][[0,0,0,0,1,0]] = 1.0
+v_kick[6][[0,0,0,0,0,1]] = 1.0
+
+# Sextupole nonlinear part. Pull out the variables as TPSs and assemble:
+Δ = @vars(d_z)
+x, px, y, py, z, δ = Δ[1], Δ[2], Δ[3], Δ[4], Δ[5], Δ[6]
+
+v_kick[2] += -K2L/2 * (x^2 - y^2)
+v_kick[4] +=  K2L   * x*y
+
+# ─── Assemble one-turn map and compute normal form ───────────────────────────
+m_rot = DAMap(v = v_rot)
+m_sex = DAMap(v = v_kick, nv=6)
+m     = m_sex ∘ m_rot
+
+a_full = normal(m)
+a0, a1, a2 = factorize(a_full)
+
+# ─── Compute Bengtsson RDTs (now parameter-dependent) ───────────────────────
+h = compute_bengtsson(a0, a1, m)
+
+# ─── Check the K2L-dependence of the RDTs ────────────────────────────────────
+# Expected (canonical √(2J) convention, after the sqrt(2)^d fix):
+#   h_30000(K2L) = -K2L · βx^(3/2) / 48
+#   h_10200(K2L) =  K2L · √βx · βy / 16
+#   h_10020(K2L) =  K2L · √βx · βy / 16
+# At K2L_ref = 1.0:
+#   constant term  = closed-form value at K2L = 1.0
+#   linear term    = derivative w.r.t. K2L = same closed-form (since linear in K2L)
+
+h30000 = h[(3,0,0,0,0,0)]    # TPS in the parameter
+h10200 = h[(1,0,2,0,0,0)]
+h10020 = h[(1,0,0,2,0,0)]
+
+# Read off constant and linear-in-parameter pieces
+# Parameter exponent vector has variable exponents = 0, parameter exponent = 0 or 1
+println("h_30000 constant term      = ", h30000[[0,0,0,0,0,0, 0]])
+println("h_30000 linear-in-K2L term = ", h30000[[0,0,0,0,0,0, 1]])
+println("expected (at K2L=1.0)      = ", -βx^1.5 / 48)
+println("expected derivative        = ", -βx^1.5 / 48)
+println()
+println("|h_30000(K2L=1)|  = ", abs(h30000[[0,0,0,0,0,0, 0]]))
+println("|h_10200(K2L=1)|  = ", abs(h10200[[0,0,0,0,0,0, 0]]))
+println("expected |h_30000| = ", βx^1.5 / 48)
+println("expected |h_10200| = ", sqrt(βx) * βy / 16)
+println()
+println("ratio of magnitudes  = ", abs(h30000[[0,0,0,0,0,0, 0]]) / abs(h10200[[0,0,0,0,0,0, 0]]))
+println("expected ratio (2/3) = ", 2/3)
