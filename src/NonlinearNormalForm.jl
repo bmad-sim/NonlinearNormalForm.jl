@@ -72,7 +72,8 @@ export        TaylorMap,
               factorize,
               canonize,
               compute_de_moivre,
-              compute_sagan_rubin
+              compute_sagan_rubin,
+              compute_bengtsson
 
 
 # After experimenting I have found MVector
@@ -109,5 +110,6 @@ include("methods.jl")
 include("normal.jl")
 include("de_moivre.jl")
 include("sagan_rubin.jl")
+include("bengtsson.jl")
 
 end
