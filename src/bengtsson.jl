@@ -3,20 +3,35 @@ function compute_bengtsson(a0, a1, m)
   # and value of type complex scalar if np == 0 or complex TPS if np > 0.
   # This is type stable bc this is stored in the type.
   nhv = nhvars(m)
+  nv = nvars(m)
   np = nparams(m)
   nn = ndiffs(m)
 
-  valtype = np == 0 ? complex(TI.numtype(eltype(m.v))) : complex(eltype(m.v) )
-  h = Dict{NTuple{nhv,Int},valtype}()
+  default = np == 0 ? complex(zero(TI.numtype(first(m.v)))) : complex(zero(first(m.v)))
+  valtype = typeof(default)
+  h = DefaultOrderedDict{NTuple{nhv,Int},valtype}(default)
+  a1t = one(a1)
+  setray!(view(a1t.v, 1:nv), scalar=getscalar(a1), v_matrix=jacobian(a1, HVARS))
+  #@show jacobian(a1t, ALL)
 
+  a_cs = a0 ∘ a1t
+#  cutord(a1, 2)
+#  cutord(a0 ∘ a1t, 2)#t #cutord(a1, 2) #t #cutord(a1, 2) #cutord(a0 ∘ a1, 2)
+#@show jacobian(a_cs, ALL)
+#error()
+  #@show jacobian(cutord(a1, 2), ALL)
+ # error()
   c = c_map(a0)
   ci = ci_map(a0)
 
-  r = ci ∘ inv(a1) ∘ inv(a0) ∘ m ∘ a0 ∘ a1 ∘ c
-  
+  r = ci ∘ inv(a_cs) ∘ m ∘ a_cs ∘ c
+
+  #r = ci ∘ inv(a1) ∘ inv(a0) ∘ m ∘ a0 ∘ a1 ∘ c
+  R_inv = inv(jacobian(r, ALL)) # R is diagonal matrix
+  ri = one(r)
+  setray!(ri.v, v_matrix=R_inv)
   # Remove the linear part:
-  r_lin = cutord(r, 2)
-  r_nonl = inv(r_lin) ∘ r
+  r_nonl = r ∘ ri
 
   # Log:
   h_vf = log(r_nonl)
