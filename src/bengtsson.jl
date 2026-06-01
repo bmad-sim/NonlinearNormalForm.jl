@@ -6,17 +6,22 @@ function compute_bengtsson(a0, a1, m)
   np = nparams(m)
   nn = ndiffs(m)
 
-  valtype = np == 0 ? complex(TI.numtype(eltype(m.v))) : complex(eltype(m.v) )
-  h = Dict{NTuple{nhv,Int},valtype}()
-
+  default = np == 0 ? complex(zero(TI.numtype(first(m.v)))) : complex(zero(first(m.v)))
+  valtype = typeof(default)
+  h = DefaultOrderedDict{NTuple{nhv,Int},valtype}(default)
+  a1t = one(a1)
+  setray!(a1t.v, v_matrix=jacobian(a1, HVARS))
+  a_cs = a0 ∘ a1t
   c = c_map(a0)
   ci = ci_map(a0)
 
-  r = ci ∘ inv(a1) ∘ inv(a0) ∘ m ∘ a0 ∘ a1 ∘ c
-  
+  r =  ci ∘ inv(a_cs) ∘ m ∘ a_cs ∘ c
+
+  R_inv = inv(jacobian(r, HVARS)) # R is diagonal matrix
+  ri = one(r)
+  setray!(ri.v, v_matrix=R_inv)
   # Remove the linear part:
-  r_lin = cutord(r, 2)
-  r_nonl = inv(r_lin) ∘ r
+  r_nonl = r ∘ ri
 
   # Log:
   h_vf = log(r_nonl)
@@ -47,7 +52,7 @@ function compute_bengtsson(a0, a1, m)
         fac += Int(tmpmono[j])
       end
       tmpmono[bump] += 1
-      contribution = (sgn * v[]) / (fac * sqrt(2)^fac)
+      contribution = (sgn * v[]) / fac # (fac * sqrt(2)^fac)
       h_idx = ntuple(k -> Int(tmpmono[k]), Val(nhv))
       if TI.is_tps_type(valtype) isa TI.IsTPSType # parameters included
         if haskey(h, h_idx)

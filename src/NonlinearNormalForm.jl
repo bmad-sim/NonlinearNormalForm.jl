@@ -32,7 +32,8 @@ using LinearAlgebra,
       SkewLinearAlgebra,
       Printf,
       StaticArrays,
-      DelimitedFiles
+      DelimitedFiles,
+      DataStructures
       
 using ReferenceFrameRotations: Quaternion, vect
 
