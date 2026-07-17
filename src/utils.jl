@@ -475,8 +475,8 @@ const S = SymplecticS()
 
 for op = (:+, :-, :*, :/)
 @eval begin
-Base.$op(S::SymplecticS,M) = Base.$op(JMatrix{Int8,+1}(size(M,1)), M)
-Base.$op(M,S::SymplecticS) = Base.$op(M, JMatrix{Int8,+1}(size(M,2)))
+Base.$op(S::SymplecticS,M::AbstractVecOrMat) = Base.$op(JMatrix{Int8,+1}(size(M,1)), M)
+Base.$op(M::AbstractVecOrMat,S::SymplecticS) = Base.$op(M, JMatrix{Int8,+1}(size(M,2)))
 end
 end
 
