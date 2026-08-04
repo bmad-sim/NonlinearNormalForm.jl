@@ -683,7 +683,7 @@ function canonize_and_factorize(
       setray!(canonizer.v, v_matrix=a_rot)
     end
     a = a ∘ canonizer
-    return factorize(a)
+    return merge(factorize(a), (; r=canonizer))
   end
 
   # Level >= 1:
@@ -778,7 +778,7 @@ function canonize_and_factorize(
   fac = factorize(a ∘ r_cs)
 
   if level == 1
-    return fac
+    return merge(fac, (; r=r_cs))
   end
 
   # 2) FULLY NONLINEAR PART TO REMOVE ROTATION GENERATORS
@@ -813,7 +813,12 @@ function canonize_and_factorize(
   end
   #print(fac.a2)
   phi2 = exp(-hf, id)
-  return r_cs ∘ real(c ∘ phi2 ∘ ci) #phi2
+  r_nonl = real(c ∘ phi2 ∘ ci)
+  r = r_cs ∘ r_nonl
+  return r_nonl
+
+
+  return r_cs  #phi2
   #r = real(c ∘ phi2 ∘ ci) ∘ 
  # return r
   # Have to update phase (and damp?) with the result
