@@ -101,7 +101,7 @@ program example
      !! call print(m)
     !call c_gofix(m,a0)
 
-    call c_normal_new_no_fac(m,normal,doberz=.false.)
+    !call c_normal_new_no_fac(m,normal,doberz=.false.)
     m = ci_phasor()*normal%Atot**(-1) * m * normal%Atot *c_phasor()
        
 

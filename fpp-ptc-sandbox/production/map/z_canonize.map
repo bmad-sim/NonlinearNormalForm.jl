@@ -3,138 +3,123 @@
 # Object files:
 [  0] linker synthesized
 [  1] CMakeFiles/z_canonize-exe.dir/z_canonize.f90.o
-[  2] /Users/matthewsignorelli/Documents/Bmad/bmad-ecosystem/20260121-0/production/lib/libforest.dylib
-[  3] /opt/homebrew/lib/libhdf5_hl_fortran.310.0.6.dylib
-[  4] /opt/homebrew/lib/libhdf5_fortran.310.3.2.dylib
-[  5] /opt/homebrew/lib/libcairo.dylib
-[  6] /opt/homebrew/lib/libpango-1.0.dylib
-[  7] /opt/homebrew/lib/libpangocairo-1.0.dylib
-[  8] /opt/homebrew/lib/libgobject-2.0.dylib
-[  9] /opt/homebrew/lib/libSM.dylib
-[ 10] /opt/homebrew/lib/libICE.dylib
+[  2] /Users/matthewsignorelli/Documents/Bmad/bmad-ecosystem/20260802-0/production/lib/libforest.dylib
+[  3] /opt/homebrew/lib/libcairo.dylib
+[  4] /opt/homebrew/lib/libpango-1.0.dylib
+[  5] /opt/homebrew/lib/libpangocairo-1.0.dylib
+[  6] /opt/homebrew/lib/libgobject-2.0.dylib
+[  7] /opt/homebrew/lib/libSM.dylib
+[  8] /opt/homebrew/lib/libICE.dylib
+[  9] /opt/homebrew/lib/libX11.dylib
+[ 10] /opt/homebrew/lib/libXext.dylib
 [ 11] /opt/homebrew/lib/libX11.dylib
-[ 12] /opt/homebrew/lib/libXext.dylib
-[ 13] /opt/homebrew/lib/libX11.dylib
-[ 14] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libplplotfortran.dylib
-[ 15] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libplplot.dylib
-[ 16] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libcsirocsa.dylib
-[ 17] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libqsastime.dylib
-[ 18] /opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/libstdc++.dylib
-[ 19] /opt/homebrew/lib/libhdf5_hl_f90cstub.310.0.6.dylib
-[ 20] /opt/homebrew/lib/libhdf5_f90cstub.310.3.2.dylib
-[ 21] /opt/homebrew/lib/libhdf5_hl.310.0.6.dylib
-[ 22] /opt/homebrew/lib/libhdf5.310.5.1.dylib
-[ 23] /opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/libgfortran.dylib
-[ 24] /opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/libquadmath.dylib
+[ 12] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libplplotfortran.dylib
+[ 13] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libplplot.dylib
+[ 14] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libcsirocsa.dylib
+[ 15] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libqsastime.dylib
+[ 16] /opt/homebrew/Cellar/gcc/16.1.0/lib/gcc/current/libstdc++.dylib
+[ 17] /opt/homebrew/lib/libhdf5_hl_fortran.320.0.2.dylib
+[ 18] /opt/homebrew/lib/libhdf5_hl_f90cstub.320.0.2.dylib
+[ 19] /opt/homebrew/lib/libhdf5_hl.320.0.2.dylib
+[ 20] /opt/homebrew/lib/libhdf5_fortran.320.1.1.dylib
+[ 21] /opt/homebrew/lib/libhdf5_f90cstub.320.1.1.dylib
+[ 22] /opt/homebrew/lib/libhdf5.320.1.1.dylib
+[ 23] /opt/homebrew/Cellar/gcc/16.1.0/lib/gcc/current/libgfortran.dylib
+[ 24] /opt/homebrew/Cellar/gcc/16.1.0/lib/gcc/current/libquadmath.dylib
 [ 25] /Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/usr/lib/libSystem.tbd
 [ 26] /Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/usr/lib/system/libsystem_c.tbd
 [ 27] /Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/usr/lib/system/libsystem_malloc.tbd
 # Sections:
 # Address	Size    	Segment	Section
-0x100000F40	0x00001014	__TEXT	__text
-0x100001F60	0x0000002C	__TEXT	__text_startup
-0x100001F8C	0x0000021C	__TEXT	__stubs
-0x1000021B0	0x00000230	__TEXT	__const
-0x1000023E0	0x0000016C	__TEXT	__cstring
-0x100002550	0x000000D8	__TEXT	__eh_frame
+0x100000F40	0x00001158	__TEXT	__text
+0x1000020A0	0x0000002C	__TEXT	__text_startup
+0x1000020CC	0x0000021C	__TEXT	__stubs
+0x1000022F0	0x00000230	__TEXT	__const
+0x100002520	0x0000016C	__TEXT	__cstring
+0x100002690	0x000000E0	__TEXT	__eh_frame
 0x100004000	0x00000198	__DATA_CONST	__got
 0x100008000	0x00000004	__DATA	__data
 0x100008008	0x00014198	__DATA	__bss
 # Symbols:
 # Address	Size    	File  Name
 0x100000000	0x00000000	[  0] __mh_execute_header
-0x100000F40	0x00001014	[  1] _MAIN__
-0x100001F60	0x0000002C	[  1] _main
-0x100001F8C	0x0000000C	[  2] ___c_tpsa_MOD_a_opt_c_damap.stub
-0x100001F98	0x0000000C	[  2] ___c_tpsa_MOD_a_opt_c_vector.stub
-0x100001FA4	0x0000000C	[  2] ___c_tpsa_MOD_add.stub
-0x100001FB0	0x0000000C	[  2] ___c_tpsa_MOD_alloc_c_damap.stub
-0x100001FBC	0x0000000C	[  2] ___c_tpsa_MOD_alloc_c_normal_form.stub
-0x100001FC8	0x0000000C	[  2] ___c_tpsa_MOD_c_a_opt.stub
-0x100001FD4	0x0000000C	[  2] ___c_tpsa_MOD_c_aimag.stub
-0x100001FE0	0x0000000C	[  2] ___c_tpsa_MOD_c_allocda.stub
-0x100001FEC	0x0000000C	[  2] ___c_tpsa_MOD_c_allocdas.stub
-0x100001FF8	0x0000000C	[  2] ___c_tpsa_MOD_c_clean_taylor.stub
-0x100002004	0x0000000C	[  2] ___c_tpsa_MOD_c_clean_taylors.stub
-0x100002010	0x0000000C	[  2] ___c_tpsa_MOD_c_concat.stub
-0x10000201C	0x0000000C	[  2] ___c_tpsa_MOD_c_equalmap.stub
-0x100002028	0x0000000C	[  2] ___c_tpsa_MOD_c_equalvec.stub
-0x100002034	0x0000000C	[  2] ___c_tpsa_MOD_c_expflo_map.stub
-0x100002040	0x0000000C	[  2] ___c_tpsa_MOD_c_fast_canonise.stub
-0x10000204C	0x0000000C	[  2] ___c_tpsa_MOD_c_full_canonise.stub
-0x100002058	0x0000000C	[  2] ___c_tpsa_MOD_c_identityequalmap.stub
-0x100002064	0x0000000C	[  2] ___c_tpsa_MOD_c_identityequalvec.stub
-0x100002070	0x0000000C	[  2] ___c_tpsa_MOD_c_init.stub
-0x10000207C	0x0000000C	[  2] ___c_tpsa_MOD_c_normal.stub
-0x100002088	0x0000000C	[  2] ___c_tpsa_MOD_c_pri.stub
-0x100002094	0x0000000C	[  2] ___c_tpsa_MOD_c_taylor_ran.stub
-0x1000020A0	0x0000000C	[  2] ___c_tpsa_MOD_cdscmul.stub
-0x1000020AC	0x0000000C	[  2] ___c_tpsa_MOD_cutorder.stub
-0x1000020B8	0x0000000C	[  2] ___c_tpsa_MOD_daprinttaylors.stub
-0x1000020C4	0x0000000C	[  2] ___c_tpsa_MOD_dequaldacon.stub
-0x1000020D0	0x0000000C	[  2] ___c_tpsa_MOD_dmulsc.stub
-0x1000020DC	0x0000000C	[  2] ___c_tpsa_MOD_dscmul.stub
-0x1000020E8	0x0000000C	[  2] ___c_tpsa_MOD_equal.stub
-0x1000020F4	0x0000000C	[  2] ___c_tpsa_MOD_getvectorfield.stub
-0x100002100	0x0000000C	[  2] ___c_tpsa_MOD_pow.stub
-0x10000210C	0x0000000C	[  2] ___c_tpsa_MOD_subs.stub
-0x100002118	0x0000000C	[  2] ___c_tpsa_MOD_unarysub.stub
-0x100002124	0x0000000C	[  2] ___gauss_dis_MOD_grnf.stub
-0x100002130	0x0000000C	[ 23] __gfortran_os_error_at.stub
-0x10000213C	0x0000000C	[ 23] __gfortran_set_args.stub
-0x100002148	0x0000000C	[ 23] __gfortran_set_options.stub
-0x100002154	0x0000000C	[ 23] __gfortran_st_write.stub
-0x100002160	0x0000000C	[ 23] __gfortran_st_write_done.stub
-0x10000216C	0x0000000C	[ 23] __gfortran_transfer_array_write.stub
-0x100002178	0x0000000C	[ 23] __gfortran_transfer_character_write.stub
-0x100002184	0x0000000C	[ 23] __gfortran_transfer_real_write.stub
-0x100002190	0x0000000C	[ 27] _malloc.stub
-0x10000219C	0x0000000C	[ 26] _memcpy.stub
-0x1000021B0	0x00000008	[  1] lC0
-0x1000021B8	0x00000010	[  1] lC4
-0x1000021C8	0x00000008	[  1] lC5
-0x1000021D0	0x00000008	[  1] lC6
-0x1000021D8	0x00000008	[  1] lC7
-0x1000021E0	0x00000008	[  1] lC8
-0x1000021E8	0x00000004	[  1] lC9
-0x1000021EC	0x00000004	[  1] lC10
-0x1000021F0	0x00000008	[  1] lC11
-0x1000021F8	0x00000008	[  1] lC12
-0x100002200	0x00000018	[  1] lC14
-0x100002218	0x00000010	[  1] lC15
-0x100002228	0x00000010	[  1] lC16
-0x100002238	0x00000010	[  1] lC17
-0x100002248	0x00000018	[  1] lC18
-0x100002260	0x00000008	[  1] lC19
-0x100002268	0x00000010	[  1] lC20
-0x100002278	0x00000010	[  1] lC21
-0x100002288	0x00000008	[  1] lC22
-0x100002290	0x00000008	[  1] lC23
-0x100002298	0x00000028	[  1] lC24
-0x1000022C0	0x00000020	[  1] lC25
-0x1000022E0	0x00000010	[  1] lC26
-0x1000022F0	0x00000008	[  1] lC27
-0x1000022F8	0x00000018	[  1] lC28
-0x100002310	0x00000018	[  1] lC29
-0x100002328	0x00000024	[  1] lC30
-0x10000234C	0x0000001C	[  1] _options.32.15
-0x100002368	0x00000008	[  1] lC35
-0x100002370	0x00000008	[  1] lC37
-0x100002380	0x00000010	[  1] 16-byte-literal
-0x100002390	0x00000010	[  1] 16-byte-literal
-0x1000023A0	0x00000010	[  1] 16-byte-literal
-0x1000023B0	0x00000010	[  1] 16-byte-literal
-0x1000023C0	0x00000010	[  1] 16-byte-literal
-0x1000023D0	0x00000008	[  1] 8-byte-literal
-0x1000023D8	0x00000008	[  1] 8-byte-literal
-0x1000023E0	0x0000001B	[  1] literal string: Error allocating %lu bytes
-0x1000023FC	0x00000001	[  1] literal string: 
-0x100002400	0x00000076	[  1] literal string: In file '/Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/z_canonize.f90', around line 25
-0x100002478	0x00000076	[  1] literal string: In file '/Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/z_canonize.f90', around line 34
-0x1000024F0	0x0000005C	[  1] literal string: /Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/z_canonize.f90
-0x100002550	0x00000018	[  1] CFI
-0x100002568	0x00000088	[  1] FDE for: _MAIN__
-0x1000025F0	0x00000038	[  1] FDE for: _main
+0x100000F40	0x00001158	[  1] _MAIN__
+0x1000020A0	0x0000002C	[  1] _main
+0x1000020CC	0x0000000C	[  2] ___c_tpsa_MOD_a_opt_c_damap.stub
+0x1000020D8	0x0000000C	[  2] ___c_tpsa_MOD_a_opt_c_vector.stub
+0x1000020E4	0x0000000C	[  2] ___c_tpsa_MOD_add.stub
+0x1000020F0	0x0000000C	[  2] ___c_tpsa_MOD_alloc_c_damap.stub
+0x1000020FC	0x0000000C	[  2] ___c_tpsa_MOD_alloc_c_normal_form.stub
+0x100002108	0x0000000C	[  2] ___c_tpsa_MOD_c_a_opt.stub
+0x100002114	0x0000000C	[  2] ___c_tpsa_MOD_c_aimag.stub
+0x100002120	0x0000000C	[  2] ___c_tpsa_MOD_c_allocda.stub
+0x10000212C	0x0000000C	[  2] ___c_tpsa_MOD_c_allocdas.stub
+0x100002138	0x0000000C	[  2] ___c_tpsa_MOD_c_clean_taylor.stub
+0x100002144	0x0000000C	[  2] ___c_tpsa_MOD_c_clean_taylors.stub
+0x100002150	0x0000000C	[  2] ___c_tpsa_MOD_c_concat.stub
+0x10000215C	0x0000000C	[  2] ___c_tpsa_MOD_c_equalmap.stub
+0x100002168	0x0000000C	[  2] ___c_tpsa_MOD_c_equalvec.stub
+0x100002174	0x0000000C	[  2] ___c_tpsa_MOD_c_expflo_map.stub
+0x100002180	0x0000000C	[  2] ___c_tpsa_MOD_c_fast_canonise.stub
+0x10000218C	0x0000000C	[  2] ___c_tpsa_MOD_c_full_canonise.stub
+0x100002198	0x0000000C	[  2] ___c_tpsa_MOD_c_identityequalmap.stub
+0x1000021A4	0x0000000C	[  2] ___c_tpsa_MOD_c_identityequalvec.stub
+0x1000021B0	0x0000000C	[  2] ___c_tpsa_MOD_c_init.stub
+0x1000021BC	0x0000000C	[  2] ___c_tpsa_MOD_c_normal.stub
+0x1000021C8	0x0000000C	[  2] ___c_tpsa_MOD_c_pri.stub
+0x1000021D4	0x0000000C	[  2] ___c_tpsa_MOD_c_taylor_ran.stub
+0x1000021E0	0x0000000C	[  2] ___c_tpsa_MOD_cdscmul.stub
+0x1000021EC	0x0000000C	[  2] ___c_tpsa_MOD_cutorder.stub
+0x1000021F8	0x0000000C	[  2] ___c_tpsa_MOD_daprinttaylors.stub
+0x100002204	0x0000000C	[  2] ___c_tpsa_MOD_dequaldacon.stub
+0x100002210	0x0000000C	[  2] ___c_tpsa_MOD_dmulsc.stub
+0x10000221C	0x0000000C	[  2] ___c_tpsa_MOD_dscmul.stub
+0x100002228	0x0000000C	[  2] ___c_tpsa_MOD_equal.stub
+0x100002234	0x0000000C	[  2] ___c_tpsa_MOD_getvectorfield.stub
+0x100002240	0x0000000C	[  2] ___c_tpsa_MOD_pow.stub
+0x10000224C	0x0000000C	[  2] ___c_tpsa_MOD_subs.stub
+0x100002258	0x0000000C	[  2] ___c_tpsa_MOD_unarysub.stub
+0x100002264	0x0000000C	[  2] ___gauss_dis_MOD_grnf.stub
+0x100002270	0x0000000C	[ 23] __gfortran_os_error_at.stub
+0x10000227C	0x0000000C	[ 23] __gfortran_set_args.stub
+0x100002288	0x0000000C	[ 23] __gfortran_set_options.stub
+0x100002294	0x0000000C	[ 23] __gfortran_st_write.stub
+0x1000022A0	0x0000000C	[ 23] __gfortran_st_write_done.stub
+0x1000022AC	0x0000000C	[ 23] __gfortran_transfer_array_write.stub
+0x1000022B8	0x0000000C	[ 23] __gfortran_transfer_character_write.stub
+0x1000022C4	0x0000000C	[ 23] __gfortran_transfer_real_write.stub
+0x1000022D0	0x0000000C	[ 27] _malloc.stub
+0x1000022DC	0x0000000C	[ 26] _memcpy.stub
+0x1000022F0	0x00000008	[  1] lC1
+0x1000022F8	0x00000010	[  1] lC8
+0x100002308	0x00000008	[  1] lC9
+0x100002310	0x00000008	[  1] lC10
+0x100002318	0x00000008	[  1] lC11
+0x100002320	0x00000008	[  1] lC12
+0x100002328	0x00000004	[  1] lC13
+0x10000232C	0x00000004	[  1] lC14
+0x100002330	0x00000008	[  1] lC15
+0x100002338	0x00000090	[  1] lC16
+0x1000023C8	0x00000008	[  1] lC28
+0x1000023D0	0x000000BC	[  1] lC29
+0x10000248C	0x0000001C	[  1] _options.32.15
+0x1000024A8	0x00000008	[  1] lC19
+0x1000024B0	0x00000008	[  1] lC31
+0x1000024C0	0x00000010	[  1] 16-byte-literal
+0x1000024D0	0x00000010	[  1] 16-byte-literal
+0x1000024E0	0x00000010	[  1] 16-byte-literal
+0x1000024F0	0x00000010	[  1] 16-byte-literal
+0x100002500	0x00000010	[  1] 16-byte-literal
+0x100002510	0x00000008	[  1] 8-byte-literal
+0x100002518	0x00000008	[  1] 8-byte-literal
+0x100002520	0x0000001B	[  1] literal string: Error allocating %lu bytes
+0x10000253C	0x00000001	[  1] literal string: 
+0x100002540	0x00000076	[  1] literal string: In file '/Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/z_canonize.f90', around line 25
+0x1000025B8	0x00000076	[  1] literal string: In file '/Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/z_canonize.f90', around line 34
+0x100002630	0x0000005C	[  1] literal string: /Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/z_canonize.f90
+0x100002690	0x00000018	[  1] CFI
+0x1000026A8	0x00000090	[  1] FDE for: _MAIN__
+0x100002738	0x00000038	[  1] FDE for: _main
 0x100004000	0x00000008	[  2] ___c_da_arrays_MOD_c_lda_used.got
 0x100004008	0x00000008	[  2] ___c_tpsa_MOD_a_opt_c_damap.got
 0x100004010	0x00000008	[  2] ___c_tpsa_MOD_a_opt_c_vector.got

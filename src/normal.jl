@@ -300,7 +300,6 @@ function factorize(a)
   nv = nvars(a)
   nhv = nhvars(a)
   nn = ndiffs(a)
-  mo = maxord(a)
   coast = iscoasting(a)
 
   if !isnothing(a.q)
@@ -597,20 +596,19 @@ end
 
 # Returns the rotation map to put a in Courant Snyder form 
 # The phase advance can be acquired from this map by atan(r11,r22), etc etc
-function canonize(
-  a::DAMap{V0},
-  ::Val{linear}=Val{true}();
+function canonize_and_factorize(
+  a::DAMap{V0};
+  level::Integer=0, # 0 = fully linear, 1 = linear w parameters, 2 = fully nonlinear
   phase=nothing, 
   damping::Bool=!isnothing(a.s),
   damp=nothing
-) where {V0<:StaticArray,linear}
+) where {V0<:StaticArray}
+  nn = ndiffs(a)
   nv = nvars(a)
   nhv = nhvars(a)
   coast = iscoasting(a)
 
-
-  # tries to be fast for linear calc
-  if linear
+  if level == 0 # ONLY LINEAR!
     a_matrix = real.(jacobian(a, VARS))
     canonizer = one(a)
     for i in 1:div(nhv, 2) # for each harmonic oscillator
@@ -684,152 +682,143 @@ function canonize(
       end
       setray!(canonizer.v, v_matrix=a_rot)
     end
-    return canonizer
-  else
-    mo = maxord(a)
-    # For nonlinear case we have to exponentiate to ensure symplecticity
-    id = one(a)
-    lin_canonizer = one(a) # linear part separately to speed up exponent
-    canonizerf = zero(VectorField, a)
-    for i in 1:div(nhv, 2) # for each harmonic oscillator
-      # Need to include parameter dependence if nonlinear, so "var-par"
-      t1 = fast_var_slice(a.v[2*i-1], 2*i-1, nv; par=true)
-      t2 = fast_var_slice(a.v[2*i-1], 2*i,   nv; par=true)
-      t = TI.cutord(sqrt(TI.cutord(t1^2, mo)+TI.cutord(t2^2, mo)), mo)
-      cphi = TI.cutord(t1/t, mo)
-      sphi = TI.cutord(t2/t, mo)
-      if TI.scalar(sphi)*TI.scalar(t2) + TI.scalar(cphi)*TI.scalar(t1) < 0
-        cphi = -cphi
-        sphi = -sphi
-      end
-      phi = TI.cutord(atan(sphi,cphi), mo)
-
-      TI.seti!(lin_canonizer.v[2*i-1], TI.scalar( cphi), 2*i-1)
-      TI.seti!(lin_canonizer.v[2*i],   TI.scalar( cphi), 2*i)
-      TI.seti!(lin_canonizer.v[2*i-1], TI.scalar(-sphi), 2*i)
-      TI.seti!(lin_canonizer.v[2*i],   TI.scalar( sphi), 2*i-1)
-
-      if !isnothing(phase)
-        TI.add!(phase[i], phase[i], TI.cutord(phi/(2*pi), mo))
-      end
-
-      TI.seti!(phi, 0, 0) # set scalar part to zero bc linear canonization separate
-      factor_in!(canonizerf.v[2*i-1], -phi, 2*i)
-      factor_in!(canonizerf.v[2*i],  phi, 2*i-1)
-    end
-
-    if coast
-      nt = nv
-      ndpt = nv + 1
-      
-      TI.clear!(canonizerf.v[nt])
-      tmp1 = zero(canonizerf.v[nt])
-      tmp2 = zero(canonizerf.v[nt])
-      tmp3 = zero(canonizerf.v[nt])
-      # set the timelike variable so poisson bracket does not change
-      # have :mu_x(delta)(x^2+px^2) + mu_y(delta)(y^2+py^2):
-      # so for time like variable we have 
-      # -\partial_\delta  (mu_x(delta)(x^2+px^2) + mu_y(delta)(y^2+py^2))
-      # = -dmu_x/ddelta*(x^2+px^2) - dmu_y/ddelta(y^2+py^2)
-      for i in 1:div(nhv, 2)
-        TI.clear!(tmp3)
-        TI.deriv!(tmp1, canonizerf.v[2*i-1], ndpt)
-        TI.seti!(tmp3, 1, 2*i)
-        TI.mul!(tmp2, tmp1, tmp3)
-        TI.div!(tmp3, tmp2, 2)
-        TI.add!(canonizerf.v[nt], canonizerf.v[nt], tmp3)
-
-        TI.deriv!(tmp1, canonizerf.v[2*i], ndpt)
-        TI.clear!(tmp3)
-        TI.seti!(tmp3, -1, 2*i-1)
-        TI.mul!(tmp2, tmp1, tmp3)
-        TI.div!(tmp3, tmp2, 2)
-        TI.add!(canonizerf.v[nt], canonizerf.v[nt], tmp3)
-      end
-              
-      # get delta dependent part only
-      # this makes sure doesn't blow up, have to remove
-      slip = fast_var_slice(a.v[nt], ndpt, nv; all_ords=true)
-      if !isnothing(phase)
-        TI.sub!(phase[end], phase[end], slip)
-      end
-      TI.seti!(lin_canonizer.v[nt], 1, nt)
-      TI.seti!(lin_canonizer.v[ndpt], 1, ndpt)
-      TI.seti!(lin_canonizer.v[nt], -TI.geti(slip, ndpt), ndpt)
-      
-      # set linear part to zero for nonlinear part
-      TI.seti!(slip, 0, ndpt)
-      TI.add!(canonizerf.v[nt], canonizerf.v[nt], -slip)
-    end
-
-    # linear ===
-    # AS IN THIS IS NOT COMPLETE IN THE =====
-    # IT WAS COPIED FROM LINEAR AND I STARTED IT BUT DON'T HAVE TIME RN
-    if damping
-      if coast
-        error("Canonization including damping and coasting beam is not supported")
-      end
-
-      error("Nonlinear canonization including damping not implemented yet")
-      # Note: here are are doing something a bit strange
-      # We need to invert a (nhv/2) x (nhv/2) MAP (for linear we can do matrix)
-      # Therefore we will so something a bit strange
-      tmpmap = one(canonizer)
-      tmp1 = zero(tmpmap.v[1])
-      tmp2 = zero(tmpmap.v[1])
-      tmp3 = zero(tmpmap.v[1])
-      tmp4 = zero(tmpmap.v[1])
-
-      for i in 1:div(nhv, 2)
-        TI.clear!(tmpmap.v[i])
-        for j in 1:div(nhv, 2)
-          TI.clear!(tmp1)
-          TI.clear!(tmp2)
-          TI.clear!(tmp3)
-          TI.clear!(tmp4)
-          fast_var_slice!(tmp1, a.v[2*i-1], 2*j-1, nhv; par=true)
-          fast_var_slice!(tmp2, a.v[2*i], 2*j, nhv; par=true)
-          TI.mul!(tmp3, tmp1, tmp2)
-          TI.clear!(tmp1)
-          TI.clear!(tmp2)
-          fast_var_slice!(tmp1, a.v[2*i-1], 2*j, nhv; par=true)
-          fast_var_slice!(tmp2, a.v[2*i], 2*j-1, nhv; par=true)
-          TI.mul!(tmp4, tmp1, tmp2)
-          TI.clear!(tmp1)
-          TI.sub!(tmp1, tmp3, tmp4)
-          TI.clear!(tmp2)
-          TI.cutord!(tmp2, tmp1, mo)
-          TI.factor_in!(tmpmap.v[i], tmp2, j)
-        end
-      end
-      #=
-      tmp = StaticArrays.sacollect(SMatrix{div(nhv, 2),div(nhv, 2)}, begin
-          a_matrix[2*i-1,2*j-1]*a_matrix[2*i,2*j]-a_matrix[2*i-1,2*j]*a_matrix[2*i,2*j-1]
-      end for j in 1:div(nhv, 2) for i in 1:div(nhv, 2))
-        =#
-      tmp2 = inv(tmpmap)
-
-      dampt = sqrt.(sum(tmp2, dims=2))
-      Λi = StaticArrays.sacollect(SMatrix{nhv,nhv}, begin
-        if j == i
-          dampt[floor(Int, (i-1)/2)+1]
-        else
-          0
-        end
-      end for j in 1:nhv for i in 1:nhv)
-      
-      # now multiply canonizer matrix by this one
-      a_rot = jacobian(canonizer, VARS)*Λi
-      if !isnothing(damp)
-        damp .+= log.(dampt)
-      end
-      setray!(canonizer.v, v_matrix=a_rot)
-    end
-    # return canonizer
-    # linear ===
-
-    return lin_canonizer ∘ exp(canonizerf, id)
+    a = a ∘ canonizer
+    return factorize(a)
   end
+
+  # Level >= 1:
+
+  # 1) COMPUTE r_cs INCLUDING NONLINEAR PARAMETER DEPENDENCE!
+  mo = maxord(a)
+  # For nonlinear case we have to exponentiate to ensure symplecticity
+  id = one(a)
+  lin_canonizer = one(a) # linear part separately to speed up exponent
+  canonizerf = zero(VectorField, a)
+  for i in 1:div(nhv, 2) # for each harmonic oscillator
+    # Need to include parameter dependence if nonlinear, so "var-par"
+    t1 = fast_var_slice(a.v[2*i-1], 2*i-1, nv; par=true)
+    t2 = fast_var_slice(a.v[2*i-1], 2*i,   nv; par=true)
+    t = TI.cutord(sqrt(TI.cutord(t1^2, mo)+TI.cutord(t2^2, mo)), mo)
+    cphi = TI.cutord(t1/t, mo)
+    sphi = TI.cutord(t2/t, mo)
+    if TI.scalar(sphi)*TI.scalar(t2) + TI.scalar(cphi)*TI.scalar(t1) < 0
+      cphi = -cphi
+      sphi = -sphi
+    end
+    phi = TI.cutord(atan(sphi,cphi), mo)
+
+    TI.seti!(lin_canonizer.v[2*i-1], TI.scalar( cphi), 2*i-1)
+    TI.seti!(lin_canonizer.v[2*i],   TI.scalar( cphi), 2*i)
+    TI.seti!(lin_canonizer.v[2*i-1], TI.scalar(-sphi), 2*i)
+    TI.seti!(lin_canonizer.v[2*i],   TI.scalar( sphi), 2*i-1)
+
+    if !isnothing(phase)
+      TI.add!(phase[i], phase[i], TI.cutord(phi/(2*pi), mo))
+    end
+
+    TI.seti!(phi, 0, 0) # set scalar part to zero bc linear canonization separate
+    factor_in!(canonizerf.v[2*i-1], -phi, 2*i)
+    factor_in!(canonizerf.v[2*i],  phi, 2*i-1)
+  end
+
+  if coast
+    nt = nv
+    ndpt = nv + 1
+    
+    TI.clear!(canonizerf.v[nt])
+    tmp1 = zero(canonizerf.v[nt])
+    tmp2 = zero(canonizerf.v[nt])
+    tmp3 = zero(canonizerf.v[nt])
+    # set the timelike variable so poisson bracket does not change
+    # have :mu_x(delta)(x^2+px^2) + mu_y(delta)(y^2+py^2):
+    # so for time like variable we have 
+    # -\partial_\delta  (mu_x(delta)(x^2+px^2) + mu_y(delta)(y^2+py^2))
+    # = -dmu_x/ddelta*(x^2+px^2) - dmu_y/ddelta(y^2+py^2)
+    for i in 1:div(nhv, 2)
+      TI.clear!(tmp3)
+      TI.deriv!(tmp1, canonizerf.v[2*i-1], ndpt)
+      TI.seti!(tmp3, 1, 2*i)
+      TI.mul!(tmp2, tmp1, tmp3)
+      TI.div!(tmp3, tmp2, 2)
+      TI.add!(canonizerf.v[nt], canonizerf.v[nt], tmp3)
+
+      TI.deriv!(tmp1, canonizerf.v[2*i], ndpt)
+      TI.clear!(tmp3)
+      TI.seti!(tmp3, -1, 2*i-1)
+      TI.mul!(tmp2, tmp1, tmp3)
+      TI.div!(tmp3, tmp2, 2)
+      TI.add!(canonizerf.v[nt], canonizerf.v[nt], tmp3)
+    end
+            
+    # get delta dependent part only
+    # this makes sure doesn't blow up, have to remove
+    slip = fast_var_slice(a.v[nt], ndpt, nv; all_ords=true)
+    if !isnothing(phase)
+      TI.sub!(phase[end], phase[end], slip)
+    end
+    TI.seti!(lin_canonizer.v[nt], 1, nt)
+    TI.seti!(lin_canonizer.v[ndpt], 1, ndpt)
+    TI.seti!(lin_canonizer.v[nt], -TI.geti(slip, ndpt), ndpt)
+    
+    # set linear part to zero for nonlinear part
+    TI.seti!(slip, 0, ndpt)
+    TI.add!(canonizerf.v[nt], canonizerf.v[nt], -slip)
+  end
+
+  if damping
+    if coast
+      error("Canonization including damping and coasting beam is not supported")
+    end
+    error("Nonlinear canonization including damping not implemented yet")
+    # See Github commit ae023593564e0ad6607b60b26b4b052c7fb0bba0 for preliminary implementation
+  end
+
+  r_cs = lin_canonizer ∘ exp(canonizerf, id)
+
+  fac = factorize(a ∘ r_cs)
+
+  if level == 1
+    return fac
+  end
+
+  # 2) FULLY NONLINEAR PART TO REMOVE ROTATION GENERATORS
+  # Go into phasor basis:
+  c = c_map(r_cs)
+  ci = ci_map(r_cs)
+  b1 = ci ∘ fac.a2 ∘ c
+
+  ords = similar(a.v, Int) # monomial orders
+  tmpmono = zeros(UInt8, nn) # same as ords but GTPSA v1.4.0 only compatible with this (UInt8 and Vector type) right now
+  id = one(b1)
+  v = Ref{TI.numtype(eltype(b1.v))}() # monomial value 
+
+  hr =  zero(VectorField, b1)  # VectorField of monomials to remove for this particular order 
+  hf =  zero(VectorField, b1)  # VectorField of tune shifts to keep for this particular order
+  for _ in 1:mo
+    h = log(b1)
+    clear!(hr)
+    for j in 1:nv
+      idx = TI.cycle!(h.v[j], 0, mono=tmpmono, val=v)
+      while idx > 0
+        ords .= tmpmono
+        if is_tune_shift(j, ords, nhv) # then removeit=false
+          #println("found one: $tmpmono = $(v[])")
+          TI.setm!(hr.v[j], TI.getm(hr.v[j], tmpmono)+v[], tmpmono)
+        end
+        idx = TI.cycle!(h.v[j], idx, mono=tmpmono, val=v)
+      end
+      TI.add!(hf.v[j], hf.v[j], hr.v[j])
+    end
+    b1 = exp(-hr, b1)
+  end
+  #print(fac.a2)
+  phi2 = exp(-hf, id)
+  return r_cs ∘ real(c ∘ phi2 ∘ ci) #phi2
+  #r = real(c ∘ phi2 ∘ ci) ∘ 
+ # return r
+  # Have to update phase (and damp?) with the result
+  # then can 
+
 end
 
 # This can help give you the fixed point

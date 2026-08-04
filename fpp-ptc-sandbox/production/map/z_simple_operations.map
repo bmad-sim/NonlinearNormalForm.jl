@@ -3,86 +3,84 @@
 # Object files:
 [  0] linker synthesized
 [  1] CMakeFiles/z_simple_operations-exe.dir/z_simple_operations.f90.o
-[  2] /Users/matthewsignorelli/Documents/Bmad/bmad-ecosystem/20260121-0/production/lib/libforest.dylib
-[  3] /opt/homebrew/lib/libhdf5_hl_fortran.310.0.6.dylib
-[  4] /opt/homebrew/lib/libhdf5_fortran.310.3.2.dylib
-[  5] /opt/homebrew/lib/libcairo.dylib
-[  6] /opt/homebrew/lib/libpango-1.0.dylib
-[  7] /opt/homebrew/lib/libpangocairo-1.0.dylib
-[  8] /opt/homebrew/lib/libgobject-2.0.dylib
-[  9] /opt/homebrew/lib/libSM.dylib
-[ 10] /opt/homebrew/lib/libICE.dylib
+[  2] /Users/matthewsignorelli/Documents/Bmad/bmad-ecosystem/20260802-0/production/lib/libforest.dylib
+[  3] /opt/homebrew/lib/libcairo.dylib
+[  4] /opt/homebrew/lib/libpango-1.0.dylib
+[  5] /opt/homebrew/lib/libpangocairo-1.0.dylib
+[  6] /opt/homebrew/lib/libgobject-2.0.dylib
+[  7] /opt/homebrew/lib/libSM.dylib
+[  8] /opt/homebrew/lib/libICE.dylib
+[  9] /opt/homebrew/lib/libX11.dylib
+[ 10] /opt/homebrew/lib/libXext.dylib
 [ 11] /opt/homebrew/lib/libX11.dylib
-[ 12] /opt/homebrew/lib/libXext.dylib
-[ 13] /opt/homebrew/lib/libX11.dylib
-[ 14] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libplplotfortran.dylib
-[ 15] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libplplot.dylib
-[ 16] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libcsirocsa.dylib
-[ 17] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libqsastime.dylib
-[ 18] /opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/libstdc++.dylib
-[ 19] /opt/homebrew/lib/libhdf5_hl_f90cstub.310.0.6.dylib
-[ 20] /opt/homebrew/lib/libhdf5_f90cstub.310.3.2.dylib
-[ 21] /opt/homebrew/lib/libhdf5_hl.310.0.6.dylib
-[ 22] /opt/homebrew/lib/libhdf5.310.5.1.dylib
-[ 23] /opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/libgfortran.dylib
-[ 24] /opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/libquadmath.dylib
+[ 12] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libplplotfortran.dylib
+[ 13] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libplplot.dylib
+[ 14] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libcsirocsa.dylib
+[ 15] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libqsastime.dylib
+[ 16] /opt/homebrew/Cellar/gcc/16.1.0/lib/gcc/current/libstdc++.dylib
+[ 17] /opt/homebrew/lib/libhdf5_hl_fortran.320.0.2.dylib
+[ 18] /opt/homebrew/lib/libhdf5_hl_f90cstub.320.0.2.dylib
+[ 19] /opt/homebrew/lib/libhdf5_hl.320.0.2.dylib
+[ 20] /opt/homebrew/lib/libhdf5_fortran.320.1.1.dylib
+[ 21] /opt/homebrew/lib/libhdf5_f90cstub.320.1.1.dylib
+[ 22] /opt/homebrew/lib/libhdf5.320.1.1.dylib
+[ 23] /opt/homebrew/Cellar/gcc/16.1.0/lib/gcc/current/libgfortran.dylib
+[ 24] /opt/homebrew/Cellar/gcc/16.1.0/lib/gcc/current/libquadmath.dylib
 [ 25] /Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/usr/lib/libSystem.tbd
 [ 26] /Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/usr/lib/system/libsystem_c.tbd
 # Sections:
 # Address	Size    	Segment	Section
-0x100000EE0	0x000004EC	__TEXT	__text
-0x1000013E0	0x00000020	__TEXT	__text_startup
-0x100001400	0x0000012C	__TEXT	__stubs
-0x100001530	0x00000088	__TEXT	__const
-0x1000015B8	0x00000065	__TEXT	__cstring
-0x100001620	0x000000C0	__TEXT	__eh_frame
+0x100000EE0	0x000005A0	__TEXT	__text
+0x100001480	0x00000020	__TEXT	__text_startup
+0x1000014A0	0x0000012C	__TEXT	__stubs
+0x1000015D0	0x00000088	__TEXT	__const
+0x100001658	0x00000065	__TEXT	__cstring
+0x1000016C0	0x000000B8	__TEXT	__eh_frame
 0x100004000	0x000000D8	__DATA_CONST	__got
 0x100008000	0x00006BB0	__DATA	__bss
 # Symbols:
 # Address	Size    	File  Name
 0x100000000	0x00000000	[  0] __mh_execute_header
-0x100000EE0	0x000004EC	[  1] _MAIN__
-0x1000013E0	0x00000020	[  1] _main
-0x100001400	0x0000000C	[  2] ___c_tpsa_MOD_a_opt_c_damap.stub
-0x10000140C	0x0000000C	[  2] ___c_tpsa_MOD_alloc_c_vector_field.stub
-0x100001418	0x0000000C	[  2] ___c_tpsa_MOD_c_aimag.stub
-0x100001424	0x0000000C	[  2] ___c_tpsa_MOD_c_allocda.stub
-0x100001430	0x0000000C	[  2] ___c_tpsa_MOD_c_equalmap.stub
-0x10000143C	0x0000000C	[  2] ___c_tpsa_MOD_c_equalvec.stub
-0x100001448	0x0000000C	[  2] ___c_tpsa_MOD_c_expflo_map.stub
-0x100001454	0x0000000C	[  2] ___c_tpsa_MOD_c_identityequalmap.stub
-0x100001460	0x0000000C	[  2] ___c_tpsa_MOD_c_init.stub
-0x10000146C	0x0000000C	[  2] ___c_tpsa_MOD_c_pri_map.stub
-0x100001478	0x0000000C	[  2] ___c_tpsa_MOD_c_taylor_ran.stub
-0x100001484	0x0000000C	[  2] ___c_tpsa_MOD_cdscmul.stub
-0x100001490	0x0000000C	[  2] ___c_tpsa_MOD_cutorder.stub
-0x10000149C	0x0000000C	[  2] ___c_tpsa_MOD_dmulsc.stub
-0x1000014A8	0x0000000C	[  2] ___c_tpsa_MOD_equal.stub
-0x1000014B4	0x0000000C	[  2] ___c_tpsa_MOD_getvectorfield.stub
-0x1000014C0	0x0000000C	[  2] ___c_tpsa_MOD_real_mul_map.stub
-0x1000014CC	0x0000000C	[  2] ___c_tpsa_MOD_subs.stub
-0x1000014D8	0x0000000C	[ 23] __gfortran_set_args.stub
-0x1000014E4	0x0000000C	[ 23] __gfortran_set_options.stub
-0x1000014F0	0x0000000C	[ 23] __gfortran_st_write.stub
-0x1000014FC	0x0000000C	[ 23] __gfortran_st_write_done.stub
-0x100001508	0x0000000C	[ 23] __gfortran_stop_string.stub
-0x100001514	0x0000000C	[ 23] __gfortran_transfer_character_write.stub
-0x100001520	0x0000000C	[ 26] _memcpy.stub
-0x100001530	0x00000008	[  1] lC0
-0x100001538	0x00000010	[  1] lC1
-0x100001548	0x00000004	[  1] lC2
-0x10000154C	0x00000004	[  1] lC3
-0x100001550	0x00000010	[  1] lC5
-0x100001560	0x00000008	[  1] lC6
-0x100001568	0x0000000C	[  1] lC7
-0x100001574	0x0000001C	[  1] _options.5.9
-0x100001590	0x00000008	[  1] lC10
-0x1000015A0	0x00000010	[  1] 16-byte-literal
-0x1000015B0	0x00000008	[  1] 8-byte-literal
-0x1000015B8	0x00000065	[  1] literal string: /Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/z_simple_operations.f90
-0x100001620	0x00000018	[  1] CFI
-0x100001638	0x00000078	[  1] FDE for: _MAIN__
-0x1000016B0	0x00000030	[  1] FDE for: _main
+0x100000EE0	0x000005A0	[  1] _MAIN__
+0x100001480	0x00000020	[  1] _main
+0x1000014A0	0x0000000C	[  2] ___c_tpsa_MOD_a_opt_c_damap.stub
+0x1000014AC	0x0000000C	[  2] ___c_tpsa_MOD_alloc_c_vector_field.stub
+0x1000014B8	0x0000000C	[  2] ___c_tpsa_MOD_c_aimag.stub
+0x1000014C4	0x0000000C	[  2] ___c_tpsa_MOD_c_allocda.stub
+0x1000014D0	0x0000000C	[  2] ___c_tpsa_MOD_c_equalmap.stub
+0x1000014DC	0x0000000C	[  2] ___c_tpsa_MOD_c_equalvec.stub
+0x1000014E8	0x0000000C	[  2] ___c_tpsa_MOD_c_expflo_map.stub
+0x1000014F4	0x0000000C	[  2] ___c_tpsa_MOD_c_identityequalmap.stub
+0x100001500	0x0000000C	[  2] ___c_tpsa_MOD_c_init.stub
+0x10000150C	0x0000000C	[  2] ___c_tpsa_MOD_c_pri_map.stub
+0x100001518	0x0000000C	[  2] ___c_tpsa_MOD_c_taylor_ran.stub
+0x100001524	0x0000000C	[  2] ___c_tpsa_MOD_cdscmul.stub
+0x100001530	0x0000000C	[  2] ___c_tpsa_MOD_cutorder.stub
+0x10000153C	0x0000000C	[  2] ___c_tpsa_MOD_dmulsc.stub
+0x100001548	0x0000000C	[  2] ___c_tpsa_MOD_equal.stub
+0x100001554	0x0000000C	[  2] ___c_tpsa_MOD_getvectorfield.stub
+0x100001560	0x0000000C	[  2] ___c_tpsa_MOD_real_mul_map.stub
+0x10000156C	0x0000000C	[  2] ___c_tpsa_MOD_subs.stub
+0x100001578	0x0000000C	[ 23] __gfortran_set_args.stub
+0x100001584	0x0000000C	[ 23] __gfortran_set_options.stub
+0x100001590	0x0000000C	[ 23] __gfortran_st_write.stub
+0x10000159C	0x0000000C	[ 23] __gfortran_st_write_done.stub
+0x1000015A8	0x0000000C	[ 23] __gfortran_stop_string.stub
+0x1000015B4	0x0000000C	[ 23] __gfortran_transfer_character_write.stub
+0x1000015C0	0x0000000C	[ 26] _memcpy.stub
+0x1000015D0	0x00000008	[  1] lC1
+0x1000015D8	0x00000010	[  1] lC3
+0x1000015E8	0x00000004	[  1] lC4
+0x1000015EC	0x00000014	[  1] lC5
+0x100001600	0x00000014	[  1] lC9
+0x100001614	0x0000001C	[  1] _options.5.9
+0x100001630	0x00000008	[  1] lC7
+0x100001640	0x00000010	[  1] 16-byte-literal
+0x100001650	0x00000008	[  1] 8-byte-literal
+0x100001658	0x00000065	[  1] literal string: /Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/z_simple_operations.f90
+0x1000016C0	0x00000018	[  1] CFI
+0x1000016D8	0x00000070	[  1] FDE for: _MAIN__
+0x100001748	0x00000030	[  1] FDE for: _main
 0x100004000	0x00000008	[  2] ___c_tpsa_MOD_a_opt_c_damap.got
 0x100004008	0x00000008	[  2] ___c_tpsa_MOD_alloc_c_vector_field.got
 0x100004010	0x00000008	[  2] ___c_tpsa_MOD_c_aimag.got

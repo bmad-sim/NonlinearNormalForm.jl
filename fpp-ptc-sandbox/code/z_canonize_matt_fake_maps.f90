@@ -23,12 +23,12 @@ program example
   
   radfluc=0.0001d0
   remove_tune_shift=.false.
-  putspin=.true.
+  putspin=.false.
   n_cai=-i_
   !write(6,*) " If deltap/p0 is a canonical variable  enter 3"
   !write(6,*) " else enter 2"
   !read(5,*) nd
-  nd=2  ! no coast
+  nd=3  ! coast
   !if(nd/=2.and.nd/=3) stop 44
   if(nd==1) ndpt = 0
   if(nd==2) ndpt = 0
@@ -43,7 +43,7 @@ program example
   call c_init(no,nd,np1=np,ndpt1=ndpt)  ! initializes taylor series with maps
   allocate(phase(nd))
 
-  do_damping =.true.
+  do_damping =.false.
    
   call alloc(f,F_FLOQUET,F_FLOQUET_cs,courant_snyder,nu_spin)      ! must be constructed after init
   call alloc(vf1,vf2,vf3)      
@@ -160,9 +160,9 @@ program example
   decrement(6)=0.9999d0
   
   !remove_tune_shift=.true.
-  do i=1,c_%nd2
-    m%v(i)=m%v(i)*decrement(i)
-  enddo
+  !do i=1,c_%nd2
+  !  m%v(i)=m%v(i)*decrement(i)
+  !enddo
   !call print(m)
   !stop
   
@@ -171,9 +171,16 @@ program example
   !write(*,*) "====12==pfds=f=das=fds=a"
   !stop
   call c_normal(m,normal,canonize=.false.) !,dospin=putspin,phase=phase,nu_spin=nu_spin)
+    normal%atot = m*normal%atot
+  write(*,*) "=============== PRE CANONIZE: =========="
+  call print(normal%atot)
+  call c_full_canonise(normal%atot, a_cs, as, a0, a1, a2, rot)
+  write(*,*) "=============== Rotation: =========="
+  call print(rot)
+  write(*,*) " = ===== ==== canonise done"
+  stop
   call c_fast_canonise(normal%atot, m1) !, phase=phi, damping=damping)
-  call print(m1)
-  write(*,*) "made it"
+
   stop
   call c_full_factorise(normal%atot,as,a0,a1,a2,dir=1) 
   !call print(as)
