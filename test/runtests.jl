@@ -132,14 +132,13 @@ end
     ac_fpp = real(read_fpp_map("canonize_rad2/ac.map", spin=false, stochastic=false));
 
     a = normal(m);
-    ac_norad = a ∘ canonize(a)
+    ac_norad = a ∘ factorize(a, canonize=0).r
     @test norm(NNF.jacobian(ac_norad - ac_norad_fpp)) < 1e-12
 
     damp = zeros(3)
-    ac = ac_norad ∘ canonize(ac_norad; damping=true, damp=damp)
+    ac = ac_norad ∘ factorize(ac_norad; canonize=0, damping=true, damp=damp)
     @test norm(damp - [  7.0794145850303742E-009 ,  3.2927211731860217E-007 ,  5.5985424078986008E-007]) < 1e-12
     @test norm(NNF.jacobian(ac-ac_fpp)) < 1e-12
-
 
     # ADST
     m = read_fpp_map("adst/test.map",coast=true)
@@ -149,5 +148,21 @@ end
     adst = -atan(real(r.q.q2), real(r.q.q0))/pi
     include("adst/adst.jl")
     @test TI.norm_tps(adst-adst_fpp) < 1e-9
+
+    # Full canonise with coasting, parameters, no spin yet, no damping
+    a = real(read_fpp_map("full_canonize/a.map",coast=true,spin=false))
+    a0_fpp = real(read_fpp_map("full_canonize/a0.map",coast=true,spin=false))
+    a1_fpp = real(read_fpp_map("full_canonize/a1.map",coast=true,spin=false))
+    a2_fpp = real(read_fpp_map("full_canonize/a2.map",coast=true,spin=false))
+    r_fpp = real(read_fpp_map("full_canonize/rot.map",coast=true,spin=false))
+    phase_fpp = include("full_canonize/phase.jl")
+
+    phase = [zero(a.v[1]),zero(a.v[1]),zero(a.v[1])]
+    f = factorize(a; canonize=2, phase=phase)
+    @test norm(f.a0 - a0_fpp) < 2e-7
+    @test norm(f.a1 - a1_fpp) < 2e-7
+    @test norm(f.a2 - a2_fpp) < 2e-7
+    @test norm(inv(f.r) - r_fpp) < 2e-7
+    @test TI.norm_tps.(phase-phase_fpp) < 2e-7
 end
 

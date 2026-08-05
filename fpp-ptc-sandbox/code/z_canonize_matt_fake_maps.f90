@@ -174,9 +174,9 @@ program example
     normal%atot = m*normal%atot
   write(*,*) "=============== PRE CANONIZE: =========="
   call print(normal%atot)
-  call c_full_canonise(normal%atot, a_cs, as, a0, a1, a2, rot)
-  write(*,*) "=============== Rotation: =========="
-  call print(rot)
+  call c_full_canonise(normal%atot, a_cs, as, a0, a1, a2, rot, phase)
+  write(*,*) "=============== phase: =========="
+  call print(phase)
   write(*,*) " = ===== ==== canonise done"
   stop
   call c_fast_canonise(normal%atot, m1) !, phase=phi, damping=damping)

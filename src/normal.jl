@@ -296,7 +296,7 @@ end
 # to get dbeta/ddelta, first go to fully nonlinear parameter dependent fixed point
 # then calculate lattice functions. Lattice functions will be TPSA and then you 
 # can extract dbeta/ddelta
-function factorize(a)
+function _factorize(a)
   nv = nvars(a)
   nhv = nhvars(a)
   nn = ndiffs(a)
@@ -589,16 +589,12 @@ function equilibrium_moments(m::DAMap, a::DAMap=normal(m,1))
   return real((A*C)*Σc*transpose(A*C))
 end
 
-# making the 12, 34, 56 elements 0 in the normalizing map
-# and returns the phase added to do so
-# only canonizes linear part, see c_full_canonise for nonlinear
-# modify this to return canonizing map
-
 # Returns the rotation map to put a in Courant Snyder form 
 # The phase advance can be acquired from this map by atan(r11,r22), etc etc
-function canonize_and_factorize(
+# Factors the map to: as ∘ a0 ∘ a1 ∘ a2 ∘ inv(r) . Spin not yet implemented
+function factorize(
   a::DAMap{V0};
-  level::Integer=0, # 0 = fully linear, 1 = linear w parameters, 2 = fully nonlinear
+  canonize::Integer=-1, # 0 = fully linear, 1 = linear w parameters, 2 = fully nonlinear
   phase=nothing, 
   damping::Bool=!isnothing(a.s),
   damp=nothing
@@ -608,7 +604,11 @@ function canonize_and_factorize(
   nhv = nhvars(a)
   coast = iscoasting(a)
 
-  if level == 0 # ONLY LINEAR!
+  if canonize == -1
+    return merge(_factorize(a), (; r=one(a)))
+  end
+
+  if canonize == 0 # ONLY LINEAR!
     a_matrix = real.(jacobian(a, VARS))
     canonizer = one(a)
     for i in 1:div(nhv, 2) # for each harmonic oscillator
@@ -683,10 +683,10 @@ function canonize_and_factorize(
       setray!(canonizer.v, v_matrix=a_rot)
     end
     a = a ∘ canonizer
-    return merge(factorize(a), (; r=canonizer))
+    return merge(_factorize(a), (; r=canonizer))
   end
 
-  # Level >= 1:
+  # canonize >= 1:
 
   # 1) COMPUTE r_cs INCLUDING NONLINEAR PARAMETER DEPENDENCE!
   mo = maxord(a)
@@ -753,8 +753,8 @@ function canonize_and_factorize(
     # get delta dependent part only
     # this makes sure doesn't blow up, have to remove
     slip = fast_var_slice(a.v[nt], ndpt, nv; all_ords=true)
-    if !isnothing(phase)
-      TI.sub!(phase[end], phase[end], slip)
+    if canonize == 1 && !isnothing(phase)
+      TI.add!(phase[end], phase[end], slip)
     end
     TI.seti!(lin_canonizer.v[nt], 1, nt)
     TI.seti!(lin_canonizer.v[ndpt], 1, ndpt)
@@ -775,10 +775,12 @@ function canonize_and_factorize(
 
   r_cs = lin_canonizer ∘ exp(canonizerf, id)
 
-  fac = factorize(a ∘ r_cs)
+  fac = _factorize(a ∘ r_cs)
 
-  if level == 1
+  if canonize == 1
     return merge(fac, (; r=r_cs))
+  elseif canonize != 2
+    error("`canonize` keyword argument to `factorize` must be an integer between -1 and 2")
   end
 
   # 2) FULLY NONLINEAR PART TO REMOVE ROTATION GENERATORS
@@ -801,8 +803,7 @@ function canonize_and_factorize(
       idx = TI.cycle!(h.v[j], 0, mono=tmpmono, val=v)
       while idx > 0
         ords .= tmpmono
-        if is_tune_shift(j, ords, nhv) # then removeit=false
-          #println("found one: $tmpmono = $(v[])")
+        if is_tune_shift(j, ords, nhv)
           TI.setm!(hr.v[j], TI.getm(hr.v[j], tmpmono)+v[], tmpmono)
         end
         idx = TI.cycle!(h.v[j], idx, mono=tmpmono, val=v)
@@ -811,19 +812,22 @@ function canonize_and_factorize(
     end
     b1 = exp(-hr, b1)
   end
-  #print(fac.a2)
   phi2 = exp(-hf, id)
+  fac = merge(fac, (; a2=real(c ∘ b1 ∘ ci)))
   r_nonl = real(c ∘ phi2 ∘ ci)
   r = r_cs ∘ r_nonl
-  return r_nonl
 
-
-  return r_cs  #phi2
-  #r = real(c ∘ phi2 ∘ ci) ∘ 
- # return r
-  # Have to update phase (and damp?) with the result
-  # then can 
-
+  # Now need to update phase
+  if !isnothing(phase)
+    for i in 1:div(nhv, 2)
+      TI.add!(phase[i], phase[i], TI.cutord(angle(factor_out(phi2.v[2*i-1], 2*i-1))/(2*pi), mo))
+    end
+    if coast
+      TI.sub!(phase[end], phase[end], real((ci ∘ r ∘ c).v[nt]))
+      TI.seti!(phase[end], 0, nt)
+    end
+  end
+  return merge(fac, (; r=r))
 end
 
 # This can help give you the fixed point

@@ -31,18 +31,18 @@
 [ 27] /Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/usr/lib/system/libsystem_malloc.tbd
 # Sections:
 # Address	Size    	Segment	Section
-0x100000EE0	0x00000814	__TEXT	__text
+0x100000EE0	0x00000818	__TEXT	__text
 0x100001700	0x00000020	__TEXT	__text_startup
-0x100001720	0x00000204	__TEXT	__stubs
+0x100001720	0x00000210	__TEXT	__stubs
 0x100001930	0x00000108	__TEXT	__const
 0x100001A38	0x0000019D	__TEXT	__cstring
-0x100001BD8	0x000000E0	__TEXT	__eh_frame
-0x100004000	0x000001A0	__DATA_CONST	__got
+0x100001BD8	0x000000D0	__TEXT	__eh_frame
+0x100004000	0x000001A8	__DATA_CONST	__got
 0x100008000	0x000157C8	__DATA	__bss
 # Symbols:
 # Address	Size    	File  Name
 0x100000000	0x00000000	[  0] __mh_execute_header
-0x100000EE0	0x00000814	[  1] _MAIN__
+0x100000EE0	0x00000818	[  1] _MAIN__
 0x100001700	0x00000020	[  1] _main
 0x100001720	0x0000000C	[  2] ___c_tpsa_MOD_a_opt_c_damap.stub
 0x10000172C	0x0000000C	[  2] ___c_tpsa_MOD_a_opt_c_vector.stub
@@ -68,25 +68,26 @@
 0x10000181C	0x0000000C	[  2] ___c_tpsa_MOD_c_trxtaylor.stub
 0x100001828	0x0000000C	[  2] ___c_tpsa_MOD_cdscmul.stub
 0x100001834	0x0000000C	[  2] ___c_tpsa_MOD_cutorder.stub
-0x100001840	0x0000000C	[  2] ___c_tpsa_MOD_dequaldacon.stub
-0x10000184C	0x0000000C	[  2] ___c_tpsa_MOD_dmulsc.stub
-0x100001858	0x0000000C	[  2] ___c_tpsa_MOD_dscmul.stub
-0x100001864	0x0000000C	[  2] ___c_tpsa_MOD_equal.stub
-0x100001870	0x0000000C	[  2] ___c_tpsa_MOD_getvectorfield.stub
-0x10000187C	0x0000000C	[  2] ___c_tpsa_MOD_pow.stub
-0x100001888	0x0000000C	[  2] ___c_tpsa_MOD_subs.stub
-0x100001894	0x0000000C	[  2] ___c_tpsa_MOD_unarysub.stub
-0x1000018A0	0x0000000C	[  2] ___gauss_dis_MOD_gaussian_seed.stub
-0x1000018AC	0x0000000C	[ 23] __gfortran_os_error_at.stub
-0x1000018B8	0x0000000C	[ 23] __gfortran_set_args.stub
-0x1000018C4	0x0000000C	[ 23] __gfortran_set_options.stub
-0x1000018D0	0x0000000C	[ 23] __gfortran_st_write.stub
-0x1000018DC	0x0000000C	[ 23] __gfortran_st_write_done.stub
-0x1000018E8	0x0000000C	[ 23] __gfortran_stop_string.stub
-0x1000018F4	0x0000000C	[ 23] __gfortran_transfer_character_write.stub
-0x100001900	0x0000000C	[ 23] __gfortran_transfer_integer_write.stub
-0x10000190C	0x0000000C	[ 27] _malloc.stub
-0x100001918	0x0000000C	[ 26] _memcpy.stub
+0x100001840	0x0000000C	[  2] ___c_tpsa_MOD_daprinttaylors.stub
+0x10000184C	0x0000000C	[  2] ___c_tpsa_MOD_dequaldacon.stub
+0x100001858	0x0000000C	[  2] ___c_tpsa_MOD_dmulsc.stub
+0x100001864	0x0000000C	[  2] ___c_tpsa_MOD_dscmul.stub
+0x100001870	0x0000000C	[  2] ___c_tpsa_MOD_equal.stub
+0x10000187C	0x0000000C	[  2] ___c_tpsa_MOD_getvectorfield.stub
+0x100001888	0x0000000C	[  2] ___c_tpsa_MOD_pow.stub
+0x100001894	0x0000000C	[  2] ___c_tpsa_MOD_subs.stub
+0x1000018A0	0x0000000C	[  2] ___c_tpsa_MOD_unarysub.stub
+0x1000018AC	0x0000000C	[  2] ___gauss_dis_MOD_gaussian_seed.stub
+0x1000018B8	0x0000000C	[ 23] __gfortran_os_error_at.stub
+0x1000018C4	0x0000000C	[ 23] __gfortran_set_args.stub
+0x1000018D0	0x0000000C	[ 23] __gfortran_set_options.stub
+0x1000018DC	0x0000000C	[ 23] __gfortran_st_write.stub
+0x1000018E8	0x0000000C	[ 23] __gfortran_st_write_done.stub
+0x1000018F4	0x0000000C	[ 23] __gfortran_stop_string.stub
+0x100001900	0x0000000C	[ 23] __gfortran_transfer_character_write.stub
+0x10000190C	0x0000000C	[ 23] __gfortran_transfer_integer_write.stub
+0x100001918	0x0000000C	[ 27] _malloc.stub
+0x100001924	0x0000000C	[ 26] _memcpy.stub
 0x100001930	0x00000010	[  1] lC1
 0x100001940	0x00000008	[  1] lC8
 0x100001948	0x00000010	[  1] lC9
@@ -106,8 +107,8 @@
 0x100001AC8	0x00000085	[  1] literal string: In file '/Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/z_canonize_matt_fake_maps.f90', around line 44
 0x100001B50	0x00000085	[  1] literal string: In file '/Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/z_canonize_matt_fake_maps.f90', around line 56
 0x100001BD8	0x00000018	[  1] CFI
-0x100001BF0	0x00000098	[  1] FDE for: _MAIN__
-0x100001C88	0x00000030	[  1] FDE for: _main
+0x100001BF0	0x00000088	[  1] FDE for: _MAIN__
+0x100001C78	0x00000030	[  1] FDE for: _main
 0x100004000	0x00000008	[  2] ___c_da_arrays_MOD_c_lda_used.got
 0x100004008	0x00000008	[  2] ___c_tpsa_MOD_a_opt_c_damap.got
 0x100004010	0x00000008	[  2] ___c_tpsa_MOD_a_opt_c_vector.got
@@ -133,33 +134,34 @@
 0x1000040B0	0x00000008	[  2] ___c_tpsa_MOD_c_trxtaylor.got
 0x1000040B8	0x00000008	[  2] ___c_tpsa_MOD_cdscmul.got
 0x1000040C0	0x00000008	[  2] ___c_tpsa_MOD_cutorder.got
-0x1000040C8	0x00000008	[  2] ___c_tpsa_MOD_dequaldacon.got
-0x1000040D0	0x00000008	[  2] ___c_tpsa_MOD_dmulsc.got
-0x1000040D8	0x00000008	[  2] ___c_tpsa_MOD_do_damping.got
-0x1000040E0	0x00000008	[  2] ___c_tpsa_MOD_dscmul.got
-0x1000040E8	0x00000008	[  2] ___c_tpsa_MOD_equal.got
-0x1000040F0	0x00000008	[  2] ___c_tpsa_MOD_getvectorfield.got
-0x1000040F8	0x00000008	[  2] ___c_tpsa_MOD_n_cai.got
-0x100004100	0x00000008	[  2] ___c_tpsa_MOD_pow.got
-0x100004108	0x00000008	[  2] ___c_tpsa_MOD_remove_tune_shift.got
-0x100004110	0x00000008	[  2] ___c_tpsa_MOD_subs.got
-0x100004118	0x00000008	[  2] ___c_tpsa_MOD_unarysub.got
-0x100004120	0x00000008	[  2] ___definition_MOD_dz_c.got
-0x100004128	0x00000008	[  2] ___definition_MOD_negative_synchrotron_tune.got
-0x100004130	0x00000008	[  2] ___gauss_dis_MOD_gaussian_seed.got
-0x100004138	0x00000008	[  2] ___precision_constants_MOD_c_.got
-0x100004140	0x00000008	[  2] ___precision_constants_MOD_lielib_print.got
-0x100004148	0x00000008	[  2] ___precision_constants_MOD_use_quaternion.got
-0x100004150	0x00000008	[ 23] __gfortran_os_error_at.got
-0x100004158	0x00000008	[ 23] __gfortran_set_args.got
-0x100004160	0x00000008	[ 23] __gfortran_set_options.got
-0x100004168	0x00000008	[ 23] __gfortran_st_write.got
-0x100004170	0x00000008	[ 23] __gfortran_st_write_done.got
-0x100004178	0x00000008	[ 23] __gfortran_stop_string.got
-0x100004180	0x00000008	[ 23] __gfortran_transfer_character_write.got
-0x100004188	0x00000008	[ 23] __gfortran_transfer_integer_write.got
-0x100004190	0x00000008	[ 27] _malloc.got
-0x100004198	0x00000008	[ 26] _memcpy.got
+0x1000040C8	0x00000008	[  2] ___c_tpsa_MOD_daprinttaylors.got
+0x1000040D0	0x00000008	[  2] ___c_tpsa_MOD_dequaldacon.got
+0x1000040D8	0x00000008	[  2] ___c_tpsa_MOD_dmulsc.got
+0x1000040E0	0x00000008	[  2] ___c_tpsa_MOD_do_damping.got
+0x1000040E8	0x00000008	[  2] ___c_tpsa_MOD_dscmul.got
+0x1000040F0	0x00000008	[  2] ___c_tpsa_MOD_equal.got
+0x1000040F8	0x00000008	[  2] ___c_tpsa_MOD_getvectorfield.got
+0x100004100	0x00000008	[  2] ___c_tpsa_MOD_n_cai.got
+0x100004108	0x00000008	[  2] ___c_tpsa_MOD_pow.got
+0x100004110	0x00000008	[  2] ___c_tpsa_MOD_remove_tune_shift.got
+0x100004118	0x00000008	[  2] ___c_tpsa_MOD_subs.got
+0x100004120	0x00000008	[  2] ___c_tpsa_MOD_unarysub.got
+0x100004128	0x00000008	[  2] ___definition_MOD_dz_c.got
+0x100004130	0x00000008	[  2] ___definition_MOD_negative_synchrotron_tune.got
+0x100004138	0x00000008	[  2] ___gauss_dis_MOD_gaussian_seed.got
+0x100004140	0x00000008	[  2] ___precision_constants_MOD_c_.got
+0x100004148	0x00000008	[  2] ___precision_constants_MOD_lielib_print.got
+0x100004150	0x00000008	[  2] ___precision_constants_MOD_use_quaternion.got
+0x100004158	0x00000008	[ 23] __gfortran_os_error_at.got
+0x100004160	0x00000008	[ 23] __gfortran_set_args.got
+0x100004168	0x00000008	[ 23] __gfortran_set_options.got
+0x100004170	0x00000008	[ 23] __gfortran_st_write.got
+0x100004178	0x00000008	[ 23] __gfortran_st_write_done.got
+0x100004180	0x00000008	[ 23] __gfortran_stop_string.got
+0x100004188	0x00000008	[ 23] __gfortran_transfer_character_write.got
+0x100004190	0x00000008	[ 23] __gfortran_transfer_integer_write.got
+0x100004198	0x00000008	[ 27] _malloc.got
+0x1000041A0	0x00000008	[ 26] _memcpy.got
 0x100008000	0x00008E08	[  1] _normal.7
 0x100010E08	0x00000368	[  1] _vf.8
 0x100011170	0x000012D0	[  1] _cs_te.9

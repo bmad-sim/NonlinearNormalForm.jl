@@ -71,10 +71,11 @@ export        TaylorMap,
 
               equilibrium_moments,
               factorize,
-              canonize,
-              compute_de_moivre,
-              compute_sagan_rubin,
-              compute_bengtsson
+              canonize
+              #,
+              #compute_de_moivre,
+              #compute_sagan_rubin,
+              #compute_bengtsson
 
 
 # After experimenting I have found MVector
