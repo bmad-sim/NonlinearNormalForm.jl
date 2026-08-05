@@ -591,7 +591,7 @@ end
 
 # Returns the rotation map to put a in Courant Snyder form 
 # The phase advance can be acquired from this map by atan(r11,r22), etc etc
-# Factors the map to: as ∘ a0 ∘ a1 ∘ a2 ∘ inv(r) . Spin not yet implemented
+# Factors the map to: as ∘ a0 ∘ a1 ∘ a2 ∘ inv(ri) . Spin not yet implemented
 function factorize(
   a::DAMap{V0};
   canonize::Integer=-1, # 0 = fully linear, 1 = linear w parameters, 2 = fully nonlinear
@@ -605,7 +605,7 @@ function factorize(
   coast = iscoasting(a)
 
   if canonize == -1
-    return merge(_factorize(a), (; r=one(a)))
+    return merge(_factorize(a), (; ri=one(a)))
   end
 
   if canonize == 0 # ONLY LINEAR!
@@ -683,7 +683,7 @@ function factorize(
       setray!(canonizer.v, v_matrix=a_rot)
     end
     a = a ∘ canonizer
-    return merge(_factorize(a), (; r=canonizer))
+    return merge(_factorize(a), (; ri=canonizer))
   end
 
   # canonize >= 1:
@@ -778,7 +778,7 @@ function factorize(
   fac = _factorize(a ∘ r_cs)
 
   if canonize == 1
-    return merge(fac, (; r=r_cs))
+    return merge(fac, (; ri=r_cs))
   elseif canonize != 2
     error("`canonize` keyword argument to `factorize` must be an integer between -1 and 2")
   end
@@ -827,7 +827,7 @@ function factorize(
       TI.seti!(phase[end], 0, nt)
     end
   end
-  return merge(fac, (; r=r))
+  return merge(fac, (; ri=r))
 end
 
 # This can help give you the fixed point

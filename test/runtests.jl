@@ -162,7 +162,7 @@ end
     @test norm(f.a0 - a0_fpp) < 2e-7
     @test norm(f.a1 - a1_fpp) < 2e-7
     @test norm(f.a2 - a2_fpp) < 2e-7
-    @test norm(inv(f.r) - r_fpp) < 2e-7
+    @test norm(inv(f.ri) - r_fpp) < 2e-7
     @test TI.norm_tps.(phase-phase_fpp) < 2e-7
 end
 
