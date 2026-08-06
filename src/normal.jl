@@ -591,7 +591,7 @@ end
 
 # Returns the rotation map to put a in Courant Snyder form 
 # The phase advance can be acquired from this map by atan(r11,r22), etc etc
-# Factors the map to: as ∘ a0 ∘ a1 ∘ a2 ∘ inv(ri) . Spin not yet implemented
+# Factors the map to: as ∘ a0 ∘ a1 ∘ a2 ∘ r . Spin canonize not yet implemented
 function factorize(
   a::DAMap{V0};
   canonize::Integer=-1, # 0 = fully linear, 1 = linear w parameters, 2 = fully nonlinear
@@ -605,7 +605,7 @@ function factorize(
   coast = iscoasting(a)
 
   if canonize == -1
-    return merge(_factorize(a), (; ri=one(a)))
+    return merge(_factorize(a), (; r=one(a)))
   end
 
   if canonize == 0 # ONLY LINEAR!
@@ -683,7 +683,7 @@ function factorize(
       setray!(canonizer.v, v_matrix=a_rot)
     end
     a = a ∘ canonizer
-    return merge(_factorize(a), (; ri=canonizer))
+    return merge(_factorize(a), (; r=inv(canonizer)))
   end
 
   # canonize >= 1:
@@ -778,7 +778,7 @@ function factorize(
   fac = _factorize(a ∘ r_cs)
 
   if canonize == 1
-    return merge(fac, (; ri=r_cs))
+    return merge(fac, (; r=inv(r_cs)))
   elseif canonize != 2
     error("`canonize` keyword argument to `factorize` must be an integer between -1 and 2")
   end
@@ -812,22 +812,22 @@ function factorize(
     end
     b1 = exp(-hr, b1)
   end
-  phi2 = exp(-hf, id)
+  phi2 = exp(hf, id)
   fac = merge(fac, (; a2=real(c ∘ b1 ∘ ci)))
   r_nonl = real(c ∘ phi2 ∘ ci)
-  r = r_cs ∘ r_nonl
+  r = r_nonl ∘ inv(r_cs)
 
   # Now need to update phase
   if !isnothing(phase)
     for i in 1:div(nhv, 2)
-      TI.add!(phase[i], phase[i], TI.cutord(angle(factor_out(phi2.v[2*i-1], 2*i-1))/(2*pi), mo))
+      TI.add!(phase[i], phase[i], -TI.cutord(angle(factor_out(phi2.v[2*i-1], 2*i-1))/(2*pi), mo))
     end
     if coast
-      TI.sub!(phase[end], phase[end], real((ci ∘ r ∘ c).v[nt]))
+      TI.add!(phase[end], phase[end], real((ci ∘ r ∘ c).v[nt]))
       TI.seti!(phase[end], 0, nt)
     end
   end
-  return merge(fac, (; ri=r))
+  return merge(fac, (; r=r))
 end
 
 # This can help give you the fixed point

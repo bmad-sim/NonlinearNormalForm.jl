@@ -132,11 +132,11 @@ end
     ac_fpp = real(read_fpp_map("canonize_rad2/ac.map", spin=false, stochastic=false));
 
     a = normal(m);
-    ac_norad = a ∘ factorize(a, canonize=0).r
+    ac_norad = a ∘ inv(factorize(a, canonize=0).r)
     @test norm(NNF.jacobian(ac_norad - ac_norad_fpp)) < 1e-12
 
     damp = zeros(3)
-    ac = ac_norad ∘ factorize(ac_norad; canonize=0, damping=true, damp=damp)
+    ac = ac_norad ∘ inv(factorize(ac_norad; canonize=0, damping=true, damp=damp).r)
     @test norm(damp - [  7.0794145850303742E-009 ,  3.2927211731860217E-007 ,  5.5985424078986008E-007]) < 1e-12
     @test norm(NNF.jacobian(ac-ac_fpp)) < 1e-12
 
@@ -162,7 +162,7 @@ end
     @test norm(f.a0 - a0_fpp) < 2e-7
     @test norm(f.a1 - a1_fpp) < 2e-7
     @test norm(f.a2 - a2_fpp) < 2e-7
-    @test norm(inv(f.ri) - r_fpp) < 2e-7
-    @test TI.norm_tps.(phase-phase_fpp) < 2e-7
+    @test norm(f.r - r_fpp) < 2e-7
+    @test norm(TI.norm_tps.(phase-phase_fpp)) < 2e-7
 end
 
