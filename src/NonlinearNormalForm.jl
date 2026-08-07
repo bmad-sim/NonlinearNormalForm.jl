@@ -24,7 +24,7 @@ import Base: ∘,
              rand,
              promote_rule
 
-import LinearAlgebra: norm, factorise
+import LinearAlgebra: norm
 
 import TPSAInterface as TI
 import TPSAInterface: AbstractTPSAInit, getinit, ndiffs, maxord, nmonos
