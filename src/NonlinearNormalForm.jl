@@ -24,7 +24,7 @@ import Base: ∘,
              rand,
              promote_rule
 
-import LinearAlgebra: norm, factorize
+import LinearAlgebra: norm, factorise
 
 import TPSAInterface as TI
 import TPSAInterface: AbstractTPSAInit, getinit, ndiffs, maxord, nmonos
@@ -70,8 +70,7 @@ export        TaylorMap,
               log!,
 
               equilibrium_moments,
-              factorize,
-              canonize
+              factorise
               #,
               #compute_de_moivre,
               #compute_sagan_rubin,

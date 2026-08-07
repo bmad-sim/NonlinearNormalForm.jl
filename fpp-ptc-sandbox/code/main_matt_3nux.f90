@@ -176,7 +176,7 @@ endif
  
 
  
-call c_normal(T,c_n,canonize=.true.,phase=phat)
+call c_normal(T,c_n,canonise=.true.,phase=phat)
 
 write(6,*) c_n%tune(1:2)
  !!!!!!!!!!!!!!!

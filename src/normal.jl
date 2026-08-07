@@ -84,7 +84,7 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
       # Variables part:
       # Note that here, because we are only doing first-order, we have exp(F) = I + F
       # And so we can capture this just by adding the Poisson bracket. 
-      # But in the nonlinear part (where we "factorize" we have to actually exponentiate
+      # But in the nonlinear part (where we "factorise" we have to actually exponentiate
       # the Poisson bracket captured in F to handle this properly.)
       for i in 1:div(nhv, 2)
         TI.seti!(a0.v[nt], TI.geti(a0.v[2*i-1], ndpt), 2*i)
@@ -296,7 +296,7 @@ end
 # to get dbeta/ddelta, first go to fully nonlinear parameter dependent fixed point
 # then calculate lattice functions. Lattice functions will be TPSA and then you 
 # can extract dbeta/ddelta
-function _factorize(a)
+function _factorise(a)
   nv = nvars(a)
   nhv = nhvars(a)
   nn = ndiffs(a)
@@ -562,7 +562,7 @@ function equilibrium_moments(m::DAMap, a::DAMap=normal(m,1))
   # very easy to do in phasors basis
   # fixed point transformation does nothing (note a0.s = Bₐ₀ = 0 of course and a0.v is identity in variable but not in parameters)
   # When including parameters, fixed point transformation would have to be fully 
-  # nonlinear, probably obtained from factorized `a`
+  # nonlinear, probably obtained from factorised `a`
   
   # For now because excluding parameters I do not need a fixed point transformation
 
@@ -591,10 +591,10 @@ end
 
 # Returns the rotation map to put a in Courant Snyder form 
 # The phase advance can be acquired from this map by atan(r11,r22), etc etc
-# Factors the map to: as ∘ a0 ∘ a1 ∘ a2 ∘ r . Spin canonize not yet implemented
-function factorize(
+# Factors the map to: as ∘ a0 ∘ a1 ∘ a2 ∘ r . Spin canonise not yet implemented
+function factorise(
   a::DAMap{V0};
-  canonize::Integer=-1, # 0 = fully linear, 1 = linear w parameters, 2 = fully nonlinear
+  canonise::Integer=-1, # 0 = fully linear, 1 = linear w parameters, 2 = fully nonlinear
   phase=nothing, 
   damping::Bool=!isnothing(a.s),
   damp=nothing
@@ -604,13 +604,13 @@ function factorize(
   nhv = nhvars(a)
   coast = iscoasting(a)
 
-  if canonize == -1
-    return merge(_factorize(a), (; r=one(a)))
+  if canonise == -1
+    return merge(_factorise(a), (; a=a, r=one(a)))
   end
 
-  if canonize == 0 # ONLY LINEAR!
+  if canonise == 0 # ONLY LINEAR!
     a_matrix = real.(jacobian(a, VARS))
-    canonizer = one(a)
+    canoniser = one(a)
     for i in 1:div(nhv, 2) # for each harmonic oscillator
       t = sqrt(a_matrix[2*i-1,2*i-1]^2 + a_matrix[2*i-1,2*i]^2)
       cphi = a_matrix[2*i-1,2*i-1]/t
@@ -619,10 +619,10 @@ function factorize(
         cphi = -cphi
         sphi = -sphi
       end
-      TI.seti!(canonizer.v[2*i-1],  cphi, 2*i-1)
-      TI.seti!(canonizer.v[2*i],    cphi, 2*i)
-      TI.seti!(canonizer.v[2*i-1], -sphi, 2*i)
-      TI.seti!(canonizer.v[2*i],    sphi, 2*i-1)
+      TI.seti!(canoniser.v[2*i-1],  cphi, 2*i-1)
+      TI.seti!(canoniser.v[2*i],    cphi, 2*i)
+      TI.seti!(canoniser.v[2*i-1], -sphi, 2*i)
+      TI.seti!(canoniser.v[2*i],    sphi, 2*i-1)
       
       if !isnothing(phase)
         phase[i] += atan(sphi,cphi)/(2*pi)
@@ -632,9 +632,9 @@ function factorize(
     if coast
       nt = nv
       ndpt = nv + 1
-      TI.seti!(canonizer.v[nt], 1, nt)
-      TI.seti!(canonizer.v[ndpt], 1, ndpt)
-      TI.seti!(canonizer.v[nt], -TI.geti(a.v[nt], ndpt), ndpt)
+      TI.seti!(canoniser.v[nt], 1, nt)
+      TI.seti!(canoniser.v[ndpt], 1, ndpt)
+      TI.seti!(canoniser.v[nt], -TI.geti(a.v[nt], ndpt), ndpt)
       if !isnothing(phase)
         phase[end] += -TI.geti(a.v[nt], ndpt)
       end
@@ -655,12 +655,12 @@ function factorize(
 
     # Basically want to multiply the matrix A by some diagonal real matrix D so that
     # (AD)*S*transpose(AD) = S
-    # So we have to include this in the canonizer
+    # So we have to include this in the canoniser
     if damping
       if coast
         error("Canonization including damping and coasting beam is not supported")
       end
-      #a_matrix = jacobian(a, VARS)*jacobian(canonizer, VARS)
+      #a_matrix = jacobian(a, VARS)*jacobian(canoniser, VARS)
       tmp = StaticArrays.sacollect(SMatrix{div(nhv, 2),div(nhv, 2)}, begin
           a_matrix[2*i-1,2*j-1]*a_matrix[2*i,2*j]-a_matrix[2*i-1,2*j]*a_matrix[2*i,2*j-1]
       end for j in 1:div(nhv, 2) for i in 1:div(nhv, 2))
@@ -675,25 +675,25 @@ function factorize(
         end
       end for j in 1:nhv for i in 1:nhv)
       
-      # now multiply canonizer matrix by this one
-      a_rot = jacobian(canonizer, VARS)*Λi
+      # now multiply canoniser matrix by this one
+      a_rot = jacobian(canoniser, VARS)*Λi
       if !isnothing(damp)
         damp .+= log.(dampt)
       end
-      setray!(canonizer.v, v_matrix=a_rot)
+      setray!(canoniser.v, v_matrix=a_rot)
     end
-    a = a ∘ canonizer
-    return merge(_factorize(a), (; r=inv(canonizer)))
+    a = a ∘ canoniser
+    return merge(_factorise(a), (; a=a, r=inv(canoniser)))
   end
 
-  # canonize >= 1:
+  # canonise >= 1:
 
   # 1) COMPUTE r_cs INCLUDING NONLINEAR PARAMETER DEPENDENCE!
   mo = maxord(a)
   # For nonlinear case we have to exponentiate to ensure symplecticity
   id = one(a)
-  lin_canonizer = one(a) # linear part separately to speed up exponent
-  canonizerf = zero(VectorField, a)
+  lin_canoniser = one(a) # linear part separately to speed up exponent
+  canoniserf = zero(VectorField, a)
   for i in 1:div(nhv, 2) # for each harmonic oscillator
     # Need to include parameter dependence if nonlinear, so "var-par"
     t1 = fast_var_slice(a.v[2*i-1], 2*i-1, nv; par=true)
@@ -707,28 +707,28 @@ function factorize(
     end
     phi = TI.cutord(atan(sphi,cphi), mo)
 
-    TI.seti!(lin_canonizer.v[2*i-1], TI.scalar( cphi), 2*i-1)
-    TI.seti!(lin_canonizer.v[2*i],   TI.scalar( cphi), 2*i)
-    TI.seti!(lin_canonizer.v[2*i-1], TI.scalar(-sphi), 2*i)
-    TI.seti!(lin_canonizer.v[2*i],   TI.scalar( sphi), 2*i-1)
+    TI.seti!(lin_canoniser.v[2*i-1], TI.scalar( cphi), 2*i-1)
+    TI.seti!(lin_canoniser.v[2*i],   TI.scalar( cphi), 2*i)
+    TI.seti!(lin_canoniser.v[2*i-1], TI.scalar(-sphi), 2*i)
+    TI.seti!(lin_canoniser.v[2*i],   TI.scalar( sphi), 2*i-1)
 
     if !isnothing(phase)
       TI.add!(phase[i], phase[i], TI.cutord(phi/(2*pi), mo))
     end
 
     TI.seti!(phi, 0, 0) # set scalar part to zero bc linear canonization separate
-    factor_in!(canonizerf.v[2*i-1], -phi, 2*i)
-    factor_in!(canonizerf.v[2*i],  phi, 2*i-1)
+    factor_in!(canoniserf.v[2*i-1], -phi, 2*i)
+    factor_in!(canoniserf.v[2*i],  phi, 2*i-1)
   end
 
   if coast
     nt = nv
     ndpt = nv + 1
     
-    TI.clear!(canonizerf.v[nt])
-    tmp1 = zero(canonizerf.v[nt])
-    tmp2 = zero(canonizerf.v[nt])
-    tmp3 = zero(canonizerf.v[nt])
+    TI.clear!(canoniserf.v[nt])
+    tmp1 = zero(canoniserf.v[nt])
+    tmp2 = zero(canoniserf.v[nt])
+    tmp3 = zero(canoniserf.v[nt])
     # set the timelike variable so poisson bracket does not change
     # have :mu_x(delta)(x^2+px^2) + mu_y(delta)(y^2+py^2):
     # so for time like variable we have 
@@ -736,33 +736,33 @@ function factorize(
     # = -dmu_x/ddelta*(x^2+px^2) - dmu_y/ddelta(y^2+py^2)
     for i in 1:div(nhv, 2)
       TI.clear!(tmp3)
-      TI.deriv!(tmp1, canonizerf.v[2*i-1], ndpt)
+      TI.deriv!(tmp1, canoniserf.v[2*i-1], ndpt)
       TI.seti!(tmp3, 1, 2*i)
       TI.mul!(tmp2, tmp1, tmp3)
       TI.div!(tmp3, tmp2, 2)
-      TI.add!(canonizerf.v[nt], canonizerf.v[nt], tmp3)
+      TI.add!(canoniserf.v[nt], canoniserf.v[nt], tmp3)
 
-      TI.deriv!(tmp1, canonizerf.v[2*i], ndpt)
+      TI.deriv!(tmp1, canoniserf.v[2*i], ndpt)
       TI.clear!(tmp3)
       TI.seti!(tmp3, -1, 2*i-1)
       TI.mul!(tmp2, tmp1, tmp3)
       TI.div!(tmp3, tmp2, 2)
-      TI.add!(canonizerf.v[nt], canonizerf.v[nt], tmp3)
+      TI.add!(canoniserf.v[nt], canoniserf.v[nt], tmp3)
     end
             
     # get delta dependent part only
     # this makes sure doesn't blow up, have to remove
     slip = fast_var_slice(a.v[nt], ndpt, nv; all_ords=true)
-    if canonize == 1 && !isnothing(phase)
+    if canonise == 1 && !isnothing(phase)
       TI.add!(phase[end], phase[end], slip)
     end
-    TI.seti!(lin_canonizer.v[nt], 1, nt)
-    TI.seti!(lin_canonizer.v[ndpt], 1, ndpt)
-    TI.seti!(lin_canonizer.v[nt], -TI.geti(slip, ndpt), ndpt)
+    TI.seti!(lin_canoniser.v[nt], 1, nt)
+    TI.seti!(lin_canoniser.v[ndpt], 1, ndpt)
+    TI.seti!(lin_canoniser.v[nt], -TI.geti(slip, ndpt), ndpt)
     
     # set linear part to zero for nonlinear part
     TI.seti!(slip, 0, ndpt)
-    TI.add!(canonizerf.v[nt], canonizerf.v[nt], -slip)
+    TI.add!(canoniserf.v[nt], canoniserf.v[nt], -slip)
   end
 
   if damping
@@ -773,14 +773,14 @@ function factorize(
     # See Github commit ae023593564e0ad6607b60b26b4b052c7fb0bba0 for preliminary implementation
   end
 
-  r_cs = lin_canonizer ∘ exp(canonizerf, id)
+  r_cs = lin_canoniser ∘ exp(canoniserf, id)
+  a_cs = a ∘ r_cs
+  fac = _factorise(a_cs)
 
-  fac = _factorize(a ∘ r_cs)
-
-  if canonize == 1
-    return merge(fac, (; r=inv(r_cs)))
-  elseif canonize != 2
-    error("`canonize` keyword argument to `factorize` must be an integer between -1 and 2")
+  if canonise == 1
+    return merge(fac, (; a=a_cs, r=inv(r_cs)))
+  elseif canonise != 2
+    error("`canonise` keyword argument to `factorise` must be an integer between -1 and 2")
   end
 
   # 2) FULLY NONLINEAR PART TO REMOVE ROTATION GENERATORS
@@ -827,7 +827,7 @@ function factorize(
       TI.seti!(phase[end], 0, nt)
     end
   end
-  return merge(fac, (; r=r))
+  return merge(fac, (; a=(a_cs ∘ inv(r_nonl)), r=r))
 end
 
 # This can help give you the fixed point
@@ -837,7 +837,7 @@ function calc_Hr(m, n, res)
   R = inv(c)*inv(a)*m*a*c
   
   # This could be old ----------------- 
-  # Now we want to refactorize the map as
+  # Now we want to refactorise the map as
   # R = exp(-:p*2*pi/|mr|^2 * mr dot J :)*Rc
   # Eq 5.16 in EYB
   # Then log(Rc) is :Hr: which you can use to calculate the fixed point

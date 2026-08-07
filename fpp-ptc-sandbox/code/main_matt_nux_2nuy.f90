@@ -161,7 +161,7 @@ do i=1,c_%nd
 mu(i)=phat(i)
 enddo
  
-call c_normal(T,c_n,canonize=.true.)
+call c_normal(T,c_n,canonise=.true.)
 
 write(6,*) "************** tunes **********************"
 write(6,*) c_n%tune(1:3)

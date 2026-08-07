@@ -13,7 +13,7 @@ program example
   type(c_vector_field) vf
   type(c_ray) ray,ray2
   type(c_lattice_function)   Lat_function
-  logical :: damp = .false.,fastcanonize=.true.,COSLIKE,t_e
+  logical :: damp = .false.,fastcanonise=.true.,COSLIKE,t_e
   type(c_taylor), allocatable :: phase(:)
   type(c_damap), allocatable :: mt(:)
   real(dp)  ph(3),spintune(2),dampdec(3)
@@ -579,7 +579,7 @@ write(*,*) "hi"
   
   
   
-  subroutine c_normal1(xyso3,n,dospin,no_used,rot,phase,nu_spin,canonize)
+  subroutine c_normal1(xyso3,n,dospin,no_used,rot,phase,nu_spin,canonise)
   !#general:  normal
   !# This routine normalises the map xy
   !# xy = n%a_t**(-1)*r*n%a_t 
@@ -588,7 +588,7 @@ write(*,*) "hi"
   !# Dospin must be set to .true. if spin is to be normalised.
   !# Resonances can be left in the map. Their number is in n%nres.
   !# They are nres resonances The kth resonance is n%m(i,k).Q_i+n%ms(k)=integer
-  !# canonize=.true. Then it is put into courant-snyder form or anti- courant-snyder form
+  !# canonise=.true. Then it is put into courant-snyder form or anti- courant-snyder form
   !# depending on the logical  courant_snyder_teng_edwards=true or false. (See blue or yellow book)
   !#  The map in phasors is exp(n%H_l.grad) exp(n%H_nl.grad)
   !# if fully normalized into a rotation then the map is exp(n%h.grad)
@@ -607,7 +607,7 @@ write(*,*) "hi"
       complex(dp) v,lam,egspin(3)
       complex(dp), allocatable :: eg(:)
       real(dp) norm,alpha,prec !,cx,sx
-      logical(lp), optional :: dospin,canonize
+      logical(lp), optional :: dospin,canonise
       logical dospinr,change
       type(c_spinor) n0,nr
       type(c_quaternion) qnr
@@ -1144,8 +1144,8 @@ write(*,*) "hi"
       n%n=c_simil(ri,m1,1)
       n%Atot=n%as*n%a_t
   
-    if(present(canonize)) then
-     if(canonize) call c_full_canonise(n%atot,n%atot)
+    if(present(canonise)) then
+     if(canonise) call c_full_canonise(n%atot,n%atot)
     endif
   
   
@@ -1390,7 +1390,7 @@ write(*,*) "hi"
   if(do_damping) then
    
   
-  call canonize_damping(st,id,damp)
+  call canonise_damping(st,id,damp)
    
          st=matmul(st,id)
    

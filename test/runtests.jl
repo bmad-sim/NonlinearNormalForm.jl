@@ -82,26 +82,26 @@ end
     Σ = equilibrium_moments(m,a)
     @test norm(Σ - Σ_fpp) < tol
 
-    # Factorize -----------------------------
+    # factorise -----------------------------
     # 3D all pseudo harmonic oscillators
-    a = read_fpp_map("factorize1/a.map")
-    a0_fpp = read_fpp_map("factorize1/a0.map")
-    a1_fpp = read_fpp_map("factorize1/a1.map")
-    a2_fpp = read_fpp_map("factorize1/a2.map")
+    a = read_fpp_map("factorise1/a.map")
+    a0_fpp = read_fpp_map("factorise1/a0.map")
+    a1_fpp = read_fpp_map("factorise1/a1.map")
+    a2_fpp = read_fpp_map("factorise1/a2.map")
     
-    as, a0, a1, a2 = factorize(a)
+    as, a0, a1, a2 = factorise(a)
     @test norm(a0-a0_fpp) < tol
     @test norm(a1-a1_fpp) < tol
     @test norm(a2-a2_fpp) < tol
 
     # 3D coasting beam
-    a = read_fpp_map("factorize2/a.map",coast=true,spin=true)
-    as_fpp = read_fpp_map("factorize2/as.map",coast=true,spin=true)
-    a0_fpp = read_fpp_map("factorize2/a0.map",coast=true,spin=true)
-    a1_fpp = read_fpp_map("factorize2/a1.map",coast=true,spin=true)
-    a2_fpp = read_fpp_map("factorize2/a2.map",coast=true,spin=true)
+    a = read_fpp_map("factorise2/a.map",coast=true,spin=true)
+    as_fpp = read_fpp_map("factorise2/as.map",coast=true,spin=true)
+    a0_fpp = read_fpp_map("factorise2/a0.map",coast=true,spin=true)
+    a1_fpp = read_fpp_map("factorise2/a1.map",coast=true,spin=true)
+    a2_fpp = read_fpp_map("factorise2/a2.map",coast=true,spin=true)
     
-    as, a0, a1, a2 = factorize(a)
+    as, a0, a1, a2 = factorise(a)
     @test norm(a0-a0_fpp) < tol
     @test norm(a1-a1_fpp) < tol
     @test norm(a2-a2_fpp) < tol
@@ -126,17 +126,17 @@ end
     @test norm(a - a_fpp) < 2e-7
 
     # Canonization with damping
-    m = real(read_fpp_map("canonize_rad2/test.map", spin=false, stochastic=false));
-    a_fpp = real(read_fpp_map("canonize_rad2/a.map", spin=false, stochastic=false));
-    ac_norad_fpp = real(read_fpp_map("canonize_rad2/ac_norad.map", spin=false, stochastic=false));
-    ac_fpp = real(read_fpp_map("canonize_rad2/ac.map", spin=false, stochastic=false));
+    m = real(read_fpp_map("canonise_rad2/test.map", spin=false, stochastic=false));
+    a_fpp = real(read_fpp_map("canonise_rad2/a.map", spin=false, stochastic=false));
+    ac_norad_fpp = real(read_fpp_map("canonise_rad2/ac_norad.map", spin=false, stochastic=false));
+    ac_fpp = real(read_fpp_map("canonise_rad2/ac.map", spin=false, stochastic=false));
 
     a = normal(m);
-    ac_norad = a ∘ inv(factorize(a, canonize=0).r)
+    ac_norad = a ∘ inv(factorise(a, canonise=0).r)
     @test norm(NNF.jacobian(ac_norad - ac_norad_fpp)) < 1e-12
 
     damp = zeros(3)
-    ac = ac_norad ∘ inv(factorize(ac_norad; canonize=0, damping=true, damp=damp).r)
+    ac = ac_norad ∘ inv(factorise(ac_norad; canonise=0, damping=true, damp=damp).r)
     @test norm(damp - [  7.0794145850303742E-009 ,  3.2927211731860217E-007 ,  5.5985424078986008E-007]) < 1e-12
     @test norm(NNF.jacobian(ac-ac_fpp)) < 1e-12
 
@@ -150,18 +150,19 @@ end
     @test TI.norm_tps(adst-adst_fpp) < 1e-9
 
     # Full canonise with coasting, parameters, no spin yet, no damping
-    a = real(read_fpp_map("full_canonize/a.map",coast=true,spin=false))
-    a0_fpp = real(read_fpp_map("full_canonize/a0.map",coast=true,spin=false))
-    a1_fpp = real(read_fpp_map("full_canonize/a1.map",coast=true,spin=false))
-    a2_fpp = real(read_fpp_map("full_canonize/a2.map",coast=true,spin=false))
-    r_fpp = real(read_fpp_map("full_canonize/rot.map",coast=true,spin=false))
-    phase_fpp = include("full_canonize/phase.jl")
+    a = real(read_fpp_map("full_canonise/a.map",coast=true,spin=false))
+    a0_fpp = real(read_fpp_map("full_canonise/a0.map",coast=true,spin=false))
+    a1_fpp = real(read_fpp_map("full_canonise/a1.map",coast=true,spin=false))
+    a2_fpp = real(read_fpp_map("full_canonise/a2.map",coast=true,spin=false))
+    r_fpp = real(read_fpp_map("full_canonise/rot.map",coast=true,spin=false))
+    phase_fpp = include("full_canonise/phase.jl")
 
     phase = [zero(a.v[1]),zero(a.v[1]),zero(a.v[1])]
-    f = factorize(a; canonize=2, phase=phase)
+    f = factorise(a; canonise=2, phase=phase)
     @test norm(f.a0 - a0_fpp) < 2e-7
     @test norm(f.a1 - a1_fpp) < 2e-7
     @test norm(f.a2 - a2_fpp) < 2e-7
+    @test norm(f.a - a0_fpp∘a1_fpp∘a2_fpp) < 2e-7
     @test norm(f.r - r_fpp) < 2e-7
     @test norm(TI.norm_tps.(phase-phase_fpp)) < 2e-7
 end

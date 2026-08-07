@@ -11,7 +11,7 @@ complex(dp) c1
 type(c_normal_form) normal
 type(c_ray) ray,ray2
 type(c_lattice_function)   Lat_function
-logical :: damp = .false.,fastcanonize=.true.
+logical :: damp = .false.,fastcanonise=.true.
 type(c_taylor), allocatable :: phase(:)
 type(c_damap), allocatable :: mt(:)
 real(dp)  ph(3),spintune(2),dampdec(3)
@@ -39,8 +39,8 @@ enddo
   negative_synchrotron_tune=.false.
 
 damp=.true.
-fastcanonize=.true.
-if(.not.fastcanonize) damp=.false.
+fastcanonise=.true.
+if(.not.fastcanonise) damp=.false.
 do_damping=damp
 
  decrement=.001d0
@@ -95,7 +95,7 @@ do i=1,n
  m=mt(i)*m
 enddo
  
-call c_normal(m,normal,canonize=.false.,dospin=.true.,phase=phase,nu_spin=nu_spin)
+call c_normal(m,normal,canonise=.false.,dospin=.true.,phase=phase,nu_spin=nu_spin)
 do_damping=.true.
 !call c_fast_canonise(normal%atot, a_cs)
 !call print(a_cs)
@@ -114,7 +114,7 @@ call print(nu_spin)
 
  
 
-if(fastcanonize) then
+if(fastcanonise) then
  call c_fast_canonise(normal%atot,a_cs,dospin=.true.)
 else
  call c_full_canonise(normal%atot,a_cs,as,a0,a1,a2)   
@@ -128,11 +128,11 @@ ph=0
 spintune=0
 dampdec=0
  
-! Tracking the canonized a_cs
+! Tracking the canonised a_cs
 !do k=1,n
 a_cs = m*a_cs
 !a_cs=mt(k)*a_cs
- if(fastcanonize) then
+ if(fastcanonise) then
     call c_fast_canonise(a_cs,a_cs,phase=ph,damping=dampdec,spin_tune=spintune,dospin=.true.)  
   else
     call c_full_canonise(a_cs,a_cs,as,a0,a1,a2,phase=phase,nu_spin=nu_spin)
@@ -142,19 +142,19 @@ a_cs = m*a_cs
 call clean(phase,phase,prec=1.d-10)
 call clean(nu_spin,nu_spin,prec=1.d-10)
 write(6,'(a)') "Total Orbital Tunes (phase advances) "
-if(fastcanonize) then
+if(fastcanonise) then
  write(6,*) ph(1:nd)
 else
  call print(phase)
 endif
 write(6,'(a)') "Total Spin Tune (phase advance) "
-if(fastcanonize) then
+if(fastcanonise) then
  write(6,*) spintune
 else
  call print(nu_spin)
 endif
 
-if(fastcanonize) then
+if(fastcanonise) then
  write(6,'(a)') "Total damping "
  write(6,*)  dampdec(1:nd)
 endif

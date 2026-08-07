@@ -11,7 +11,7 @@ program example
    type(c_normal_form) normal
    type(c_ray) ray,ray2
    type(c_lattice_function)   Lat_function
-   logical :: damp = .false.,fastcanonize=.true.
+   logical :: damp = .false.,fastcanonise=.true.
    type(c_taylor), allocatable :: phase(:),phase1(:)
    type(c_damap), allocatable :: mt(:)
    real(dp)  ph(3),spintune(2),dampdec(3) 
