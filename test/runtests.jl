@@ -150,12 +150,12 @@ end
     @test TI.norm_tps(adst-adst_fpp) < 1e-9
 
     # Full canonise with coasting, parameters, no spin yet, no damping
-    a = real(read_fpp_map("full_canonise/a.map",coast=true,spin=false))
-    a0_fpp = real(read_fpp_map("full_canonise/a0.map",coast=true,spin=false))
-    a1_fpp = real(read_fpp_map("full_canonise/a1.map",coast=true,spin=false))
-    a2_fpp = real(read_fpp_map("full_canonise/a2.map",coast=true,spin=false))
-    r_fpp = real(read_fpp_map("full_canonise/rot.map",coast=true,spin=false))
-    phase_fpp = include("full_canonise/phase.jl")
+    a = real(read_fpp_map("full_canonize/a.map",coast=true,spin=false))
+    a0_fpp = real(read_fpp_map("full_canonize/a0.map",coast=true,spin=false))
+    a1_fpp = real(read_fpp_map("full_canonize/a1.map",coast=true,spin=false))
+    a2_fpp = real(read_fpp_map("full_canonize/a2.map",coast=true,spin=false))
+    r_fpp = real(read_fpp_map("full_canonize/rot.map",coast=true,spin=false))
+    phase_fpp = include("full_canonize/phase.jl")
 
     phase = [zero(a.v[1]),zero(a.v[1]),zero(a.v[1])]
     f = factorise(a; canonise=2, phase=phase)

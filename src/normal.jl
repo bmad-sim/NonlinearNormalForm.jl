@@ -636,7 +636,7 @@ function factorise(
       TI.seti!(canoniser.v[ndpt], 1, ndpt)
       TI.seti!(canoniser.v[nt], -TI.geti(a.v[nt], ndpt), ndpt)
       if !isnothing(phase)
-        phase[end] += -TI.geti(a.v[nt], ndpt)
+        phase[end] += TI.geti(a.v[nt], ndpt)
       end
     end
 
