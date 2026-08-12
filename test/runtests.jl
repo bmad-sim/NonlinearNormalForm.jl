@@ -84,10 +84,10 @@ end
 
     # factorise -----------------------------
     # 3D all pseudo harmonic oscillators
-    a = read_fpp_map("factorise1/a.map")
-    a0_fpp = read_fpp_map("factorise1/a0.map")
-    a1_fpp = read_fpp_map("factorise1/a1.map")
-    a2_fpp = read_fpp_map("factorise1/a2.map")
+    a = read_fpp_map("factorize1/a.map")
+    a0_fpp = read_fpp_map("factorize1/a0.map")
+    a1_fpp = read_fpp_map("factorize1/a1.map")
+    a2_fpp = read_fpp_map("factorize1/a2.map")
     
     as, a0, a1, a2 = factorise(a)
     @test norm(a0-a0_fpp) < tol
@@ -95,11 +95,11 @@ end
     @test norm(a2-a2_fpp) < tol
 
     # 3D coasting beam
-    a = read_fpp_map("factorise2/a.map",coast=true,spin=true)
-    as_fpp = read_fpp_map("factorise2/as.map",coast=true,spin=true)
-    a0_fpp = read_fpp_map("factorise2/a0.map",coast=true,spin=true)
-    a1_fpp = read_fpp_map("factorise2/a1.map",coast=true,spin=true)
-    a2_fpp = read_fpp_map("factorise2/a2.map",coast=true,spin=true)
+    a = read_fpp_map("factorize2/a.map",coast=true,spin=true)
+    as_fpp = read_fpp_map("factorize2/as.map",coast=true,spin=true)
+    a0_fpp = read_fpp_map("factorize2/a0.map",coast=true,spin=true)
+    a1_fpp = read_fpp_map("factorize2/a1.map",coast=true,spin=true)
+    a2_fpp = read_fpp_map("factorize2/a2.map",coast=true,spin=true)
     
     as, a0, a1, a2 = factorise(a)
     @test norm(a0-a0_fpp) < tol
@@ -126,10 +126,10 @@ end
     @test norm(a - a_fpp) < 2e-7
 
     # Canonization with damping
-    m = real(read_fpp_map("canonise_rad2/test.map", spin=false, stochastic=false));
-    a_fpp = real(read_fpp_map("canonise_rad2/a.map", spin=false, stochastic=false));
-    ac_norad_fpp = real(read_fpp_map("canonise_rad2/ac_norad.map", spin=false, stochastic=false));
-    ac_fpp = real(read_fpp_map("canonise_rad2/ac.map", spin=false, stochastic=false));
+    m = real(read_fpp_map("canonize_rad2/test.map", spin=false, stochastic=false));
+    a_fpp = real(read_fpp_map("canonize_rad2/a.map", spin=false, stochastic=false));
+    ac_norad_fpp = real(read_fpp_map("canonize_rad2/ac_norad.map", spin=false, stochastic=false));
+    ac_fpp = real(read_fpp_map("canonize_rad2/ac.map", spin=false, stochastic=false));
 
     a = normal(m);
     ac_norad = a ∘ inv(factorise(a, canonise=0).r)
