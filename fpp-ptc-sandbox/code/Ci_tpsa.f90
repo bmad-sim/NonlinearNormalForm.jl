@@ -19292,7 +19292,7 @@ if(do_damping) then
 !b0=matmul(matmul(st,s),transpose(st))
 
  ! id gets filled with diagonal 
-call canonize_damping(st,id,damp)
+call canonise_damping(st,id,damp)
  ! matrix multiplication
 write(*,*) "diagonal ===="
 write(*,*) id
@@ -19409,7 +19409,7 @@ u_c=uct
 
 end subroutine c_fast_canonise
 
-subroutine canonize_damping(b0,sd,damp)
+subroutine canonise_damping(b0,sd,damp)
 implicit none
 real(dp) b0(6,6),damp(3),sd(6,6)
 real(dp) a(3,3),v(3)
@@ -19437,7 +19437,7 @@ enddo
    damp(i)=sd(2*i-1,2*i-1)
  enddo
 
-end subroutine canonize_damping
+end subroutine canonise_damping
 
 
 
@@ -22972,7 +22972,7 @@ end subroutine gramschmidt
 
 
 
-subroutine c_normal(xyso3,n,dospin,no_used,rot,phase,nu_spin,canonize)
+subroutine c_normal(xyso3,n,dospin,no_used,rot,phase,nu_spin,canonise)
 !#general:  normal
 !# This routine normalises the map xy
 !# xy = n%a_t**(-1)*r*n%a_t 
@@ -22981,7 +22981,7 @@ subroutine c_normal(xyso3,n,dospin,no_used,rot,phase,nu_spin,canonize)
 !# Dospin must be set to .true. if spin is to be normalised.
 !# Resonances can be left in the map. Their number is in n%nres.
 !# They are nres resonances The kth resonance is n%m(i,k).Q_i+n%ms(k)=integer
-!# canonize=.true. Then it is put into courant-snyder form or anti- courant-snyder form
+!# canonise=.true. Then it is put into courant-snyder form or anti- courant-snyder form
 !# depending on the logical  courant_snyder_teng_edwards=true or false. (See blue or yellow book)
 !#  The map in phasors is exp(n%H_l.grad) exp(n%H_nl.grad)
 !# if fully normalized into a rotation then the map is exp(n%h.grad)
@@ -23000,7 +23000,7 @@ subroutine c_normal(xyso3,n,dospin,no_used,rot,phase,nu_spin,canonize)
     complex(dp) v,lam,egspin(3)
     complex(dp), allocatable :: eg(:)
     real(dp) norm,alpha,prec !,cx,sx
-    logical(lp), optional :: dospin,canonize
+    logical(lp), optional :: dospin,canonise
     logical dospinr,change
     type(c_spinor) n0,nr
     type(c_quaternion) qnr
@@ -23541,8 +23541,8 @@ endif
     n%n=c_simil(ri,m1,1)
     n%Atot=n%as*n%a_t
 
-  if(present(canonize)) then
-   if(canonize) call c_full_canonise(n%atot,n%atot)
+  if(present(canonise)) then
+   if(canonise) call c_full_canonise(n%atot,n%atot)
   endif
 
 
@@ -23695,7 +23695,7 @@ endif
 
  end subroutine c_normal !_with_quaternion
 
-subroutine c_normal_new(xyso3,n,dospin,no_used,rot,phase,nu_spin,canonize)
+subroutine c_normal_new(xyso3,n,dospin,no_used,rot,phase,nu_spin,canonise)
 !#general:  normal
 !# This routine normalises the map xy
 !# xy = n%a_t**(-1)*r*n%a_t 
@@ -23704,7 +23704,7 @@ subroutine c_normal_new(xyso3,n,dospin,no_used,rot,phase,nu_spin,canonize)
 !# Dospin must be set to .true. if spin is to be normalised.
 !# Resonances can be left in the map. Their number is in n%nres.
 !# They are nres resonances The kth resonance is n%m(i,k).Q_i+n%ms(k)=integer
-!# canonize=.true. Then it is put into courant-snyder form or anti- courant-snyder form
+!# canonise=.true. Then it is put into courant-snyder form or anti- courant-snyder form
 !# depending on the logical  courant_snyder_teng_edwards=true or false. (See blue or yellow book)
 !#  The map in phasors is exp(n%H_l.grad) exp(n%H_nl.grad)
 !# if fully normalized into a rotation then the map is exp(n%h.grad)
@@ -23723,7 +23723,7 @@ subroutine c_normal_new(xyso3,n,dospin,no_used,rot,phase,nu_spin,canonize)
     complex(dp) v,lam,egspin(3)
     complex(dp), allocatable :: eg(:)
     real(dp) norm,alpha,prec !,cx,sx
-    logical(lp), optional :: dospin,canonize
+    logical(lp), optional :: dospin,canonise
     logical dospinr 
 
     integer mker, mkers,mdiss,mdis,ndptbmad 
@@ -23738,7 +23738,7 @@ subroutine c_normal_new(xyso3,n,dospin,no_used,rot,phase,nu_spin,canonize)
     n%ker%dir=1
 
     if(.not.use_quaternion) then
-     call c_normal(xyso3,n,dospin,no_used,rot,phase,nu_spin,canonize)
+     call c_normal(xyso3,n,dospin,no_used,rot,phase,nu_spin,canonise)
      return
     endif
 
@@ -24101,8 +24101,8 @@ call kill(F)
     n%Atot= n%a_t
 
 !   not necessary
-  if(present(canonize)) then
-   if(canonize) call c_full_canonise(n%atot,n%atot)
+  if(present(canonise)) then
+   if(canonise) call c_full_canonise(n%atot,n%atot)
   endif
 
 
@@ -24204,7 +24204,7 @@ endif
  end subroutine c_normal_new !_with_quaternion
 
 
-subroutine c_normal_new_no_fac(xyso3,n,dospin,no_used,rot,phase,nu_spin,canonize,doberz)
+subroutine c_normal_new_no_fac(xyso3,n,dospin,no_used,rot,phase,nu_spin,canonise,doberz)
 !#general:  normal
 !# This routine normalises the map xy
 !# xy = n%a_t**(-1)*r*n%a_t 
@@ -24213,7 +24213,7 @@ subroutine c_normal_new_no_fac(xyso3,n,dospin,no_used,rot,phase,nu_spin,canonize
 !# Dospin must be set to .true. if spin is to be normalised.
 !# Resonances can be left in the map. Their number is in n%nres.
 !# They are nres resonances The kth resonance is n%m(i,k).Q_i+n%ms(k)=integer
-!# canonize=.true. Then it is put into courant-snyder form or anti- courant-snyder form
+!# canonise=.true. Then it is put into courant-snyder form or anti- courant-snyder form
 !# depending on the logical  courant_snyder_teng_edwards=true or false. (See blue or yellow book)
 !#  The map in phasors is exp(n%H_l.grad) exp(n%H_nl.grad)
 !# if fully normalized into a rotation then the map is exp(n%h.grad)
@@ -24232,7 +24232,7 @@ subroutine c_normal_new_no_fac(xyso3,n,dospin,no_used,rot,phase,nu_spin,canonize
     complex(dp) v,lam,egspin(3)
     complex(dp), allocatable :: eg(:)
     real(dp) norm,alpha,prec !,cx,sx
-    logical(lp), optional :: dospin,canonize,doberz
+    logical(lp), optional :: dospin,canonise,doberz
     logical dospinr,change
     type(c_spinor) n0,nr
     type(c_quaternion) qnr
@@ -24789,8 +24789,8 @@ endif
     n%n=c_simil(ri,m1,1)
     n%Atot=n%as*n%a_t
 
-  if(present(canonize)) then
-   if(canonize) call c_full_canonise(n%atot,n%atot)
+  if(present(canonise)) then
+   if(canonise) call c_full_canonise(n%atot,n%atot)
   endif
 
 

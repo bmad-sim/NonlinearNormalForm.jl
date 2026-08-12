@@ -13,7 +13,7 @@ program example
   type(c_vector_field) vf
   type(c_ray) ray,ray2
   type(c_lattice_function)   Lat_function
-  logical :: damp = .false.,fastcanonize=.true.,COSLIKE,t_e
+  logical :: damp = .false.,fastcanonise=.true.,COSLIKE,t_e
   type(c_taylor), allocatable :: phase(:)
   type(c_damap), allocatable :: mt(:)
   real(dp)  ph(3),spintune(2),dampdec(3)

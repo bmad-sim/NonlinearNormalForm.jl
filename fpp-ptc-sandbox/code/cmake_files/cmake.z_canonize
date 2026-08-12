@@ -1,6 +1,6 @@
-set (EXENAME z_canonize)
+set (EXENAME z_canonise)
 
-FILE (GLOB SRC_FILES z_canonize.f90)
+FILE (GLOB SRC_FILES z_canonise.f90)
 
 set (INC_DIRS
 )

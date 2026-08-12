@@ -204,7 +204,7 @@ enddo
 p_res=nint(s)
  endif
 
-  call c_normal(T,normal_form,phase=phat,canonize=.true.)
+  call c_normal(T,normal_form,phase=phat,canonise=.true.)
   call print(normal_form%atot)
   write(*,*) "+========================================="
   stop
@@ -223,7 +223,7 @@ p_res=nint(s)
  
   
    
-  call c_normal(T,normal_form,canonize=.true.)
+  call c_normal(T,normal_form,canonise=.true.)
   
   write(6,*) normal_form%tune(1:3)
   write(6,*) normal_form%spin_tune

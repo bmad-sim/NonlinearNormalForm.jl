@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 4.2)
 project(ACC)
 
 #find_library(FOREST_LIBRARY forest REQUIRED PATHS /Users/mgs255/Software/bmad/bmad-ecosystem/production/lib/)
-#add_executable(z_canonize_matt_fake_maps z_canonize_matt_fake_maps.f90)
-#target_link_libraries(z_canonize_matt_fake_maps PUBLIC ${FOREST_LIBRARY})
-#target_include_directories(z_canonize_matt_fake_maps PRIVATE /Users/mgs255/Software/bmad/bmad-ecosystem/production/modules/)
+#add_executable(z_canonise_matt_fake_maps z_canonise_matt_fake_maps.f90)
+#target_link_libraries(z_canonise_matt_fake_maps PUBLIC ${FOREST_LIBRARY})
+#target_include_directories(z_canonise_matt_fake_maps PRIVATE /Users/mgs255/Software/bmad/bmad-ecosystem/production/modules/)
 
  set(INC_DIRS 
  )
@@ -35,7 +35,7 @@ project(ACC)
    cmake_files/cmake.z_vf_Lie_sub
    cmake_files/cmake.z_coast_matt_fake_maps
    cmake_files/cmake.z_radiation_matt_fake_maps
-   cmake_files/cmake.z_canonize_matt_fake_maps
+   cmake_files/cmake.z_canonise_matt_fake_maps
    cmake_files/cmake.z_resonance
    cmake_files/cmake.z_spin1
    cmake_files/cmake.z_spin_res
@@ -45,6 +45,6 @@ project(ACC)
    cmake_files/cmake.main_matt_accel_als_quad_strobos_with_res_ac_new
    cmake_files/cmake.main_matt_3nux
    cmake_files/cmake.main_matt_nux_2nuy
-   cmake_files/cmake.z_canonize
+   cmake_files/cmake.z_canonise
  )
 include(/Users/matthewsignorelli/Documents/Bmad/bmad-ecosystem/${bmad_version}/util/Master.cmake)

@@ -43,7 +43,7 @@ T=mat
 
 
 
-call c_normal_new(T,Normal_form)
+!call c_normal_new(T,Normal_form)
 stop
 N=Normal_form%Atot**(-1)*T*Normal_form%Atot
 ! Creating x^2+p^2 which is the invariant of a rotation

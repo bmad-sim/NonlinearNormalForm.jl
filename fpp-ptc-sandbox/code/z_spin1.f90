@@ -165,7 +165,7 @@ program Guignard_normal_form_average_x
   normal_form%m(2,1)=1
   normal_form%ms(1)=-1
    write(*,*) "entering NF"
-   call c_normal(one_turn_map,normal_form,dospin=state%spin,phase=phase, canonize=.true.)  ! (6)
+   call c_normal(one_turn_map,normal_form,dospin=state%spin,phase=phase, canonise=.true.)  ! (6)
 write(*,*) "exiting NF"
    id_s=one_turn_map
    !call print(normal_form%atot)

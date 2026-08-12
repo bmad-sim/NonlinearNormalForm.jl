@@ -43,7 +43,7 @@ julia> c = c_map(m);  # Get the transform to phasors basis √(J)*exp(±im*ϕ)
 
 julia> R_J = inv(c) ∘ R_z ∘ c; # Nonlinear amplitude-dependent rotation in phasors basis
 
-julia> a_spin, a0, a1, a2 = factorize(a); # Spin part, nonlinear parameter-dependent fixed point, a1, a2
+julia> a_spin, a0, a1, a2 = factorise(a); # Spin part, nonlinear parameter-dependent fixed point, a1, a2
 
 julia> Σ = equilibrium_moments(m, a); # Calculate equilibrium sigma matrix when fluctuation-dissipation
 

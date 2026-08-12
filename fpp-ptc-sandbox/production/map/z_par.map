@@ -3,88 +3,80 @@
 # Object files:
 [  0] linker synthesized
 [  1] CMakeFiles/z_par-exe.dir/z_par.f90.o
-[  2] /Users/matthewsignorelli/Documents/Bmad/bmad-ecosystem/20260121-0/production/lib/libforest.dylib
-[  3] /opt/homebrew/lib/libhdf5_hl_fortran.310.0.6.dylib
-[  4] /opt/homebrew/lib/libhdf5_fortran.310.3.2.dylib
-[  5] /opt/homebrew/lib/libcairo.dylib
-[  6] /opt/homebrew/lib/libpango-1.0.dylib
-[  7] /opt/homebrew/lib/libpangocairo-1.0.dylib
-[  8] /opt/homebrew/lib/libgobject-2.0.dylib
-[  9] /opt/homebrew/lib/libSM.dylib
-[ 10] /opt/homebrew/lib/libICE.dylib
+[  2] /Users/matthewsignorelli/Documents/Bmad/bmad-ecosystem/20260802-0/production/lib/libforest.dylib
+[  3] /opt/homebrew/lib/libcairo.dylib
+[  4] /opt/homebrew/lib/libpango-1.0.dylib
+[  5] /opt/homebrew/lib/libpangocairo-1.0.dylib
+[  6] /opt/homebrew/lib/libgobject-2.0.dylib
+[  7] /opt/homebrew/lib/libSM.dylib
+[  8] /opt/homebrew/lib/libICE.dylib
+[  9] /opt/homebrew/lib/libX11.dylib
+[ 10] /opt/homebrew/lib/libXext.dylib
 [ 11] /opt/homebrew/lib/libX11.dylib
-[ 12] /opt/homebrew/lib/libXext.dylib
-[ 13] /opt/homebrew/lib/libX11.dylib
-[ 14] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libplplotfortran.dylib
-[ 15] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libplplot.dylib
-[ 16] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libcsirocsa.dylib
-[ 17] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libqsastime.dylib
-[ 18] /opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/libstdc++.dylib
-[ 19] /opt/homebrew/lib/libhdf5_hl_f90cstub.310.0.6.dylib
-[ 20] /opt/homebrew/lib/libhdf5_f90cstub.310.3.2.dylib
-[ 21] /opt/homebrew/lib/libhdf5_hl.310.0.6.dylib
-[ 22] /opt/homebrew/lib/libhdf5.310.5.1.dylib
-[ 23] /opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/libgfortran.dylib
-[ 24] /opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/libquadmath.dylib
+[ 12] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libplplotfortran.dylib
+[ 13] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libplplot.dylib
+[ 14] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libcsirocsa.dylib
+[ 15] /Users/matthewsignorelli/Documents/Bmad/packages/lib/libqsastime.dylib
+[ 16] /opt/homebrew/Cellar/gcc/16.1.0/lib/gcc/current/libstdc++.dylib
+[ 17] /opt/homebrew/lib/libhdf5_hl_fortran.320.0.2.dylib
+[ 18] /opt/homebrew/lib/libhdf5_hl_f90cstub.320.0.2.dylib
+[ 19] /opt/homebrew/lib/libhdf5_hl.320.0.2.dylib
+[ 20] /opt/homebrew/lib/libhdf5_fortran.320.1.1.dylib
+[ 21] /opt/homebrew/lib/libhdf5_f90cstub.320.1.1.dylib
+[ 22] /opt/homebrew/lib/libhdf5.320.1.1.dylib
+[ 23] /opt/homebrew/Cellar/gcc/16.1.0/lib/gcc/current/libgfortran.dylib
+[ 24] /opt/homebrew/Cellar/gcc/16.1.0/lib/gcc/current/libquadmath.dylib
 [ 25] /Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/usr/lib/libSystem.tbd
 [ 26] /Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/usr/lib/system/libsystem_malloc.tbd
 # Sections:
 # Address	Size    	Segment	Section
-0x100000E60	0x00000430	__TEXT	__text
-0x1000012A0	0x0000002C	__TEXT	__text_startup
-0x1000012CC	0x000000C0	__TEXT	__stubs
-0x100001390	0x00000091	__TEXT	__cstring
-0x100001430	0x000000E0	__TEXT	__const
-0x100001510	0x00000120	__TEXT	__eh_frame
+0x100000E60	0x000003F4	__TEXT	__text
+0x100001260	0x0000002C	__TEXT	__text_startup
+0x10000128C	0x000000C0	__TEXT	__stubs
+0x100001350	0x00000091	__TEXT	__cstring
+0x1000013F0	0x000000E0	__TEXT	__const
+0x1000014D0	0x000000C0	__TEXT	__eh_frame
 0x100004000	0x00000080	__DATA_CONST	__got
 # Symbols:
 # Address	Size    	File  Name
 0x100000000	0x00000000	[  0] __mh_execute_header
-0x100000E60	0x00000430	[  1] _MAIN__
-0x1000012A0	0x0000002C	[  1] _main
-0x1000012CC	0x0000000C	[  2] ___c_tpsa_MOD_add.stub
-0x1000012D8	0x0000000C	[  2] ___c_tpsa_MOD_c_a_opt.stub
-0x1000012E4	0x0000000C	[  2] ___c_tpsa_MOD_c_init.stub
-0x1000012F0	0x0000000C	[  2] ___c_tpsa_MOD_c_pri.stub
-0x1000012FC	0x0000000C	[  2] ___c_tpsa_MOD_daddsca.stub
-0x100001308	0x0000000C	[  2] ___c_tpsa_MOD_dputcharr.stub
-0x100001314	0x0000000C	[  2] ___c_tpsa_MOD_dputintr.stub
-0x100001320	0x0000000C	[  2] ___c_tpsa_MOD_equal.stub
-0x10000132C	0x0000000C	[  2] ___c_tpsa_MOD_getcharnd2.stub
-0x100001338	0x0000000C	[  2] ___c_tpsa_MOD_getintnd2.stub
-0x100001344	0x0000000C	[  2] ___c_tpsa_MOD_k_opt.stub
-0x100001350	0x0000000C	[ 23] __gfortran_os_error_at.stub
-0x10000135C	0x0000000C	[ 23] __gfortran_set_args.stub
-0x100001368	0x0000000C	[ 23] __gfortran_set_options.stub
-0x100001374	0x0000000C	[ 26] _free.stub
-0x100001380	0x0000000C	[ 26] _malloc.stub
-0x100001390	0x0000001B	[  1] literal string: Error allocating %lu bytes
-0x1000013AC	0x00000001	[  1] literal string: 
-0x1000013B0	0x00000071	[  1] literal string: In file '/Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/z_par.f90', around line 15
-0x100001430	0x00000008	[  1] lC2
-0x100001438	0x00000008	[  1] lC3
-0x100001440	0x00000008	[  1] lC4
-0x100001448	0x00000008	[  1] lC5
-0x100001450	0x00000008	[  1] lC6
-0x100001458	0x00000008	[  1] lC7
-0x100001460	0x00000008	[  1] lC8
-0x100001468	0x00000008	[  1] lC9
-0x100001470	0x00000008	[  1] lC10
-0x100001478	0x00000008	[  1] lC11
-0x100001480	0x00000008	[  1] lC12
-0x100001488	0x00000008	[  1] lC13
-0x100001490	0x00000008	[  1] lC14
-0x100001498	0x00000008	[  1] lC15
-0x1000014A0	0x00000004	[  1] lC16
-0x1000014A4	0x0000001C	[  1] _options.9.0
-0x1000014C0	0x00000008	[  1] lC21
-0x1000014D0	0x00000010	[  1] 16-byte-literal
-0x1000014E0	0x00000010	[  1] 16-byte-literal
-0x1000014F0	0x00000010	[  1] 16-byte-literal
-0x100001500	0x00000010	[  1] 16-byte-literal
-0x100001510	0x00000018	[  1] CFI
-0x100001528	0x000000D0	[  1] FDE for: _MAIN__
-0x1000015F8	0x00000038	[  1] FDE for: _main
+0x100000E60	0x000003F4	[  1] _MAIN__
+0x100001260	0x0000002C	[  1] _main
+0x10000128C	0x0000000C	[  2] ___c_tpsa_MOD_add.stub
+0x100001298	0x0000000C	[  2] ___c_tpsa_MOD_c_a_opt.stub
+0x1000012A4	0x0000000C	[  2] ___c_tpsa_MOD_c_init.stub
+0x1000012B0	0x0000000C	[  2] ___c_tpsa_MOD_c_pri.stub
+0x1000012BC	0x0000000C	[  2] ___c_tpsa_MOD_daddsca.stub
+0x1000012C8	0x0000000C	[  2] ___c_tpsa_MOD_dputcharr.stub
+0x1000012D4	0x0000000C	[  2] ___c_tpsa_MOD_dputintr.stub
+0x1000012E0	0x0000000C	[  2] ___c_tpsa_MOD_equal.stub
+0x1000012EC	0x0000000C	[  2] ___c_tpsa_MOD_getcharnd2.stub
+0x1000012F8	0x0000000C	[  2] ___c_tpsa_MOD_getintnd2.stub
+0x100001304	0x0000000C	[  2] ___c_tpsa_MOD_k_opt.stub
+0x100001310	0x0000000C	[ 23] __gfortran_os_error_at.stub
+0x10000131C	0x0000000C	[ 23] __gfortran_set_args.stub
+0x100001328	0x0000000C	[ 23] __gfortran_set_options.stub
+0x100001334	0x0000000C	[ 26] _free.stub
+0x100001340	0x0000000C	[ 26] _malloc.stub
+0x100001350	0x0000001B	[  1] literal string: Error allocating %lu bytes
+0x10000136C	0x00000001	[  1] literal string: 
+0x100001370	0x00000071	[  1] literal string: In file '/Users/matthewsignorelli/.julia/dev/NonlinearNormalForm/fpp-ptc-sandbox/code/z_par.f90', around line 15
+0x1000013F0	0x00000008	[  1] lC7
+0x1000013F8	0x00000008	[  1] lC8
+0x100001400	0x00000008	[  1] lC9
+0x100001408	0x00000018	[  1] lC10
+0x100001420	0x00000010	[  1] lC13
+0x100001430	0x00000028	[  1] lC15
+0x100001458	0x0000000C	[  1] lC20
+0x100001464	0x0000001C	[  1] _options.9.0
+0x100001480	0x00000008	[  1] lC6
+0x100001490	0x00000010	[  1] 16-byte-literal
+0x1000014A0	0x00000010	[  1] 16-byte-literal
+0x1000014B0	0x00000010	[  1] 16-byte-literal
+0x1000014C0	0x00000010	[  1] 16-byte-literal
+0x1000014D0	0x00000018	[  1] CFI
+0x1000014E8	0x00000070	[  1] FDE for: _MAIN__
+0x100001558	0x00000038	[  1] FDE for: _main
 0x100004000	0x00000008	[  2] ___c_tpsa_MOD_add.got
 0x100004008	0x00000008	[  2] ___c_tpsa_MOD_c_a_opt.got
 0x100004010	0x00000008	[  2] ___c_tpsa_MOD_c_init.got

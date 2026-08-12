@@ -11,7 +11,7 @@ program example
    type(c_normal_form) normal
    type(c_ray) ray,ray2
    type(c_lattice_function)   Lat_function
-   logical :: damp = .false.,fastcanonize=.true.
+   logical :: damp = .false.,fastcanonise=.true.
    type(c_taylor), allocatable :: phase(:),phase1(:)
    type(c_damap), allocatable :: mt(:)
    real(dp)  ph(3),spintune(2),dampdec(3) 
@@ -101,7 +101,7 @@ program example
      !! call print(m)
     !call c_gofix(m,a0)
 
-    call c_normal_new_no_fac(m,normal,doberz=.false.)
+    !call c_normal_new_no_fac(m,normal,doberz=.false.)
     m = ci_phasor()*normal%Atot**(-1) * m * normal%Atot *c_phasor()
        
 
