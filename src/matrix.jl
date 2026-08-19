@@ -214,6 +214,8 @@ Moves back eigenvectors with eigenvalues having a zero imaginary component to th
 the `values` and `vectors` arrays in the Eigen struct, and returns the number of unstable 
 eigenvectors. 
 
+Also: will pair complex conjugates if not already done.
+
 Note that if more than 1 mode is unstable, the pair of eigenvectors corresponding to a mode 
 will not necessarily be next to each other at the end of the matrix.
 """
@@ -236,6 +238,21 @@ function moveback_unstable!(F::Eigen)
     end
   end
 
+  # Now make sure to pair eigenvectors as complex conjugates
+  nmodes = div(nv-cnt, 2)
+  for i in 1:nmodes
+    if evals[2*i-1] != conj(evals[2*i])
+      for j in (2*i+1):(nv-cnt)
+        if evals[2*i-1] == conj(evals[j])
+          evals[2*i], evals[j] = evals[j], evals[2*i]
+          for k in 1:nv
+            evecs[k,2*i], evecs[k,j] = evecs[k,j], evecs[k,2*i]
+          end
+          break
+        end
+      end
+    end
+  end
   return cnt
 end
 
