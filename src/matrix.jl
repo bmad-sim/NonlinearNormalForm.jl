@@ -103,8 +103,55 @@ function low_mat_eigen!(F, sort, phase_modes, error_unstable)
 
   end
 
+  orthogonalize_degenerate_pairs!(F.vectors, F.values; phase_modes)
+
   return F
 end
+
+
+function Sform(u::AbstractVector, v::AbstractVector)
+  n_modes = div(length(u), 2)
+  s = zero(promote_type(eltype(u), eltype(v)))
+  for i in 1:n_modes
+    s += conj(u[2i-1]) * v[2i] - conj(u[2i]) * v[2i-1]
+  end
+  return s
+end
+
+"""
+    orthogonalize_degenerate_pairs!(evecs, evals; tol=1e-8, phase_modes=-1)
+
+Given eigenvectors/eigenvalues already sorted into conjugate pairs
+(v1,v1*,v2,v2*,...) and already self-normalized (vⱼ'*S*vⱼ = ±im), fix up
+ONLY the pairs that share a (numerically) degenerate eigenvalue, making them
+mutually S-orthogonal while staying exact eigenvectors. Distinct-eigenvalue
+pairs are left untouched (correct whether or not the parent matrix is
+symplectic).
+"""
+function orthogonalize_degenerate_pairs!(evecs::AbstractMatrix, evals::AbstractVector; tol::Real=1e-7, phase_modes::Integer=-1)
+    n_modes = div(size(evecs, 1), 2)
+
+    for k in 2:n_modes, j in 1:(k-1)
+        # only touch pairs (j,k) that share an eigenvalue
+        isapprox(evals[2j-1], evals[2k-1]; atol=tol, rtol=tol) || continue
+
+        vj, vjc = evecs[:, 2j-1], evecs[:, 2j]     # normalized: vj'Svj=+im, vjc'Svjc=-im
+        vk = evecs[:, 2k-1]
+
+        # symplectic Gram-Schmidt: remove vk's overlap with mode j
+        c1 = -im * Sform(vj,  vk)
+        c2 =  im * Sform(vjc, vk)
+        vk = vk .- c1 .* vj .- c2 .* vjc
+
+        evecs[:, 2k-1] = vk
+        evecs[:, 2k]   = conj.(vk)
+
+        # renormalize this pair (projection changes the self-term magnitude)
+        normalize_eigenmode!((@view evecs[:, 2k-1:2k]), (@view evals[2k-1:2k]), phase_modes)
+    end
+    return evecs, evals
+end
+
 
 """
     normalize_eigenmode!(evec_pair, eval_pair, phase_mode::Integer=-1)
