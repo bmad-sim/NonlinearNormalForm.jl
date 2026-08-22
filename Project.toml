@@ -1,7 +1,7 @@
 name = "NonlinearNormalForm"
 uuid = "05e19671-dec8-4f15-984f-54eaa6ca64be"
 authors = ["Matt Signorelli"]
-version = "0.5.1"
+version = "0.5.2"
 
 [deps]
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
