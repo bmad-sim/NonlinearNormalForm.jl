@@ -83,15 +83,18 @@ export        TaylorMap,
 # initially (before nv and np are known) is higher
 
 macro _DEFAULT_X0(NV)
-  return :(MVector{$(esc(NV))})
+  # return :(MVector{$(esc(NV))})
+  return :(Vector)
 end
 
 macro _DEFAULT_X(NN)
-  return :(MVector{$(esc(NN))})
+  # return :(MVector{$(esc(NN))})
+  return :(Vector)
 end
 
 macro _DEFAULT_S(NV)
-  return :(MMatrix{$(esc(NV)),$(esc(NV))})
+  # return :(MMatrix{$(esc(NV)),$(esc(NV))})
+  return :(Matrix)
 end
 
 const DEFAULT_NVARS = 6
