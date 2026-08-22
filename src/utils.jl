@@ -513,3 +513,43 @@ function checksymp(m::TaylorMap)
   return out-S
 end
 # =================================================================================== #
+# Block determinants and double diag (for damping)
+
+function block_det(m::DAMap{V0}, a_matrix::SMatrix) where {V0<:StaticArray}
+  nhv = nhvars(m)
+  return StaticArrays.sacollect(SMatrix{div(nhv, 2),div(nhv, 2)}, begin
+    a_matrix[2*i-1,2*j-1]*a_matrix[2*i,2*j]-a_matrix[2*i-1,2*j]*a_matrix[2*i,2*j-1]
+  end for j in 1:div(nhv, 2) for i in 1:div(nhv, 2))
+end
+
+function block_det(m::DAMap, a_matrix)
+  nhv = nhvars(m)
+  nd = div(nhv, 2)
+  out = zeros(eltype(a_matrix), nd, nd)
+  for i in 1:nd
+    for j in 1:nd
+      out[i,j] = det(view(a_matrix, (2*i-1):(2*i), (2*j-1):(2*j)))
+    end
+  end
+  return out
+end
+
+function double_diag(v::V) where {V<:StaticArray}
+  n = length(V)
+  return StaticArrays.sacollect(SMatrix{2*n,2*n}, begin
+    if j == i
+      v[floor(Int, (i-1)/2)+1]
+    else
+      0
+    end
+  end for j in 1:(2*n) for i in 1:(2*n))
+end
+
+function double_diag(v)
+  n = length(v)
+  out = zeros(eltype(v), 2*n)
+  for i in 1:(2*n)
+    out[i] = v[floor(Int, (i-1)/2)+1]
+  end
+  return Diagonal(out)
+end

@@ -593,12 +593,12 @@ end
 # The phase advance can be acquired from this map by atan(r11,r22), etc etc
 # Factors the map to: as ∘ a0 ∘ a1 ∘ a2 ∘ r . Spin canonise not yet implemented
 function factorise(
-  a::DAMap{V0};
+  a::DAMap;
   canonise::Integer=-1, # 0 = fully linear, 1 = linear w parameters, 2 = fully nonlinear
   phase=nothing, 
   damping::Bool=!isnothing(a.s),
   damp=nothing
-) where {V0<:StaticArray}
+)
   nn = ndiffs(a)
   nv = nvars(a)
   nhv = nhvars(a)
@@ -661,20 +661,11 @@ function factorise(
         error("Canonization including damping and coasting beam is not supported")
       end
       #a_matrix = jacobian(a, VARS)*jacobian(canoniser, VARS)
-      tmp = StaticArrays.sacollect(SMatrix{div(nhv, 2),div(nhv, 2)}, begin
-          a_matrix[2*i-1,2*j-1]*a_matrix[2*i,2*j]-a_matrix[2*i-1,2*j]*a_matrix[2*i,2*j-1]
-      end for j in 1:div(nhv, 2) for i in 1:div(nhv, 2))
+      tmp = block_det(a, a_matrix) 
       tmp2 = inv(tmp)
 
       dampt = sqrt.(sum(tmp2, dims=2))
-      Λi = StaticArrays.sacollect(SMatrix{nhv,nhv}, begin
-        if j == i
-          dampt[floor(Int, (i-1)/2)+1]
-        else
-          0
-        end
-      end for j in 1:nhv for i in 1:nhv)
-      
+      Λi = double_diag(dampt)
       # now multiply canoniser matrix by this one
       a_rot = jacobian(canoniser, VARS)*Λi
       if !isnothing(damp)
