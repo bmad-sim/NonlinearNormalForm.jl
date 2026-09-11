@@ -51,7 +51,7 @@ end
 
 factor_in(t, var::Int, n::Int=1) = (out = zero(t); factor_in!(out, t, var, n))
 
-function factor_in!(out, t, var::Int, n::Int=1)
+function factor_in!(out, t, var::Int, n::Int=1, )
   TI.is_tps_type(typeof(t)) isa TI.IsTPSType || error("Function only accepts TPS types")
   TI.is_tps_type(typeof(out)) isa TI.IsTPSType || error("Function only accepts TPS types")
   nn = ndiffs(t)
@@ -65,7 +65,9 @@ function factor_in!(out, t, var::Int, n::Int=1)
   idx = TI.cycle!(t, 0, mono=tmpmono, val=v)
   while idx > 0
     tmpmono[var] += n
-    TI.setm!(out, v[], tmpmono)
+    if TI.isvalidm(out, tmpmono)
+      TI.setm!(out, v[], tmpmono)
+    end
     idx = TI.cycle!(t, idx, mono=tmpmono, val=v)
   end
   return out
