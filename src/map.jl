@@ -731,8 +731,10 @@ function ∘(m2::$t, m1::$t)
   return m
 end
 
-# When composing a TPS scalar/vector function w a map, use orbital part of map:
-function ∘(m2, m1::$t)
+# When composing a TPS scalar/vector function w a map, use orbital part of map.
+# `m2` is constrained to Number/AbstractArray (a TPS scalar or vector function) so
+# that inserting this method does not invalidate compiled `∘(::Any, ...)` callers.
+function ∘(m2::Union{Number,AbstractArray}, m1::$t)
   TI.is_tps_type(eltype(m2)) isa TI.IsTPSType || error("Cannot compose: $(eltype(m2)) is not a TPS type supported by TPSAInterface.jl")
   T = promote_type(eltype(m1.v), eltype(m2))
   T == eltype(m1.v) ? m1xprom = m1.v : m1xprom = T.(m1.v)
@@ -751,8 +753,11 @@ literal_pow(::typeof(^), m::$t{V0,V,Q,S}, vn::Val{-1}) where {V0,V,Q,S} = inv(m)
 inv(m::$t; do_spin::Bool=true) = (out_m = zero(m); inv!(out_m, m, do_spin=do_spin); return out_m)
 ^(m::$t, n::Integer) = (out_m = zero(m); pow!(out_m, m, n); return out_m)
 
-# Also allow * for simplicity and \ and / 
-*(m2, m1::$t) = ∘(m2, m1)
+# Also allow * for simplicity and \ and /
+# Split the former untyped `*(m2, m1::$t)` into concrete-argument methods so that
+# inserting them does not invalidate compiled `*(::Any, ...)` callers.
+*(m2::$t, m1::$t) = ∘(m2, m1)
+*(m2::Union{Number,AbstractArray}, m1::$t) = ∘(m2, m1)
 /(m2::$t, m1::$t) = m2 ∘ inv(m1) 
 \(m2::$t, m1::$t) = inv(m2) ∘ m1
 
