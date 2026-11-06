@@ -1,5 +1,15 @@
 Manifest.toml
 docs/build
+CLAUDE.md
+
+# Editor and Jupyter leftovers
+*.swp
+.ipynb_checkpoints/
+
+# fpp-ptc-sandbox: build output and Fortran unit files
 fpp-ptc-sandbox/production/
 fpp-ptc-sandbox/code/CMakeFiles/
-CLAUDE.md
+fpp-ptc-sandbox/code/CMakeCache.txt
+fpp-ptc-sandbox/code/cmake_install.cmake
+fpp-ptc-sandbox/code/Makefile
+fpp-ptc-sandbox/code/fort.*
