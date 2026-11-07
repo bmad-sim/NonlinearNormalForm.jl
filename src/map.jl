@@ -547,9 +547,7 @@ function inv!(
   m::TaylorMap,
   m1::TaylorMap; 
   do_spin::Bool=true, 
-  work_vs::NTuple{3}=m.v isa StaticArray ? 
-                      ntuple(t->StaticArrays.sacollect(MVector{nvars(m)}, zero(first(m.v)) for i in 1:nvars(m)), Val{3}()) :
-                      ntuple(t->zero.(view(m.v, 1:nvars(m))), Val{3}()), 
+  work_vs::Union{Nothing,NTuple{3}}=nothing, # only needed (and allocated if nothing) for maxord > 1
   work_q::Union{Nothing,Quaternion}=isnothing(m.q) ? nothing : zero(m.q)
 )
 
@@ -561,7 +559,8 @@ function inv!(
   # for inverse of block matrices: https://en.wikipedia.org/wiki/Block_matrix#Inversion
   A = jacobian(m1, VARS)
   B = jacobian(m1, PARAMS)
-  Ri = hcat(inv(A), -inv(A)*B)
+  Ai = inv(A)
+  Ri = hcat(Ai, -Ai*B)
 
   clear!(m)
   setray!(m.v, v_matrix=Ri)
@@ -572,6 +571,11 @@ function inv!(
     nv = nvars(m)
     np = nparams(m)
 
+    if isnothing(work_vs)
+      work_vs = m.v isa StaticArray ?
+                ntuple(t->StaticArrays.sacollect(MVector{nvars(m)}, zero(first(m.v)) for i in 1:nvars(m)), Val{3}()) :
+                ntuple(t->zero.(view(m.v, 1:nvars(m))), Val{3}())
+    end
     ri = work_vs[1]
     Ntilde = work_vs[2]
     tmp = work_vs[3]

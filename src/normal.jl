@@ -221,7 +221,11 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
     alpha = acos(n0[2])
 
     nrm = sqrt(n0[1]^2+n0[3]^2)
-    qr = Quaternion(cos(alpha/2), sin(alpha/2)*n0[3]/nrm, 0, -sin(alpha/2)*n0[1]/nrm)
+    if nrm == 0 # n0 = ±yhat (e.g. a flat ring): any horizontal rotation axis, here x
+      qr = Quaternion(cos(alpha/2), sin(alpha/2), 0, 0)
+    else
+      qr = Quaternion(cos(alpha/2), sin(alpha/2)*n0[3]/nrm, 0, -sin(alpha/2)*n0[1]/nrm)
+    end
     # now concatenate m1:
     aspin = one(m)
     setquat!(aspin.q, q=qr)
