@@ -596,20 +596,23 @@ end
 # Returns the rotation map to put a in Courant Snyder form 
 # The phase advance can be acquired from this map by atan(r11,r22), etc etc
 # Factors the map to: as ∘ a0 ∘ a1 ∘ a2 ∘ r . Spin canonise not yet implemented
+# With compute_r=Val(false), r is not computed and not in the result
 function factorise(
   a::DAMap;
   canonise::Integer=-1, # 0 = fully linear, 1 = linear w parameters, 2 = fully nonlinear
   phase=nothing, 
   damping::Bool=!isnothing(a.s),
-  damp=nothing
-)
+  damp=nothing,
+  compute_r::Val{CR}=Val{true}()
+) where {CR}
   nn = ndiffs(a)
   nv = nvars(a)
   nhv = nhvars(a)
   coast = iscoasting(a)
 
   if canonise == -1
-    return merge(_factorise(a), (; a=a, r=one(a)))
+    fac = merge(_factorise(a), (; a=a))
+    return CR ? merge(fac, (; r=one(a))) : fac
   end
 
   if canonise == 0 # ONLY LINEAR!
@@ -678,7 +681,8 @@ function factorise(
       setray!(canoniser.v, v_matrix=a_rot)
     end
     a = a ∘ canoniser
-    return merge(_factorise(a), (; a=a, r=inv(canoniser)))
+    fac = merge(_factorise(a), (; a=a))
+    return CR ? merge(fac, (; r=inv(canoniser))) : fac
   end
 
   # canonise >= 1:
@@ -773,7 +777,8 @@ function factorise(
   fac = _factorise(a_cs)
 
   if canonise == 1
-    return merge(fac, (; a=a_cs, r=inv(r_cs)))
+    fac = merge(fac, (; a=a_cs))
+    return CR ? merge(fac, (; r=inv(r_cs))) : fac
   elseif canonise != 2
     error("`canonise` keyword argument to `factorise` must be an integer between -1 and 2")
   end
@@ -810,7 +815,8 @@ function factorise(
   phi2 = exp(hf, id)
   fac = merge(fac, (; a2=real(c ∘ b1 ∘ ci)))
   r_nonl = real(c ∘ phi2 ∘ ci)
-  r = r_nonl ∘ inv(r_cs)
+  # (also needed for the phase of a coasting beam)
+  r = CR || (coast && !isnothing(phase)) ? r_nonl ∘ inv(r_cs) : nothing
 
   # Now need to update phase
   if !isnothing(phase)
@@ -822,7 +828,8 @@ function factorise(
       TI.seti!(phase[end], 0, nt)
     end
   end
-  return merge(fac, (; a=(a_cs ∘ inv(r_nonl)), r=r))
+  fac = merge(fac, (; a=(a_cs ∘ inv(r_nonl))))
+  return CR ? merge(fac, (; r=r)) : fac
 end
 
 # This can help give you the fixed point
