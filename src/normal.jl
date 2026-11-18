@@ -297,29 +297,25 @@ function normal(m::DAMap, order::Integer=maxord(m); res=nothing, spin_res=nothin
 end
 
 
-# to get dbeta/ddelta, first go to fully nonlinear parameter dependent fixed point
-# then calculate lattice functions. Lattice functions will be TPSA and then you 
-# can extract dbeta/ddelta
-function _factorise(a)
+"""
+    factorise_a0(a::DAMap)
+
+The first factor `a0` of `factorise(a)` alone: the translation to the parameter dependent fixed
+point (the orbit), identity in the variables (for a coasting beam, with the time-like variable
+set so that the Poisson bracket does not change). Cheaper than `factorise` when only the orbit is
+needed, and the same as its `a0`.
+"""
+function factorise_a0(a)
   nv = nvars(a)
   nhv = nhvars(a)
-  nn = ndiffs(a)
-  coast = iscoasting(a)
-
-  if !isnothing(a.q)
-    as = one(a)
-    tmp = inv(a)
-    setquat!(tmp.q, q=I)
-    TI.compose!(as.q, a.q, tmp.v)
-  end
 
   # Simply get parameter dependent part
   a0 = a ∘ zero(a)
 
-  if coast
+  if iscoasting(a)
     # At the moment, modulations are NOT implemented  in this package.
     # If modulations AND coasting plane is used, then this computation may disagree with FPP
-    # I am not sure which is correct nor if it has been tested in FPP... so if someone wants 
+    # I am not sure which is correct nor if it has been tested in FPP... so if someone wants
     # to implement modulations make sure there is no coasting
     nt = nv
     ndpt = nv+1
@@ -354,7 +350,27 @@ function _factorise(a)
   else
     add!(a0, a0, I)
   end
-  a1t = inv(a0)*a 
+  return a0
+end
+
+# to get dbeta/ddelta, first go to fully nonlinear parameter dependent fixed point
+# then calculate lattice functions. Lattice functions will be TPSA and then you
+# can extract dbeta/ddelta
+function _factorise(a)
+  nv = nvars(a)
+  nhv = nhvars(a)
+  nn = ndiffs(a)
+  coast = iscoasting(a)
+
+  if !isnothing(a.q)
+    as = one(a)
+    tmp = inv(a)
+    setquat!(tmp.q, q=I)
+    TI.compose!(as.q, a.q, tmp.v)
+  end
+
+  a0 = factorise_a0(a)
+  a1t = inv(a0)*a
   a1 = zero(a1t)
   ords = zeros(UInt8, nn)
   tmp = zero(a1.v[1])

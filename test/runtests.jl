@@ -93,6 +93,7 @@ end
     @test norm(a0-a0_fpp) < tol
     @test norm(a1-a1_fpp) < tol
     @test norm(a2-a2_fpp) < tol
+    @test norm(factorise_a0(a) - factorise(a).a0) == 0 # (the first factor alone)
 
     # 3D coasting beam
     a = read_fpp_map("factorize2/a.map",coast=true,spin=true)
@@ -106,6 +107,7 @@ end
     @test norm(a1-a1_fpp) < tol
     @test norm(a2-a2_fpp) < tol
     @test norm(as-as_fpp) < tol
+    @test norm(factorise_a0(a) - factorise(a).a0) == 0
 
     # Spin resonance  (Q_y - Q_s resonance)
     # WHEN LEAVING RESONANCES IN THE MAP, the PHASE of the normal 

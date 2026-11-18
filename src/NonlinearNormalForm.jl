@@ -70,7 +70,8 @@ export        TaylorMap,
               log!,
 
               equilibrium_moments,
-              factorise
+              factorise,
+              factorise_a0
               #,
               #compute_de_moivre,
               #compute_sagan_rubin,
