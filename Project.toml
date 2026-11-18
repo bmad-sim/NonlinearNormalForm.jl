@@ -29,7 +29,7 @@ ReferenceFrameRotations = "3"
 SkewLinearAlgebra = "1"
 StaticArrays = "1"
 TPSAInterface = "0.3.1"
-julia = "1.9"
+julia = "1.10"
 
 [extras]
 GTPSA = "b27dd330-f138-47c5-815b-40db9dd9b6e8"
